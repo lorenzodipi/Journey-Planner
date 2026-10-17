@@ -7,6 +7,7 @@ import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { BudgetItem } from '../types'
 import { BudgetItemForm } from '../ui/BudgetItemForm'
+import { FxCard } from '../ui/FxCard'
 import { FxForm } from '../ui/FxForm'
 import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
 import { Sheet } from '../ui/Sheet'
@@ -80,21 +81,7 @@ export function Budget() {
           )}
         </Card>
 
-        {hasLocal && (
-          <Card>
-            <div class="flex items-center gap-3">
-              <div class="min-w-0 flex-1">
-                <p class="text-xs font-medium uppercase tracking-wide text-muted">Cambio</p>
-                <p class="font-medium">
-                  {trip.fxRate ? `1 ${trip.localCurrency} = ${String(trip.fxRate).replace('.', ',')} ${base}` : `Imposta il cambio ${trip.localCurrency} → ${base}`}
-                </p>
-              </div>
-              <button type="button" onClick={() => setSheet({ kind: 'fx' })} class="min-h-11 rounded-full px-3 text-sm font-medium text-accent">
-                {trip.fxRate ? 'Modifica' : 'Imposta'}
-              </button>
-            </div>
-          </Card>
-        )}
+        {hasLocal && <FxCard trip={trip} onEdit={() => setSheet({ kind: 'fx' })} />}
 
         <Link href="/altro/spese" class="block">
           <Card class="flex min-h-14 items-center gap-3">

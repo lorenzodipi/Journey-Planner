@@ -7,6 +7,7 @@ import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { Expense } from '../types'
 import { ExpenseForm } from '../ui/ExpenseForm'
+import { FxCard } from '../ui/FxCard'
 import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
 import { Sheet } from '../ui/Sheet'
 
@@ -65,6 +66,8 @@ export function Spese() {
             </p>
           )}
         </Card>
+
+        {trip.localCurrency && trip.localCurrency !== trip.baseCurrency && <FxCard trip={trip} />}
 
         {trip.expenses.length === 0 ? (
           <EmptyState title="Nessuna spesa" text="Tocca + e scrivi importo e cosa hai pagato: in yen il cambio si calcola da solo." />
