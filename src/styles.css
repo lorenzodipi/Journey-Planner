@@ -174,10 +174,11 @@ input, select, textarea {
 
 /* Mappa (MapLibre): pin piccoli e puliti, controlli più grandi da toccare */
 .jp-pin {
-  display: block;
+  display: grid;
+  place-items: center;
   box-sizing: border-box;
-  width: 18px;
-  height: 18px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   cursor: pointer;
   border: 2.5px solid #fff;
@@ -185,9 +186,15 @@ input, select, textarea {
   box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
   transition: width 0.15s, height 0.15s;
 }
+.jp-pin svg {
+  width: 62%;
+  height: 62%;
+  pointer-events: none;
+  filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.45));
+}
 .jp-pin-selected {
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   border-width: 3.5px;
   box-shadow: 0 0 0 3px rgb(0 0 0 / 0.25), 0 2px 8px rgb(0 0 0 / 0.4);
 }

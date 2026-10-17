@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks'
-import { KIND_LABEL, KINDS } from '../lib/checklist'
+import { KIND_LABEL, KINDS, parseQuantity } from '../lib/checklist'
 import type { ChecklistInput } from '../lib/planningData'
 import type { ChecklistItem, Trip } from '../types'
 import { ChipSelect, FormError, PrimaryButton, SecondaryButton, TextField } from './Field'
@@ -17,6 +17,7 @@ export function ChecklistItemForm({ trip, initial, onSubmit, onDelete, onDone }:
   const [kind, setKind] = useState(initial.kind)
   const [who, setWho] = useState(initial.travelerId ?? 'all')
   const [dueDate, setDueDate] = useState(initial.dueDate ?? '')
+  const [quantity, setQuantity] = useState(String(initial.quantity ?? 1))
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -25,7 +26,7 @@ export function ChecklistItemForm({ trip, initial, onSubmit, onDelete, onDone }:
     if (!text.trim()) return setError('Scrivi la voce.')
     setBusy(true)
     setError(null)
-    const message = await onSubmit({ text, kind, travelerId: who === 'all' ? null : who, dueDate })
+    const message = await onSubmit({ text, kind, travelerId: who === 'all' ? null : who, dueDate, quantity: parseQuantity(quantity) })
     setBusy(false)
     if (message) setError(message)
     else onDone()
@@ -42,6 +43,7 @@ export function ChecklistItemForm({ trip, initial, onSubmit, onDelete, onDone }:
   return (
     <form class="space-y-4" onSubmit={submit} noValidate>
       <TextField label="Voce" value={text} onInput={setText} maxLength={200} />
+      <TextField label="Quantità" value={quantity} onInput={setQuantity} inputMode="numeric" maxLength={3} />
       <ChipSelect label="Elenco" value={kind} onChange={setKind} options={KINDS.map((k) => ({ value: k, label: KIND_LABEL[k] }))} />
       {trip.travelers.length > 1 && (
         <ChipSelect

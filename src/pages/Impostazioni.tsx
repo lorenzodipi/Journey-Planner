@@ -6,6 +6,7 @@ import { showToast } from '../state/toast'
 import { useTrips } from '../state/trip'
 import { SecondaryButton } from '../ui/Field'
 import { Card, PageHeader } from '../ui/PageHeader'
+import { RestoreCard } from '../ui/RestoreCard'
 
 const time = (ms: number) =>
   new Date(ms).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -51,6 +52,8 @@ export function Impostazioni() {
             {t.trips.length > 1 && <SecondaryButton onClick={() => exportTrips(t.trips)}>Esporta tutti i viaggi</SecondaryButton>}
           </div>
         </Card>
+
+        <RestoreCard />
 
         <Link href="/altro/budget" class="block">
           <Card class="flex min-h-14 items-center gap-3">

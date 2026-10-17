@@ -1,5 +1,5 @@
-import { useEffect } from 'preact/hooks'
-import { Route, Router, Switch } from 'wouter-preact'
+import { useEffect, useLayoutEffect } from 'preact/hooks'
+import { Route, Router, Switch, useLocation } from 'wouter-preact'
 import { useHashLocation } from 'wouter-preact/use-hash-location'
 import { useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
@@ -22,6 +22,22 @@ import { BottomNav } from './ui/BottomNav'
 import { OutboxBanner } from './ui/OutboxBanner'
 import { ToastHost } from './ui/ToastHost'
 import { EmptyState } from './ui/PageHeader'
+
+/** Ogni cambio di pagina riparte dall'alto (altrimenti resta la posizione della pagina precedente). */
+function ScrollToTop() {
+  const [location] = useLocation()
+  useEffect(() => {
+    try {
+      history.scrollRestoration = 'manual'
+    } catch {
+      // ignorato
+    }
+  }, [])
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [location])
+  return null
+}
 
 export function App() {
   const auth = useAuth()
@@ -71,6 +87,7 @@ export function App() {
 
   return (
     <Router hook={useHashLocation}>
+      <ScrollToTop />
       <div
         class="mx-auto min-h-dvh max-w-xl"
         style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))' }}

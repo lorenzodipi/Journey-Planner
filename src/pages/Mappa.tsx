@@ -6,6 +6,7 @@ import { usePlaceFilters } from '../state/placeFilters'
 import { useTrip } from '../state/trip'
 import { FilterBar } from '../ui/FilterBar'
 import { FilterSheet } from '../ui/FilterSheet'
+import { categoryIcon } from '../lib/categoryIcon'
 import type { MapPin } from '../ui/MapView'
 import { EmptyState } from '../ui/PageHeader'
 import { PlaceSheet, type PlaceSheetState } from '../ui/PlaceSheet'
@@ -63,6 +64,7 @@ export function Mappa() {
         lng: p.lng as number,
         name: p.name,
         color: colorOf(p.id, categoryColor(trip, p)),
+        icon: categoryIcon(p.category),
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [visible, trip.categories, mode, dayOf],

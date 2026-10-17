@@ -11,6 +11,7 @@ export interface ChecklistRow {
   text: string
   done: boolean
   due_date: string | null
+  quantity?: number | null
   position: number
 }
 
@@ -38,6 +39,7 @@ export function mapChecklist(rows: ChecklistRow[], tripId: string): ChecklistIte
       done: r.done,
       travelerId: r.traveler_id ?? undefined,
       dueDate: r.due_date ?? undefined,
+      quantity: r.quantity && r.quantity > 1 ? r.quantity : undefined,
       position: r.position,
     }))
     .sort((a, b) => a.position - b.position)
@@ -66,10 +68,23 @@ export interface ChecklistInput {
   kind: ChecklistKind
   travelerId: string | null
   dueDate: string
+  /** Quanti pezzi; 1 = nessuna quantità. */
+  quantity?: number
 }
 
-export function checklistColumns(i: ChecklistInput) {
-  return { text: i.text.trim(), kind: i.kind, traveler_id: i.travelerId, due_date: i.dueDate || null }
+/**
+ * Colonne da salvare. `quantity` viaggia solo quando serve (maggiore di 1, o per azzerare una quantità
+ * già salvata): così le voci semplici si salvano anche se la colonna non esiste ancora nel database.
+ */
+export function checklistColumns(i: ChecklistInput, hadQuantity = false) {
+  const qty = i.quantity && i.quantity > 1 ? i.quantity : null
+  return {
+    text: i.text.trim(),
+    kind: i.kind,
+    traveler_id: i.travelerId,
+    due_date: i.dueDate || null,
+    ...(qty !== null || hadQuantity ? { quantity: qty } : {}),
+  }
 }
 
 export interface BookingInput {

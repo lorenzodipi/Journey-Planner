@@ -18,4 +18,15 @@ describe('esportazione', () => {
     expect(exportFileName([demoTrip, demoTrip], now)).toBe('journey-planner-tutti-i-viaggi-2026-11-13.json')
     expect(exportFileName([{ ...demoTrip, title: '⛩️' }], now)).toBe('journey-planner-viaggio-2026-11-13.json')
   })
+
+  it('non contiene account, email né ruolo', () => {
+    const trip = {
+      ...demoTrip,
+      myRole: 'owner' as const,
+      travelers: demoTrip.travelers.map((t, i) => ({ ...t, userId: `uid-${i}`, email: `persona${i}@example.com` })),
+    }
+    const text = serializeExport(buildExport([trip], now))
+    expect(text).not.toMatch(/example\.com|uid-|myRole|userId|"email"/)
+    expect(JSON.parse(text).trips[0].travelers[0]).toMatchObject({ name: demoTrip.travelers[0].name })
+  })
 })

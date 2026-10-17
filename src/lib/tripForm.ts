@@ -53,11 +53,48 @@ export function validateTrip(input: TripInput): string | null {
   return null
 }
 
-/** Nomi dei viaggiatori: tolti vuoti e spazi, controllati i doppioni. */
-export function cleanTravelerNames(names: string[]): { names: string[]; error: string | null } {
-  const cleaned = names.map((n) => n.trim()).filter(Boolean)
-  if (cleaned.length === 0) return { names: [], error: 'Aggiungi almeno un viaggiatore.' }
-  const lower = cleaned.map((n) => n.toLowerCase())
-  if (new Set(lower).size !== lower.length) return { names: cleaned, error: 'Due viaggiatori hanno lo stesso nome.' }
-  return { names: cleaned, error: null }
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export interface PersonDraft {
+  email: string
+  name: string
+}
+
+/** Nome di partenza per chi viene aggiunto con la sola email: la parte prima della chiocciola. */
+export function nameFromEmail(email: string): string {
+  const local = email.trim().split('@')[0] ?? ''
+  const clean = local.replace(/[._-]+/g, ' ').trim()
+  return clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : ''
+}
+
+/**
+ * Chi viaggia: il proprio nome più gli altri, che vanno scritti con l'email di un account esistente
+ * (niente persone inventate). Righe vuote ignorate, email in minuscolo, doppioni rifiutati.
+ */
+export function cleanPeople(
+  selfName: string,
+  others: PersonDraft[],
+  ownEmail?: string,
+): { self: string; others: PersonDraft[]; error: string | null } {
+  const self = selfName.trim()
+  const out: PersonDraft[] = []
+  const fail = (error: string) => ({ self, others: out, error })
+  if (!self) return fail('Scrivi il tuo nome.')
+
+  const seen = new Set<string>(ownEmail ? [ownEmail.trim().toLowerCase()] : [])
+  const names = new Set<string>([self.toLowerCase()])
+  for (const o of others) {
+    const email = o.email.trim().toLowerCase()
+    const name = o.name.trim()
+    if (!email && !name) continue
+    if (!email) return fail('Per ogni persona serve l’email del suo account.')
+    if (!EMAIL.test(email)) return fail(`«${o.email.trim()}» non è un indirizzo email valido.`)
+    if (seen.has(email)) return fail(`«${email}» compare due volte (o sei tu).`)
+    seen.add(email)
+    const label = name || nameFromEmail(email)
+    if (names.has(label.toLowerCase())) return fail(`Due persone si chiamano «${label}»: cambia uno dei nomi.`)
+    names.add(label.toLowerCase())
+    out.push({ email, name: label })
+  }
+  return { self, others: out, error: null }
 }

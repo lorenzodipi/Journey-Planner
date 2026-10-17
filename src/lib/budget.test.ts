@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Expense } from '../types'
-import { budgetLines, expenseBase, expenseOwed, groupByCategory, logisticsLines, settle, shareAmounts, splitEvenly, summarizeExpenses, summarizeLines, toBase, type Line } from './budget'
+import { budgetLines, expenseBase, expenseOwed, expensesOf, groupByCategory, involvesTraveler, personSummary, shareOf, logisticsLines, settle, shareAmounts, splitEvenly, summarizeExpenses, summarizeLines, toBase, type Line } from './budget'
 
 // Cifre FITTIZIE: servono solo a verificare i calcoli.
 const T1 = { id: 't1' }
@@ -124,5 +124,47 @@ describe('spese', () => {
       { from: 'b', to: 'a', amount: 10 },
     ])
     expect(settle([{ travelerId: 'a', net: 0 }, { travelerId: 'b', net: 0 }])).toEqual([])
+  })
+})
+
+describe('vista per persona', () => {
+  const T3 = { id: 't3' }
+  const three = [T1, T2, T3]
+  const mk = (id: string, amount: number, paidBy: string | undefined, ids: string[]): Expense => ({
+    id, label: id, amount, currency: 'EUR', paidBy, spentAt: '2026-11-22T10:00:00Z', shares: ids.map((travelerId) => ({ travelerId, weight: 1 })),
+  })
+  const list = [mk('a', 30, 't1', []), mk('b', 20, 't2', ['t2', 't3']), mk('c', 10, 't3', ['t3']), mk('d', 8, undefined, ['t1', 't2'])]
+
+  it('una spesa riguarda chi paga, chi ha una quota, o tutti se non ci sono quote', () => {
+    expect(involvesTraveler(list[0], 't2')).toBe(true) // nessuna quota = tutti
+    expect(involvesTraveler(list[1], 't1')).toBe(false)
+    expect(involvesTraveler(list[1], 't3')).toBe(true)
+    expect(involvesTraveler(mk('x', 5, 't1', ['t2']), 't1')).toBe(true) // ha pagato per un altro
+    expect(involvesTraveler({ paidBy: undefined, shares: [{ travelerId: 't1', weight: 0 }] }, 't1')).toBe(false)
+  })
+
+  it('filtra le spese di una persona; "all" le lascia tutte', () => {
+    expect(expensesOf(list, 'all')).toHaveLength(4)
+    expect(expensesOf(list, 't1').map((e) => e.id)).toEqual(['a', 'd'])
+    expect(expensesOf(list, 't3').map((e) => e.id)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('quota di una persona in una spesa', () => {
+    expect(shareOf(list[0], three, 't2', fx)).toBe(10)
+    expect(shareOf(list[1], three, 't1', fx)).toBe(0)
+    expect(shareOf({ ...list[0], currency: 'USD' }, three, 't1', fx)).toBeNull()
+  })
+
+  it('riepilogo di una persona: anticipato, quota, saldo e bonifici', () => {
+    const s = summarizeExpenses(list, three, fx)
+    const p1 = personSummary(s, 't1')
+    expect(p1.paid).toBe(30)
+    expect(p1.share).toBe(14) // 10 della spesa a + 4 della d
+    expect(p1.net).toBe(20) // 30 - 10 (la d non ha pagante e non conta nel saldo)
+    expect(p1.gives).toEqual([])
+    expect(p1.receives.reduce((n, t) => n + t.amount, 0)).toBeCloseTo(20, 2)
+    const total = ['t1', 't2', 't3'].reduce((n, id) => n + personSummary(s, id).net, 0)
+    expect(total).toBeCloseTo(0, 2)
+    expect(personSummary(s, 'zz')).toMatchObject({ paid: 0, share: 0, net: 0 })
   })
 })

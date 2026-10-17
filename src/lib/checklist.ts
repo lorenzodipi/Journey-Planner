@@ -35,6 +35,15 @@ export const TEMPLATE: Record<ChecklistKind, string[]> = {
   ],
 }
 
+export const MAX_QUANTITY = 999
+
+/** Quantità scritta dall'utente → intero da 1 a 999 (vuoto o non valido = 1). */
+export function parseQuantity(raw: string | number | undefined | null): number {
+  const n = typeof raw === 'number' ? raw : Number.parseInt(String(raw ?? '').replace(/\D/g, ''), 10)
+  if (!Number.isFinite(n) || n < 1) return 1
+  return Math.min(Math.floor(n), MAX_QUANTITY)
+}
+
 export function progress(items: Pick<ChecklistItem, 'done'>[]): { done: number; total: number } {
   return { done: items.filter((i) => i.done).length, total: items.length }
 }

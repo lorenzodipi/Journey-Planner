@@ -14,8 +14,14 @@ export interface ExportFile {
   trips: Trip[]
 }
 
+/** Il file non contiene account o email: quelli restano nel database, non nella copia di sicurezza. */
+function withoutAccounts(trip: Trip): Trip {
+  const { myRole: _role, ...rest } = trip
+  return { ...rest, travelers: trip.travelers.map(({ userId: _u, email: _e, ...t }) => t) }
+}
+
 export function buildExport(trips: Trip[], now: Date = new Date()): ExportFile {
-  return { format: EXPORT_FORMAT, version: EXPORT_VERSION, exportedAt: now.toISOString(), trips }
+  return { format: EXPORT_FORMAT, version: EXPORT_VERSION, exportedAt: now.toISOString(), trips: trips.map(withoutAccounts) }
 }
 
 const slug = (s: string) =>

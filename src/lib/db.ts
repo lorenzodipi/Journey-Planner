@@ -14,6 +14,7 @@ export function describeError(error: unknown): string {
   if (/abort|timed? ?out/i.test(message)) return 'Il server non risponde. Controlla la connessione e riprova.'
   if (/failed to fetch|networkerror|load failed/i.test(message)) return 'Connessione assente o instabile. Riprova.'
   if (/row-level security|permission denied/i.test(message)) return 'Non hai il permesso per questa operazione.'
+  if (/could not find the (function|'quantity' column)/i.test(message)) return 'Manca un aggiornamento del database: esegui il file supabase/migrations/0006_traveler_accounts.sql nel SQL Editor di Supabase.'
   if (/duplicate key/i.test(message)) return 'Esiste già un elemento uguale.'
   if (/trips_dates_ok/i.test(message)) return 'La data di fine non può essere prima di quella di inizio.'
   return message

@@ -12,7 +12,12 @@ export interface Traveler {
   name: string
   color: string
   position?: number
+  /** Account collegato: chi non ce l'ha è un viaggiatore "vecchio" da collegare. */
+  userId?: string
+  email?: string
 }
+
+export type MemberRole = 'owner' | 'editor' | 'viewer'
 
 export interface Category {
   id: string
@@ -173,6 +178,8 @@ export interface ChecklistItem {
   done: boolean
   travelerId?: string // vuoto = per tutti
   dueDate?: string // "YYYY-MM-DD"
+  /** Quanti pezzi (es. 3 magliette). Vuoto = 1. */
+  quantity?: number
   position: number
 }
 
@@ -203,6 +210,8 @@ export interface Trip {
   localCurrency?: string
   center: { lat: number; lng: number }
   travelers: Traveler[]
+  /** Ruolo di chi sta usando l'app in questo viaggio (se noto). */
+  myRole?: MemberRole
   days: Day[]
   places: Place[]
   categories: Category[]

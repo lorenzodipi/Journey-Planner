@@ -240,3 +240,52 @@ export function summarizeExpenses(expenses: Expense[], travelers: Pick<Traveler,
     unconverted: Array.from(unconverted).sort(),
   }
 }
+
+// ---------- vista per persona (tab in Spese) ----------
+
+/** La spesa riguarda questa persona: l'ha pagata o ne ha una quota (senza quote = tutti). */
+export function involvesTraveler(e: Pick<Expense, 'paidBy' | 'shares'>, travelerId: string): boolean {
+  if (e.paidBy === travelerId) return true
+  if (e.shares.length === 0) return true
+  return e.shares.some((s) => s.travelerId === travelerId && s.weight > 0)
+}
+
+export function expensesOf(expenses: Expense[], travelerId: 'all' | string): Expense[] {
+  return travelerId === 'all' ? expenses : expenses.filter((e) => involvesTraveler(e, travelerId))
+}
+
+/** Quota di una spesa a carico di una persona (nella valuta base), o null se manca il cambio. */
+export function shareOf(
+  e: Pick<Expense, 'amount' | 'currency' | 'fxRate' | 'shares'>,
+  travelers: Pick<Traveler, 'id'>[],
+  travelerId: string,
+  fx: FxContext,
+): number | null {
+  const owed = expenseOwed(e, travelers, fx)
+  if (owed === null) return null
+  return round2(owed.filter((o) => o.travelerId === travelerId).reduce((n, o) => n + o.amount, 0))
+}
+
+export interface PersonSummary {
+  /** quanto ha anticipato */
+  paid: number
+  /** la sua parte di tutte le spese */
+  share: number
+  /** > 0: deve ricevere; < 0: deve dare */
+  net: number
+  /** a chi deve dare, e quanto */
+  gives: Transfer[]
+  /** da chi deve ricevere, e quanto */
+  receives: Transfer[]
+}
+
+export function personSummary(summary: ExpenseSummary, travelerId: string): PersonSummary {
+  const balance = summary.balances.find((b) => b.travelerId === travelerId)
+  return {
+    paid: balance?.paid ?? 0,
+    share: summary.spentBy.find((s) => s.travelerId === travelerId)?.amount ?? 0,
+    net: balance?.net ?? 0,
+    gives: summary.transfers.filter((t) => t.from === travelerId),
+    receives: summary.transfers.filter((t) => t.to === travelerId),
+  }
+}

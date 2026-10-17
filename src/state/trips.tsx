@@ -9,16 +9,16 @@ import { execOp } from '../lib/outboxExec'
 import { applyQueue, checklistEntry, deletedPatch, expenseEntry } from '../lib/outboxLocal'
 import { showToast } from './toast'
 import { positionForNew, positionForStep } from '../lib/itemOrder'
-import { between } from '../lib/position'
 import * as api from '../lib/tripApi'
 import * as logistics from '../lib/logisticsApi'
 import * as money from '../lib/moneyApi'
 import * as planning from '../lib/planningApi'
+import * as restore from '../lib/restoreApi'
 import { syncOfflineFiles } from '../lib/bookingFiles'
 import type { BookingInput, ChecklistInput } from '../lib/planningData'
 import type { BudgetInput, ExpenseInput } from '../lib/moneyData'
 import type { FlightInput, StayInput, TransportInput } from '../lib/logistics'
-import type { ItemInput, PlaceInput, TravelerInput, TripInput } from '../lib/tripApi'
+import type { InvitedInput, ItemInput, PlaceInput, TravelerInput, TripInput, TripPeople } from '../lib/tripApi'
 import type { Booking, BudgetItem, ChecklistItem, Expense, Flight, PlaceStatus, Trip } from '../types'
 
 export type TripsStatus = 'loading' | 'ready' | 'error'
@@ -40,14 +40,16 @@ interface TripsValue {
   dismissFailed: (id: string) => void
   setActive: (id: string) => void
   refresh: () => Promise<void>
-  createTrip: (input: TripInput, travelers: TravelerInput[]) => Result
+  createTrip: (input: TripInput, people: TripPeople) => Result
   updateTrip: (id: string, input: TripInput) => Result
   deleteTrip: (id: string) => Result
+  /** Crea un viaggio nuovo a partire da un file esportato (e lo rende quello attivo). */
+  restoreTrip: (trip: Trip, title: string) => Result
   updateDay: (id: string, patch: { city: string; title: string; notes: string }) => Result
-  addTraveler: (tripId: string, input: TravelerInput) => Result
+  addTraveler: (tripId: string, input: InvitedInput) => Result
+  linkTraveler: (id: string, email: string) => Result
   updateTraveler: (id: string, input: TravelerInput) => Result
   removeTraveler: (id: string) => Result
-  addMember: (tripId: string, email: string, role: 'editor' | 'viewer') => Result
   createPlace: (tripId: string, input: PlaceInput) => Result
   updatePlace: (id: string, tripId: string, input: PlaceInput) => Result
   setPlaceStatus: (id: string, status: PlaceStatus) => Result
@@ -281,22 +283,30 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     dismissFailed: (id) => commit(queueRef.current.filter((e) => e.id !== id)),
     setActive,
     refresh,
-    createTrip: (input, travelers) =>
+    createTrip: (input, people) =>
       run(async () => {
-        const id = await api.createTrip(input, travelers)
+        const id = await api.createTrip(input, people)
         setActive(id)
       }),
     updateTrip: (id, input) => run(() => api.updateTrip(id, input)),
     deleteTrip: (id) => run(() => api.deleteTrip(id)),
-    updateDay: (id, patch) => run(() => api.updateDay(id, patch)),
-    addTraveler: (tripId, input) => {
-      const current = trips.find((t) => t.id === tripId)
-      const last = Math.max(0, ...(current?.travelers ?? []).map((t) => t.position ?? 0))
-      return run(() => api.addTraveler(tripId, input, between(last, null))) // dopo l'ultimo
+    restoreTrip: async (trip, title) => {
+      if (demo) return DEMO_MESSAGE
+      try {
+        const id = await restore.restoreTrip(trip, title)
+        setActive(id)
+      } catch (e) {
+        console.error('[journey] ripristino fallito', e)
+        return api.describeError(e)
+      }
+      await refresh()
+      return null
     },
+    updateDay: (id, patch) => run(() => api.updateDay(id, patch)),
+    addTraveler: (tripId, input) => run(() => api.addTraveler(tripId, input)),
+    linkTraveler: (id, email) => run(() => api.linkTraveler(id, email)),
     updateTraveler: (id, input) => run(() => api.updateTraveler(id, input)),
     removeTraveler: (id) => run(() => api.removeTraveler(id)),
-    addMember: (tripId, email, role) => run(() => api.addMember(tripId, email, role)),
     createPlace: (tripId, input) =>
       run(() => api.createPlace(tripId, input, trips.find((t) => t.id === tripId)?.categories ?? [])),
     updatePlace: (id, tripId, input) =>

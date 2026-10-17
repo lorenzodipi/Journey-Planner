@@ -1,10 +1,11 @@
 import { useState } from 'preact/hooks'
-import type { TravelerInput, TripInput } from '../lib/tripApi'
+import { useAuth } from '../lib/auth'
+import type { TripInput, TripPeople } from '../lib/tripApi'
 import {
   PRESETS,
   THEME_LABELS,
   TRAVELER_COLORS,
-  cleanTravelerNames,
+  cleanPeople,
   validateTrip,
   type Preset,
 } from '../lib/tripForm'
@@ -14,7 +15,7 @@ import { FormError, PrimaryButton, TextField } from './Field'
 interface Props {
   /** Se presente il form modifica quel viaggio, altrimenti ne crea uno nuovo. */
   trip?: Trip
-  onSubmit: (input: TripInput, travelers: TravelerInput[]) => Promise<string | null>
+  onSubmit: (input: TripInput, people: TripPeople) => Promise<string | null>
   /** Chiamata dopo un salvataggio riuscito. */
   onDone: () => void
 }
@@ -41,7 +42,10 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
   const [baseCurrency, setBaseCurrency] = useState(trip?.baseCurrency ?? 'EUR')
   const [localCurrency, setLocalCurrency] = useState(trip?.localCurrency ?? first.localCurrency)
   const [center, setCenter] = useState(trip?.center ?? first.center)
-  const [names, setNames] = useState<string[]>(['', ''])
+  const auth = useAuth()
+  const ownEmail = auth.session?.user.email ?? undefined
+  const [selfName, setSelfName] = useState('')
+  const [others, setOthers] = useState<{ email: string; name: string }[]>([{ email: '', name: '' }])
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -70,16 +74,19 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
     const problem = validateTrip(input)
     if (problem) return setError(problem)
 
-    let travelers: TravelerInput[] = []
+    let people: TripPeople = { self: { name: '', color: TRAVELER_COLORS[0] }, others: [] }
     if (!editing) {
-      const cleaned = cleanTravelerNames(names)
+      const cleaned = cleanPeople(selfName, others, ownEmail)
       if (cleaned.error) return setError(cleaned.error)
-      travelers = cleaned.names.map((name, i) => ({ name, color: TRAVELER_COLORS[i % TRAVELER_COLORS.length] }))
+      people = {
+        self: { name: cleaned.self, color: TRAVELER_COLORS[0] },
+        others: cleaned.others.map((o, i) => ({ ...o, color: TRAVELER_COLORS[(i + 1) % TRAVELER_COLORS.length] })),
+      }
     }
 
     setBusy(true)
     setError(null)
-    const message = await onSubmit(input, travelers)
+    const message = await onSubmit(input, people)
     setBusy(false)
     if (message) setError(message)
     else onDone()
@@ -116,45 +123,74 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
       </div>
 
       {!editing && (
-        <fieldset class="space-y-2">
+        <fieldset class="space-y-3">
           <legend class="mb-1 block text-sm font-medium">Chi viaggia</legend>
-          {names.map((n, i) => (
-            <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2">
+            <span aria-hidden="true" class="h-4 w-4 shrink-0 rounded-full" style={{ background: TRAVELER_COLORS[0] }} />
+            <input
+              type="text"
+              aria-label="Il tuo nome"
+              value={selfName}
+              placeholder="Il tuo nome"
+              maxLength={40}
+              autoComplete="off"
+              onInput={(e) => setSelfName(e.currentTarget.value)}
+              class="min-h-12 min-w-0 flex-1 rounded-2xl border border-line bg-bg px-4"
+            />
+          </div>
+          {ownEmail && <p class="-mt-1 pl-6 text-xs text-muted">Sei tu: {ownEmail}</p>}
+          {others.map((o, i) => (
+            <div class="flex items-start gap-2">
               <span
                 aria-hidden="true"
-                class="h-4 w-4 shrink-0 rounded-full"
-                style={{ background: TRAVELER_COLORS[i % TRAVELER_COLORS.length] }}
+                class="mt-4 h-4 w-4 shrink-0 rounded-full"
+                style={{ background: TRAVELER_COLORS[(i + 1) % TRAVELER_COLORS.length] }}
               />
-              <input
-                type="text"
-                aria-label={`Nome viaggiatore ${i + 1}`}
-                value={n}
-                placeholder={i === 0 ? 'Il tuo nome' : 'Nome'}
-                maxLength={40}
-                onInput={(e) => setNames(names.map((x, j) => (j === i ? e.currentTarget.value : x)))}
-                class="min-h-12 min-w-0 flex-1 rounded-2xl border border-line bg-bg px-4"
-              />
-              {names.length > 1 && (
-                <button
-                  type="button"
-                  aria-label={`Rimuovi viaggiatore ${i + 1}`}
-                  onClick={() => setNames(names.filter((_, j) => j !== i))}
-                  class="grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted"
-                >
-                  ✕
-                </button>
-              )}
+              <div class="min-w-0 flex-1 space-y-2">
+                <input
+                  type="email"
+                  inputMode="email"
+                  aria-label={`Email della persona ${i + 1}`}
+                  value={o.email}
+                  placeholder="Email del suo account"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  onInput={(e) => setOthers(others.map((x, j) => (j === i ? { ...x, email: e.currentTarget.value } : x)))}
+                  class="min-h-12 w-full rounded-2xl border border-line bg-bg px-4"
+                />
+                <input
+                  type="text"
+                  aria-label={`Nome della persona ${i + 1}`}
+                  value={o.name}
+                  placeholder="Nome (facoltativo)"
+                  maxLength={40}
+                  autoComplete="off"
+                  onInput={(e) => setOthers(others.map((x, j) => (j === i ? { ...x, name: e.currentTarget.value } : x)))}
+                  class="min-h-12 w-full rounded-2xl border border-line bg-bg px-4"
+                />
+              </div>
+              <button
+                type="button"
+                aria-label={`Rimuovi persona ${i + 1}`}
+                onClick={() => setOthers(others.filter((_, j) => j !== i))}
+                class="grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted"
+              >
+                ✕
+              </button>
             </div>
           ))}
-          {names.length < 6 && (
+          {others.length < 5 && (
             <button
               type="button"
-              onClick={() => setNames([...names, ''])}
+              onClick={() => setOthers([...others, { email: '', name: '' }])}
               class="min-h-11 rounded-full px-2 text-sm font-medium text-accent"
             >
               + Aggiungi persona
             </button>
           )}
+          <p class="text-xs text-muted">
+            Gli altri partecipanti devono avere già un account: scrivi la loro email e potranno vedere e modificare il viaggio.
+          </p>
         </fieldset>
       )}
 

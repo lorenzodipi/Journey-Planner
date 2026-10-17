@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks'
-import { KIND_LABEL, KINDS, progress, visibleItems } from '../lib/checklist'
+import { KIND_LABEL, KINDS, parseQuantity, progress, visibleItems } from '../lib/checklist'
 import { formatShort } from '../lib/dates'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
@@ -14,6 +14,7 @@ export function Checklist() {
   const [kind, setKind] = useState<ChecklistKind>('todo')
   const [who, setWho] = useState<'all' | string>('all')
   const [text, setText] = useState('')
+  const [qty, setQty] = useState('1')
   const [adding, setAdding] = useState(false)
   const [pending, setPending] = useState<Set<string>>(new Set())
   const [edit, setEdit] = useState<ChecklistItem | null>(null)
@@ -39,10 +40,13 @@ export function Checklist() {
     e.preventDefault()
     if (!text.trim() || adding) return
     setAdding(true)
-    const message = await t.createChecklistItem(trip.id, { text, kind, travelerId: who === 'all' ? null : who, dueDate: '' })
+    const message = await t.createChecklistItem(trip.id, { text, kind, travelerId: who === 'all' ? null : who, dueDate: '', quantity: parseQuantity(qty) })
     setAdding(false)
     if (message) showToast(message)
-    else setText('')
+    else {
+      setText('')
+      setQty('1')
+    }
   }
 
   async function addTemplate() {
@@ -118,6 +122,21 @@ export function Checklist() {
             onInput={(e) => setText(e.currentTarget.value)}
             class="min-h-12 min-w-0 flex-1 rounded-2xl border border-line bg-surface px-4"
           />
+          <label class="relative shrink-0">
+            <span aria-hidden="true" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted">×</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={qty}
+              maxLength={3}
+              aria-label="Quantità"
+              title="Quantità"
+              onInput={(e) => setQty(e.currentTarget.value.replace(/\D/g, ''))}
+              onBlur={() => setQty(String(parseQuantity(qty)))}
+              onFocus={(e) => e.currentTarget.select()}
+              class="min-h-12 w-16 rounded-2xl border border-line bg-surface pl-6 pr-2 text-center tabular-nums"
+            />
+          </label>
           <button
             type="submit"
             disabled={adding || !text.trim()}
@@ -155,7 +174,14 @@ export function Checklist() {
                       </span>
                     </button>
                     <button type="button" onClick={() => setEdit(i)} class="min-h-14 min-w-0 flex-1 py-2 pr-4 text-left">
-                      <span class={`block ${i.done ? 'text-muted line-through' : ''}`}>{i.text}</span>
+                      <span class={`block ${i.done ? 'text-muted line-through' : ''}`}>
+                        {i.quantity && i.quantity > 1 && (
+                          <span class={`mr-1.5 inline-block rounded-full px-2 text-sm font-semibold tabular-nums ${i.done ? 'bg-line text-muted' : 'bg-accent-soft text-accent'}`}>
+                            {i.quantity}×
+                          </span>
+                        )}
+                        {i.text}
+                      </span>
                       {(owner || i.dueDate) && (
                         <span class={`mt-0.5 flex items-center gap-2 text-xs ${late ? 'text-danger' : 'text-muted'}`}>
                           {owner && (

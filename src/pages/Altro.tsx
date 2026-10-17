@@ -8,7 +8,8 @@ import type { Traveler, Trip } from '../types'
 import { SecondaryButton } from '../ui/Field'
 import { Card, PageHeader } from '../ui/PageHeader'
 import { Sheet } from '../ui/Sheet'
-import { ShareForm } from '../ui/ShareForm'
+import { InviteForm } from '../ui/InviteForm'
+import { LinkAccount } from '../ui/LinkAccount'
 import { TravelerForm } from '../ui/TravelerForm'
 import { TripForm } from '../ui/TripForm'
 
@@ -47,7 +48,7 @@ const sections = [
   {
     href: '/altro/impostazioni',
     title: 'Impostazioni',
-    text: () => 'Esporta i dati, copia sul telefono, info',
+    text: () => 'Esporta e ripristina i dati, copia sul telefono, info',
   },
 ]
 
@@ -55,7 +56,6 @@ type SheetState =
   | { kind: 'new-trip' }
   | { kind: 'edit-trip' }
   | { kind: 'delete-trip' }
-  | { kind: 'share' }
   | { kind: 'new-traveler' }
   | { kind: 'edit-traveler'; traveler: Traveler }
   | null
@@ -68,6 +68,7 @@ export function Altro() {
   const trip = t.active
   if (!trip) return null
   const close = () => setSheet(null)
+  const isOwner = trip.myRole === undefined || trip.myRole === 'owner'
 
   const title =
     sheet?.kind === 'new-trip'
@@ -76,10 +77,8 @@ export function Altro() {
         ? 'Modifica viaggio'
         : sheet?.kind === 'delete-trip'
           ? 'Eliminare il viaggio?'
-          : sheet?.kind === 'share'
-            ? 'Condividi il viaggio'
-            : sheet?.kind === 'new-traveler'
-            ? 'Nuovo viaggiatore'
+          : sheet?.kind === 'new-traveler'
+            ? 'Aggiungi una persona'
             : 'Modifica viaggiatore'
 
   return (
@@ -122,16 +121,18 @@ export function Altro() {
         <Card>
           <div class="mb-2 flex items-center justify-between">
             <h2 class="font-display text-lg font-semibold">Viaggiatori</h2>
-            <button
-              type="button"
-              onClick={() => setSheet({ kind: 'new-traveler' })}
-              class="min-h-11 rounded-full px-3 text-sm font-medium text-accent"
-            >
-              + Aggiungi
-            </button>
+            {isOwner && (
+              <button
+                type="button"
+                onClick={() => setSheet({ kind: 'new-traveler' })}
+                class="min-h-11 rounded-full px-3 text-sm font-medium text-accent"
+              >
+                + Aggiungi
+              </button>
+            )}
           </div>
           {trip.travelers.length === 0 ? (
-            <p class="py-2 text-sm text-muted">Nessun viaggiatore: aggiungine uno per assegnare costi e spese.</p>
+            <p class="py-2 text-sm text-muted">Nessun viaggiatore: aggiungi una persona con la sua email per assegnare costi e spese.</p>
           ) : (
             <ul class="divide-y divide-line">
               {trip.travelers.map((person) => (
@@ -142,23 +143,20 @@ export function Altro() {
                     class="flex min-h-14 w-full items-center gap-3 text-left"
                   >
                     <span aria-hidden="true" class="h-4 w-4 shrink-0 rounded-full" style={{ background: person.color }} />
-                    <span class="min-w-0 flex-1 truncate font-medium">{person.name}</span>
+                    <span class="min-w-0 flex-1">
+                      <span class="block truncate font-medium">{person.name}</span>
+                      {person.userId ? (
+                        person.email && <span class="block truncate text-xs text-muted">{person.email}</span>
+                      ) : (
+                        <span class="block text-xs text-danger">Senza account · da collegare</span>
+                      )}
+                    </span>
                     <span class="text-xs text-muted">Modifica</span>
                   </button>
                 </li>
               ))}
             </ul>
           )}
-        </Card>
-
-        <Card>
-          <h2 class="font-display text-lg font-semibold">Accesso</h2>
-          <p class="mt-1 text-sm text-muted">
-            Chi ha un account può vedere e modificare questo viaggio. Crea prima l'utente su Supabase, poi aggiungilo qui con la sua email.
-          </p>
-          <div class="mt-3">
-            <SecondaryButton onClick={() => setSheet({ kind: 'share' })}>Dai accesso a una persona</SecondaryButton>
-          </div>
         </Card>
 
         <Card class="!p-0">
@@ -239,10 +237,8 @@ export function Altro() {
           </div>
         )}
 
-        {sheet?.kind === 'share' && <ShareForm onSubmit={(email) => t.addMember(trip.id, email, 'editor')} onDone={close} />}
-
         {sheet?.kind === 'new-traveler' && (
-          <TravelerForm
+          <InviteForm
             defaultColor={TRAVELER_COLORS[trip.travelers.length % TRAVELER_COLORS.length]}
             onSubmit={(input) => t.addTraveler(trip.id, input)}
             onDone={close}
@@ -250,13 +246,19 @@ export function Altro() {
         )}
 
         {sheet?.kind === 'edit-traveler' && (
-          <TravelerForm
-            key={sheet.traveler.id}
-            initial={sheet.traveler}
-            onSubmit={(input) => t.updateTraveler(sheet.traveler.id, input)}
-            onRemove={() => t.removeTraveler(sheet.traveler.id)}
-            onDone={close}
-          />
+          <div class="space-y-4">
+            {sheet.traveler.email && <p class="truncate text-sm text-muted">Account: {sheet.traveler.email}</p>}
+            <TravelerForm
+              key={sheet.traveler.id}
+              initial={sheet.traveler}
+              onSubmit={(input) => t.updateTraveler(sheet.traveler.id, input)}
+              onRemove={() => t.removeTraveler(sheet.traveler.id)}
+              onDone={close}
+            />
+            {!sheet.traveler.userId && isOwner && (
+              <LinkAccount onSubmit={(email) => t.linkTraveler(sheet.traveler.id, email)} onDone={close} />
+            )}
+          </div>
         )}
       </Sheet>
     </>

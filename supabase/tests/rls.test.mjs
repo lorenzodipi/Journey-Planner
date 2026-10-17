@@ -25,7 +25,7 @@ await db.exec(`
   insert into auth.users values ('${A}','a@test.it'),('${B}','b@test.it'),('${C}','c@test.it');
 `)
 
-for (const file of ['0001_init.sql', '0002_trip_fx.sql', '0003_service_role_import.sql', '0004_stays_dinner.sql', '0005_transport_coords.sql']) {
+for (const file of ['0001_init.sql', '0002_trip_fx.sql', '0003_service_role_import.sql', '0004_stays_dinner.sql', '0005_transport_coords.sql', '0006_traveler_accounts.sql']) {
   await db.exec(fs.readFileSync(new URL(`../migrations/${file}`, import.meta.url), 'utf8'))
 }
 console.log('MIGRAZIONE OK')
@@ -113,7 +113,8 @@ await asUser(A)
 const s1 = (await db.query(
   `insert into trips (title,destination,start_date,end_date,timezone,theme,base_currency,local_currency,center_lat,center_lng)
    values ('Giappone 2026','Giappone','2026-11-21','2026-12-09','Asia/Tokyo','japan','EUR','JPY',35.68,139.76) returning id`)).rows[0].id
-await db.query(`insert into trip_travelers (trip_id,name,color,position) values ($1,'Anna','#c8402f',1000),($1,'Luca','#264653',2000)`, [s1])
+await db.query(`insert into trip_travelers (trip_id,name,color,position,user_id) values ($1,'Anna','#c8402f',1000,$2)`, [s1, A])
+await db.query(`select add_traveler_by_email($1,'b@test.it','Luca','#264653')`, [s1])
 await db.query(`insert into days (trip_id,date) select $1, d::date from generate_series('2026-11-21'::date,'2026-12-09'::date,'1 day') d`, [s1])
 check('giorni generati dalle date (19)', (await db.query(`select 1 from days where trip_id=$1`, [s1])).rows.length === 19)
 await throws('stessa data due volte nello stesso viaggio', () => db.query(`insert into days (trip_id,date) values ($1,'2026-11-21')`, [s1]))
@@ -179,8 +180,8 @@ await asUser(A)
 await throws('tasso di cambio zero o negativo rifiutato', () => db.query(`update trips set fx_rate = 0 where id=$1`, [s2]))
 await db.query(`update trips set fx_rate = 0.00562 where id=$1`, [s2])
 check('A imposta il tasso di cambio del viaggio', Number((await db.query(`select fx_rate from trips where id=$1`, [s2])).rows[0].fx_rate) === 0.00562)
-const trv = (await db.query(`insert into trip_travelers (trip_id,name) values ($1,'Lorenzo') returning id`, [s2])).rows[0].id
-const trvOther = (await db.query(`insert into trip_travelers (trip_id,name) values ($1,'Estraneo') returning id`, [other])).rows[0].id
+const trv = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'Lorenzo',$2) returning id`, [s2, A])).rows[0].id
+const trvOther = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'Estraneo',$2) returning id`, [other, A])).rows[0].id
 const bi = (await db.query(`insert into budget_items (trip_id,label,amount,currency,scope) values ($1,'Treno',30,'EUR','per_person') returning id`, [s2])).rows[0].id
 await db.query(`insert into budget_item_shares (trip_id,budget_item_id,traveler_id,paid) values ($1,$2,$3,true)`, [s2, bi, trv])
 await throws('quota budget: un viaggiatore ammesso una sola volta per voce', () =>
@@ -212,6 +213,66 @@ await throws('posizione a metà (solo latitudine) rifiutata', () => db.query(`in
 await throws('latitudine fuori intervallo rifiutata', () => db.query(`insert into transports (trip_id, from_label, to_label, to_lat, to_lng) values ($1,'a','b',95,10)`, [t]))
 await db.query(`insert into stays (trip_id, name, check_in, check_out, dinner) values ($1,'Ryokan','2026-11-24','2026-11-25',true)`, [t])
 check('alloggio con cena', (await db.query(`select dinner from stays where name='Ryokan'`)).rows[0].dinner === true)
+
+// --- 0006: i viaggiatori sono account reali ---
+await asUser(A)
+const s6 = (await db.query(`insert into trips (title) values ('Test S6') returning id`)).rows[0].id
+await throws('viaggiatore senza account rifiutato', () => db.query(`insert into trip_travelers (trip_id,name) values ($1,'Inventato')`, [s6]))
+await throws('viaggiatore con account non membro rifiutato', () => db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'B',$2)`, [s6, B]))
+await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'Io',$2)`, [s6, A])
+check('owner si aggiunge come viaggiatore col proprio account', true)
+await throws('stesso account due volte nello stesso viaggio', () => db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'Io bis',$2)`, [s6, A]))
+await throws('email inesistente rifiutata', () => db.query(`select add_traveler_by_email($1,'nessuno@test.it','X')`, [s6]))
+const bId = (await db.query(`select add_traveler_by_email($1,'B@Test.it','Beppe')`, [s6])).rows[0].add_traveler_by_email
+const bRow = (await db.query(`select user_id, name, position from trip_travelers where id=$1`, [bId])).rows[0]
+check('add_traveler_by_email collega l\'account (email senza distinzione maiuscole)', bRow.user_id === B && bRow.name === 'Beppe')
+check('B diventa membro (editor) del viaggio', (await db.query(`select role from trip_members where trip_id=$1 and user_id=$2`, [s6, B])).rows[0]?.role === 'editor')
+await throws('stessa persona due volte via email', () => db.query(`select add_traveler_by_email($1,'b@test.it')`, [s6]))
+await db.query(`update trip_travelers set deleted_at=now() where id=$1`, [bId])
+const bAgain = (await db.query(`select add_traveler_by_email($1,'b@test.it','Beppe')`, [s6])).rows[0].add_traveler_by_email
+check('persona tolta e riaggiunta: stesso viaggiatore ripreso (spese collegate)', bAgain === bId)
+await throws('non si scollega un account', () => db.query(`update trip_travelers set user_id=null where id=$1`, [bId]))
+await throws('non si collega un account non membro con update', () => db.query(`update trip_travelers set user_id=$2 where id=$1`, [bId, C]))
+await db.query(`update trip_travelers set name='Beppe!' where id=$1`, [bId])
+check('rinominare un viaggiatore resta possibile', true)
+await asUser(B)
+await throws('B (editor) non può aggiungere persone', () => db.query(`select add_traveler_by_email($1,'c@test.it')`, [s6]))
+await throws('B (editor) non può collegare account', () => db.query(`select link_traveler_to_email($1,'c@test.it')`, [bId]))
+await asUser(C)
+await throws('C estraneo non vede chi c\'è nel viaggio', () => db.query(`select * from trip_people($1)`, [s6]))
+await asUser(B)
+const ppl = (await db.query(`select email, role from trip_people($1) order by email`, [s6])).rows
+check('un membro vede email e ruoli di chi c\'è', ppl.length === 2 && ppl[0].email === 'a@test.it' && ppl[0].role === 'owner')
+await asUser('', 'anon')
+await throws('anon non chiama trip_people', () => db.query(`select * from trip_people($1)`, [s6]))
+await throws('anon non chiama add_traveler_by_email', () => db.query(`select add_traveler_by_email($1,'c@test.it')`, [s6]))
+
+// viaggiatori senza account (creati prima della 0006 o da un ripristino): si collegano dopo
+await asUser(A)
+const s6b = (await db.query(`insert into trips (title) values ('Test restore') returning id`)).rows[0].id
+const ph1 = '99999999-9999-9999-9999-999999999991'
+await db.query(`select restore_travelers($1, $2::jsonb)`, [s6b, JSON.stringify([{ id: ph1, name: 'Gaia', color: '#264653', position: 2000 }])])
+check('restore_travelers crea segnaposto senza account', (await db.query(`select user_id from trip_travelers where id=$1`, [ph1])).rows[0].user_id === null)
+await throws('restore_travelers solo su viaggio senza viaggiatori', () => db.query(`select restore_travelers($1,'[]'::jsonb)`, [s6]))
+await db.query(`update trip_travelers set name='Gaia D.' where id=$1`, [ph1])
+check('un segnaposto si può rinominare senza account', true)
+await throws('collegamento a email inesistente rifiutato', () => db.query(`select link_traveler_to_email($1,'nessuno@test.it')`, [ph1]))
+await db.query(`select link_traveler_to_email($1,'c@test.it')`, [ph1])
+check('link_traveler_to_email collega e rende membro', (await db.query(`select user_id from trip_travelers where id=$1`, [ph1])).rows[0].user_id === C &&
+  (await db.query(`select 1 from trip_members where trip_id=$1 and user_id=$2`, [s6b, C])).rows.length === 1)
+await throws('un account non si collega a due viaggiatori', async () => {
+  const ph2 = (await db.query(`select add_traveler_by_email($1,'b@test.it')`, [s6b])).rows[0].add_traveler_by_email
+  await db.query(`select link_traveler_to_email($1,'c@test.it')`, [ph2])
+})
+await asUser(A)
+
+// checklist: quantità (0006)
+await db.query(`insert into checklist_items (trip_id,text,kind,quantity) values ($1,'Magliette','packing',3)`, [t])
+check('voce checklist con quantità', true)
+await db.query(`insert into checklist_items (trip_id,text,kind) values ($1,'Passaporto','docs')`, [t])
+check('voce checklist senza quantità (= 1)', (await db.query(`select quantity from checklist_items where text='Passaporto'`)).rows[0].quantity === null)
+await throws('quantità zero rifiutata', () => db.query(`insert into checklist_items (trip_id,text,quantity) values ($1,'x',0)`, [t]))
+await throws('quantità enorme rifiutata', () => db.query(`insert into checklist_items (trip_id,text,quantity) values ($1,'x',1000)`, [t]))
 
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione
 await asUser(null, 'service_role')

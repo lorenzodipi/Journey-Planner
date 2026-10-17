@@ -91,7 +91,7 @@ export function checklistEntry(
   existing?: ChecklistItem,
 ): { ops: Op[]; local: Local; label: string } {
   const id = existing?.id ?? newId()
-  const cols = checklistColumns(input)
+  const cols = checklistColumns(input, (existing?.quantity ?? 1) > 1)
   const item: ChecklistItem = {
     id,
     kind: cols.kind,
@@ -99,6 +99,7 @@ export function checklistEntry(
     done: existing?.done ?? false,
     travelerId: cols.traveler_id ?? undefined,
     dueDate: cols.due_date ?? undefined,
+    quantity: cols.quantity && cols.quantity > 1 ? cols.quantity : undefined,
     position: existing?.position ?? position,
   }
   const write: Op = existing

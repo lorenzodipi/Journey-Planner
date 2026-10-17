@@ -11,6 +11,7 @@ import {
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { useEffect, useRef } from 'preact/hooks'
+import { pinIconSvg, type PinIcon } from '../lib/categoryIcon'
 
 // Questo file (e MapLibre) viene caricato solo quando serve una mappa: l'avvio dell'app resta leggero.
 setWorkerUrl(workerUrl)
@@ -143,13 +144,14 @@ function newMap(el: HTMLElement, center: { lat: number; lng: number }, zoom: num
   return map
 }
 
-function pinElement(p: { name: string; color: string }, selected: boolean): HTMLElement {
+function pinElement(p: { name: string; color: string; icon?: PinIcon }, selected: boolean): HTMLElement {
   const el = document.createElement('button')
   el.type = 'button'
   el.className = 'jp-pin'
   el.style.background = p.color
   el.title = p.name
   el.setAttribute('aria-label', p.name)
+  if (p.icon) el.innerHTML = pinIconSvg(p.icon)
   setSelected(el, selected)
   return el
 }
@@ -165,6 +167,8 @@ export interface MapPin {
   lng: number
   name: string
   color: string
+  /** Icona della categoria, disegnata dentro il pallino. */
+  icon?: PinIcon
 }
 
 interface MapViewProps {

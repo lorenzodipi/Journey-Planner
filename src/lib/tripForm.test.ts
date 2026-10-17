@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TripInput } from './tripApi'
-import { cleanTravelerNames, isValidTimezone, validateTrip } from './tripForm'
+import { cleanPeople, isValidTimezone, nameFromEmail, validateTrip } from './tripForm'
 
 const ok: TripInput = {
   title: 'Giappone 2026',
@@ -35,12 +35,33 @@ describe('isValidTimezone', () => {
   })
 })
 
-describe('cleanTravelerNames', () => {
-  it('toglie i vuoti e gli spazi', () => {
-    expect(cleanTravelerNames([' Anna ', '', 'Luca'])).toEqual({ names: ['Anna', 'Luca'], error: null })
+describe('cleanPeople', () => {
+  it('richiede il proprio nome', () => {
+    expect(cleanPeople(' ', []).error).toMatch(/tuo nome/)
+    expect(cleanPeople(' Lorenzo ', [])).toEqual({ self: 'Lorenzo', others: [], error: null })
   })
-  it('richiede almeno un nome', () => expect(cleanTravelerNames(['', ' ']).error).toMatch(/almeno/))
-  it('segnala i doppioni senza badare alle maiuscole', () => {
-    expect(cleanTravelerNames(['Anna', 'anna']).error).toMatch(/stesso nome/)
+  it('ignora le righe vuote e porta le email in minuscolo', () => {
+    const r = cleanPeople('Lorenzo', [{ email: '', name: '' }, { email: ' Gaia.D@Mail.it ', name: '' }])
+    expect(r.error).toBeNull()
+    expect(r.others).toEqual([{ email: 'gaia.d@mail.it', name: 'Gaia d' }])
+  })
+  it('non ammette persone senza account (solo il nome)', () => {
+    expect(cleanPeople('Lorenzo', [{ email: '', name: 'Gaia' }]).error).toMatch(/email/)
+  })
+  it('rifiuta email non valide, doppioni e la propria email', () => {
+    expect(cleanPeople('L', [{ email: 'gaia', name: '' }]).error).toMatch(/non è un indirizzo/)
+    expect(cleanPeople('L', [{ email: 'a@b.it', name: 'A' }, { email: 'A@b.it', name: 'B' }]).error).toMatch(/due volte/)
+    expect(cleanPeople('L', [{ email: 'me@b.it', name: 'A' }], 'ME@b.it').error).toMatch(/due volte/)
+  })
+  it('rifiuta due persone con lo stesso nome', () => {
+    expect(cleanPeople('Anna', [{ email: 'a@b.it', name: 'anna' }]).error).toMatch(/si chiamano/)
+  })
+})
+
+describe('nameFromEmail', () => {
+  it('ricava un nome dalla parte prima della chiocciola', () => {
+    expect(nameFromEmail('gaia@mail.it')).toBe('Gaia')
+    expect(nameFromEmail('lorenzo.di_palma@x.it')).toBe('Lorenzo di palma')
+    expect(nameFromEmail('@x.it')).toBe('')
   })
 })

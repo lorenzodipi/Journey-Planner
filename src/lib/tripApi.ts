@@ -1,4 +1,4 @@
-import type { Category, Day, DayItem, ItemKind, Place, PlaceStatus, ThemeName, Traveler, Trip } from '../types'
+import type { Category, Day, DayItem, ItemKind, MemberRole, Place, PlaceStatus, ThemeName, Traveler, Trip } from '../types'
 import { todayYmd } from './dates'
 import { client } from './db'
 import { queryLogistics } from './logisticsApi'
@@ -23,6 +23,23 @@ export interface TravelerInput {
   color: string
 }
 
+/** Persona da aggiungere al viaggio: deve avere già un account con questa email. */
+export interface InvitedInput extends TravelerInput {
+  email: string
+}
+
+/** Chi viaggia alla creazione: chi crea (col proprio account) e gli altri, per email. */
+export interface TripPeople {
+  self: TravelerInput
+  others: InvitedInput[]
+}
+
+interface PersonRow {
+  user_id: string
+  email: string
+  role: MemberRole
+}
+
 export interface TripInput {
   title: string
   destination: string
@@ -40,6 +57,7 @@ interface TravelerRow {
   id: string
   name: string
   color: string
+  user_id?: string | null
   position: number
   deleted_at: string | null
 }
@@ -121,11 +139,14 @@ interface TripRow {
   days: DayRow[]
 }
 
-function mapTrip(row: TripRow, extras: Extras): Trip {
+function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: string): Trip {
   const travelers: Traveler[] = (row.trip_travelers ?? [])
     .filter((t) => !t.deleted_at)
     .sort((a, b) => a.position - b.position)
-    .map((t) => ({ id: t.id, name: t.name, color: t.color, position: t.position }))
+    .map((t) => {
+      const who = t.user_id ? people.find((p) => p.user_id === t.user_id) : undefined
+      return { id: t.id, name: t.name, color: t.color, position: t.position, userId: t.user_id ?? undefined, email: who?.email }
+    })
 
   const categories: Category[] = extras.categories
     .filter((c) => c.trip_id === row.id)
@@ -199,6 +220,7 @@ function mapTrip(row: TripRow, extras: Extras): Trip {
       lng: row.center_lng ?? DEFAULT_CENTER.lng,
     },
     travelers,
+    myRole: myId ? people.find((p) => p.user_id === myId)?.role : undefined,
     days,
     places,
     categories,
@@ -245,7 +267,20 @@ export async function fetchTrips(): Promise<Trip[]> {
     checklist: checklist.data as ChecklistRow[],
     bookings: bookings.data as BookingRow[],
   }
-  return (trips.data as TripRow[]).map((row) => mapTrip(row, extras))
+  const rows = trips.data as TripRow[]
+  const myId = (await db.auth.getSession()).data.session?.user.id
+  const people = await Promise.all(rows.map((r) => loadPeople(r.id)))
+  return rows.map((row, i) => mapTrip(row, extras, people[i], myId))
+}
+
+/** Chi ha accesso al viaggio, con email e ruolo. Se la funzione non c'è ancora (migrazione 0006) l'app funziona lo stesso. */
+async function loadPeople(tripId: string): Promise<PersonRow[]> {
+  try {
+    const { data, error } = await client().rpc('trip_people', { _trip: tripId })
+    return error ? [] : ((data ?? []) as PersonRow[])
+  } catch {
+    return []
+  }
 }
 
 function tripColumns(input: TripInput) {
@@ -263,22 +298,26 @@ function tripColumns(input: TripInput) {
   }
 }
 
-/** Crea viaggio + viaggiatori + giorni. Se un passaggio fallisce, il viaggio viene annullato. */
-export async function createTrip(input: TripInput, travelers: TravelerInput[]): Promise<string> {
+/**
+ * Crea viaggio + viaggiatori + giorni. Chi crea è il primo viaggiatore (col proprio account);
+ * gli altri si aggiungono con l'email di un account esistente. Se un passaggio fallisce
+ * il viaggio appena creato viene annullato.
+ */
+export async function createTrip(input: TripInput, people: TripPeople): Promise<string> {
   const db = client()
+  const uid = (await db.auth.getSession()).data.session?.user.id
+  if (!uid) throw new Error('Sessione scaduta: esci e accedi di nuovo.')
   const { data, error } = await db.from('trips').insert(tripColumns(input)).select('id').single()
   if (error) throw error
   const id = (data as { id: string }).id
 
   try {
-    if (travelers.length > 0) {
-      const rows = travelers.map((t, i) => ({
-        trip_id: id,
-        name: t.name.trim(),
-        color: t.color,
-        position: (i + 1) * 1000,
-      }))
-      const res = await db.from('trip_travelers').insert(rows)
+    const me = await db
+      .from('trip_travelers')
+      .insert({ trip_id: id, name: people.self.name.trim(), color: people.self.color, position: 1000, user_id: uid })
+    if (me.error) throw me.error
+    for (const o of people.others) {
+      const res = await db.rpc('add_traveler_by_email', { _trip: id, _email: o.email.trim(), _name: o.name.trim(), _color: o.color })
       if (res.error) throw res.error
     }
     const dates = enumerateDates(input.startDate, input.endDate)
@@ -287,7 +326,9 @@ export async function createTrip(input: TripInput, travelers: TravelerInput[]): 
       if (res.error) throw res.error
     }
   } catch (e) {
-    await db.from('trips').update({ deleted_at: new Date().toISOString() }).eq('id', id)
+    // le righe figlie si eliminano a cascata; se non è permesso, almeno si nasconde il viaggio
+    const del = await db.from('trips').delete().eq('id', id)
+    if (del.error) await db.from('trips').update({ deleted_at: new Date().toISOString() }).eq('id', id)
     throw e
   }
   return id
@@ -339,10 +380,20 @@ export async function updateDay(id: string, patch: { city: string; title: string
   if (error) throw error
 }
 
-export async function addTraveler(tripId: string, input: TravelerInput, position: number): Promise<void> {
-  const { error } = await client()
-    .from('trip_travelers')
-    .insert({ trip_id: tripId, name: input.name.trim(), color: input.color, position })
+/** Aggiunge una persona al viaggio dalla sua email: deve avere già un account (solo l'owner). */
+export async function addTraveler(tripId: string, input: InvitedInput): Promise<void> {
+  const { error } = await client().rpc('add_traveler_by_email', {
+    _trip: tripId,
+    _email: input.email.trim(),
+    _name: input.name.trim(),
+    _color: input.color,
+  })
+  if (error) throw error
+}
+
+/** Collega a un account un viaggiatore che non ne ha ancora uno (solo l'owner). */
+export async function linkTraveler(id: string, email: string): Promise<void> {
+  const { error } = await client().rpc('link_traveler_to_email', { _traveler: id, _email: email.trim() })
   if (error) throw error
 }
 
@@ -359,12 +410,6 @@ export async function removeTraveler(id: string): Promise<void> {
     .from('trip_travelers')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
-  if (error) throw error
-}
-
-/** Dà accesso al viaggio a un utente già creato in Supabase (solo l'owner può farlo). */
-export async function addMember(tripId: string, email: string, role: 'editor' | 'viewer'): Promise<void> {
-  const { error } = await client().rpc('add_member_by_email', { _trip: tripId, _email: email.trim(), _role: role })
   if (error) throw error
 }
 

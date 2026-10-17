@@ -54,6 +54,25 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
 
   return (
     <form class="space-y-4" onSubmit={submit} noValidate>
+      {trip.places.length > 0 && (
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium">Luogo collegato</span>
+          <select
+            value={placeId}
+            onChange={(e) => onPlace(e.currentTarget.value)}
+            class="min-h-12 w-full rounded-2xl border border-line bg-bg px-4"
+          >
+            <option value="">Nessuno</option>
+            {trip.places.map((p) => (
+              <option value={p.id}>
+                {p.name}
+                {p.city ? ` · ${p.city}` : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
       <TextField label="Cosa fai" value={title} onInput={setTitle} maxLength={120} />
 
       <fieldset>
@@ -78,25 +97,6 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
         <TextField label="Dalle" type="time" value={startTime} onInput={setStartTime} />
         <TextField label="Alle" type="time" value={endTime} onInput={setEndTime} />
       </div>
-
-      {trip.places.length > 0 && (
-        <label class="block">
-          <span class="mb-1 block text-sm font-medium">Luogo collegato</span>
-          <select
-            value={placeId}
-            onChange={(e) => onPlace(e.currentTarget.value)}
-            class="min-h-12 w-full rounded-2xl border border-line bg-bg px-4"
-          >
-            <option value="">Nessuno</option>
-            {trip.places.map((p) => (
-              <option value={p.id}>
-                {p.name}
-                {p.city ? ` · ${p.city}` : ''}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
 
       <TextArea label="Note" value={notes} onInput={setNotes} />
       <FormError message={error} />
