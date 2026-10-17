@@ -6,11 +6,25 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
+const API_TIMEOUT_MS = 20_000
+
+// Una richiesta che non risponde non deve lasciare l'interfaccia "in caricamento" all'infinito:
+// dopo 20 secondi viene interrotta e l'app mostra un errore. Lo Storage (file grandi) è escluso.
+const fetchWithTimeout: typeof fetch = (input, init) => {
+  const target = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+  if (target.includes('/storage/v1/')) return fetch(input, init)
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS)
+  init?.signal?.addEventListener('abort', () => controller.abort())
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer))
+}
+
 export const isSupabaseConfigured = Boolean(url && key)
 
 export const supabase: SupabaseClient | null =
   url && key
     ? createClient(url, key, {
+        global: { fetch: fetchWithTimeout },
         auth: {
           persistSession: true, // la sessione resta salvata: l'app si apre anche offline
           autoRefreshToken: true,

@@ -114,8 +114,18 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     async (job: () => Promise<unknown>): Result => {
       if (demo) return DEMO_MESSAGE
       try {
-        await job()
+        // tetto di attesa anche prima della richiesta di rete (es. blocco della sessione)
+        let timer: ReturnType<typeof setTimeout> | undefined
+        const giveUp = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error('timeout')), 25_000)
+        })
+        try {
+          await Promise.race([job(), giveUp])
+        } finally {
+          clearTimeout(timer)
+        }
       } catch (e) {
+        console.error('[journey] operazione fallita', e)
         return api.describeError(e)
       }
       await refresh()
