@@ -11,6 +11,7 @@ import { Mappa } from './pages/Mappa'
 import { Oggi } from './pages/Oggi'
 import { PrimoViaggio } from './pages/PrimoViaggio'
 import { BottomNav } from './ui/BottomNav'
+import { ToastHost } from './ui/ToastHost'
 import { EmptyState } from './ui/PageHeader'
 
 export function App() {
@@ -95,6 +96,7 @@ export function App() {
         </Switch>
       </div>
       <BottomNav />
+      <ToastHost />
     </Router>
   )
 }

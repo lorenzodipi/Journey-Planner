@@ -4,10 +4,11 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'p
 import { demoTrip } from '../demo/demoTrip'
 import { useAuth } from '../lib/auth'
 import { clearSnapshot, loadActiveId, loadSnapshot, saveActiveId, saveSnapshot } from '../lib/cache'
+import { positionForNew, positionForStep } from '../lib/itemOrder'
 import { between } from '../lib/position'
 import * as api from '../lib/tripApi'
-import type { TravelerInput, TripInput } from '../lib/tripApi'
-import type { Trip } from '../types'
+import type { ItemInput, PlaceInput, TravelerInput, TripInput } from '../lib/tripApi'
+import type { PlaceStatus, Trip } from '../types'
 
 export type TripsStatus = 'loading' | 'ready' | 'error'
 
@@ -31,6 +32,15 @@ interface TripsValue {
   updateTraveler: (id: string, input: TravelerInput) => Result
   removeTraveler: (id: string) => Result
   addMember: (tripId: string, email: string, role: 'editor' | 'viewer') => Result
+  createPlace: (tripId: string, input: PlaceInput) => Result
+  updatePlace: (id: string, tripId: string, input: PlaceInput) => Result
+  setPlaceStatus: (id: string, status: PlaceStatus) => Result
+  setPlaceDeleted: (id: string, deleted: boolean) => Result
+  createItem: (tripId: string, dayId: string, input: ItemInput) => Result
+  updateItem: (id: string, input: ItemInput) => Result
+  moveItem: (dayId: string, itemId: string, step: -1 | 1) => Result
+  setItemDone: (id: string, done: boolean) => Result
+  setItemDeleted: (id: string, deleted: boolean) => Result
 }
 
 const DEMO_MESSAGE = 'Anteprima demo: collega Supabase per salvare le modifiche.'
@@ -158,6 +168,31 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     updateTraveler: (id, input) => run(() => api.updateTraveler(id, input)),
     removeTraveler: (id) => run(() => api.removeTraveler(id)),
     addMember: (tripId, email, role) => run(() => api.addMember(tripId, email, role)),
+    createPlace: (tripId, input) =>
+      run(() => api.createPlace(tripId, input, trips.find((t) => t.id === tripId)?.categories ?? [])),
+    updatePlace: (id, tripId, input) =>
+      run(() => api.updatePlace(id, tripId, input, trips.find((t) => t.id === tripId)?.categories ?? [])),
+    setPlaceStatus: (id, status) => run(() => api.setPlaceStatus(id, status)),
+    setPlaceDeleted: (id, deleted) => run(() => api.setPlaceDeleted(id, deleted)),
+    createItem: (tripId, dayId, input) => {
+      const day = trips.find((t) => t.id === tripId)?.days.find((d) => d.id === dayId)
+      const position = positionForNew(
+        (day?.items ?? []).map((i) => ({ position: i.position ?? 0, time: i.time })),
+        input.startTime || undefined,
+      )
+      return run(() => api.createItem(tripId, dayId, input, position))
+    },
+    updateItem: (id, input) => run(() => api.updateItem(id, input)),
+    moveItem: async (dayId, itemId, step) => {
+      const day = trips.flatMap((t) => t.days).find((d) => d.id === dayId)
+      const items = (day?.items ?? []).map((i) => ({ id: i.id, position: i.position ?? 0, time: i.time }))
+      const index = items.findIndex((i) => i.id === itemId)
+      const position = index === -1 ? null : positionForStep(items, index, step)
+      if (position === null) return null
+      return run(() => api.setItemPosition(itemId, position))
+    },
+    setItemDone: (id, done) => run(() => api.setItemDone(id, done)),
+    setItemDeleted: (id, deleted) => run(() => api.setItemDeleted(id, deleted)),
   }
   if (demo) {
     value.createTrip = () => demoResult

@@ -164,3 +164,58 @@ input, select, textarea {
 /* scorrimento orizzontale senza barra (filtri a chip) */
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Mappa (MapLibre): pin piccoli e puliti, controlli più grandi da toccare */
+.jp-pin {
+  display: block;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  cursor: pointer;
+  border: 2.5px solid #fff;
+  border-radius: 9999px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+  transition: width 0.15s, height 0.15s;
+}
+.jp-pin-selected {
+  width: 30px;
+  height: 30px;
+  border-width: 3.5px;
+  box-shadow: 0 0 0 3px rgb(0 0 0 / 0.25), 0 2px 8px rgb(0 0 0 / 0.4);
+}
+.maplibregl-map {
+  font: inherit;
+  background: var(--bg);
+}
+.maplibregl-ctrl-group button {
+  width: 40px;
+  height: 40px;
+}
+.maplibregl-ctrl-group button.jp-style-toggle {
+  width: auto;
+  min-width: 40px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #222;
+}
+.maplibregl-ctrl-attrib {
+  font-size: 10px;
+  background: color-mix(in srgb, var(--surface) 80%, transparent) !important;
+  color: var(--muted);
+}
+.maplibregl-ctrl-attrib a {
+  color: inherit;
+}
+@media (prefers-color-scheme: dark) {
+  .maplibregl-ctrl-group {
+    background: #2b2b2b;
+  }
+  .maplibregl-ctrl-group button.jp-style-toggle {
+    color: #eee;
+  }
+  .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+    filter: invert(1);
+  }
+}

@@ -6,7 +6,7 @@ interface TextProps {
   label: string
   value: string
   onInput: (value: string) => void
-  type?: 'text' | 'date'
+  type?: 'text' | 'date' | 'time'
   placeholder?: string
   list?: string
   autoComplete?: string
@@ -28,6 +28,8 @@ export function TextField({ label, value, onInput, type = 'text', list, ...rest 
         <input type="text" list={list} {...common} />
       ) : type === 'date' ? (
         <input type="date" {...common} />
+      ) : type === 'time' ? (
+        <input type="time" {...common} />
       ) : (
         <input type="text" {...common} />
       )}

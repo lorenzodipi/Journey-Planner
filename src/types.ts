@@ -12,24 +12,40 @@ export interface Traveler {
   position?: number
 }
 
+export interface Category {
+  id: string
+  label: string
+  color?: string
+}
+
 export interface Place {
   id: string
   name: string
+  nameLocal?: string // nome nella lingua del posto, da mostrare a un tassista
   city: string
-  category: string
+  category: string // etichetta della categoria ('' se nessuna)
+  categoryId?: string
   status: PlaceStatus
   note?: string
-  lat: number
-  lng: number
+  address?: string
+  mapsUrl?: string
+  openingHours?: string
+  estCost?: number
+  currency?: string
+  lat: number | null
+  lng: number | null
 }
 
 export interface DayItem {
   id: string
   time?: string // "HH:MM" nell'orario locale della destinazione
+  endTime?: string
   title: string
   kind: ItemKind
   placeId?: string
   note?: string
+  done?: boolean
+  position?: number
 }
 
 export interface Day {
@@ -55,4 +71,5 @@ export interface Trip {
   travelers: Traveler[]
   days: Day[]
   places: Place[]
+  categories: Category[]
 }

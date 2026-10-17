@@ -35,6 +35,18 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
+        // le tessere di mappa già viste restano disponibili offline (nessun download in blocco)
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/tiles\.openfreemap\.org\/.*/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'map-tiles',
+              expiration: { maxEntries: 1500, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],

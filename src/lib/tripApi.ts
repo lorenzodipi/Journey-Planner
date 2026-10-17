@@ -1,4 +1,4 @@
-import type { Day, ThemeName, Traveler, Trip } from '../types'
+import type { Category, Day, DayItem, ItemKind, Place, PlaceStatus, ThemeName, Traveler, Trip } from '../types'
 import { todayYmd } from './dates'
 import { supabase } from './supabase'
 import { DEFAULT_CENTER } from './tripForm'
@@ -40,6 +40,49 @@ interface DayRow {
   notes: string | null
   deleted_at: string | null
 }
+interface CategoryRow {
+  id: string
+  trip_id: string
+  label: string
+  color: string | null
+  position: number
+}
+interface PlaceRow {
+  id: string
+  trip_id: string
+  category_id: string | null
+  name: string
+  name_local: string | null
+  city: string | null
+  address: string | null
+  lat: number | null
+  lng: number | null
+  maps_url: string | null
+  opening_hours: string | null
+  est_cost: number | string | null
+  currency: string | null
+  status: PlaceStatus
+  notes: string | null
+}
+interface ItemRow {
+  id: string
+  trip_id: string
+  day_id: string
+  place_id: string | null
+  kind: ItemKind
+  title: string
+  start_time: string | null
+  end_time: string | null
+  notes: string | null
+  done: boolean
+  position: number
+}
+interface Extras {
+  places: PlaceRow[]
+  categories: CategoryRow[]
+  items: ItemRow[]
+}
+
 interface TripRow {
   id: string
   title: string
@@ -73,11 +116,55 @@ export function describeError(error: unknown): string {
   return message
 }
 
-function mapTrip(row: TripRow): Trip {
+function mapTrip(row: TripRow, extras: Extras): Trip {
   const travelers: Traveler[] = (row.trip_travelers ?? [])
     .filter((t) => !t.deleted_at)
     .sort((a, b) => a.position - b.position)
     .map((t) => ({ id: t.id, name: t.name, color: t.color, position: t.position }))
+
+  const categories: Category[] = extras.categories
+    .filter((c) => c.trip_id === row.id)
+    .sort((a, b) => a.position - b.position)
+    .map((c) => ({ id: c.id, label: c.label, color: c.color ?? undefined }))
+  const categoryLabel = new Map(categories.map((c) => [c.id, c.label]))
+
+  const places: Place[] = extras.places
+    .filter((p) => p.trip_id === row.id)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      nameLocal: p.name_local ?? undefined,
+      city: p.city ?? '',
+      category: p.category_id ? (categoryLabel.get(p.category_id) ?? '') : '',
+      categoryId: p.category_id ?? undefined,
+      status: p.status,
+      note: p.notes ?? undefined,
+      address: p.address ?? undefined,
+      mapsUrl: p.maps_url ?? undefined,
+      openingHours: p.opening_hours ?? undefined,
+      estCost: p.est_cost == null ? undefined : Number(p.est_cost),
+      currency: p.currency?.trim() || undefined,
+      lat: p.lat,
+      lng: p.lng,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'it'))
+
+  const itemsByDay = new Map<string, DayItem[]>()
+  for (const it of extras.items.filter((i) => i.trip_id === row.id).sort((a, b) => a.position - b.position)) {
+    const list = itemsByDay.get(it.day_id) ?? []
+    list.push({
+      id: it.id,
+      time: it.start_time?.slice(0, 5),
+      endTime: it.end_time?.slice(0, 5),
+      title: it.title,
+      kind: it.kind,
+      placeId: it.place_id ?? undefined,
+      note: it.notes ?? undefined,
+      done: it.done,
+      position: it.position,
+    })
+    itemsByDay.set(it.day_id, list)
+  }
 
   const days: Day[] = (row.days ?? [])
     .filter((d) => !d.deleted_at)
@@ -88,7 +175,7 @@ function mapTrip(row: TripRow): Trip {
       city: d.city ?? '',
       title: d.title ?? undefined,
       notes: d.notes ?? undefined,
-      items: [], // le tappe arrivano nello Sprint 2
+      items: itemsByDay.get(d.id) ?? [],
     }))
 
   const today = todayYmd()
@@ -108,19 +195,31 @@ function mapTrip(row: TripRow): Trip {
     },
     travelers,
     days,
-    places: [], // i luoghi arrivano nello Sprint 2
+    places,
+    categories,
   }
 }
 
 export async function fetchTrips(): Promise<Trip[]> {
   const db = client()
-  const { data, error } = await db
-    .from('trips')
-    .select('*, trip_travelers(*), days(*)')
-    .is('deleted_at', null)
-    .order('start_date', { ascending: true, nullsFirst: false })
-  if (error) throw error
-  return (data as TripRow[]).map(mapTrip)
+  // Richieste separate e in parallelo: più semplici e robuste degli "embed" annidati.
+  const [trips, places, categories, items] = await Promise.all([
+    db
+      .from('trips')
+      .select('*, trip_travelers(*), days(*)')
+      .is('deleted_at', null)
+      .order('start_date', { ascending: true, nullsFirst: false }),
+    db.from('places').select('*').is('deleted_at', null),
+    db.from('categories').select('*').is('deleted_at', null),
+    db.from('day_items').select('*').is('deleted_at', null),
+  ])
+  for (const r of [trips, places, categories, items]) if (r.error) throw r.error
+  const extras: Extras = {
+    places: places.data as PlaceRow[],
+    categories: categories.data as CategoryRow[],
+    items: items.data as ItemRow[],
+  }
+  return (trips.data as TripRow[]).map((row) => mapTrip(row, extras))
 }
 
 function tripColumns(input: TripInput) {
@@ -240,5 +339,143 @@ export async function removeTraveler(id: string): Promise<void> {
 /** Dà accesso al viaggio a un utente già creato in Supabase (solo l'owner può farlo). */
 export async function addMember(tripId: string, email: string, role: 'editor' | 'viewer'): Promise<void> {
   const { error } = await client().rpc('add_member_by_email', { _trip: tripId, _email: email.trim(), _role: role })
+  if (error) throw error
+}
+
+// ---------- luoghi e categorie ----------
+
+export interface PlaceInput {
+  name: string
+  nameLocal: string
+  city: string
+  category: string
+  status: PlaceStatus
+  notes: string
+  address: string
+  mapsUrl: string
+  openingHours: string
+  lat: number | null
+  lng: number | null
+}
+
+/** Trova la categoria per nome (senza badare alle maiuscole) o la crea. */
+async function resolveCategory(tripId: string, label: string, known: Category[]): Promise<string | null> {
+  const clean = label.trim()
+  if (!clean) return null
+  const hit = known.find((c) => c.label.toLowerCase() === clean.toLowerCase())
+  if (hit) return hit.id
+  const db = client()
+  const position = (known.length + 1) * 1000
+  const { data, error } = await db
+    .from('categories')
+    .insert({ trip_id: tripId, label: clean, position })
+    .select('id')
+    .single()
+  if (!error) return (data as { id: string }).id
+  // già esistente ma non ancora nella cache locale (o nascosta): la recupero
+  const found = await db.from('categories').select('id').eq('trip_id', tripId).ilike('label', clean).limit(1)
+  if (found.error || !found.data?.length) throw error
+  const id = (found.data[0] as { id: string }).id
+  await db.from('categories').update({ deleted_at: null }).eq('id', id)
+  return id
+}
+
+function placeColumns(input: PlaceInput, categoryId: string | null) {
+  return {
+    category_id: categoryId,
+    name: input.name.trim(),
+    name_local: input.nameLocal.trim() || null,
+    city: input.city.trim() || null,
+    address: input.address.trim() || null,
+    lat: input.lat,
+    lng: input.lng,
+    maps_url: input.mapsUrl.trim() || null,
+    opening_hours: input.openingHours.trim() || null,
+    status: input.status,
+    notes: input.notes.trim() || null,
+  }
+}
+
+export async function createPlace(tripId: string, input: PlaceInput, known: Category[]): Promise<string> {
+  const categoryId = await resolveCategory(tripId, input.category, known)
+  const { data, error } = await client()
+    .from('places')
+    .insert({ trip_id: tripId, ...placeColumns(input, categoryId) })
+    .select('id')
+    .single()
+  if (error) throw error
+  return (data as { id: string }).id
+}
+
+export async function updatePlace(id: string, tripId: string, input: PlaceInput, known: Category[]): Promise<void> {
+  const categoryId = await resolveCategory(tripId, input.category, known)
+  const { error } = await client().from('places').update(placeColumns(input, categoryId)).eq('id', id)
+  if (error) throw error
+}
+
+export async function setPlaceStatus(id: string, status: PlaceStatus): Promise<void> {
+  const { error } = await client().from('places').update({ status }).eq('id', id)
+  if (error) throw error
+}
+
+export async function setPlaceDeleted(id: string, deleted: boolean): Promise<void> {
+  const { error } = await client()
+    .from('places')
+    .update({ deleted_at: deleted ? new Date().toISOString() : null })
+    .eq('id', id)
+  if (error) throw error
+}
+
+// ---------- tappe del giorno ----------
+
+export interface ItemInput {
+  title: string
+  kind: ItemKind
+  startTime: string // "HH:MM" oppure ''
+  endTime: string
+  notes: string
+  placeId: string | null
+}
+
+const timeOrNull = (t: string) => (/^\d{2}:\d{2}$/.test(t) ? t : null)
+
+function itemColumns(input: ItemInput) {
+  return {
+    title: input.title.trim(),
+    kind: input.kind,
+    start_time: timeOrNull(input.startTime),
+    end_time: timeOrNull(input.endTime),
+    notes: input.notes.trim() || null,
+    place_id: input.placeId,
+  }
+}
+
+export async function createItem(tripId: string, dayId: string, input: ItemInput, position: number): Promise<void> {
+  const { error } = await client()
+    .from('day_items')
+    .insert({ trip_id: tripId, day_id: dayId, position, ...itemColumns(input) })
+  if (error) throw error
+}
+
+export async function updateItem(id: string, input: ItemInput): Promise<void> {
+  const { error } = await client().from('day_items').update(itemColumns(input)).eq('id', id)
+  if (error) throw error
+}
+
+export async function setItemPosition(id: string, position: number): Promise<void> {
+  const { error } = await client().from('day_items').update({ position }).eq('id', id)
+  if (error) throw error
+}
+
+export async function setItemDone(id: string, done: boolean): Promise<void> {
+  const { error } = await client().from('day_items').update({ done }).eq('id', id)
+  if (error) throw error
+}
+
+export async function setItemDeleted(id: string, deleted: boolean): Promise<void> {
+  const { error } = await client()
+    .from('day_items')
+    .update({ deleted_at: deleted ? new Date().toISOString() : null })
+    .eq('id', id)
   if (error) throw error
 }

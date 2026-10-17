@@ -141,5 +141,38 @@ check('viewer non elimina (soft) il viaggio', (await db.query(`update trips set 
 await asUser(A)
 check('owner elimina il viaggio (soft delete)', (await db.query(`update trips set deleted_at=now() where id=$1 returning id`, [s1])).rows.length === 1)
 
+// --- Sprint 2: categorie, luoghi, tappe (le operazioni dell'app) ---
+await asUser(A)
+const s2 = (await db.query(`insert into trips (title) values ('Test S2') returning id`)).rows[0].id
+const other = (await db.query(`insert into trips (title) values ('Altro viaggio') returning id`)).rows[0].id
+const cat = (await db.query(`insert into categories (trip_id,label,position) values ($1,'Tempio',1000) returning id`, [s2])).rows[0].id
+await throws('categoria duplicata nello stesso viaggio (trovata per nome)', () =>
+  db.query(`insert into categories (trip_id,label,position) values ($1,'Tempio',2000)`, [s2]))
+const catOther = (await db.query(`insert into categories (trip_id,label,position) values ($1,'Cibo',1000) returning id`, [other])).rows[0].id
+await throws('luogo non può usare la categoria di un altro viaggio', () =>
+  db.query(`insert into places (trip_id,name,category_id) values ($1,'x',$2)`, [s2, catOther]))
+const pl = (await db.query(
+  `insert into places (trip_id,category_id,name,name_local,city,lat,lng,status) values ($1,$2,'Senso-ji','浅草寺','Taito',35.7148,139.7967,'idea') returning id`, [s2, cat])).rows[0].id
+await throws('coordinate fuori intervallo rifiutate', () => db.query(`insert into places (trip_id,name,lat,lng) values ($1,'x',95,10)`, [s2]))
+check('luogo senza coordinate ammesso (si aggiusta dopo)', (await db.query(`insert into places (trip_id,name) values ($1,'Senza pin') returning id`, [s2])).rows.length === 1)
+
+const dd = (await db.query(`insert into days (trip_id,date) values ($1,'2026-11-22') returning id`, [s2])).rows[0].id
+const it = (await db.query(
+  `insert into day_items (trip_id,day_id,place_id,kind,title,start_time,position) values ($1,$2,$3,'visit','Senso-ji','09:30',1000) returning id`, [s2, dd, pl])).rows[0].id
+await db.query(`update day_items set position=1500 where id=$1`, [it])
+check('tappa riordinata (position frazionaria)', (await db.query(`select position from day_items where id=$1`, [it])).rows[0].position === 1500)
+await db.query(`update day_items set deleted_at=now() where id=$1`, [it])
+await db.query(`update day_items set deleted_at=null where id=$1`, [it])
+check('tappa eliminata e ripristinata (annulla)', (await db.query(`select 1 from day_items where id=$1 and deleted_at is null`, [it])).rows.length === 1)
+await throws('tappa non può puntare a un luogo di un altro viaggio', async () => {
+  const foreign = (await db.query(`insert into places (trip_id,name) values ($1,'Estraneo') returning id`, [other])).rows[0].id
+  await db.query(`insert into day_items (trip_id,day_id,place_id,title) values ($1,$2,$3,'x')`, [s2, dd, foreign])
+})
+await asUser(B)
+check('B non vede luoghi e tappe del viaggio di A', (await db.query(`select 1 from places where trip_id=$1`, [s2])).rows.length === 0 &&
+  (await db.query(`select 1 from day_items where trip_id=$1`, [s2])).rows.length === 0)
+await throws('B non può creare luoghi nel viaggio di A', () => db.query(`insert into places (trip_id,name) values ($1,'x')`, [s2]))
+await asUser(A)
+
 console.log(`\n${pass} ok, ${fail} falliti`)
 process.exit(fail ? 1 : 0)

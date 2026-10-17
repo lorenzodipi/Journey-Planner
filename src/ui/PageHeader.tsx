@@ -9,11 +9,11 @@ interface Props {
 export function PageHeader({ title, subtitle, children }: Props) {
   return (
     <header
-      class="px-5 pb-4"
-      style={{ paddingTop: 'calc(1.5rem + env(safe-area-inset-top))' }}
+      class="px-5 pb-3"
+      style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
     >
-      <h1 class="font-display text-3xl font-semibold leading-tight">{title}</h1>
-      {subtitle && <p class="mt-1 text-sm text-muted">{subtitle}</p>}
+      <h1 class="font-display text-2xl font-semibold leading-tight">{title}</h1>
+      {subtitle && <p class="text-sm text-muted">{subtitle}</p>}
       {children}
     </header>
   )

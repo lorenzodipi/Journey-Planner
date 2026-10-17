@@ -17,6 +17,7 @@ export const demoTrip: Trip = {
     { id: 't1', name: 'Viaggiatore 1', color: '#c8402f' },
     { id: 't2', name: 'Viaggiatore 2', color: '#264653' },
   ],
+  categories: [],
   places: [
     { id: 'p1', name: 'Tempio Senso-ji', city: 'Tokyo', category: 'Tempio', status: 'planned', lat: 35.7148, lng: 139.7967, note: 'Meglio al mattino presto' },
     { id: 'p2', name: 'Santuario Meiji', city: 'Tokyo', category: 'Tempio', status: 'idea', lat: 35.6764, lng: 139.6993 },
