@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Design token. Ogni viaggio sceglie un tema con data-theme sull'elemento <html>.
+   Chiaro e scuro seguono il sistema. Le classi Tailwind usano questi token
+   (bg-bg, bg-surface, text-ink, text-muted, border-line, bg-accent, ...).
+   --------------------------------------------------------------------------- */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-secondary: var(--secondary);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --radius-card: 1.25rem;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 20px -8px rgb(40 30 20 / 0.18);
+}
+
+/* Tema base (neutro, verde petrolio) */
+:root {
+  color-scheme: light dark;
+  --bg: #f5f3ee;
+  --surface: #ffffff;
+  --ink: #1d2327;
+  --muted: #667075;
+  --line: #e5e1d8;
+  --accent: #2f5d62;
+  --accent-ink: #ffffff;
+  --accent-soft: #e0ecec;
+  --secondary: #b4552d;
+  --ok: #2d7a3e;
+  --warn: #a8710f;
+  --danger: #b3382a;
+  --night: #1f2a44;
+  --day-a: #ffe9a8;
+  --day-b: #ffb36b;
+}
+
+/* Giappone: carta washi, rosso vermiglio, indaco */
+:root[data-theme="japan"] {
+  --bg: #f6f1e7;
+  --surface: #fffdf8;
+  --ink: #1f2a33;
+  --muted: #6c6a63;
+  --line: #e4dccb;
+  --accent: #c8402f;
+  --accent-ink: #ffffff;
+  --accent-soft: #f8e3de;
+  --secondary: #264653;
+  --night: #1b2a3a;
+}
+
+/* Islanda: blu ghiaccio */
+:root[data-theme="iceland"] {
+  --bg: #eff5f8;
+  --surface: #ffffff;
+  --ink: #12222c;
+  --muted: #5b7280;
+  --line: #d6e2ea;
+  --accent: #1f6f8b;
+  --accent-ink: #ffffff;
+  --accent-soft: #dcecf2;
+  --secondary: #2f4b66;
+  --night: #1d2b4a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111518;
+    --surface: #1a2024;
+    --ink: #eeeae1;
+    --muted: #9aa3a8;
+    --line: #2a3238;
+    --accent: #6fb0b5;
+    --accent-ink: #0c1c1e;
+    --accent-soft: #1d3436;
+    --secondary: #e0865a;
+    --ok: #62c27a;
+    --warn: #e0b04a;
+    --danger: #ef7a6a;
+    --night: #0f1626;
+  }
+  :root[data-theme="japan"] {
+    --bg: #14171b;
+    --surface: #1d2228;
+    --ink: #f1ece2;
+    --muted: #a09d94;
+    --line: #2e353c;
+    --accent: #ea6a57;
+    --accent-ink: #1c0c09;
+    --accent-soft: #3a211e;
+    --secondary: #7fb0c4;
+    --night: #0e1722;
+  }
+  :root[data-theme="iceland"] {
+    --bg: #0f161b;
+    --surface: #182027;
+    --ink: #e9f1f5;
+    --muted: #8fa6b3;
+    --line: #26323b;
+    --accent: #5fb4d1;
+    --accent-ink: #07161d;
+    --accent-soft: #17303b;
+    --secondary: #8fb0d6;
+    --night: #0c1424;
+  }
+}
+
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  line-height: 1.45;
+  /* evita il rimbalzo che fa muovere la barra in basso nella PWA */
+  overscroll-behavior-y: none;
+}
+
+/* Titoli con un tocco editoriale; font di sistema, niente download (serve offline) */
+.font-display {
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", ui-serif, Georgia, "Times New Roman", serif;
+  letter-spacing: -0.01em;
+}
+
+/* Input leggibili e senza zoom automatico su iOS (>= 16px) */
+input, select, textarea, button {
+  font: inherit;
+}
+input, select, textarea {
+  font-size: 1rem;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.rise { animation: rise 0.35s ease-out both; }
+
+/* scorrimento orizzontale senza barra (filtri a chip) */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

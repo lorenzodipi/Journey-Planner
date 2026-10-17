@@ -1,0 +1,145 @@
+// Test della sicurezza (RLS) dello schema, su un Postgres locale in memoria (PGlite).
+// Simula ruoli e funzioni di Supabase (auth.uid, storage.foldername). Esegui: npm run test:sql
+import { PGlite } from '@electric-sql/pglite'
+import fs from 'node:fs'
+
+const db = new PGlite()
+const A = '11111111-1111-1111-1111-111111111111'
+const B = '22222222-2222-2222-2222-222222222222'
+const C = '33333333-3333-3333-3333-333333333333'
+
+// --- stub di ciò che Supabase fornisce già ---
+await db.exec(`
+  create role anon nologin; create role authenticated nologin;
+  create schema auth; create schema storage;
+  create table auth.users (id uuid primary key, email text);
+  create function auth.uid() returns uuid language sql stable as $$
+    select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+  create table storage.buckets (id text primary key, name text, public boolean);
+  create table storage.objects (id uuid default gen_random_uuid() primary key, bucket_id text, name text);
+  alter table storage.objects enable row level security;
+  create function storage.foldername(name text) returns text[] language sql immutable as $$
+    select (string_to_array(name, '/'))[1:array_length(string_to_array(name,'/'),1)-1] $$;
+  grant usage on schema auth, storage to anon, authenticated;
+  grant execute on function auth.uid() to anon, authenticated;
+  insert into auth.users values ('${A}','a@test.it'),('${B}','b@test.it'),('${C}','c@test.it');
+`)
+
+const sql = fs.readFileSync(new URL('../migrations/0001_init.sql', import.meta.url), 'utf8')
+await db.exec(sql)
+console.log('MIGRAZIONE OK')
+
+const asUser = async (uid, role = 'authenticated') => {
+  await db.exec(`reset role; select set_config('request.jwt.claim.sub', '${uid ?? ''}', false); set role ${role};`)
+}
+let pass = 0, fail = 0
+const check = (name, cond, extra = '') => { (cond ? pass++ : fail++); console.log(`${cond ? 'OK  ' : 'FAIL'} ${name} ${extra}`) }
+const throws = async (name, fn) => { try { await fn(); check(name, false, '(nessun errore)') } catch (e) { check(name, true, `→ ${String(e.message).slice(0, 70)}`) } }
+
+// A crea un viaggio
+await asUser(A)
+const t = (await db.query(`insert into trips (title, timezone, theme) values ('Giappone','Asia/Tokyo','japan') returning id`)).rows[0].id
+const m = (await db.query(`select role from trip_members where trip_id=$1 and user_id=$2`, [t, A])).rows
+check('owner aggiunto in automatico', m.length === 1 && m[0].role === 'owner')
+
+const d1 = (await db.query(`insert into days (trip_id, date, city) values ($1,'2026-11-22','Tokyo') returning id`, [t])).rows[0].id
+await db.query(`insert into day_items (trip_id, day_id, title) values ($1,$2,'Senso-ji')`, [t, d1])
+const f = (await db.query(`insert into flights (trip_id, title) values ($1,'Andata') returning id`, [t])).rows[0].id
+await db.query(`insert into flight_legs (trip_id, flight_id, seq, from_airport, to_airport, depart_at, arrive_at, from_tz, to_tz)
+  values ($1,$2,1,'MXP','PEK','2026-11-21T12:30:00+01','2026-11-22T05:35:00+08','Europe/Rome','Asia/Shanghai')`, [t, f])
+check('A scrive giorni, tappe, voli', true)
+
+// B non è membro
+await asUser(B)
+check('B non vede il viaggio', (await db.query(`select 1 from trips`)).rows.length === 0)
+check('B non vede i giorni', (await db.query(`select 1 from days`)).rows.length === 0)
+await throws('B non può scrivere nel viaggio di A', () => db.query(`insert into days (trip_id, date) values ($1,'2026-11-23')`, [t]))
+await throws('B non può aggiungersi come membro', () => db.query(`insert into trip_members (trip_id,user_id,role) values ($1,$2,'owner')`, [t, B]))
+await throws('B non può usare add_member_by_email', () => db.query(`select add_member_by_email($1,'b@test.it','editor')`, [t]))
+
+// A aggiunge B come editor
+await asUser(A)
+await db.query(`select add_member_by_email($1,'b@test.it','editor')`, [t])
+await asUser(B)
+check('B ora vede il viaggio', (await db.query(`select 1 from trips`)).rows.length === 1)
+check('B ora vede le tappe', (await db.query(`select 1 from day_items`)).rows.length === 1)
+await db.query(`insert into days (trip_id, date, city) values ($1,'2026-11-23','Tokyo')`, [t])
+check('B (editor) può scrivere', true)
+await throws('B (editor) non può eliminare il viaggio', async () => {
+  const r = await db.query(`delete from trips where id=$1 returning id`, [t]); if (r.rows.length === 0) throw new Error('0 righe eliminate')
+})
+
+// C estraneo e anonimo
+await asUser(C)
+check('C non vede nulla', (await db.query(`select 1 from trips`)).rows.length === 0)
+await asUser('', 'anon')
+await throws('anon non legge i viaggi', () => db.query(`select 1 from trips`))
+check('anon legge health (keep-alive)', (await db.query(`select ok from health`)).rows[0].ok === true)
+await throws('anon non scrive health', () => db.query(`update health set ok=false`))
+await throws('anon non chiama add_member_by_email', () => db.query(`select add_member_by_email($1,'c@test.it','viewer')`, [t]))
+
+// coerenza tra viaggi (FK composite)
+await asUser(A)
+const t2 = (await db.query(`insert into trips (title) values ('Altro') returning id`)).rows[0].id
+await throws('tappa non può puntare a un giorno di un altro viaggio', () =>
+  db.query(`insert into day_items (trip_id, day_id, title) values ($1,$2,'x')`, [t2, d1]))
+
+// viewer in sola lettura
+await db.query(`select add_member_by_email($1,'c@test.it','viewer')`, [t])
+await asUser(C)
+check('viewer legge', (await db.query(`select 1 from days`)).rows.length >= 1)
+await throws('viewer non scrive', () => db.query(`insert into days (trip_id, date) values ($1,'2026-12-01')`, [t]))
+
+// vincoli
+await asUser(A)
+await throws('date viaggio incoerenti', () => db.query(`insert into trips (title,start_date,end_date) values ('x','2026-12-01','2026-11-01')`))
+await throws('arrivo prima della partenza', () => db.query(
+  `insert into flight_legs (trip_id, flight_id, seq, from_airport, to_airport, depart_at, arrive_at, from_tz, to_tz)
+   values ($1,$2,2,'PEK','HND','2026-11-22T11:45:00+08','2026-11-22T10:00:00+09','Asia/Shanghai','Asia/Tokyo')`, [t, f]))
+
+// updated_at
+await db.exec(`reset role`)
+const before = (await db.query(`select updated_at from days where id=$1`, [d1])).rows[0].updated_at
+await new Promise(r => setTimeout(r, 15))
+await asUser(A)
+await db.query(`update days set title='Arrivo' where id=$1`, [d1])
+await db.exec(`reset role`)
+const after = (await db.query(`select updated_at from days where id=$1`, [d1])).rows[0].updated_at
+check('updated_at aggiornato dal trigger', after > before)
+
+// --- Sprint 1: le stesse operazioni che esegue l'app (creazione viaggio, viaggiatori, giorni) ---
+await asUser(A)
+const s1 = (await db.query(
+  `insert into trips (title,destination,start_date,end_date,timezone,theme,base_currency,local_currency,center_lat,center_lng)
+   values ('Giappone 2026','Giappone','2026-11-21','2026-12-09','Asia/Tokyo','japan','EUR','JPY',35.68,139.76) returning id`)).rows[0].id
+await db.query(`insert into trip_travelers (trip_id,name,color,position) values ($1,'Anna','#c8402f',1000),($1,'Luca','#264653',2000)`, [s1])
+await db.query(`insert into days (trip_id,date) select $1, d::date from generate_series('2026-11-21'::date,'2026-12-09'::date,'1 day') d`, [s1])
+check('giorni generati dalle date (19)', (await db.query(`select 1 from days where trip_id=$1`, [s1])).rows.length === 19)
+await throws('stessa data due volte nello stesso viaggio', () => db.query(`insert into days (trip_id,date) values ($1,'2026-11-21')`, [s1]))
+
+// restringere le date: i giorni si nascondono, non si cancellano; poi tornano
+const dTail = (await db.query(`select id from days where trip_id=$1 and date='2026-12-09'`, [s1])).rows[0].id
+await db.query(`update days set title='Ritorno', deleted_at=now() where id=$1`, [dTail])
+await db.query(`update days set deleted_at=null where id=$1`, [dTail])
+check('giorno nascosto e ripristinato conserva i dati',
+  (await db.query(`select title from days where id=$1`, [dTail])).rows[0].title === 'Ritorno')
+
+// viaggiatore rimosso = soft delete
+const luca = (await db.query(`select id from trip_travelers where trip_id=$1 and name='Luca'`, [s1])).rows[0].id
+await db.query(`update trip_travelers set deleted_at=now() where id=$1`, [luca])
+check('viaggiatore rimosso resta in tabella ma con deleted_at',
+  (await db.query(`select 1 from trip_travelers where id=$1 and deleted_at is not null`, [luca])).rows.length === 1)
+
+// un viewer non può modificare giorni né viaggiatori (nessun errore, ma 0 righe toccate)
+await db.query(`select add_member_by_email($1,'c@test.it','viewer')`, [s1])
+await asUser(C)
+check('viewer non modifica i giorni', (await db.query(`update days set city='x' where trip_id=$1 returning id`, [s1])).rows.length === 0)
+check('viewer non modifica i viaggiatori', (await db.query(`update trip_travelers set name='x' where trip_id=$1 returning id`, [s1])).rows.length === 0)
+check('viewer non elimina (soft) il viaggio', (await db.query(`update trips set deleted_at=now() where id=$1 returning id`, [s1])).rows.length === 0)
+
+// l'owner elimina il viaggio (soft delete) e lo può ancora leggere
+await asUser(A)
+check('owner elimina il viaggio (soft delete)', (await db.query(`update trips set deleted_at=now() where id=$1 returning id`, [s1])).rows.length === 1)
+
+console.log(`\n${pass} ok, ${fail} falliti`)
+process.exit(fail ? 1 : 0)
