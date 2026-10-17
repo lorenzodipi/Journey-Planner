@@ -1,4 +1,5 @@
 import type { Trip } from '../types'
+import { clearBookingCache } from './bookingFiles'
 
 // Copia locale dei viaggi per aprire l'app anche senza rete (sola lettura).
 // Per ora basta localStorage; nello Sprint 4 passerà a IndexedDB insieme alla
@@ -12,12 +13,18 @@ export interface Snapshot {
   savedAt: number
 }
 
+export function normalizeTrip(trip: Trip): Trip {
+  return { ...trip, stays: trip.stays ?? [], transports: trip.transports ?? [], flights: trip.flights ?? [], budget: trip.budget ?? [], expenses: trip.expenses ?? [], checklist: trip.checklist ?? [], bookings: trip.bookings ?? [] }
+}
+
 export function loadSnapshot(): Snapshot | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as Snapshot
-    return Array.isArray(parsed.trips) ? parsed : null
+    if (!Array.isArray(parsed.trips)) return null
+    // copie salvate da versioni precedenti: aggiungo le sezioni che non c'erano
+    return { ...parsed, trips: parsed.trips.map(normalizeTrip) }
   } catch {
     return null
   }
@@ -32,6 +39,7 @@ export function saveSnapshot(trips: Trip[]): void {
 }
 
 export function clearSnapshot(): void {
+  clearBookingCache() // anche i biglietti salvati sul telefono
   try {
     localStorage.removeItem(CACHE_KEY)
     localStorage.removeItem(ACTIVE_KEY)

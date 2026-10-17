@@ -7,8 +7,15 @@ import { clearSnapshot, loadActiveId, loadSnapshot, saveActiveId, saveSnapshot }
 import { positionForNew, positionForStep } from '../lib/itemOrder'
 import { between } from '../lib/position'
 import * as api from '../lib/tripApi'
+import * as logistics from '../lib/logisticsApi'
+import * as money from '../lib/moneyApi'
+import * as planning from '../lib/planningApi'
+import { syncOfflineFiles } from '../lib/bookingFiles'
+import type { BookingInput, ChecklistInput } from '../lib/planningData'
+import type { BudgetInput, ExpenseInput } from '../lib/moneyData'
+import type { FlightInput, StayInput, TransportInput } from '../lib/logistics'
 import type { ItemInput, PlaceInput, TravelerInput, TripInput } from '../lib/tripApi'
-import type { PlaceStatus, Trip } from '../types'
+import type { Booking, BudgetItem, ChecklistItem, Expense, Flight, PlaceStatus, Trip } from '../types'
 
 export type TripsStatus = 'loading' | 'ready' | 'error'
 
@@ -41,6 +48,34 @@ interface TripsValue {
   moveItem: (dayId: string, itemId: string, step: -1 | 1) => Result
   setItemDone: (id: string, done: boolean) => Result
   setItemDeleted: (id: string, deleted: boolean) => Result
+  createStay: (tripId: string, input: StayInput) => Result
+  updateStay: (id: string, input: StayInput) => Result
+  setStayFlag: (id: string, flag: 'booked' | 'paid', value: boolean) => Result
+  setStayDeleted: (id: string, deleted: boolean) => Result
+  createTransport: (tripId: string, input: TransportInput) => Result
+  updateTransport: (tripId: string, id: string, input: TransportInput) => Result
+  setTransportBought: (id: string, bought: boolean) => Result
+  setTransportDeleted: (id: string, deleted: boolean) => Result
+  createFlight: (tripId: string, input: FlightInput) => Result
+  updateFlight: (tripId: string, flight: Flight, input: FlightInput) => Result
+  setFlightPaid: (id: string, paid: boolean) => Result
+  setFlightDeleted: (id: string, deleted: boolean) => Result
+  createBudgetItem: (tripId: string, input: BudgetInput) => Result
+  updateBudgetItem: (tripId: string, item: BudgetItem, input: BudgetInput) => Result
+  setBudgetSharePaid: (shareId: string, paid: boolean) => Result
+  setBudgetItemDeleted: (id: string, deleted: boolean) => Result
+  createExpense: (tripId: string, input: ExpenseInput) => Result
+  updateExpense: (tripId: string, expense: Expense, input: ExpenseInput) => Result
+  setExpenseDeleted: (id: string, deleted: boolean) => Result
+  setFxRate: (tripId: string, rate: number | null) => Result
+  createChecklistItem: (tripId: string, input: ChecklistInput) => Result
+  updateChecklistItem: (id: string, input: ChecklistInput) => Result
+  setChecklistDone: (id: string, done: boolean) => Result
+  setChecklistDeleted: (id: string, deleted: boolean) => Result
+  addChecklistTemplate: (tripId: string) => Result
+  createBooking: (tripId: string, input: BookingInput) => Result
+  updateBooking: (tripId: string, booking: Booking, input: BookingInput) => Result
+  setBookingDeleted: (id: string, deleted: boolean) => Result
 }
 
 const DEMO_MESSAGE = 'Anteprima demo: collega Supabase per salvare le modifiche.'
@@ -70,6 +105,7 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
       setError(null)
       setStatus('ready')
       saveSnapshot(fresh)
+      void syncOfflineFiles(fresh) // biglietti marcati "offline" sul telefono
     } catch (e) {
       // Offline o errore: se ho una copia locale la mostro, altrimenti segnalo l'errore.
       if (hasData.current) {
@@ -193,6 +229,51 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     },
     setItemDone: (id, done) => run(() => api.setItemDone(id, done)),
     setItemDeleted: (id, deleted) => run(() => api.setItemDeleted(id, deleted)),
+    createStay: (tripId, input) => run(() => logistics.createStay(tripId, input)),
+    updateStay: (id, input) => run(() => logistics.updateStay(id, input)),
+    setStayFlag: (id, flag, value) => run(() => logistics.setStayFlag(id, flag, value)),
+    setStayDeleted: (id, deleted) => run(() => logistics.setStayDeleted(id, deleted)),
+    createTransport: (tripId, input) => {
+      const trip = trips.find((x) => x.id === tripId)
+      return run(() => logistics.createTransport(tripId, input, trip?.timezone ?? 'UTC', trip?.days ?? []))
+    },
+    updateTransport: (tripId, id, input) => {
+      const trip = trips.find((x) => x.id === tripId)
+      return run(() => logistics.updateTransport(id, input, trip?.timezone ?? 'UTC', trip?.days ?? []))
+    },
+    setTransportBought: (id, bought) => run(() => logistics.setTransportBought(id, bought)),
+    setTransportDeleted: (id, deleted) => run(() => logistics.setTransportDeleted(id, deleted)),
+    createFlight: (tripId, input) => run(() => logistics.createFlight(tripId, input)),
+    updateFlight: (tripId, flight, input) => run(() => logistics.updateFlight(flight, tripId, input)),
+    setFlightPaid: (id, paid) => run(() => logistics.setFlightPaid(id, paid)),
+    setFlightDeleted: (id, deleted) => run(() => logistics.setFlightDeleted(id, deleted)),
+    createBudgetItem: (tripId, input) => run(() => money.createBudgetItem(tripId, input)),
+    updateBudgetItem: (tripId, item, input) => run(() => money.updateBudgetItem(item, tripId, input)),
+    setBudgetSharePaid: (shareId, paid) => run(() => money.setBudgetSharePaid(shareId, paid)),
+    setBudgetItemDeleted: (id, deleted) => run(() => money.setBudgetItemDeleted(id, deleted)),
+    createExpense: (tripId, input) => {
+      const trip = trips.find((x) => x.id === tripId)
+      return run(() => money.createExpense(tripId, input, trip?.timezone ?? 'UTC', trip?.days ?? []))
+    },
+    updateExpense: (tripId, expense, input) => {
+      const trip = trips.find((x) => x.id === tripId)
+      return run(() => money.updateExpense(expense, tripId, input, trip?.timezone ?? 'UTC', trip?.days ?? []))
+    },
+    setExpenseDeleted: (id, deleted) => run(() => money.setExpenseDeleted(id, deleted)),
+    setFxRate: (tripId, rate) => run(() => money.setTripFxRate(tripId, rate)),
+    createChecklistItem: (tripId, input) => {
+      const items = trips.find((x) => x.id === tripId)?.checklist.filter((c: ChecklistItem) => c.kind === input.kind) ?? []
+      const position = Math.max(0, ...items.map((c) => c.position)) + 1000
+      return run(() => planning.createChecklistItem(tripId, input, position))
+    },
+    updateChecklistItem: (id, input) => run(() => planning.updateChecklistItem(id, input)),
+    setChecklistDone: (id, done) => run(() => planning.setChecklistDone(id, done)),
+    setChecklistDeleted: (id, deleted) => run(() => planning.setChecklistDeleted(id, deleted)),
+    addChecklistTemplate: (tripId) => run(() => planning.addChecklistTemplate(tripId, trips.find((x) => x.id === tripId)?.checklist ?? [])),
+    createBooking: (tripId, input) => run(() => planning.createBooking(tripId, input, trips.find((x) => x.id === tripId)?.timezone ?? 'UTC')),
+    updateBooking: (tripId, booking, input) =>
+      run(() => planning.updateBooking(booking, tripId, input, trips.find((x) => x.id === tripId)?.timezone ?? 'UTC')),
+    setBookingDeleted: (id, deleted) => run(() => planning.setBookingDeleted(id, deleted)),
   }
   if (demo) {
     value.createTrip = () => demoResult

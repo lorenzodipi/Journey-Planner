@@ -1,9 +1,10 @@
 import { useState } from 'preact/hooks'
+import { Link } from 'wouter-preact'
 import { useAuth } from '../lib/auth'
 import { formatShort } from '../lib/dates'
 import { TRAVELER_COLORS } from '../lib/tripForm'
 import { useTrips } from '../state/trip'
-import type { Traveler } from '../types'
+import type { Traveler, Trip } from '../types'
 import { SecondaryButton } from '../ui/Field'
 import { Card, PageHeader } from '../ui/PageHeader'
 import { Sheet } from '../ui/Sheet'
@@ -12,12 +13,41 @@ import { TravelerForm } from '../ui/TravelerForm'
 import { TripForm } from '../ui/TripForm'
 
 const upcoming = [
-  { title: 'Alloggi', text: 'Hotel, check-in e check-out, costi', sprint: 3 },
-  { title: 'Trasporti e voli', text: 'Treni, pass, voli con scali e fusi orari', sprint: 3 },
-  { title: 'Budget e spese', text: 'Previsto, speso e da pagare, in EUR e JPY', sprint: 3 },
-  { title: 'Checklist e valigia', text: 'Cose da fare e da portare, per persona', sprint: 3 },
-  { title: 'Prenotazioni e documenti', text: 'Codici, link e biglietti, anche offline', sprint: 3 },
   { title: 'Impostazioni', text: 'Tasso di cambio, esporta i dati', sprint: 4 },
+]
+
+const sections = [
+  {
+    href: '/altro/alloggi',
+    title: 'Alloggi',
+    text: (t: Trip) => (t.stays.length ? `${t.stays.length} ${t.stays.length === 1 ? 'alloggio' : 'alloggi'}` : 'Hotel, check-in e check-out, costi'),
+  },
+  {
+    href: '/altro/trasporti',
+    title: 'Trasporti e voli',
+    text: (t: Trip) =>
+      t.flights.length + t.transports.length
+        ? `${t.flights.length} voli · ${t.transports.length} spostamenti`
+        : 'Treni, pass, voli con scali e fusi orari',
+  },
+  {
+    href: '/altro/budget',
+    title: 'Budget e spese',
+    text: (t: Trip) => (t.budget.length + t.expenses.length ? `${t.budget.length} voci · ${t.expenses.length} spese` : 'Previsto, speso e chi deve a chi'),
+  },
+  {
+    href: '/altro/checklist',
+    title: 'Checklist e valigia',
+    text: (t: Trip) => {
+      const done = t.checklist.filter((c) => c.done).length
+      return t.checklist.length ? `${done} di ${t.checklist.length} fatte` : 'Cose da fare e da portare, per persona'
+    },
+  },
+  {
+    href: '/altro/prenotazioni',
+    title: 'Prenotazioni e documenti',
+    text: (t: Trip) => (t.bookings.length ? `${t.bookings.length} ${t.bookings.length === 1 ? 'prenotazione' : 'prenotazioni'}` : 'Codici, link e biglietti, anche offline'),
+  },
 ]
 
 type SheetState =
@@ -132,6 +162,17 @@ export function Altro() {
 
         <Card class="!p-0">
           <ul class="divide-y divide-line">
+            {sections.map((s) => (
+              <li>
+                <Link href={s.href} class="flex min-h-16 items-center gap-3 px-4 py-3">
+                  <span class="min-w-0 flex-1">
+                    <span class="block font-medium">{s.title}</span>
+                    <span class="block truncate text-xs text-muted">{s.text(trip)}</span>
+                  </span>
+                  <span aria-hidden="true" class="text-muted">›</span>
+                </Link>
+              </li>
+            ))}
             {upcoming.map((s) => (
               <li class="flex min-h-16 items-center gap-3 px-4 py-3 opacity-80">
                 <div class="min-w-0 flex-1">

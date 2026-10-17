@@ -3,6 +3,8 @@
 
 export type ThemeName = 'default' | 'japan' | 'iceland'
 export type PlaceStatus = 'idea' | 'planned' | 'done' | 'skipped'
+export type Scope = 'per_person' | 'total'
+export type TransportMode = 'train' | 'metro' | 'bus' | 'taxi' | 'walk' | 'car' | 'plane' | 'ferry' | 'other'
 export type ItemKind = 'visit' | 'meal' | 'transport' | 'free' | 'note' | 'flight'
 
 export interface Traveler {
@@ -57,6 +59,133 @@ export interface Day {
   items: DayItem[]
 }
 
+export interface Stay {
+  id: string
+  name: string
+  city: string
+  checkIn: string // "YYYY-MM-DD"
+  checkOut: string
+  checkInInfo?: string // es. "17:00–22:00"
+  checkOutInfo?: string // es. "entro 10:30"
+  address?: string
+  mapsUrl?: string
+  totalCost?: number // per tutti i viaggiatori
+  currency: string
+  breakfast: boolean
+  kitchen: boolean
+  booked: boolean
+  paid: boolean
+  notes?: string
+}
+
+export interface Transport {
+  id: string
+  from: string
+  to: string
+  mode: TransportMode
+  departAt?: string // istante ISO (UTC)
+  arriveAt?: string
+  dayId?: string
+  cost?: number
+  currency: string
+  scope: Scope
+  bought: boolean
+  refCode?: string
+  notes?: string
+}
+
+export interface FlightLeg {
+  id: string
+  seq: number
+  flightNumber?: string
+  from: string // IATA
+  to: string
+  departAt: string // istante ISO (UTC)
+  arriveAt: string
+  fromTz: string // fuso IANA dell'aeroporto di partenza
+  toTz: string
+  cabin?: string
+  seats?: string
+  notes?: string
+}
+
+export interface Flight {
+  id: string
+  title: string
+  airline?: string
+  bookingRef?: string
+  cost?: number
+  currency: string
+  scope: Scope
+  paid: boolean
+  notes?: string
+  legs: FlightLeg[]
+}
+
+export interface BudgetShare {
+  id: string
+  travelerId: string
+  paid: boolean
+}
+
+export interface BudgetItem {
+  id: string
+  label: string
+  category?: string
+  amount: number
+  currency: string
+  scope: Scope
+  dueDate?: string // "YYYY-MM-DD"
+  notes?: string
+  shares: BudgetShare[] // chi paga questa voce (per tutti = tutti i viaggiatori)
+}
+
+export interface ExpenseShare {
+  travelerId: string
+  weight: number
+}
+
+export interface Expense {
+  id: string
+  label: string
+  category?: string
+  amount: number
+  currency: string
+  fxRate?: number // unità di valuta base per 1 unità di `currency`
+  paidBy?: string // id del viaggiatore che ha anticipato
+  spentAt: string // istante ISO
+  dayId?: string
+  notes?: string
+  shares: ExpenseShare[] // tra chi si divide (vuoto = tutti in parti uguali)
+}
+
+export type ChecklistKind = 'todo' | 'packing' | 'docs'
+
+export interface ChecklistItem {
+  id: string
+  kind: ChecklistKind
+  text: string
+  done: boolean
+  travelerId?: string // vuoto = per tutti
+  dueDate?: string // "YYYY-MM-DD"
+  position: number
+}
+
+export type BookingType = 'flight' | 'hotel' | 'train' | 'ticket' | 'insurance' | 'esim' | 'other'
+
+export interface Booking {
+  id: string
+  type: BookingType
+  title: string
+  code?: string // codice di conferma
+  url?: string
+  validFrom?: string // istante ISO
+  validTo?: string
+  filePath?: string // nel bucket privato "bookings"
+  keepOffline: boolean
+  notes?: string
+}
+
 export interface Trip {
   id: string
   title: string
@@ -72,4 +201,13 @@ export interface Trip {
   days: Day[]
   places: Place[]
   categories: Category[]
+  stays: Stay[]
+  transports: Transport[]
+  flights: Flight[]
+  budget: BudgetItem[]
+  expenses: Expense[]
+  checklist: ChecklistItem[]
+  bookings: Booking[]
+  /** Unità di valuta base per 1 unità della valuta locale (es. 0,0056 EUR per 1 JPY). */
+  fxRate?: number
 }

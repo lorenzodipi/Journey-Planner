@@ -1,8 +1,19 @@
 import type { Category, Day, DayItem, ItemKind, Place, PlaceStatus, ThemeName, Traveler, Trip } from '../types'
 import { todayYmd } from './dates'
-import { supabase } from './supabase'
+import { client } from './db'
+import { queryLogistics } from './logisticsApi'
+import { queryMoney } from './moneyApi'
+import { queryPlanning } from './planningApi'
+import { mapBookings, mapChecklist } from './planningData'
+import type { BookingRow, ChecklistRow } from './planningData'
+import { mapBudget, mapExpenses } from './moneyData'
+import type { BudgetItemRow, BudgetShareRow, ExpenseRow, ExpenseShareRow } from './moneyData'
+import { mapFlights, mapStays, mapTransports } from './logistics'
+import type { FlightLegRow, FlightRow, StayRow, TransportRow } from './logistics'
 import { DEFAULT_CENTER } from './tripForm'
 import { enumerateDates, planDays } from './tripDays'
+
+export { describeError } from './db'
 
 // Accesso ai dati dei viaggi. La sicurezza non dipende da questo codice ma dalla
 // Row Level Security del database: qui si legge e si scrive come utente loggato.
@@ -81,6 +92,16 @@ interface Extras {
   places: PlaceRow[]
   categories: CategoryRow[]
   items: ItemRow[]
+  stays: StayRow[]
+  transports: TransportRow[]
+  flights: FlightRow[]
+  legs: FlightLegRow[]
+  budgetItems: BudgetItemRow[]
+  budgetShares: BudgetShareRow[]
+  expenses: ExpenseRow[]
+  expenseShares: ExpenseShareRow[]
+  checklist: ChecklistRow[]
+  bookings: BookingRow[]
 }
 
 interface TripRow {
@@ -93,27 +114,11 @@ interface TripRow {
   theme: string
   base_currency: string
   local_currency: string | null
+  fx_rate?: number | string | null
   center_lat: number | null
   center_lng: number | null
   trip_travelers: TravelerRow[]
   days: DayRow[]
-}
-
-function client() {
-  if (!supabase) throw new Error('Supabase non è configurato.')
-  if (!navigator.onLine) throw new Error('Sei offline: la modifica non è stata salvata. Riprova con la connessione.')
-  return supabase
-}
-
-/** Messaggi comprensibili al posto degli errori grezzi del database. */
-export function describeError(error: unknown): string {
-  const message = error instanceof Error ? error.message : typeof error === 'object' && error && 'message' in error ? String((error as { message: unknown }).message) : String(error)
-  if (/abort|timed? ?out/i.test(message)) return 'Il server non risponde. Controlla la connessione e riprova.'
-  if (/failed to fetch|networkerror|load failed/i.test(message)) return 'Connessione assente o instabile. Riprova.'
-  if (/row-level security|permission denied/i.test(message)) return 'Non hai il permesso per questa operazione.'
-  if (/duplicate key/i.test(message)) return 'Esiste già un elemento uguale.'
-  if (/trips_dates_ok/i.test(message)) return 'La data di fine non può essere prima di quella di inizio.'
-  return message
 }
 
 function mapTrip(row: TripRow, extras: Extras): Trip {
@@ -197,13 +202,21 @@ function mapTrip(row: TripRow, extras: Extras): Trip {
     days,
     places,
     categories,
+    stays: mapStays(extras.stays, row.id),
+    transports: mapTransports(extras.transports, row.id),
+    flights: mapFlights(extras.flights, extras.legs, row.id),
+    budget: mapBudget(extras.budgetItems, extras.budgetShares, row.id),
+    expenses: mapExpenses(extras.expenses, extras.expenseShares, row.id),
+    checklist: mapChecklist(extras.checklist, row.id),
+    bookings: mapBookings(extras.bookings, row.id),
+    fxRate: row.fx_rate == null ? undefined : Number(row.fx_rate),
   }
 }
 
 export async function fetchTrips(): Promise<Trip[]> {
   const db = client()
   // Richieste separate e in parallelo: più semplici e robuste degli "embed" annidati.
-  const [trips, places, categories, items] = await Promise.all([
+  const [trips, places, categories, items, [stays, transports, flights, legs], [budgetItems, budgetShares, expenses, expenseShares], [checklist, bookings]] = await Promise.all([
     db
       .from('trips')
       .select('*, trip_travelers(*), days(*)')
@@ -212,12 +225,25 @@ export async function fetchTrips(): Promise<Trip[]> {
     db.from('places').select('*').is('deleted_at', null),
     db.from('categories').select('*').is('deleted_at', null),
     db.from('day_items').select('*').is('deleted_at', null),
+    queryLogistics(db),
+    queryMoney(db),
+    queryPlanning(db),
   ])
-  for (const r of [trips, places, categories, items]) if (r.error) throw r.error
+  for (const r of [trips, places, categories, items, stays, transports, flights, legs, budgetItems, budgetShares, expenses, expenseShares, checklist, bookings]) if (r.error) throw r.error
   const extras: Extras = {
     places: places.data as PlaceRow[],
     categories: categories.data as CategoryRow[],
     items: items.data as ItemRow[],
+    stays: stays.data as StayRow[],
+    transports: transports.data as TransportRow[],
+    flights: flights.data as FlightRow[],
+    legs: legs.data as FlightLegRow[],
+    budgetItems: budgetItems.data as BudgetItemRow[],
+    budgetShares: budgetShares.data as BudgetShareRow[],
+    expenses: expenses.data as ExpenseRow[],
+    expenseShares: expenseShares.data as ExpenseShareRow[],
+    checklist: checklist.data as ChecklistRow[],
+    bookings: bookings.data as BookingRow[],
   }
   return (trips.data as TripRow[]).map((row) => mapTrip(row, extras))
 }

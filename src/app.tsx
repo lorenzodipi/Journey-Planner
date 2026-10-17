@@ -3,13 +3,19 @@ import { Route, Router, Switch } from 'wouter-preact'
 import { useHashLocation } from 'wouter-preact/use-hash-location'
 import { useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
+import { Alloggi } from './pages/Alloggi'
 import { Altro } from './pages/Altro'
+import { Budget } from './pages/Budget'
+import { Checklist } from './pages/Checklist'
+import { Prenotazioni } from './pages/Prenotazioni'
 import { Giorni } from './pages/Giorni'
 import { Login } from './pages/Login'
 import { Luoghi } from './pages/Luoghi'
 import { Mappa } from './pages/Mappa'
 import { Oggi } from './pages/Oggi'
+import { Trasporti } from './pages/Trasporti'
 import { PrimoViaggio } from './pages/PrimoViaggio'
+import { Spese } from './pages/Spese'
 import { BottomNav } from './ui/BottomNav'
 import { ToastHost } from './ui/ToastHost'
 import { EmptyState } from './ui/PageHeader'
@@ -88,6 +94,12 @@ export function App() {
           <Route path="/mappa" component={Mappa} />
           <Route path="/luoghi" component={Luoghi} />
           <Route path="/altro" component={Altro} />
+          <Route path="/altro/alloggi" component={Alloggi} />
+          <Route path="/altro/trasporti" component={Trasporti} />
+          <Route path="/altro/budget" component={Budget} />
+          <Route path="/altro/spese" component={Spese} />
+          <Route path="/altro/checklist" component={Checklist} />
+          <Route path="/altro/prenotazioni" component={Prenotazioni} />
           <Route>
             <div class="px-4 pt-10">
               <EmptyState title="Pagina non trovata" text="Torna alla scheda Oggi dalla barra in basso." />

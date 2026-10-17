@@ -25,8 +25,9 @@ await db.exec(`
   insert into auth.users values ('${A}','a@test.it'),('${B}','b@test.it'),('${C}','c@test.it');
 `)
 
-const sql = fs.readFileSync(new URL('../migrations/0001_init.sql', import.meta.url), 'utf8')
-await db.exec(sql)
+for (const file of ['0001_init.sql', '0002_trip_fx.sql']) {
+  await db.exec(fs.readFileSync(new URL(`../migrations/${file}`, import.meta.url), 'utf8'))
+}
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -172,6 +173,33 @@ await asUser(B)
 check('B non vede luoghi e tappe del viaggio di A', (await db.query(`select 1 from places where trip_id=$1`, [s2])).rows.length === 0 &&
   (await db.query(`select 1 from day_items where trip_id=$1`, [s2])).rows.length === 0)
 await throws('B non può creare luoghi nel viaggio di A', () => db.query(`insert into places (trip_id,name) values ($1,'x')`, [s2]))
+await asUser(A)
+
+// ---- soldi: tasso di cambio, budget e spese ----
+await throws('tasso di cambio zero o negativo rifiutato', () => db.query(`update trips set fx_rate = 0 where id=$1`, [s2]))
+await db.query(`update trips set fx_rate = 0.00562 where id=$1`, [s2])
+check('A imposta il tasso di cambio del viaggio', Number((await db.query(`select fx_rate from trips where id=$1`, [s2])).rows[0].fx_rate) === 0.00562)
+const trv = (await db.query(`insert into trip_travelers (trip_id,name) values ($1,'Lorenzo') returning id`, [s2])).rows[0].id
+const trvOther = (await db.query(`insert into trip_travelers (trip_id,name) values ($1,'Estraneo') returning id`, [other])).rows[0].id
+const bi = (await db.query(`insert into budget_items (trip_id,label,amount,currency,scope) values ($1,'Treno',30,'EUR','per_person') returning id`, [s2])).rows[0].id
+await db.query(`insert into budget_item_shares (trip_id,budget_item_id,traveler_id,paid) values ($1,$2,$3,true)`, [s2, bi, trv])
+await throws('quota budget: un viaggiatore ammesso una sola volta per voce', () =>
+  db.query(`insert into budget_item_shares (trip_id,budget_item_id,traveler_id) values ($1,$2,$3)`, [s2, bi, trv]))
+await throws('quota budget: non si assegna a un viaggiatore di un altro viaggio', () =>
+  db.query(`insert into budget_item_shares (trip_id,budget_item_id,traveler_id) values ($1,$2,$3)`, [s2, bi, trvOther]))
+const ex = (await db.query(`insert into expenses (trip_id,label,amount,currency,fx_rate,paid_by) values ($1,'Ramen',1200,'JPY',0.00562,$2) returning id`, [s2, trv])).rows[0].id
+await db.query(`insert into expense_shares (trip_id,expense_id,traveler_id,weight) values ($1,$2,$3,1)`, [s2, ex, trv])
+await throws('spesa: chi ha pagato deve essere di questo viaggio', () =>
+  db.query(`insert into expenses (trip_id,label,amount,currency,paid_by) values ($1,'x',1,'EUR',$2)`, [s2, trvOther]))
+await db.query(`delete from budget_item_shares where budget_item_id=$1`, [bi])
+check('quote budget eliminabili (sincronizzazione del modulo)', (await db.query(`select 1 from budget_item_shares where budget_item_id=$1`, [bi])).rows.length === 0)
+await asUser(B)
+await throws('B non può cambiare il tasso del viaggio di A', async () => {
+  const r = await db.query(`update trips set fx_rate = 1 where id=$1 returning id`, [s2])
+  if (r.rows.length === 0) throw new Error('0 righe aggiornate (RLS)')
+})
+check('B non vede budget né spese del viaggio di A', (await db.query(`select 1 from budget_items where trip_id=$1`, [s2])).rows.length === 0 &&
+  (await db.query(`select 1 from expenses where trip_id=$1`, [s2])).rows.length === 0)
 await asUser(A)
 
 console.log(`\n${pass} ok, ${fail} falliti`)

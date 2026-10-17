@@ -41,3 +41,42 @@ export function outstandingForPerson(lines: { amount: number; scope: Scope; paid
 export function convert(amount: number, rate: number): number {
   return round2(amount * rate)
 }
+
+/** Legge un importo scritto a mano ("1.234,50", "12,5", "300"). `null` se vuoto o non valido. */
+export function parseAmount(text: string): number | null {
+  let t = text.trim().replace(/\s/g, '')
+  if (!t) return null
+  if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.') // 1.234,50 -> 1234.50
+  else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '') // 1.234 -> 1234
+  const n = Number(t)
+  return Number.isFinite(n) && n >= 0 ? round2(n) : null
+}
+
+/** Tasso di cambio scritto a mano: come un importo, ma con fino a 6 decimali (0,0056 non diventa 0,01). */
+export function parseRate(text: string): number | null {
+  const n = Number(text.trim().replace(',', '.'))
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 1e6) / 1e6 : null
+}
+
+/** Importo con simbolo di valuta; lo yen non ha decimali. */
+export function formatMoney(amount: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat('it-IT', { style: 'currency', currency }).format(amount)
+  } catch {
+    return `${amount.toFixed(2)} ${currency}`
+  }
+}
+
+/** Importo per un campo di testo, senza zeri inutili ("30" invece di "30.00"). */
+export function amountToText(amount: number | undefined | null): string {
+  return amount == null ? '' : String(amount).replace('.', ',')
+}
+
+/** Somma per valuta: [{ currency: 'EUR', amount: 600 }, …], ordinata per valuta. */
+export function sumByCurrency(items: { amount: number; currency: string }[]): { currency: string; amount: number }[] {
+  const map = new Map<string, number>()
+  for (const i of items) map.set(i.currency, (map.get(i.currency) ?? 0) + i.amount)
+  return Array.from(map, ([currency, amount]) => ({ currency, amount: round2(amount) })).sort((a, b) =>
+    a.currency.localeCompare(b.currency),
+  )
+}

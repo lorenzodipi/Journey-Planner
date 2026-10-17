@@ -65,3 +65,8 @@ export function dayOffset(leg: Leg, fromTz: string, toTz: string): number {
   const b = Date.parse(`${dateInZone(leg.arrive, toTz)}T00:00:00Z`)
   return Math.round((b - a) / 86_400_000)
 }
+
+/** "ven 21 nov" di un istante nel fuso indicato. */
+export function formatDateInZone(iso: string, timeZone: string): string {
+  return new Intl.DateTimeFormat('it-IT', { timeZone, weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(iso))
+}
