@@ -7,6 +7,7 @@ import type { Traveler } from '../types'
 import { SecondaryButton } from '../ui/Field'
 import { Card, PageHeader } from '../ui/PageHeader'
 import { Sheet } from '../ui/Sheet'
+import { ShareForm } from '../ui/ShareForm'
 import { TravelerForm } from '../ui/TravelerForm'
 import { TripForm } from '../ui/TripForm'
 
@@ -23,6 +24,7 @@ type SheetState =
   | { kind: 'new-trip' }
   | { kind: 'edit-trip' }
   | { kind: 'delete-trip' }
+  | { kind: 'share' }
   | { kind: 'new-traveler' }
   | { kind: 'edit-traveler'; traveler: Traveler }
   | null
@@ -43,7 +45,9 @@ export function Altro() {
         ? 'Modifica viaggio'
         : sheet?.kind === 'delete-trip'
           ? 'Eliminare il viaggio?'
-          : sheet?.kind === 'new-traveler'
+          : sheet?.kind === 'share'
+            ? 'Condividi il viaggio'
+            : sheet?.kind === 'new-traveler'
             ? 'Nuovo viaggiatore'
             : 'Modifica viaggiatore'
 
@@ -114,6 +118,16 @@ export function Altro() {
               ))}
             </ul>
           )}
+        </Card>
+
+        <Card>
+          <h2 class="font-display text-lg font-semibold">Accesso</h2>
+          <p class="mt-1 text-sm text-muted">
+            Chi ha un account può vedere e modificare questo viaggio. Crea prima l'utente su Supabase, poi aggiungilo qui con la sua email.
+          </p>
+          <div class="mt-3">
+            <SecondaryButton onClick={() => setSheet({ kind: 'share' })}>Dai accesso a una persona</SecondaryButton>
+          </div>
         </Card>
 
         <Card class="!p-0">
@@ -193,6 +207,8 @@ export function Altro() {
             <SecondaryButton onClick={close}>Annulla</SecondaryButton>
           </div>
         )}
+
+        {sheet?.kind === 'share' && <ShareForm onSubmit={(email) => t.addMember(trip.id, email, 'editor')} onDone={close} />}
 
         {sheet?.kind === 'new-traveler' && (
           <TravelerForm

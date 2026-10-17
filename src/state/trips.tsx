@@ -30,6 +30,7 @@ interface TripsValue {
   addTraveler: (tripId: string, input: TravelerInput) => Result
   updateTraveler: (id: string, input: TravelerInput) => Result
   removeTraveler: (id: string) => Result
+  addMember: (tripId: string, email: string, role: 'editor' | 'viewer') => Result
 }
 
 const DEMO_MESSAGE = 'Anteprima demo: collega Supabase per salvare le modifiche.'
@@ -146,6 +147,7 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     },
     updateTraveler: (id, input) => run(() => api.updateTraveler(id, input)),
     removeTraveler: (id) => run(() => api.removeTraveler(id)),
+    addMember: (tripId, email, role) => run(() => api.addMember(tripId, email, role)),
   }
   if (demo) {
     value.createTrip = () => demoResult

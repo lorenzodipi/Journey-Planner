@@ -235,3 +235,9 @@ export async function removeTraveler(id: string): Promise<void> {
     .eq('id', id)
   if (error) throw error
 }
+
+/** Dà accesso al viaggio a un utente già creato in Supabase (solo l'owner può farlo). */
+export async function addMember(tripId: string, email: string, role: 'editor' | 'viewer'): Promise<void> {
+  const { error } = await client().rpc('add_member_by_email', { _trip: tripId, _email: email.trim(), _role: role })
+  if (error) throw error
+}
