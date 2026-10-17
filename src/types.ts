@@ -180,6 +180,8 @@ export interface ChecklistItem {
   dueDate?: string // "YYYY-MM-DD"
   /** Quanti pezzi (es. 3 magliette). Vuoto = 1. */
   quantity?: number
+  /** Pezzi già presi/fatti, da 0 a `quantity`. Vuoto = nessuno (o tutti, se la voce è segnata fatta). */
+  quantityDone?: number
   position: number
 }
 

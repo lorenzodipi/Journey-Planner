@@ -1,4 +1,5 @@
 import type { ChecklistItem, Expense, Trip } from '../types'
+import { doneCount } from './checklist'
 import { checklistColumns, type ChecklistInput } from './planningData'
 import { expenseColumns, type ExpenseInput } from './moneyData'
 import type { Entry, Local, Op } from './outbox'
@@ -29,6 +30,11 @@ function apply(trips: Trip[], l: Local): Trip[] {
       }))
     case 'checklist.done':
       return patchTrip(trips, null, (t) => ({ ...t, checklist: t.checklist.map((c) => (c.id === l.id ? { ...c, done: l.done } : c)) }))
+    case 'checklist.count':
+      return patchTrip(trips, null, (t) => ({
+        ...t,
+        checklist: t.checklist.map((c) => (c.id === l.id ? { ...c, done: l.done, quantityDone: l.count > 0 && l.count < (c.quantity ?? 1) ? l.count : undefined } : c)),
+      }))
     case 'checklist.deleted':
       return l.deleted ? patchTrip(trips, null, (t) => ({ ...t, checklist: t.checklist.filter((c) => c.id !== l.id) })) : trips
     case 'item.done':
@@ -91,20 +97,29 @@ export function checklistEntry(
   existing?: ChecklistItem,
 ): { ops: Op[]; local: Local; label: string } {
   const id = existing?.id ?? newId()
-  const cols = checklistColumns(input, (existing?.quantity ?? 1) > 1)
+  const hadQuantity = (existing?.quantity ?? 1) > 1
+  const cols = checklistColumns(input, hadQuantity)
+  const quantity = cols.quantity && cols.quantity > 1 ? cols.quantity : undefined
+  // i pezzi già a posto restano, ma non possono superare la nuova quantità
+  const count = Math.min(existing ? doneCount(existing) : 0, quantity ?? 1)
+  const done = quantity ? count >= quantity : hadQuantity ? count >= 1 : (existing?.done ?? false)
   const item: ChecklistItem = {
     id,
     kind: cols.kind,
     text: cols.text,
-    done: existing?.done ?? false,
+    done,
     travelerId: cols.traveler_id ?? undefined,
     dueDate: cols.due_date ?? undefined,
-    quantity: cols.quantity && cols.quantity > 1 ? cols.quantity : undefined,
+    quantity,
+    quantityDone: quantity && count > 0 && count < quantity ? count : undefined,
     position: existing?.position ?? position,
   }
+  // la colonna dei pezzi si scrive solo per le voci con quantità (o per azzerarla)
+  const extra = quantity ? { quantity_done: count, done } : hadQuantity ? { quantity_done: null, done: item.done } : {}
+  const full = { ...cols, ...extra }
   const write: Op = existing
-    ? { k: 'update', table: 'checklist_items', id, patch: cols }
-    : { k: 'upsert', table: 'checklist_items', row: { id, trip_id: tripId, position, ...cols } }
+    ? { k: 'update', table: 'checklist_items', id, patch: full }
+    : { k: 'upsert', table: 'checklist_items', row: { id, trip_id: tripId, position, ...full } }
   return { ops: [write], local: { t: 'checklist.save', tripId, item }, label: `Checklist «${item.text}»` }
 }
 

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { ChecklistItem } from '../types'
+import { checklistEntry } from './outboxLocal'
 import { checklistColumns, mapChecklist } from './planningData'
-import { parseQuantity, progress, TEMPLATE, templateToAdd, visibleItems } from './checklist'
+import { countChange, doneCount, parseQuantity, progress, TEMPLATE, templateToAdd, visibleItems } from './checklist'
 
 const item = (over: Partial<ChecklistItem>): ChecklistItem => ({ id: 'x', kind: 'todo', text: 't', done: false, position: 1000, ...over })
 
@@ -71,5 +72,70 @@ describe('quantità', () => {
       { ...row, id: 'd', text: 'D', position: 4 },
     ], 't')
     expect(list.map((x) => x.quantity)).toEqual([3, undefined, undefined, undefined])
+  })
+})
+
+describe('pezzi a posto', () => {
+  const multi = (over: Partial<ChecklistItem> = {}) => item({ quantity: 10, ...over })
+
+  it('conta i pezzi: tutti se fatta, i parziali altrimenti, 1 pezzo se senza quantità', () => {
+    expect(doneCount(item({ done: true }))).toBe(1)
+    expect(doneCount(item({}))).toBe(0)
+    expect(doneCount(multi({ done: true }))).toBe(10)
+    expect(doneCount(multi({ quantityDone: 8 }))).toBe(8)
+    expect(doneCount(multi({}))).toBe(0)
+    expect(doneCount(multi({ quantityDone: 99 }))).toBe(9) // mai "tutti" se non è segnata fatta
+  })
+
+  it('imposta i pezzi e deduce se la voce è fatta', () => {
+    expect(countChange({ quantity: 10 }, 8)).toMatchObject({ count: 8, done: false, patch: { quantity_done: 8, done: false } })
+    expect(countChange({ quantity: 10 }, 10)).toMatchObject({ count: 10, done: true })
+    expect(countChange({ quantity: 10 }, 15).count).toBe(10)
+    expect(countChange({ quantity: 10 }, -3)).toMatchObject({ count: 0, done: false })
+    expect(countChange({}, 1)).toMatchObject({ count: 1, done: true })
+  })
+
+  it('mappa dal database solo i pezzi parziali', () => {
+    const row = { trip_id: 't', traveler_id: null, kind: 'packing' as const, text: 'x', due_date: null, position: 1 }
+    const r = (id: string, done: boolean, quantity: number | null, quantity_done: number | null) => ({ ...row, id, done, quantity, quantity_done })
+    const list = mapChecklist([r('a', false, 10, 8), r('b', true, 10, 10), r('c', false, 10, 0), r('d', false, 10, null), r('e', false, null, 3)], 't')
+    expect(list.map((x) => x.quantityDone)).toEqual([8, undefined, undefined, undefined, undefined])
+  })
+})
+
+describe('salvataggio di una voce con quantità', () => {
+  const input = { text: 'Magliette', kind: 'packing' as const, travelerId: null, dueDate: '' }
+  const patchOf = (e: ReturnType<typeof checklistEntry>) => {
+    const op = e.ops[0]
+    return op.k === 'update' ? op.patch : op.k === 'upsert' ? op.row : {}
+  }
+
+  it('una voce nuova con quantità parte da zero pezzi', () => {
+    const e = checklistEntry('t', { ...input, quantity: 10 }, 1000)
+    expect(patchOf(e)).toMatchObject({ quantity: 10, quantity_done: 0, done: false })
+  })
+
+  it('una voce senza quantità non scrive le colonne nuove', () => {
+    const e = checklistEntry('t', { ...input, quantity: 1 }, 1000)
+    expect('quantity' in patchOf(e)).toBe(false)
+    expect('quantity_done' in patchOf(e)).toBe(false)
+  })
+
+  it('abbassando la quantità sotto i pezzi già presi la voce risulta fatta', () => {
+    const old = item({ id: 'a', quantity: 10, quantityDone: 8 })
+    const e = checklistEntry('t', { ...input, quantity: 5 }, 1000, old)
+    expect(patchOf(e)).toMatchObject({ quantity: 5, quantity_done: 5, done: true })
+  })
+
+  it('alzando la quantità di una voce fatta, quella non è più completa', () => {
+    const old = item({ id: 'a', quantity: 3, done: true })
+    const e = checklistEntry('t', { ...input, quantity: 5 }, 1000, old)
+    expect(patchOf(e)).toMatchObject({ quantity: 5, quantity_done: 3, done: false })
+  })
+
+  it('tornando a quantità 1 si azzerano le colonne', () => {
+    const old = item({ id: 'a', quantity: 10, quantityDone: 4 })
+    const e = checklistEntry('t', { ...input, quantity: 1 }, 1000, old)
+    expect(patchOf(e)).toMatchObject({ quantity: null, quantity_done: null, done: true })
   })
 })

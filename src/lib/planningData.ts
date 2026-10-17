@@ -12,6 +12,7 @@ export interface ChecklistRow {
   done: boolean
   due_date: string | null
   quantity?: number | null
+  quantity_done?: number | null
   position: number
 }
 
@@ -40,6 +41,7 @@ export function mapChecklist(rows: ChecklistRow[], tripId: string): ChecklistIte
       travelerId: r.traveler_id ?? undefined,
       dueDate: r.due_date ?? undefined,
       quantity: r.quantity && r.quantity > 1 ? r.quantity : undefined,
+      quantityDone: r.quantity && r.quantity > 1 && r.quantity_done && r.quantity_done > 0 && r.quantity_done < r.quantity ? r.quantity_done : undefined,
       position: r.position,
     }))
     .sort((a, b) => a.position - b.position)

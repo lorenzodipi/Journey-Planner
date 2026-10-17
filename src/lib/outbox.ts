@@ -16,6 +16,7 @@ export type Local =
   | { t: 'expense.deleted'; id: string; deleted: boolean }
   | { t: 'checklist.save'; tripId: string; item: ChecklistItem }
   | { t: 'checklist.done'; id: string; done: boolean }
+  | { t: 'checklist.count'; id: string; count: number; done: boolean }
   | { t: 'checklist.deleted'; id: string; deleted: boolean }
   | { t: 'item.done'; id: string; done: boolean }
   | { t: 'place.status'; id: string; status: PlaceStatus }

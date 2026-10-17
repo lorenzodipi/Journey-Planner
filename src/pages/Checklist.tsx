@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks'
-import { KIND_LABEL, KINDS, parseQuantity, progress, visibleItems } from '../lib/checklist'
+import { doneCount, KIND_LABEL, KINDS, parseQuantity, progress, visibleItems } from '../lib/checklist'
 import { formatShort } from '../lib/dates'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
@@ -27,7 +27,11 @@ export function Checklist() {
 
   async function toggle(i: ChecklistItem) {
     setPending((p) => new Set(p).add(i.id))
-    const message = await t.setChecklistDone(i.id, !i.done)
+    // con una quantità, il segno di spunta mette tutti i pezzi a posto (o li azzera se erano già tutti)
+    const message =
+      (i.quantity ?? 1) > 1
+        ? await t.setChecklistCount(i.id, i.done ? 0 : (i.quantity as number))
+        : await t.setChecklistDone(i.id, !i.done)
     setPending((p) => {
       const n = new Set(p)
       n.delete(i.id)
@@ -47,6 +51,17 @@ export function Checklist() {
       setText('')
       setQty('1')
     }
+  }
+
+  async function setCount(i: ChecklistItem, count: number) {
+    setPending((p) => new Set(p).add(i.id))
+    const message = await t.setChecklistCount(i.id, count)
+    setPending((p) => {
+      const n = new Set(p)
+      n.delete(i.id)
+      return n
+    })
+    if (message) showToast(message)
   }
 
   async function addTemplate() {
@@ -158,26 +173,33 @@ export function Checklist() {
               {items.map((i) => {
                 const owner = i.travelerId ? person.get(i.travelerId) : undefined
                 const late = !i.done && !!i.dueDate && i.dueDate < today
+                const multi = (i.quantity ?? 1) > 1
+                const have = doneCount(i)
+                const partial = multi && have > 0 && !i.done
                 return (
                   <li class="flex items-center">
                     <button
                       type="button"
                       role="checkbox"
-                      aria-checked={i.done}
-                      aria-label={`${i.done ? 'Da rifare' : 'Fatto'}: ${i.text}`}
+                      aria-checked={partial ? 'mixed' : i.done}
+                      aria-label={`${i.done ? 'Da rifare' : multi ? 'Tutti a posto' : 'Fatto'}: ${i.text}`}
                       disabled={pending.has(i.id)}
                       onClick={() => void toggle(i)}
                       class="grid min-h-14 w-14 shrink-0 place-items-center disabled:opacity-50"
                     >
-                      <span class={`grid h-6 w-6 place-items-center rounded-md border-2 text-sm ${i.done ? 'border-accent bg-accent text-accent-ink' : 'border-line'}`}>
-                        {i.done ? '✓' : ''}
+                      <span
+                        class={`grid h-6 w-6 place-items-center rounded-md border-2 text-sm ${
+                          i.done ? 'border-accent bg-accent text-accent-ink' : partial ? 'border-accent text-accent' : 'border-line'
+                        }`}
+                      >
+                        {i.done ? '✓' : partial ? '–' : ''}
                       </span>
                     </button>
                     <button type="button" onClick={() => setEdit(i)} class="min-h-14 min-w-0 flex-1 py-2 pr-4 text-left">
                       <span class={`block ${i.done ? 'text-muted line-through' : ''}`}>
-                        {i.quantity && i.quantity > 1 && (
+                        {multi && (
                           <span class={`mr-1.5 inline-block rounded-full px-2 text-sm font-semibold tabular-nums ${i.done ? 'bg-line text-muted' : 'bg-accent-soft text-accent'}`}>
-                            {i.quantity}×
+                            {have}/{i.quantity}
                           </span>
                         )}
                         {i.text}
@@ -194,6 +216,28 @@ export function Checklist() {
                         </span>
                       )}
                     </button>
+                    {multi && (
+                      <div class="mr-2 flex shrink-0 items-center" role="group" aria-label={`Pezzi a posto: ${i.text}`}>
+                        <button
+                          type="button"
+                          aria-label="Un pezzo in meno"
+                          disabled={pending.has(i.id) || have <= 0}
+                          onClick={() => void setCount(i, have - 1)}
+                          class="grid h-11 w-11 place-items-center rounded-full text-xl text-muted disabled:opacity-30"
+                        >
+                          −
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Un pezzo in più"
+                          disabled={pending.has(i.id) || have >= (i.quantity as number)}
+                          onClick={() => void setCount(i, have + 1)}
+                          class="grid h-11 w-11 place-items-center rounded-full bg-accent-soft text-xl text-accent disabled:opacity-30"
+                        >
+                          +
+                        </button>
+                      </div>
+                    )}
                   </li>
                 )
               })}

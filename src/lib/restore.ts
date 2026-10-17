@@ -376,9 +376,13 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
         done: bool(c.done),
         travelerId: who && travelerIds.has(who) ? who : undefined,
         dueDate: ymd(c.dueDate),
-        quantity: (() => {
+        ...(() => {
           const q = num(c.quantity)
-          return q !== undefined && q >= 2 ? Math.min(Math.floor(q), 999) : undefined
+          const quantity = q !== undefined && q >= 2 ? Math.min(Math.floor(q), 999) : undefined
+          // i pezzi già a posto: solo parziali (da 1 a quantità-1) e solo se la voce non è già fatta
+          const d = num(c.quantityDone)
+          const partial = quantity && !bool(c.done) && d !== undefined && d >= 1 ? Math.min(Math.floor(d), quantity - 1) : undefined
+          return { quantity, quantityDone: partial }
         })(),
         position: num(c.position) ?? (i + 1) * 1000,
       }
@@ -681,6 +685,7 @@ export function buildSteps(trip: Trip, tripId: string, newId: () => string): Res
 
   // la colonna quantity si scrive solo se serve (il file può arrivare da un database senza la colonna)
   const anyQuantity = trip.checklist.some((c) => (c.quantity ?? 1) > 1)
+  const anyPartial = trip.checklist.some((c) => (c.quantityDone ?? 0) > 0)
   const checklist = trip.checklist.map((c) => ({
     id: newId(),
     trip_id: tripId,
@@ -690,6 +695,7 @@ export function buildSteps(trip: Trip, tripId: string, newId: () => string): Res
     done: c.done,
     due_date: nul(c.dueDate),
     ...(anyQuantity ? { quantity: c.quantity && c.quantity > 1 ? c.quantity : null } : {}),
+    ...(anyPartial ? { quantity_done: c.quantityDone ?? null } : {}),
     position: c.position,
   }))
 

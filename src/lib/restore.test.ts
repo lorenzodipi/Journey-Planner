@@ -285,6 +285,19 @@ describe('buildSteps', () => {
     expect(rows.map((r) => r.quantity)).toEqual([3, null, null])
   })
 
+  it('i pezzi già a posto si ripristinano solo se parziali', () => {
+    const f = parseExport(exported({ ...trip, checklist: [
+      { id: 'k1', kind: 'packing', text: 'Magliette', done: false, quantity: 10, quantityDone: 8, position: 1 },
+      { id: 'k2', kind: 'packing', text: 'Calzini', done: true, quantity: 5, quantityDone: 2, position: 2 },
+      { id: 'k3', kind: 'packing', text: 'Zaino', done: false, quantityDone: 4, position: 3 },
+      { id: 'k4', kind: 'packing', text: 'Guanti', done: false, quantity: 4, quantityDone: 40, position: 4 },
+    ] }))
+    if (!f.ok) throw new Error(f.error)
+    expect(f.trips[0].trip.checklist.map((c) => c.quantityDone)).toEqual([8, undefined, undefined, 3])
+    const rows = buildSteps(f.trips[0].trip, 'T', () => crypto.randomUUID()).find((x) => x.table === 'checklist_items')?.rows ?? []
+    expect(rows.map((r) => r.quantity_done)).toEqual([8, null, null, 3])
+  })
+
   it('tripRow usa il titolo scelto, altrimenti quello del file', () => {
     expect(tripRow(parsed.trips[0].trip, 'Giappone (ripristino)').title).toBe('Giappone (ripristino)')
     expect(tripRow(parsed.trips[0].trip, '   ').title).toBe('Giappone 2026')

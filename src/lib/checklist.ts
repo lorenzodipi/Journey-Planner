@@ -44,6 +44,24 @@ export function parseQuantity(raw: string | number | undefined | null): number {
   return Math.min(Math.floor(n), MAX_QUANTITY)
 }
 
+/** Quanti pezzi della voce sono già a posto (una voce senza quantità vale 1 pezzo). */
+export function doneCount(i: Pick<ChecklistItem, 'done' | 'quantity' | 'quantityDone'>): number {
+  const q = i.quantity && i.quantity > 1 ? i.quantity : 1
+  if (i.done) return q
+  return q > 1 ? Math.max(0, Math.min(i.quantityDone ?? 0, q - 1)) : 0
+}
+
+/** Cosa salvare quando i pezzi a posto diventano `count` (limitati tra 0 e la quantità). */
+export function countChange(
+  i: Pick<ChecklistItem, 'quantity'>,
+  count: number,
+): { count: number; done: boolean; patch: { quantity_done: number; done: boolean } } {
+  const q = i.quantity && i.quantity > 1 ? i.quantity : 1
+  const n = Math.max(0, Math.min(Math.floor(count), q))
+  const done = n >= q
+  return { count: n, done, patch: { quantity_done: n, done } }
+}
+
 export function progress(items: Pick<ChecklistItem, 'done'>[]): { done: number; total: number } {
   return { done: items.filter((i) => i.done).length, total: items.length }
 }

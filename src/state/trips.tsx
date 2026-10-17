@@ -6,6 +6,7 @@ import { useAuth } from '../lib/auth'
 import { clearSnapshot, loadActiveId, loadSnapshot, saveActiveId, saveSnapshot } from '../lib/cache'
 import { clearQueue, flushQueue, loadQueue, saveQueue, type Entry, type Local, type Op } from '../lib/outbox'
 import { execOp } from '../lib/outboxExec'
+import { countChange } from '../lib/checklist'
 import { applyQueue, checklistEntry, deletedPatch, expenseEntry } from '../lib/outboxLocal'
 import { showToast } from './toast'
 import { positionForNew, positionForStep } from '../lib/itemOrder'
@@ -82,6 +83,8 @@ interface TripsValue {
   createChecklistItem: (tripId: string, input: ChecklistInput) => Result
   updateChecklistItem: (id: string, input: ChecklistInput) => Result
   setChecklistDone: (id: string, done: boolean) => Result
+  /** Imposta quanti pezzi di una voce con quantità sono già a posto. */
+  setChecklistCount: (id: string, count: number) => Result
   setChecklistDeleted: (id: string, deleted: boolean) => Result
   addChecklistTemplate: (tripId: string) => Result
   createBooking: (tripId: string, input: BookingInput) => Result
@@ -384,6 +387,12 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     },
     setChecklistDone: (id, done) =>
       queued('Checklist', [{ k: 'update', table: 'checklist_items', id, patch: { done } }], { t: 'checklist.done', id, done }),
+    setChecklistCount: (id, count) => {
+      const item = trips.flatMap((x) => x.checklist).find((c) => c.id === id)
+      if (!item) return Promise.resolve('Voce non trovata.')
+      const c = countChange(item, count)
+      return queued('Checklist', [{ k: 'update', table: 'checklist_items', id, patch: c.patch }], { t: 'checklist.count', id, count: c.count, done: c.done })
+    },
     setChecklistDeleted: (id, deleted) =>
       queued('Checklist', [{ k: 'update', table: 'checklist_items', id, patch: deletedPatch(deleted) }], { t: 'checklist.deleted', id, deleted }),
     addChecklistTemplate: (tripId) => run(() => planning.addChecklistTemplate(tripId, trips.find((x) => x.id === tripId)?.checklist ?? [])),

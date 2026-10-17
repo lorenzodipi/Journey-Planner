@@ -25,7 +25,7 @@ await db.exec(`
   insert into auth.users values ('${A}','a@test.it'),('${B}','b@test.it'),('${C}','c@test.it');
 `)
 
-for (const file of ['0001_init.sql', '0002_trip_fx.sql', '0003_service_role_import.sql', '0004_stays_dinner.sql', '0005_transport_coords.sql', '0006_traveler_accounts.sql']) {
+for (const file of ['0001_init.sql', '0002_trip_fx.sql', '0003_service_role_import.sql', '0004_stays_dinner.sql', '0005_transport_coords.sql', '0006_traveler_accounts.sql', '0007_checklist_quantity_done.sql']) {
   await db.exec(fs.readFileSync(new URL(`../migrations/${file}`, import.meta.url), 'utf8'))
 }
 console.log('MIGRAZIONE OK')
@@ -271,6 +271,10 @@ await db.query(`insert into checklist_items (trip_id,text,kind,quantity) values 
 check('voce checklist con quantità', true)
 await db.query(`insert into checklist_items (trip_id,text,kind) values ($1,'Passaporto','docs')`, [t])
 check('voce checklist senza quantità (= 1)', (await db.query(`select quantity from checklist_items where text='Passaporto'`)).rows[0].quantity === null)
+await db.query(`update checklist_items set quantity_done = 2 where text='Magliette'`)
+check('pezzi già presi (2 su 3)', (await db.query(`select quantity_done from checklist_items where text='Magliette'`)).rows[0].quantity_done === 2)
+await throws('più pezzi della quantità rifiutati', () => db.query(`update checklist_items set quantity_done = 4 where text='Magliette'`))
+await throws('pezzi negativi rifiutati', () => db.query(`update checklist_items set quantity_done = -1 where text='Magliette'`))
 await throws('quantità zero rifiutata', () => db.query(`insert into checklist_items (trip_id,text,quantity) values ($1,'x',0)`, [t]))
 await throws('quantità enorme rifiutata', () => db.query(`insert into checklist_items (trip_id,text,quantity) values ($1,'x',1000)`, [t]))
 
