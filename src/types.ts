@@ -72,6 +72,7 @@ export interface Stay {
   totalCost?: number // per tutti i viaggiatori
   currency: string
   breakfast: boolean
+  dinner: boolean
   kitchen: boolean
   booked: boolean
   paid: boolean

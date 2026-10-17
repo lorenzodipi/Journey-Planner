@@ -54,7 +54,7 @@ describe('riepilogo budget', () => {
     const l = logisticsLines({
       travelers: [{ id: 't1', name: 'A', color: '#000' }, { id: 't2', name: 'B', color: '#000' }],
       flights: [{ id: 'f', title: 'Andata', cost: 600, currency: 'EUR', scope: 'per_person', paid: true, legs: [] }],
-      stays: [{ id: 's', name: 'Hotel', city: '', checkIn: '2026-11-22', checkOut: '2026-11-26', totalCost: 800, currency: 'EUR', breakfast: false, kitchen: false, booked: true, paid: false }],
+      stays: [{ id: 's', name: 'Hotel', city: '', checkIn: '2026-11-22', checkOut: '2026-11-26', totalCost: 800, currency: 'EUR', breakfast: false, dinner: false, kitchen: false, booked: true, paid: false }],
       transports: [{ id: 'x', from: 'A', to: 'B', mode: 'train', cost: 20, currency: 'EUR', scope: 'per_person', bought: false }, { id: 'y', from: 'C', to: 'D', mode: 'bus', currency: 'EUR', scope: 'per_person', bought: false }],
     })
     expect(l.map((x) => x.category)).toEqual(['Voli', 'Alloggi', 'Trasporti'])

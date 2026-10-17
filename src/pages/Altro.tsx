@@ -12,10 +12,6 @@ import { ShareForm } from '../ui/ShareForm'
 import { TravelerForm } from '../ui/TravelerForm'
 import { TripForm } from '../ui/TripForm'
 
-const upcoming = [
-  { title: 'Impostazioni', text: 'Tasso di cambio, esporta i dati', sprint: 4 },
-]
-
 const sections = [
   {
     href: '/altro/alloggi',
@@ -47,6 +43,11 @@ const sections = [
     href: '/altro/prenotazioni',
     title: 'Prenotazioni e documenti',
     text: (t: Trip) => (t.bookings.length ? `${t.bookings.length} ${t.bookings.length === 1 ? 'prenotazione' : 'prenotazioni'}` : 'Codici, link e biglietti, anche offline'),
+  },
+  {
+    href: '/altro/impostazioni',
+    title: 'Impostazioni',
+    text: () => 'Esporta i dati, copia sul telefono, info',
   },
 ]
 
@@ -171,17 +172,6 @@ export function Altro() {
                   </span>
                   <span aria-hidden="true" class="text-muted">›</span>
                 </Link>
-              </li>
-            ))}
-            {upcoming.map((s) => (
-              <li class="flex min-h-16 items-center gap-3 px-4 py-3 opacity-80">
-                <div class="min-w-0 flex-1">
-                  <p class="font-medium">{s.title}</p>
-                  <p class="truncate text-xs text-muted">{s.text}</p>
-                </div>
-                <span class="shrink-0 rounded-full bg-line px-2.5 py-1 text-[11px] font-medium text-muted">
-                  Sprint {s.sprint}
-                </span>
               </li>
             ))}
           </ul>

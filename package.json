@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:sql": "node supabase/tests/rls.test.mjs"
+    "test:sql": "node supabase/tests/rls.test.mjs",
+    "import:sheet": "node --env-file-if-exists=.env.local scripts/import-sheet/import.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
@@ -27,6 +28,7 @@
     "@electric-sql/pglite": "^0.5.10",
     "@preact/preset-vite": "^2.10.6",
     "@tailwindcss/vite": "^4.3.3",
+    "read-excel-file": "^9.3.12",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",

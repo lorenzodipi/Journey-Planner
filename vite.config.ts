@@ -8,6 +8,8 @@ const base = '/Journey-Planner/'
 
 export default defineConfig({
   base,
+  // data di costruzione: in Impostazioni si vede quale versione sta girando sul telefono
+  define: { __BUILD_TIME__: JSON.stringify(new Date().toISOString()) },
   plugins: [
     preact(),
     tailwindcss(),
@@ -51,5 +53,5 @@ export default defineConfig({
     }),
   ],
   build: { target: 'es2022' },
-  test: { environment: 'node', include: ['src/**/*.test.ts'] },
+  test: { environment: 'node', include: ['src/**/*.test.ts', 'scripts/**/*.test.mjs'] },
 })

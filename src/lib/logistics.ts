@@ -18,6 +18,7 @@ export interface StayRow {
   total_cost: number | string | null
   currency: string
   breakfast: boolean
+  dinner?: boolean // assente finché non è applicata la migrazione 0004
   kitchen: boolean
   booked: boolean
   paid: boolean
@@ -89,6 +90,7 @@ export function mapStays(rows: StayRow[], tripId: string): Stay[] {
       totalCost: num(r.total_cost),
       currency: r.currency.trim(),
       breakfast: r.breakfast,
+      dinner: r.dinner ?? false,
       kitchen: r.kitchen,
       booked: r.booked,
       paid: r.paid,
@@ -166,6 +168,7 @@ export interface StayInput {
   totalCost: number | null
   currency: string
   breakfast: boolean
+  dinner: boolean
   kitchen: boolean
   booked: boolean
   paid: boolean
@@ -187,6 +190,7 @@ export function stayColumns(i: StayInput) {
     total_cost: i.totalCost,
     currency: i.currency.trim().toUpperCase() || 'EUR',
     breakfast: i.breakfast,
+    dinner: i.dinner,
     kitchen: i.kitchen,
     booked: i.booked,
     paid: i.paid,

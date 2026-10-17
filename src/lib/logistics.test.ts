@@ -101,8 +101,14 @@ describe('alloggi', () => {
   it('pulisce i campi e normalizza la valuta', () => {
     const c = stayColumns({
       name: ' Hotel Sakura ', city: ' Tokyo ', checkIn: '2026-11-22', checkOut: '2026-11-26', checkInInfo: '', checkOutInfo: ' entro 10:30 ',
-      address: '', mapsUrl: '', totalCost: 600, currency: 'jpy', breakfast: true, kitchen: false, booked: true, paid: false, notes: '',
+      address: '', mapsUrl: '', totalCost: 600, currency: 'jpy', breakfast: true, dinner: false, kitchen: false, booked: true, paid: false, notes: '',
     })
     expect(c).toMatchObject({ name: 'Hotel Sakura', city: 'Tokyo', check_in_info: null, check_out_info: 'entro 10:30', currency: 'JPY', total_cost: 600 })
+  })
+
+  it('salva colazione e cena separatamente', () => {
+    const base = { name: 'Ryokan', city: '', checkIn: '2026-11-24', checkOut: '2026-11-25', checkInInfo: '', checkOutInfo: '', address: '', mapsUrl: '', totalCost: null, currency: 'JPY', kitchen: false, booked: true, paid: true, notes: '' }
+    expect(stayColumns({ ...base, breakfast: true, dinner: true })).toMatchObject({ breakfast: true, dinner: true })
+    expect(stayColumns({ ...base, breakfast: false, dinner: true })).toMatchObject({ breakfast: false, dinner: true })
   })
 })

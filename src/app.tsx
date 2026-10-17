@@ -9,6 +9,7 @@ import { Budget } from './pages/Budget'
 import { Checklist } from './pages/Checklist'
 import { Prenotazioni } from './pages/Prenotazioni'
 import { Giorni } from './pages/Giorni'
+import { Impostazioni } from './pages/Impostazioni'
 import { Login } from './pages/Login'
 import { Luoghi } from './pages/Luoghi'
 import { Mappa } from './pages/Mappa'
@@ -17,12 +18,13 @@ import { Trasporti } from './pages/Trasporti'
 import { PrimoViaggio } from './pages/PrimoViaggio'
 import { Spese } from './pages/Spese'
 import { BottomNav } from './ui/BottomNav'
+import { OutboxBanner } from './ui/OutboxBanner'
 import { ToastHost } from './ui/ToastHost'
 import { EmptyState } from './ui/PageHeader'
 
 export function App() {
   const auth = useAuth()
-  const { active: trip, status, error, stale, refresh } = useTrips()
+  const { active: trip, status, error, refresh } = useTrips()
 
   // Il tema cambia con il viaggio attivo
   const theme = trip?.theme ?? 'default'
@@ -80,14 +82,7 @@ export function App() {
             Anteprima demo · dati fittizi
           </p>
         )}
-        {stale && auth.status === 'signed-in' && (
-          <p
-            class="bg-accent-soft px-4 py-2 text-center text-xs font-medium text-accent"
-            style={{ paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}
-          >
-            Dati salvati sul telefono · le modifiche richiedono la connessione
-          </p>
-        )}
+        <OutboxBanner />
         <Switch>
           <Route path="/" component={Oggi} />
           <Route path="/giorni" component={Giorni} />
@@ -100,6 +95,7 @@ export function App() {
           <Route path="/altro/spese" component={Spese} />
           <Route path="/altro/checklist" component={Checklist} />
           <Route path="/altro/prenotazioni" component={Prenotazioni} />
+          <Route path="/altro/impostazioni" component={Impostazioni} />
           <Route>
             <div class="px-4 pt-10">
               <EmptyState title="Pagina non trovata" text="Torna alla scheda Oggi dalla barra in basso." />

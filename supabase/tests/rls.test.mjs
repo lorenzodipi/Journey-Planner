@@ -10,7 +10,7 @@ const C = '33333333-3333-3333-3333-333333333333'
 
 // --- stub di ciò che Supabase fornisce già ---
 await db.exec(`
-  create role anon nologin; create role authenticated nologin;
+  create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
   create schema auth; create schema storage;
   create table auth.users (id uuid primary key, email text);
   create function auth.uid() returns uuid language sql stable as $$
@@ -25,7 +25,7 @@ await db.exec(`
   insert into auth.users values ('${A}','a@test.it'),('${B}','b@test.it'),('${C}','c@test.it');
 `)
 
-for (const file of ['0001_init.sql', '0002_trip_fx.sql']) {
+for (const file of ['0001_init.sql', '0002_trip_fx.sql', '0003_service_role_import.sql']) {
   await db.exec(fs.readFileSync(new URL(`../migrations/${file}`, import.meta.url), 'utf8'))
 }
 console.log('MIGRAZIONE OK')
@@ -200,6 +200,18 @@ await throws('B non può cambiare il tasso del viaggio di A', async () => {
 })
 check('B non vede budget né spese del viaggio di A', (await db.query(`select 1 from budget_items where trip_id=$1`, [s2])).rows.length === 0 &&
   (await db.query(`select 1 from expenses where trip_id=$1`, [s2])).rows.length === 0)
+await asUser(A)
+
+// service_role (script di import): solo le tabelle concesse, nessuna cancellazione
+await asUser(null, 'service_role')
+const svcTrip = (await db.query(`select id from trips limit 1`)).rows
+check('service_role legge i viaggi (import)', svcTrip.length === 1)
+await db.query(`insert into categories (trip_id, label, position) values ($1,'Import',1000)`, [svcTrip[0].id])
+check('service_role crea categorie', true)
+await throws('service_role non può eliminare', () => db.query(`delete from categories where trip_id=$1`, [svcTrip[0].id]))
+await throws('service_role non vede le spese', () => db.query(`select 1 from expenses`))
+await asUser(null, 'anon')
+await throws('anon resta senza accesso ai viaggi', () => db.query(`select 1 from trips`))
 await asUser(A)
 
 console.log(`\n${pass} ok, ${fail} falliti`)

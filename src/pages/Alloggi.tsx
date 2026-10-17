@@ -99,9 +99,9 @@ export function Alloggi() {
                           {s.checkOutInfo && `Check-out ${s.checkOutInfo}`}
                         </span>
                       )}
-                      {(s.breakfast || s.kitchen) && (
+                      {(s.breakfast || s.dinner || s.kitchen) && (
                         <span class="mt-1 block text-xs text-muted">
-                          {[s.breakfast && 'Colazione', s.kitchen && 'Cucina'].filter(Boolean).join(' · ')}
+                          {[s.breakfast && 'Colazione', s.dinner && 'Cena', s.kitchen && 'Cucina'].filter(Boolean).join(' · ')}
                         </span>
                       )}
                       {s.totalCost != null && (

@@ -25,6 +25,7 @@ export function StayForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
   const [cost, setCost] = useState(amountToText(initial?.totalCost))
   const [currency, setCurrency] = useState(initial?.currency ?? trip.baseCurrency)
   const [breakfast, setBreakfast] = useState(initial?.breakfast ?? false)
+  const [dinner, setDinner] = useState(initial?.dinner ?? false)
   const [kitchen, setKitchen] = useState(initial?.kitchen ?? false)
   const [booked, setBooked] = useState(initial?.booked ?? false)
   const [paid, setPaid] = useState(initial?.paid ?? false)
@@ -46,7 +47,7 @@ export function StayForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
     setError(null)
     const message = await onSubmit({
       name, city, checkIn, checkOut, checkInInfo, checkOutInfo, address, mapsUrl,
-      totalCost, currency, breakfast, kitchen, booked, paid, notes,
+      totalCost, currency, breakfast, dinner, kitchen, booked, paid, notes,
     })
     setBusy(false)
     if (message) setError(message)
@@ -90,6 +91,7 @@ export function StayForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
 
       <div class="grid grid-cols-2 gap-x-3">
         <CheckField label="Colazione" checked={breakfast} onChange={setBreakfast} />
+        <CheckField label="Cena" checked={dinner} onChange={setDinner} />
         <CheckField label="Cucina" checked={kitchen} onChange={setKitchen} />
         <CheckField label="Prenotato" checked={booked} onChange={setBooked} />
         <CheckField label="Pagato" checked={paid} onChange={setPaid} />

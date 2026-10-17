@@ -4,6 +4,10 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'p
 import { demoTrip } from '../demo/demoTrip'
 import { useAuth } from '../lib/auth'
 import { clearSnapshot, loadActiveId, loadSnapshot, saveActiveId, saveSnapshot } from '../lib/cache'
+import { clearQueue, flushQueue, loadQueue, saveQueue, type Entry, type Local, type Op } from '../lib/outbox'
+import { execOp } from '../lib/outboxExec'
+import { applyQueue, checklistEntry, deletedPatch, expenseEntry } from '../lib/outboxLocal'
+import { showToast } from './toast'
 import { positionForNew, positionForStep } from '../lib/itemOrder'
 import { between } from '../lib/position'
 import * as api from '../lib/tripApi'
@@ -29,6 +33,11 @@ interface TripsValue {
   /** true se i dati mostrati vengono dalla copia locale (offline o rete assente) */
   stale: boolean
   error: string | null
+  /** modifiche fatte senza rete (o non ancora partite) */
+  pending: number
+  /** modifiche rifiutate dal server, da scartare */
+  failed: Entry[]
+  dismissFailed: (id: string) => void
   setActive: (id: string) => void
   refresh: () => Promise<void>
   createTrip: (input: TripInput, travelers: TravelerInput[]) => Result
@@ -88,15 +97,20 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
   const demo = auth.status === 'demo'
   const signedIn = auth.status === 'signed-in'
 
-  const [trips, setTrips] = useState<Trip[]>(demo ? [demoTrip] : [])
+  const [serverTrips, setTrips] = useState<Trip[]>(demo ? [demoTrip] : [])
+  const [queue, setQueueState] = useState<Entry[]>(() => (demo ? [] : loadQueue()))
+  const queueRef = useRef<Entry[]>(queue)
+  const flushing = useRef(false)
+  const trips = useMemo(() => applyQueue(serverTrips, queue), [serverTrips, queue])
   const [status, setStatus] = useState<TripsStatus>(demo ? 'ready' : 'loading')
   const [stale, setStale] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(demo ? demoTrip.id : loadActiveId())
   const hasData = useRef(false)
 
-  const refresh = useCallback(async () => {
-    if (demo) return
+  /** Ricarica dal server. `true` se ci è riuscita. */
+  const load = useCallback(async (): Promise<boolean> => {
+    if (demo) return false
     try {
       const fresh = await api.fetchTrips()
       hasData.current = true
@@ -106,6 +120,7 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
       setStatus('ready')
       saveSnapshot(fresh)
       void syncOfflineFiles(fresh) // biglietti marcati "offline" sul telefono
+      return true
     } catch (e) {
       // Offline o errore: se ho una copia locale la mostro, altrimenti segnalo l'errore.
       if (hasData.current) {
@@ -114,8 +129,13 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
         setError(api.describeError(e))
         setStatus('error')
       }
+      return false
     }
   }, [demo])
+
+  const refresh = useCallback(async () => {
+    await load()
+  }, [load])
 
   useEffect(() => {
     if (demo) return
@@ -123,6 +143,9 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
       if (auth.status === 'signed-out') {
         // niente dati di un utente rimasti sul dispositivo dopo l'uscita
         clearSnapshot()
+        clearQueue()
+        queueRef.current = []
+        setQueueState([])
         hasData.current = false
         setTrips([])
         setActiveId(null)
@@ -137,15 +160,17 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
       setStale(true)
       setStatus('ready')
     }
-    void refresh()
+    void flushThenRefresh()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demo, signedIn, auth.status, refresh])
 
   // Tornando online ricarico i dati
   useEffect(() => {
     if (demo || !signedIn) return
-    const onOnline = () => void refresh()
+    const onOnline = () => void flushThenRefresh()
     window.addEventListener('online', onOnline)
     return () => window.removeEventListener('online', onOnline)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demo, signedIn, refresh])
 
   const active = useMemo(() => trips.find((t) => t.id === activeId) ?? trips[0] ?? null, [trips, activeId])
@@ -154,6 +179,71 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     setActiveId(id)
     saveActiveId(id)
   }, [])
+
+  // ---------- coda delle modifiche offline ----------
+
+  const commit = useCallback((next: Entry[]) => {
+    queueRef.current = next
+    saveQueue(next)
+    setQueueState(next)
+  }, [])
+
+  /** Invia le modifiche in coda; poi ricarica i dati e toglie dalla vista quelle ormai presenti sul server. */
+  const flush = useCallback(async (): Promise<void> => {
+    if (demo || !signedIn || flushing.current || !navigator.onLine) return
+    if (queueRef.current.length === 0) return
+    flushing.current = true
+    let stopped = false
+    try {
+      const res = await flushQueue(queueRef.current, execOp)
+      stopped = res.stopped
+      if (res.sent.length || res.failed.length) {
+        commit(
+          queueRef.current.map((e) => {
+            const f = res.failed.find((x) => x.id === e.id)
+            if (f) return { ...e, error: api.describeError(new Error(f.error)) }
+            return res.sent.includes(e.id) ? { ...e, sent: true } : e
+          }),
+        )
+        if (res.failed.length) showToast(`${res.failed.length === 1 ? 'Una modifica è stata rifiutata' : `${res.failed.length} modifiche sono state rifiutate`} dal server: controlla l'avviso in alto.`)
+      }
+      if (queueRef.current.some((e) => e.sent) && (await load())) commit(queueRef.current.filter((e) => !e.sent))
+    } finally {
+      flushing.current = false
+    }
+    // qualcosa è stato aggiunto mentre si inviava: riparte, a meno che la rete sia caduta
+    if (!stopped && queueRef.current.some((e) => !e.error && !e.sent)) void flush()
+  }, [demo, signedIn, commit, load])
+
+  async function flushThenRefresh() {
+    await flush()
+    await refresh()
+  }
+
+  /** Mette una modifica in coda: si vede subito, parte appena c'è rete. Non fallisce mai per mancanza di connessione. */
+  const queued = (label: string, ops: Op[], local: Local): Result => {
+    if (demo) return demoResult
+    commit([...queueRef.current, { id: crypto.randomUUID(), at: Date.now(), label, ops, local }])
+    void flush()
+    return Promise.resolve(null)
+  }
+
+  const unsent = queue.filter((e) => !e.error && !e.sent).length
+  const failed = queue.filter((e) => e.error)
+
+  // riprova ogni tanto finché ci sono modifiche da inviare, e quando l'app torna in primo piano
+  useEffect(() => {
+    if (demo || !signedIn) return
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void flush()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    const timer = unsent > 0 ? setInterval(() => void flush(), 20_000) : undefined
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      if (timer) clearInterval(timer)
+    }
+  }, [demo, signedIn, unsent, flush])
 
   /** Esegue una scrittura, poi ricarica i dati. */
   const run = useCallback(
@@ -186,6 +276,9 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     active,
     stale,
     error,
+    pending: unsent,
+    failed,
+    dismissFailed: (id) => commit(queueRef.current.filter((e) => e.id !== id)),
     setActive,
     refresh,
     createTrip: (input, travelers) =>
@@ -208,7 +301,7 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
       run(() => api.createPlace(tripId, input, trips.find((t) => t.id === tripId)?.categories ?? [])),
     updatePlace: (id, tripId, input) =>
       run(() => api.updatePlace(id, tripId, input, trips.find((t) => t.id === tripId)?.categories ?? [])),
-    setPlaceStatus: (id, status) => run(() => api.setPlaceStatus(id, status)),
+    setPlaceStatus: (id, status) => queued('Stato del luogo', [{ k: 'update', table: 'places', id, patch: { status } }], { t: 'place.status', id, status }),
     setPlaceDeleted: (id, deleted) => run(() => api.setPlaceDeleted(id, deleted)),
     createItem: (tripId, dayId, input) => {
       const day = trips.find((t) => t.id === tripId)?.days.find((d) => d.id === dayId)
@@ -227,7 +320,7 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
       if (position === null) return null
       return run(() => api.setItemPosition(itemId, position))
     },
-    setItemDone: (id, done) => run(() => api.setItemDone(id, done)),
+    setItemDone: (id, done) => queued('Tappa fatta', [{ k: 'update', table: 'day_items', id, patch: { done } }], { t: 'item.done', id, done }),
     setItemDeleted: (id, deleted) => run(() => api.setItemDeleted(id, deleted)),
     createStay: (tripId, input) => run(() => logistics.createStay(tripId, input)),
     updateStay: (id, input) => run(() => logistics.updateStay(id, input)),
@@ -253,22 +346,36 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     setBudgetItemDeleted: (id, deleted) => run(() => money.setBudgetItemDeleted(id, deleted)),
     createExpense: (tripId, input) => {
       const trip = trips.find((x) => x.id === tripId)
-      return run(() => money.createExpense(tripId, input, trip?.timezone ?? 'UTC', trip?.days ?? []))
+      if (!trip) return Promise.resolve('Viaggio non trovato.')
+      const e = expenseEntry(trip, input)
+      return queued(e.label, e.ops, e.local)
     },
     updateExpense: (tripId, expense, input) => {
       const trip = trips.find((x) => x.id === tripId)
-      return run(() => money.updateExpense(expense, tripId, input, trip?.timezone ?? 'UTC', trip?.days ?? []))
+      if (!trip) return Promise.resolve('Viaggio non trovato.')
+      const e = expenseEntry(trip, input, expense)
+      return queued(e.label, e.ops, e.local)
     },
-    setExpenseDeleted: (id, deleted) => run(() => money.setExpenseDeleted(id, deleted)),
+    setExpenseDeleted: (id, deleted) =>
+      queued('Spesa', [{ k: 'update', table: 'expenses', id, patch: deletedPatch(deleted) }], { t: 'expense.deleted', id, deleted }),
     setFxRate: (tripId, rate) => run(() => money.setTripFxRate(tripId, rate)),
     createChecklistItem: (tripId, input) => {
       const items = trips.find((x) => x.id === tripId)?.checklist.filter((c: ChecklistItem) => c.kind === input.kind) ?? []
       const position = Math.max(0, ...items.map((c) => c.position)) + 1000
-      return run(() => planning.createChecklistItem(tripId, input, position))
+      const e = checklistEntry(tripId, input, position)
+      return queued(e.label, e.ops, e.local)
     },
-    updateChecklistItem: (id, input) => run(() => planning.updateChecklistItem(id, input)),
-    setChecklistDone: (id, done) => run(() => planning.setChecklistDone(id, done)),
-    setChecklistDeleted: (id, deleted) => run(() => planning.setChecklistDeleted(id, deleted)),
+    updateChecklistItem: (id, input) => {
+      const trip = trips.find((x) => x.checklist.some((c) => c.id === id))
+      const existing = trip?.checklist.find((c) => c.id === id)
+      if (!trip || !existing) return Promise.resolve('Voce non trovata.')
+      const e = checklistEntry(trip.id, input, existing.position, existing)
+      return queued(e.label, e.ops, e.local)
+    },
+    setChecklistDone: (id, done) =>
+      queued('Checklist', [{ k: 'update', table: 'checklist_items', id, patch: { done } }], { t: 'checklist.done', id, done }),
+    setChecklistDeleted: (id, deleted) =>
+      queued('Checklist', [{ k: 'update', table: 'checklist_items', id, patch: deletedPatch(deleted) }], { t: 'checklist.deleted', id, deleted }),
     addChecklistTemplate: (tripId) => run(() => planning.addChecklistTemplate(tripId, trips.find((x) => x.id === tripId)?.checklist ?? [])),
     createBooking: (tripId, input) => run(() => planning.createBooking(tripId, input, trips.find((x) => x.id === tripId)?.timezone ?? 'UTC')),
     updateBooking: (tripId, booking, input) =>
