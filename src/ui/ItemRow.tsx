@@ -20,6 +20,10 @@ export const KIND_LABEL: Record<ItemKind, string> = {
 
 interface Props {
   item: DayItem
+  /** Numero della tappa sulla mappa del giorno: sostituisce il pallino colorato. */
+  n?: number
+  /** Riga in più sotto il titolo (es. il tempo dalla tappa precedente). */
+  hint?: string
   /** Tocco sulla riga: apre la modifica. Senza, la riga è di sola lettura. */
   onOpen?: () => void
   onToggleDone?: () => void
@@ -27,17 +31,28 @@ interface Props {
   reorder?: { onUp?: () => void; onDown?: () => void }
 }
 
-export function ItemRow({ item, onOpen, onToggleDone, reorder }: Props) {
+export function ItemRow({ item, n, hint, onOpen, onToggleDone, reorder }: Props) {
   const time = item.time ? (item.endTime ? `${item.time}–${item.endTime}` : item.time) : ''
   const body = (
     <>
       <span class="w-11 shrink-0 text-right text-sm tabular-nums text-muted">{item.time ?? ''}</span>
-      <span class={`h-2.5 w-2.5 shrink-0 rounded-full ${KIND_DOT[item.kind]}`} title={KIND_LABEL[item.kind]} />
+      {n != null ? (
+        <span
+          class="grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
+          style={{ background: '#c8402f' }}
+          title={`Tappa ${n} sulla mappa`}
+        >
+          {n}
+        </span>
+      ) : (
+        <span class={`h-2.5 w-2.5 shrink-0 rounded-full ${KIND_DOT[item.kind]}`} title={KIND_LABEL[item.kind]} />
+      )}
       <span class="min-w-0 flex-1">
         <span class={`block truncate font-medium ${item.done ? 'text-muted line-through' : ''}`}>{item.title}</span>
         {(item.note || (item.endTime && time)) && (
           <span class="block truncate text-xs text-muted">{item.endTime ? `${time}${item.note ? ' · ' : ''}` : ''}{item.note}</span>
         )}
+        {hint && <span class="block text-xs text-muted">{hint}</span>}
       </span>
     </>
   )

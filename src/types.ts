@@ -87,6 +87,10 @@ export interface Transport {
   departAt?: string // istante ISO (UTC)
   arriveAt?: string
   dayId?: string
+  fromLat?: number // posizione di partenza/arrivo, per la mappa del giorno
+  fromLng?: number
+  toLat?: number
+  toLng?: number
   cost?: number
   currency: string
   scope: Scope

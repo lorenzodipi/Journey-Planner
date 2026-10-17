@@ -5,6 +5,7 @@ import {
   Marker,
   NavigationControl,
   setWorkerUrl,
+  type GeoJSONSource,
   type IControl,
 } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -84,7 +85,7 @@ class StyleToggle implements IControl {
   }
 }
 
-function newMap(el: HTMLElement, center: { lat: number; lng: number }, zoom: number, withToggle: boolean): MLMap {
+function newMap(el: HTMLElement, center: { lat: number; lng: number }, zoom: number, withToggle: boolean, cooperative = false): MLMap {
   let pref = loadPref()
   let current = styleFor(pref)
   const map = new MLMap({
@@ -97,6 +98,17 @@ function newMap(el: HTMLElement, center: { lat: number; lng: number }, zoom: num
     dragRotate: false,
     pitchWithRotate: false,
     maxPitch: 0,
+    // dentro una pagina che scorre: con un dito scorre la pagina, con due si muove la mappa
+    ...(cooperative
+      ? {
+          cooperativeGestures: true,
+          locale: {
+            'CooperativeGesturesHandler.WindowsHelpText': 'Usa Ctrl + scorrimento per ingrandire la mappa',
+            'CooperativeGesturesHandler.MacHelpText': 'Usa ⌘ + scorrimento per ingrandire la mappa',
+            'CooperativeGesturesHandler.MobileHelpText': 'Usa due dita per muovere la mappa',
+          },
+        }
+      : {}),
   })
   map.touchZoomRotate.disableRotation()
   map.addControl(new NavigationControl({ showCompass: false }), 'top-right')
@@ -294,4 +306,178 @@ export function PinPicker({ lat, lng, center, onMove }: PinPickerProps) {
   }, [lat, lng])
 
   return <div ref={el} class="h-56 w-full overflow-hidden rounded-2xl" role="application" aria-label="Sposta il pin" />
+}
+
+// ---------- mappa del giorno ----------
+
+export interface DayMapStop {
+  id: string
+  n: number
+  name: string
+  lat: number
+  lng: number
+}
+
+export interface DayMapLine {
+  id: string
+  coords: [number, number][] // [lng, lat]
+  dashed: boolean
+  color: string
+}
+
+export interface DayMapEnd {
+  id: string
+  name: string
+  lat: number
+  lng: number
+}
+
+const LINES_SOURCE = 'day-lines'
+const STOP_COLOR = '#c8402f'
+
+function applyLines(m: MLMap, lines: DayMapLine[]) {
+  const data = {
+    type: 'FeatureCollection' as const,
+    features: lines.map((l) => ({
+      type: 'Feature' as const,
+      properties: { dashed: l.dashed, color: l.color },
+      geometry: { type: 'LineString' as const, coordinates: l.coords },
+    })),
+  }
+  try {
+    const src = m.getSource(LINES_SOURCE) as GeoJSONSource | undefined
+    if (src) {
+      src.setData(data)
+      return
+    }
+    // Non si controlla isStyleLoaded(): con lo stile vero resta "false" finché arrivano i tile.
+    // Se lo stile non è ancora pronto addSource lancia e si riprova a 'style.load' / 'idle'.
+    m.addSource(LINES_SOURCE, { type: 'geojson', data })
+    const round = { 'line-cap': 'round', 'line-join': 'round' } as const
+    // bordo chiaro sotto tutte le linee: le tiene leggibili sia sulla mappa chiara che su quella scura
+    m.addLayer({
+      id: 'day-lines-casing',
+      type: 'line',
+      source: LINES_SOURCE,
+      layout: round,
+      paint: { 'line-color': '#ffffff', 'line-width': 8.5, 'line-opacity': 0.92 },
+    })
+    m.addLayer({
+      id: 'day-lines-solid',
+      type: 'line',
+      source: LINES_SOURCE,
+      filter: ['==', ['get', 'dashed'], false],
+      layout: round,
+      paint: { 'line-color': ['get', 'color'], 'line-width': 4.5 },
+    })
+    m.addLayer({
+      id: 'day-lines-dash',
+      type: 'line',
+      source: LINES_SOURCE,
+      filter: ['==', ['get', 'dashed'], true],
+      layout: { 'line-cap': 'butt', 'line-join': 'round' },
+      paint: { 'line-color': ['get', 'color'], 'line-width': 4, 'line-dasharray': [2, 1.4] },
+    })
+  } catch {
+    // lo stile non è pronto: si riprova al prossimo evento
+    try {
+      if (m.getSource(LINES_SOURCE)) m.removeSource(LINES_SOURCE)
+    } catch {
+      /* niente */
+    }
+  }
+}
+
+function numberElement(stop: DayMapStop): HTMLElement {
+  const el = document.createElement('div')
+  el.className = 'jp-num'
+  el.style.background = STOP_COLOR
+  el.textContent = String(stop.n)
+  el.title = `${stop.n}. ${stop.name}`
+  el.setAttribute('role', 'img')
+  el.setAttribute('aria-label', `Tappa ${stop.n}: ${stop.name}`)
+  return el
+}
+
+function endElement(end: DayMapEnd): HTMLElement {
+  const el = document.createElement('div')
+  el.className = 'jp-end'
+  el.title = end.name
+  el.setAttribute('role', 'img')
+  el.setAttribute('aria-label', end.name)
+  return el
+}
+
+interface DayMapProps {
+  stops: DayMapStop[]
+  lines: DayMapLine[]
+  ends: DayMapEnd[]
+  center: { lat: number; lng: number }
+}
+
+/** Mappa di una giornata: pin numerati nell'ordine delle tappe, linee tra le tappe e partenze/arrivi dei mezzi. */
+export function DayMapView({ stops, lines, ends, center }: DayMapProps) {
+  const el = useRef<HTMLDivElement>(null)
+  const map = useRef<MLMap | null>(null)
+  const markers = useRef<Marker[]>([])
+  const linesRef = useRef(lines)
+  linesRef.current = lines
+  const pointsRef = useRef({ stops, ends })
+  pointsRef.current = { stops, ends }
+  const fitted = useRef('')
+
+  function drawPoints() {
+    const m = map.current
+    if (!m) return
+    for (const mk of markers.current) mk.remove()
+    markers.current = []
+    const { stops: s, ends: e } = pointsRef.current
+    for (const end of e) markers.current.push(new Marker({ element: endElement(end), anchor: 'center' }).setLngLat([end.lng, end.lat]).addTo(m))
+    for (const stop of s) markers.current.push(new Marker({ element: numberElement(stop), anchor: 'center' }).setLngLat([stop.lng, stop.lat]).addTo(m))
+    // inquadra tutto solo quando cambia l'insieme dei punti (non quando arrivano i percorsi)
+    const key = [...s.map((x) => x.id), ...e.map((x) => x.id)].join(',')
+    const all = [...s, ...e]
+    if (key !== fitted.current && all.length > 0) {
+      fitted.current = key
+      if (all.length === 1) m.jumpTo({ center: [all[0].lng, all[0].lat], zoom: 15 })
+      else {
+        const b = new LngLatBounds()
+        for (const p of all) b.extend([p.lng, p.lat])
+        m.fitBounds(b, { padding: 44, maxZoom: 16, duration: 0 })
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (!el.current) return
+    const m = newMap(el.current, center, 12, true, true)
+    map.current = m
+    // cambiando stile (chiaro/scuro/dettagli) le linee vanno ridisegnate
+    const redraw = () => applyLines(m, linesRef.current)
+    m.on('style.load', redraw)
+    m.on('load', redraw)
+    m.on('idle', () => {
+      if (!m.getSource(LINES_SOURCE)) redraw()
+    })
+    drawPoints()
+    return () => {
+      for (const mk of markers.current) mk.remove()
+      markers.current = []
+      m.remove()
+      map.current = null
+    }
+    // la mappa si crea una volta sola
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    drawPoints()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stops, ends])
+
+  useEffect(() => {
+    if (map.current) applyLines(map.current, lines)
+  }, [lines])
+
+  return <div ref={el} class="h-full w-full" role="application" aria-label="Mappa della giornata" />
 }

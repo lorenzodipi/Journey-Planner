@@ -1,26 +1,18 @@
 import { useState } from 'preact/hooks'
+import { Link } from 'wouter-preact'
 import { formatDay } from '../lib/dates'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { Day, DayItem } from '../types'
-import { DayForm } from '../ui/DayForm'
-import { ItemForm } from '../ui/ItemForm'
+import { DaySheet, type DaySheetState } from '../ui/DaySheet'
 import { ItemRow } from '../ui/ItemRow'
 import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
-import { Sheet } from '../ui/Sheet'
-
-type SheetState =
-  | { kind: 'day'; day: Day }
-  | { kind: 'new-item'; day: Day }
-  | { kind: 'edit-item'; day: Day; item: DayItem }
-  | null
 
 export function Giorni() {
   const trip = useTrip()
   const t = useTrips()
-  const [sheet, setSheet] = useState<SheetState>(null)
+  const [sheet, setSheet] = useState<DaySheetState>(null)
   const [reordering, setReordering] = useState<string | null>(null) // id del giorno in riordino
-  const close = () => setSheet(null)
 
   async function move(day: Day, item: DayItem, step: -1 | 1) {
     const message = await t.moveItem(day.id, item.id, step)
@@ -32,12 +24,9 @@ export function Giorni() {
     if (message) showToast(message)
   }
 
-  const sheetTitle =
-    sheet?.kind === 'day' ? 'Modifica giornata' : sheet?.kind === 'new-item' ? 'Nuova tappa' : 'Modifica tappa'
-
   return (
     <>
-      <PageHeader title="Giorni" subtitle={`${trip.days.length} giorni in programma`} />
+      <PageHeader title="Giorni" subtitle={`${trip.days.length} giorni in programma · tocca un giorno per aprirlo`} />
       <div class="space-y-3 px-4">
         {trip.days.length === 0 && (
           <EmptyState
@@ -49,10 +38,9 @@ export function Giorni() {
           const isReordering = reordering === day.id
           return (
             <Card class="rise">
-              <button
-                type="button"
-                onClick={() => setSheet({ kind: 'day', day })}
-                aria-label={`Modifica ${formatDay(day.date)}`}
+              <Link
+                href={`/giorni/${day.id}`}
+                aria-label={`Apri ${formatDay(day.date)}`}
                 class="-m-1 flex min-h-12 w-[calc(100%+0.5rem)] items-center gap-3 rounded-2xl p-1 text-left"
               >
                 <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft text-sm font-semibold text-accent">
@@ -73,7 +61,8 @@ export function Giorni() {
                     {day.items.length} {day.items.length === 1 ? 'tappa' : 'tappe'}
                   </span>
                 )}
-              </button>
+                <span aria-hidden="true" class="text-xl text-muted">›</span>
+              </Link>
 
               {day.notes && <p class="mt-2 whitespace-pre-line text-sm text-muted">{day.notes}</p>}
 
@@ -121,34 +110,7 @@ export function Giorni() {
         })}
       </div>
 
-      <Sheet open={sheet !== null} title={sheetTitle} onClose={close}>
-        {sheet?.kind === 'day' && (
-          <DayForm
-            key={sheet.day.id}
-            day={sheet.day}
-            onSubmit={(patch) => t.updateDay(sheet.day.id, patch)}
-            onDone={close}
-          />
-        )}
-        {sheet?.kind === 'new-item' && (
-          <ItemForm trip={trip} onSubmit={(input) => t.createItem(trip.id, sheet.day.id, input)} onDone={close} />
-        )}
-        {sheet?.kind === 'edit-item' && (
-          <ItemForm
-            key={sheet.item.id}
-            trip={trip}
-            initial={sheet.item}
-            onSubmit={(input) => t.updateItem(sheet.item.id, input)}
-            onDelete={async () => {
-              const id = sheet.item.id
-              const message = await t.setItemDeleted(id, true)
-              if (!message) showToast('Tappa eliminata', { label: 'Annulla', run: () => void t.setItemDeleted(id, false) })
-              return message
-            }}
-            onDone={close}
-          />
-        )}
-      </Sheet>
+      <DaySheet trip={trip} state={sheet} onClose={() => setSheet(null)} />
     </>
   )
 }

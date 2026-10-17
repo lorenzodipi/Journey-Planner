@@ -34,6 +34,10 @@ export interface TransportRow {
   mode: TransportMode
   depart_at: string | null
   arrive_at: string | null
+  from_lat?: number | null // assenti finché non è applicata la migrazione 0005
+  from_lng?: number | null
+  to_lat?: number | null
+  to_lng?: number | null
   cost: number | string | null
   currency: string
   scope: Scope
@@ -110,6 +114,10 @@ export function mapTransports(rows: TransportRow[], tripId: string): Transport[]
       departAt: r.depart_at ?? undefined,
       arriveAt: r.arrive_at ?? undefined,
       dayId: r.day_id ?? undefined,
+      fromLat: r.from_lat ?? undefined,
+      fromLng: r.from_lng ?? undefined,
+      toLat: r.to_lat ?? undefined,
+      toLng: r.to_lng ?? undefined,
       cost: num(r.cost),
       currency: r.currency.trim(),
       scope: r.scope,
@@ -206,6 +214,8 @@ export interface TransportInput {
   departTime: string
   arriveDate: string
   arriveTime: string
+  fromPos: { lat: number; lng: number } | null // posizione sulla mappa (facoltativa)
+  toPos: { lat: number; lng: number } | null
   cost: number | null
   currency: string
   scope: Scope
@@ -226,6 +236,10 @@ export function transportColumns(i: TransportInput, timeZone: string, days: Pick
     depart_at: depart,
     arrive_at: arrive,
     day_id: day?.id ?? null,
+    from_lat: i.fromPos?.lat ?? null,
+    from_lng: i.fromPos?.lng ?? null,
+    to_lat: i.toPos?.lat ?? null,
+    to_lng: i.toPos?.lng ?? null,
     cost: i.cost,
     currency: i.currency.trim().toUpperCase() || 'EUR',
     scope: i.scope,

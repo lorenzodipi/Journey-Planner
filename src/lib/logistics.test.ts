@@ -71,7 +71,7 @@ describe('trasporti', () => {
   const base = {
     from: 'Tokyo', to: 'Nikko', mode: 'train' as const, departDate: '2026-11-26', departTime: '09:00',
     arriveDate: '2026-11-26', arriveTime: '11:00', cost: 30, currency: 'eur', scope: 'per_person' as const,
-    bought: false, refCode: '', notes: '',
+    bought: false, refCode: '', notes: '', fromPos: null, toPos: null,
   }
 
   it('orari nel fuso del viaggio e giorno ricavato dalla data', () => {
@@ -94,6 +94,17 @@ describe('trasporti', () => {
     expect(transportToForm({ id: 'x', from: 'a', to: 'b', mode: 'train', currency: 'EUR', scope: 'per_person', bought: false, departAt: '2026-11-26T00:00:00.000Z' }, 'Asia/Tokyo')).toEqual({
       departDate: '2026-11-26', departTime: '09:00', arriveDate: '', arriveTime: '',
     })
+  })
+})
+
+describe('trasporti: posizione sulla mappa', () => {
+  const base = { from: 'Tokyo', to: 'Kyoto', mode: 'train' as const, departDate: '2026-11-28', departTime: '09:00', arriveDate: '2026-11-28', arriveTime: '11:30', cost: null, currency: 'JPY', scope: 'per_person' as const, bought: false, refCode: '', notes: '' }
+  const days = [{ id: 'd28', date: '2026-11-28' }]
+  it('salva le due posizioni, oppure null se mancano', () => {
+    const withPos = transportColumns({ ...base, fromPos: { lat: 35.68, lng: 139.76 }, toPos: { lat: 34.98, lng: 135.75 } }, 'Asia/Tokyo', days)
+    expect(withPos).toMatchObject({ from_lat: 35.68, from_lng: 139.76, to_lat: 34.98, to_lng: 135.75, day_id: 'd28' })
+    const without = transportColumns({ ...base, fromPos: null, toPos: null }, 'Asia/Tokyo', days)
+    expect(without).toMatchObject({ from_lat: null, from_lng: null, to_lat: null, to_lng: null })
   })
 })
 

@@ -25,7 +25,7 @@ await db.exec(`
   insert into auth.users values ('${A}','a@test.it'),('${B}','b@test.it'),('${C}','c@test.it');
 `)
 
-for (const file of ['0001_init.sql', '0002_trip_fx.sql', '0003_service_role_import.sql']) {
+for (const file of ['0001_init.sql', '0002_trip_fx.sql', '0003_service_role_import.sql', '0004_stays_dinner.sql', '0005_transport_coords.sql']) {
   await db.exec(fs.readFileSync(new URL(`../migrations/${file}`, import.meta.url), 'utf8'))
 }
 console.log('MIGRAZIONE OK')
@@ -201,6 +201,17 @@ await throws('B non può cambiare il tasso del viaggio di A', async () => {
 check('B non vede budget né spese del viaggio di A', (await db.query(`select 1 from budget_items where trip_id=$1`, [s2])).rows.length === 0 &&
   (await db.query(`select 1 from expenses where trip_id=$1`, [s2])).rows.length === 0)
 await asUser(A)
+
+// trasporti: posizione di partenza/arrivo (migrazione 0005)
+await asUser(A)
+await db.query(`insert into transports (trip_id, from_label, to_label, from_lat, from_lng, to_lat, to_lng) values ($1,'Tokyo','Kyoto',35.68,139.76,34.98,135.75)`, [t])
+check('trasporto con le due posizioni', true)
+await db.query(`insert into transports (trip_id, from_label, to_label) values ($1,'Tokyo','Nikko')`, [t])
+check('trasporto senza posizioni', true)
+await throws('posizione a metà (solo latitudine) rifiutata', () => db.query(`insert into transports (trip_id, from_label, to_label, from_lat) values ($1,'a','b',35)`, [t]))
+await throws('latitudine fuori intervallo rifiutata', () => db.query(`insert into transports (trip_id, from_label, to_label, to_lat, to_lng) values ($1,'a','b',95,10)`, [t]))
+await db.query(`insert into stays (trip_id, name, check_in, check_out, dinner) values ($1,'Ryokan','2026-11-24','2026-11-25',true)`, [t])
+check('alloggio con cena', (await db.query(`select dinner from stays where name='Ryokan'`)).rows[0].dinner === true)
 
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione
 await asUser(null, 'service_role')

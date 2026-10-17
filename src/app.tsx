@@ -9,6 +9,7 @@ import { Budget } from './pages/Budget'
 import { Checklist } from './pages/Checklist'
 import { Prenotazioni } from './pages/Prenotazioni'
 import { Giorni } from './pages/Giorni'
+import { Giorno } from './pages/Giorno'
 import { Impostazioni } from './pages/Impostazioni'
 import { Login } from './pages/Login'
 import { Luoghi } from './pages/Luoghi'
@@ -86,6 +87,7 @@ export function App() {
         <Switch>
           <Route path="/" component={Oggi} />
           <Route path="/giorni" component={Giorni} />
+          <Route path="/giorni/:id" component={Giorno} />
           <Route path="/mappa" component={Mappa} />
           <Route path="/luoghi" component={Luoghi} />
           <Route path="/altro" component={Altro} />

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
 import { daysBetween, formatDayLong, formatShort } from '../lib/dates'
 import { localPerBase, formatRateNumber } from '../lib/fx'
-import { formatMinutes, minutesOfDay, sunForDay } from '../lib/sun'
+import { minutesOfDay, sunForDay } from '../lib/sun'
 import { destinationClock, eventsForDay, formatDiffHours, nextItem, tripToday } from '../lib/today'
 import { useForecast } from '../state/forecast'
 import { useTrip } from '../state/trip'
@@ -19,11 +19,6 @@ function useNow(): Date {
     return () => clearInterval(t)
   }, [])
   return now
-}
-
-const toMinutes = (hhmm: string) => {
-  const [h, m] = hhmm.split(':').map(Number)
-  return h * 60 + m
 }
 
 export function Oggi() {
@@ -49,9 +44,6 @@ export function Oggi() {
   const deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone
   const clock = destinationClock(trip.timezone, deviceTz, now)
   const sun = focus ? sunForDay(focus.date, trip.center.lat, trip.center.lng, trip.timezone) : null
-  const segments = (focus?.items ?? [])
-    .filter((i) => i.time)
-    .map((i) => ({ from: toMinutes(i.time as string), to: toMinutes(i.time as string) + 45 }))
 
   return (
     <div class="space-y-4 px-4 pt-3">
@@ -123,13 +115,8 @@ export function Oggi() {
             sunset={sun.sunset}
             alwaysUp={sun.alwaysUp}
             alwaysDown={sun.alwaysDown}
-            segments={segments}
+            nowMin={isToday ? minutesOfDay(now, trip.timezone) : null}
           />
-          <p class="mt-2 text-xs text-muted">
-            {sun.sunrise != null && sun.sunset != null
-              ? `Alba ${formatMinutes(sun.sunrise)} · Tramonto ${formatMinutes(sun.sunset)} (ora locale)`
-              : 'Alba e tramonto non disponibili per questo giorno'}
-          </p>
         </Card>
       )}
 

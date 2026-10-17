@@ -184,6 +184,30 @@ input, select, textarea {
   border-width: 3.5px;
   box-shadow: 0 0 0 3px rgb(0 0 0 / 0.25), 0 2px 8px rgb(0 0 0 / 0.4);
 }
+.jp-num {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid #fff;
+  border-radius: 9999px;
+  box-shadow: 0 1px 5px rgb(0 0 0 / 0.4);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+.jp-end {
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  background: #1f6fd0;
+  border: 2.5px solid #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.4);
+  transform: rotate(45deg);
+}
 .maplibregl-map {
   font: inherit;
   background: var(--bg);
