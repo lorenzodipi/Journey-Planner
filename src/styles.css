@@ -40,6 +40,11 @@
   --night: #1f2a44;
   --day-a: #ffe9a8;
   --day-b: #ffb36b;
+  /* fasi del giorno: sono fisiche, uguali in ogni tema */
+  --phase-night: #243456;
+  --phase-morning: #f7b733;
+  --phase-afternoon: #f08a3c;
+  --phase-evening: #c8402f;
 }
 
 /* Giappone: carta washi, rosso vermiglio, indaco */
@@ -85,6 +90,8 @@
     --warn: #e0b04a;
     --danger: #ef7a6a;
     --night: #0f1626;
+    --phase-night: #3a4d80;
+    --phase-evening: #d9503f;
   }
   :root[data-theme="japan"] {
     --bg: #14171b;
