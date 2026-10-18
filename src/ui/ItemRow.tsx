@@ -1,4 +1,5 @@
 import type { DayItem, ItemKind } from '../types'
+import { TrashButton } from './ConfirmDialog'
 
 export const KIND_DOT: Record<ItemKind, string> = {
   visit: 'bg-accent',
@@ -20,38 +21,54 @@ export const KIND_LABEL: Record<ItemKind, string> = {
 
 interface Props {
   item: DayItem
-  /** Numero della tappa sulla mappa del giorno: sostituisce il pallino colorato. */
+  /** Numero d'ordine della tappa nel giorno (vale anche per la mappa). */
   n?: number
+  /** La tappa ha una posizione e compare sulla mappa del giorno. */
+  onMap?: boolean
   /** Riga in più sotto il titolo (es. il tempo dalla tappa precedente). */
   hint?: string
+  /** Il luogo collegato (nome e città), se serve a capire dove si va. */
+  place?: string
   /** Tocco sulla riga: apre la modifica. Senza, la riga è di sola lettura. */
   onOpen?: () => void
   onToggleDone?: () => void
+  /** Cestino in fondo alla riga (chiede conferma chi lo usa). Non compare mentre si riordina. */
+  onDelete?: () => void
   /** Se presente, al posto della spunta compaiono le frecce per riordinare. */
   reorder?: { onUp?: () => void; onDown?: () => void }
 }
 
-export function ItemRow({ item, n, hint, onOpen, onToggleDone, reorder }: Props) {
+export function ItemRow({ item, n, onMap, hint, place, onOpen, onToggleDone, onDelete, reorder }: Props) {
   const time = item.time ? (item.endTime ? `${item.time}–${item.endTime}` : item.time) : ''
   const body = (
     <>
       <span class="w-11 shrink-0 text-right text-sm tabular-nums text-muted">{item.time ?? ''}</span>
       {n != null ? (
-        <span
-          class="grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
-          style={{ background: '#c8402f' }}
-          title={`Tappa ${n} sulla mappa`}
-        >
-          {n}
-        </span>
+        onMap ? (
+          <span
+            class="grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
+            style={{ background: '#c8402f' }}
+            title={`Tappa ${n} sulla mappa`}
+          >
+            {n}
+          </span>
+        ) : (
+          <span
+            class="grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 border-line text-[11px] font-bold text-muted"
+            title={`Tappa ${n} (senza posizione sulla mappa)`}
+          >
+            {n}
+          </span>
+        )
       ) : (
         <span class={`h-2.5 w-2.5 shrink-0 rounded-full ${KIND_DOT[item.kind]}`} title={KIND_LABEL[item.kind]} />
       )}
       <span class="min-w-0 flex-1">
-        <span class={`block truncate font-medium ${item.done ? 'text-muted line-through' : ''}`}>{item.title}</span>
+        <span class={`block line-clamp-2 font-medium ${item.done ? 'text-muted line-through' : ''}`}>{item.title}</span>
         {(item.note || (item.endTime && time)) && (
           <span class="block truncate text-xs text-muted">{item.endTime ? `${time}${item.note ? ' · ' : ''}` : ''}{item.note}</span>
         )}
+        {place && <span class="block truncate text-xs text-muted">{place}</span>}
         {hint && <span class="block text-xs text-muted">{hint}</span>}
       </span>
     </>
@@ -113,6 +130,7 @@ export function ItemRow({ item, n, hint, onOpen, onToggleDone, reorder }: Props)
           </button>
         )
       )}
+      {!reorder && onDelete && <TrashButton label={`Elimina ${item.title}`} onClick={onDelete} />}
     </li>
   )
 }

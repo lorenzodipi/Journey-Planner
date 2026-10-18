@@ -18,11 +18,35 @@ export const demoTrip: Trip = {
     { id: 't2', name: 'Viaggiatore 2', color: '#264653' },
   ],
   categories: [],
+  expenseCategories: [
+    { id: 'xc1', label: 'Cibo' },
+    { id: 'xc2', label: 'Trasporti' },
+    { id: 'xc3', label: 'Souvenir' },
+  ],
   stays: [],
   transports: [],
   flights: [],
-  budget: [],
-  expenses: [],
+  fxRate: 0.0056,
+  budget: [
+    {
+      id: 'b1',
+      label: 'Cene fuori',
+      category: 'Cibo',
+      categoryId: 'xc1',
+      amount: 300,
+      currency: 'EUR',
+      scope: 'total',
+      shares: [
+        { id: 'bs1', travelerId: 't1', paid: false },
+        { id: 'bs2', travelerId: 't2', paid: false },
+      ],
+    },
+  ],
+  expenses: [
+    { id: 'e1', label: 'Ramen', category: 'Cibo', categoryId: 'xc1', amount: 2400, currency: 'JPY', paidBy: 't1', spentAt: '2026-11-22T10:30:00.000Z', dayId: 'd1', shares: [{ travelerId: 't1', weight: 1 }, { travelerId: 't2', weight: 1 }] },
+    { id: 'e2', label: 'Pranzo ad Asakusa', category: 'Cibo', categoryId: 'xc1', amount: 30, currency: 'EUR', paidBy: 't2', spentAt: '2026-11-23T03:30:00.000Z', dayId: 'd2', shares: [{ travelerId: 't1', weight: 1 }, { travelerId: 't2', weight: 1 }] },
+    { id: 'e3', label: 'Suica', category: 'Trasporti', categoryId: 'xc2', amount: 2000, currency: 'JPY', paidBy: 't1', spentAt: '2026-11-22T08:00:00.000Z', dayId: 'd1', shares: [{ travelerId: 't1', weight: 1 }] },
+  ],
   checklist: [],
   bookings: [],
   places: [

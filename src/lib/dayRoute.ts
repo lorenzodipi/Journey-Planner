@@ -1,4 +1,5 @@
-// Mappa del giorno: tappe numerate, tratti a piedi lungo le strade, linee tratteggiate per i mezzi.
+// Mappa del giorno: tappe numerate, tutti gli spostamenti a piedi lungo le strade; la linea d'aria (tratteggiata)
+// compare solo per i trasporti del giorno (treno, metro…) e, in mancanza di un trasporto, per tratti troppo lunghi per andare a piedi.
 // Il calcolo dei percorsi a piedi usa OSRM (dati OpenStreetMap, senza chiave) e, per funzionare anche
 // offline, ogni percorso già calcolato resta salvato sul telefono.
 
@@ -11,12 +12,16 @@ export interface LatLng {
 
 export interface DayStop extends LatLng {
   id: string
-  n: number // numero mostrato sulla mappa (1, 2, 3…)
+  n: number // numero della tappa nel programma del giorno (è lo stesso dell'elenco e della mappa)
   name: string
 }
 
-/** Oltre questa distanza in linea d'aria non si va a piedi: si usa un mezzo e si traccia una linea tratteggiata. */
-export const WALK_MAX_M = 2000
+/** Oltre questa distanza in linea d'aria, senza un trasporto registrato, non ha senso proporre un percorso a piedi. */
+export const WALK_MAX_M = 10000
+/** Un trasporto "copre" il tratto tra due tappe se parte e arriva a meno di così dalle due tappe. */
+export const TRANSPORT_LINK_M = 2000
+/** Sotto questa distanza non si disegna il tratto a piedi da/verso la stazione. */
+const ACCESS_MIN_M = 40
 
 export function distanceM(a: LatLng, b: LatLng): number {
   const R = 6371008.8
@@ -34,10 +39,10 @@ export function dayStops(day: Day, places: Place[]): { stops: DayStop[]; missing
   const byId = new Map(places.map((p) => [p.id, p]))
   const stops: DayStop[] = []
   let missing = 0
-  for (const it of day.items) {
+  for (const [i, it] of day.items.entries()) {
     const place = it.placeId ? byId.get(it.placeId) : undefined
     if (place && hasPos(place)) {
-      stops.push({ id: it.id, n: stops.length + 1, name: it.title || place.name, lat: place.lat, lng: place.lng })
+      stops.push({ id: it.id, n: i + 1, name: it.title || place.name, lat: place.lat, lng: place.lng })
     } else if (it.kind === 'visit' || it.kind === 'meal') {
       missing++
     }
@@ -49,25 +54,69 @@ export type LegKind = 'walk' | 'line'
 
 export interface Leg {
   key: string
-  from: DayStop
-  to: DayStop
+  from: LatLng
+  to: LatLng
+  /** 'walk' = a piedi; 'line' = si usa un mezzo (se `via` c'è, è il trasporto del giorno che copre il tratto) */
   kind: LegKind
   straightM: number
+  via?: TransportLine
 }
 
 const r5 = (n: number) => n.toFixed(5)
 export const legKey = (a: LatLng, b: LatLng) => `${r5(a.lat)},${r5(a.lng)};${r5(b.lat)},${r5(b.lng)}`
 
-/** Un tratto tra due tappe consecutive: a piedi se sono vicine, altrimenti linea tratteggiata. */
-export function planLegs(stops: DayStop[]): Leg[] {
+/** Il trasporto del giorno che parte vicino a `from` e arriva vicino a `to` (il più vicino, se più d'uno). */
+export function transportBetween(from: LatLng, to: LatLng, transports: TransportLine[]): TransportLine | undefined {
+  let best: TransportLine | undefined
+  let bestScore = Infinity
+  for (const t of transports) {
+    const a = distanceM(from, t.from)
+    const b = distanceM(to, t.to)
+    if (a > TRANSPORT_LINK_M || b > TRANSPORT_LINK_M) continue
+    if (a + b < bestScore) {
+      best = t
+      bestScore = a + b
+    }
+  }
+  return best
+}
+
+/**
+ * Un tratto tra due tappe consecutive. Si va sempre a piedi, tranne quando un trasporto del giorno copre il tratto
+ * (allora: a piedi fino alla partenza, mezzo in linea d'aria, a piedi dall'arrivo) o quando è troppo lontano.
+ */
+export function planLegs(stops: DayStop[], transports: TransportLine[] = []): Leg[] {
   const legs: Leg[] = []
   for (let i = 0; i + 1 < stops.length; i++) {
     const from = stops[i]
     const to = stops[i + 1]
     const straightM = distanceM(from, to)
-    legs.push({ key: legKey(from, to), from, to, kind: straightM <= WALK_MAX_M ? 'walk' : 'line', straightM })
+    const via = transportBetween(from, to, transports)
+    const kind: LegKind = via || straightM > WALK_MAX_M ? 'line' : 'walk'
+    legs.push({ key: legKey(from, to), from, to, kind, straightM, ...(via ? { via } : {}) })
   }
   return legs
+}
+
+/** I tratti da fare a piedi: quelli tra le tappe, più il pezzo fino/dalla stazione dove un trasporto copre il tratto. */
+export function walkLegs(legs: Leg[]): Leg[] {
+  const out: Leg[] = []
+  for (const leg of legs) {
+    if (leg.kind === 'walk') {
+      out.push(leg)
+      continue
+    }
+    if (!leg.via) continue
+    const pieces: [LatLng, LatLng][] = [
+      [leg.from, leg.via.from],
+      [leg.via.to, leg.to],
+    ]
+    for (const [from, to] of pieces) {
+      const straightM = distanceM(from, to)
+      if (straightM >= ACCESS_MIN_M) out.push({ key: legKey(from, to), from, to, kind: 'walk', straightM })
+    }
+  }
+  return out
 }
 
 export interface TransportLine {
@@ -227,7 +276,8 @@ export function formatDistance(m: number): string {
 export const formatMinutes = (seconds: number) => `${Math.max(1, Math.round(seconds / 60))} min`
 
 /** Come si fa un tratto tra due tappe: "10 min a piedi · 810 m", "serve un mezzo", ecc. `route`: percorso calcolato, `null` se non disponibile, `undefined` se in calcolo. */
-export function describeLeg(leg: Pick<Leg, 'kind' | 'straightM'>, route: WalkRoute | null | undefined): string {
+export function describeLeg(leg: Pick<Leg, 'kind' | 'straightM' | 'via'>, route: WalkRoute | null | undefined): string {
+  if (leg.kind === 'line' && leg.via) return `in viaggio: ${leg.via.fromName} → ${leg.via.toName}`
   if (leg.kind === 'line') return `${formatDistance(leg.straightM)} in linea d'aria: serve un mezzo`
   if (route) return `${formatMinutes(route.seconds)} a piedi · ${formatDistance(route.meters)}`
   if (route === null) return `${formatDistance(leg.straightM)} in linea d'aria a piedi (percorso non disponibile)`

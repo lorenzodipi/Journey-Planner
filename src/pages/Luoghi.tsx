@@ -1,7 +1,9 @@
 import { useState } from 'preact/hooks'
 import { countActive, filterPlaces } from '../lib/placeFilter'
 import { usePlaceFilters } from '../state/placeFilters'
-import { useTrip } from '../state/trip'
+import { useTrip, useTrips } from '../state/trip'
+import { TrashButton } from '../ui/ConfirmDialog'
+import { useDeleter } from '../ui/useDeleter'
 import { FilterBar } from '../ui/FilterBar'
 import { FilterSheet } from '../ui/FilterSheet'
 import { EmptyState, PageHeader } from '../ui/PageHeader'
@@ -10,6 +12,8 @@ import { STATUS_LABEL, STATUS_STYLE, categoryColor } from '../ui/placeMeta'
 
 export function Luoghi() {
   const trip = useTrip()
+  const t = useTrips()
+  const [del, delDialog] = useDeleter()
   const [filters, setFilters] = usePlaceFilters(trip.id)
   const [text, setText] = useState('')
   const [filterOpen, setFilterOpen] = useState(false)
@@ -54,11 +58,11 @@ export function Luoghi() {
         {visible.length > 0 && (
           <ul class="divide-y divide-line overflow-hidden rounded-card bg-surface shadow-card">
             {visible.map((p) => (
-              <li>
+              <li class="flex items-center pr-1">
                 <button
                   type="button"
                   onClick={() => setSheet({ kind: 'detail', placeId: p.id })}
-                  class="flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left"
+                  class="flex min-h-16 min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
                 >
                   <span aria-hidden="true" class="h-3 w-3 shrink-0 rounded-full" style={{ background: categoryColor(trip, p) }} />
                   <span class="min-w-0 flex-1">
@@ -74,11 +78,25 @@ export function Luoghi() {
                     </span>
                   )}
                 </button>
+                <TrashButton
+                  label={`Elimina ${p.name}`}
+                  onClick={() => {
+                    const used = trip.days.reduce((n, d) => n + d.items.filter((i) => i.placeId === p.id).length, 0)
+                    void del({
+                      title: `Eliminare «${p.name}»?`,
+                      text: used > 0 ? `Resta in ${used} ${used === 1 ? 'tappa' : 'tappe'} dei giorni, ma senza più il luogo collegato. Puoi annullare subito dopo.` : undefined,
+                      done: 'Luogo eliminato',
+                      run: () => t.setPlaceDeleted(p.id, true),
+                      undo: () => t.setPlaceDeleted(p.id, false),
+                    })
+                  }}
+                />
               </li>
             ))}
           </ul>
         )}
       </div>
+      {delDialog}
 
       <button
         type="button"

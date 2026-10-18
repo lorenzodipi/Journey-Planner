@@ -7,7 +7,9 @@ export interface BudgetItemRow {
   id: string
   trip_id: string
   label: string
+  /** testo libero di prima della migrazione 0008 */
   category: string | null
+  category_id?: string | null
   amount: number | string
   currency: string
   scope: Scope
@@ -28,7 +30,9 @@ export interface ExpenseRow {
   trip_id: string
   day_id: string | null
   label: string
+  /** testo libero di prima della migrazione 0008 */
   category: string | null
+  category_id?: string | null
   amount: number | string
   currency: string
   fx_rate: number | string | null
@@ -45,13 +49,20 @@ export interface ExpenseShareRow {
   weight: number | string
 }
 
-export function mapBudget(items: BudgetItemRow[], shares: BudgetShareRow[], tripId: string): BudgetItem[] {
+/** Nome della categoria di una riga: quella collegata, altrimenti il vecchio testo libero (se la migrazione 0008 non è ancora stata eseguita). */
+function categoryOf(r: { category: string | null; category_id?: string | null }, labels: ReadonlyMap<string, string>): { category?: string; categoryId?: string } {
+  if (r.category_id && labels.has(r.category_id)) return { category: labels.get(r.category_id), categoryId: r.category_id }
+  const legacy = r.category?.trim()
+  return legacy ? { category: legacy } : {}
+}
+
+export function mapBudget(items: BudgetItemRow[], shares: BudgetShareRow[], tripId: string, labels: ReadonlyMap<string, string> = new Map()): BudgetItem[] {
   return items
     .filter((r) => r.trip_id === tripId)
     .map((r) => ({
       id: r.id,
       label: r.label,
-      category: r.category ?? undefined,
+      ...categoryOf(r, labels),
       amount: Number(r.amount),
       currency: r.currency.trim(),
       scope: r.scope,
@@ -64,13 +75,13 @@ export function mapBudget(items: BudgetItemRow[], shares: BudgetShareRow[], trip
     .sort((a, b) => (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999') || a.label.localeCompare(b.label, 'it'))
 }
 
-export function mapExpenses(rows: ExpenseRow[], shares: ExpenseShareRow[], tripId: string): Expense[] {
+export function mapExpenses(rows: ExpenseRow[], shares: ExpenseShareRow[], tripId: string, labels: ReadonlyMap<string, string> = new Map()): Expense[] {
   return rows
     .filter((r) => r.trip_id === tripId)
     .map((r) => ({
       id: r.id,
       label: r.label,
-      category: r.category ?? undefined,
+      ...categoryOf(r, labels),
       amount: Number(r.amount),
       currency: r.currency.trim(),
       fxRate: r.fx_rate == null ? undefined : Number(r.fx_rate),
@@ -101,10 +112,12 @@ export interface BudgetInput {
   paidIds: string[]
 }
 
-export function budgetColumns(i: BudgetInput) {
+/** `categoryId`: la categoria scelta (già creata). Il vecchio testo libero si azzera: da ora vale solo il collegamento. */
+export function budgetColumns(i: BudgetInput, categoryId: string | null) {
   return {
     label: i.label.trim(),
-    category: orNull(i.category),
+    category: null,
+    category_id: categoryId,
     amount: i.amount,
     currency: i.currency.trim().toUpperCase() || 'EUR',
     scope: i.scope,
@@ -128,10 +141,11 @@ export interface ExpenseInput {
 }
 
 /** La spesa vale a mezzogiorno del giorno scelto, nel fuso del viaggio; il giorno del viaggio si ricava dalla data. */
-export function expenseColumns(i: ExpenseInput, timeZone: string, days: Pick<Day, 'id' | 'date'>[]) {
+export function expenseColumns(i: ExpenseInput, timeZone: string, days: Pick<Day, 'id' | 'date'>[], categoryId: string | null) {
   return {
     label: i.label.trim(),
-    category: orNull(i.category),
+    category: null,
+    category_id: categoryId,
     amount: i.amount,
     currency: i.currency.trim().toUpperCase() || 'EUR',
     fx_rate: i.fxRate,

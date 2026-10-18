@@ -144,6 +144,18 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
     })
     .slice(0, MAX_ROWS)
     .map((c) => ({ id: idOf(c.id), label: str(c.label).trim(), color: optStr(c.color) }))
+  // categorie di spesa: quelle del file (nomi unici); le spese e le voci che ne citano una assente la ricreano all'import
+  const seenExpenseLabels = new Set<string>()
+  const expenseCategories = list(raw.expenseCategories)
+    .filter((c) => optStr(c.label))
+    .filter((c) => {
+      const key = str(c.label).trim().toLowerCase()
+      if (seenExpenseLabels.has(key)) return false
+      seenExpenseLabels.add(key)
+      return true
+    })
+    .slice(0, MAX_ROWS)
+    .map((c) => ({ id: idOf(c.id), label: str(c.label).trim(), color: optStr(c.color) }))
   const rawPlaces = list(raw.places).slice(0, MAX_ROWS)
   const places: Place[] = rawPlaces
     .filter((p) => optStr(p.name))
@@ -324,6 +336,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
         id: idOf(b.id),
         label: str(b.label).trim(),
         category: optStr(b.category),
+        categoryId: optStr(b.categoryId),
         amount: money(b.amount) ?? 0,
         currency: currency(b.currency, baseCurrency),
         scope: oneOf(b.scope, SCOPES, 'per_person'),
@@ -351,6 +364,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
         id: idOf(e.id),
         label: str(e.label).trim(),
         category: optStr(e.category),
+        categoryId: optStr(e.categoryId),
         amount: amount as number,
         currency: currency(e.currency, baseCurrency),
         fxRate: fxRate !== undefined && fxRate > 0 && fxRate < 1e7 ? fxRate : undefined,
@@ -426,6 +440,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
     days,
     places,
     categories,
+    expenseCategories,
     stays,
     transports,
     flights,
@@ -534,6 +549,22 @@ export function buildSteps(trip: Trip, tripId: string, newId: () => string): Res
   }
   for (const c of trip.categories) addCategory(c.label, c.color ?? null, c.id)
   for (const p of trip.places) addCategory(p.category, null)
+
+  // categorie di spesa: quelle del file più i nomi citati solo da spese e voci di budget
+  const expCatIdByLabel = new Map<string, string>()
+  const expenseCategories: Record<string, unknown>[] = []
+  const addExpenseCategory = (label: string | undefined, color: string | null, oldId?: string) => {
+    const key = (label ?? '').trim().toLowerCase()
+    if (!key || expCatIdByLabel.has(key)) return
+    const id = oldId ? fresh(oldId) : newId()
+    expCatIdByLabel.set(key, id)
+    expenseCategories.push({ id, trip_id: tripId, label: (label as string).trim(), color, position: (expenseCategories.length + 1) * 1000 })
+  }
+  for (const c of trip.expenseCategories) addExpenseCategory(c.label, c.color ?? null, c.id)
+  for (const b of trip.budget) addExpenseCategory(b.category, null)
+  for (const e of trip.expenses) addExpenseCategory(e.category, null)
+  // la colonna category_id si scrive solo se serve (il file può arrivare da un database senza la migrazione 0008)
+  const expCat = (label: string | undefined) => (expenseCategories.length > 0 ? { category_id: expCatIdByLabel.get((label ?? '').trim().toLowerCase()) ?? null } : {})
 
   const days = trip.days.map((d) => ({ id: fresh(d.id), trip_id: tripId, date: d.date, city: d.city || null, title: nul(d.title), notes: nul(d.notes) }))
 
@@ -648,7 +679,7 @@ export function buildSteps(trip: Trip, tripId: string, newId: () => string): Res
     id: fresh(b.id),
     trip_id: tripId,
     label: b.label,
-    category: nul(b.category),
+    ...expCat(b.category),
     amount: b.amount,
     currency: b.currency,
     scope: b.scope,
@@ -671,7 +702,7 @@ export function buildSteps(trip: Trip, tripId: string, newId: () => string): Res
     trip_id: tripId,
     day_id: to(e.dayId),
     label: e.label,
-    category: nul(e.category),
+    ...expCat(e.category),
     amount: e.amount,
     currency: e.currency,
     fx_rate: nul(e.fxRate),
@@ -723,6 +754,7 @@ export function buildSteps(trip: Trip, tripId: string, newId: () => string): Res
     { table: 'transports', rows: transports },
     { table: 'flights', rows: flights },
     { table: 'flight_legs', rows: legs },
+    ...(expenseCategories.length > 0 ? [{ table: 'expense_categories', rows: expenseCategories }] : []),
     { table: 'budget_items', rows: budgetItems },
     { table: 'budget_item_shares', rows: budgetShares },
     { table: 'expenses', rows: expenses },

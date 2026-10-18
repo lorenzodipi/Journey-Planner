@@ -25,9 +25,18 @@ await db.exec(`
   insert into auth.users values ('${A}','a@test.it'),('${B}','b@test.it'),('${C}','c@test.it');
 `)
 
+const runMigration = (file) => db.exec(fs.readFileSync(new URL(`../migrations/${file}`, import.meta.url), 'utf8'))
 for (const file of ['0001_init.sql', '0002_trip_fx.sql', '0003_service_role_import.sql', '0004_stays_dinner.sql', '0005_transport_coords.sql', '0006_traveler_accounts.sql', '0007_checklist_quantity_done.sql']) {
-  await db.exec(fs.readFileSync(new URL(`../migrations/${file}`, import.meta.url), 'utf8'))
+  await runMigration(file)
 }
+
+// dati "vecchi" (categorie a testo libero) presenti PRIMA della 0008: la migrazione deve recuperarli
+const legacyTrip = (await db.query(`insert into trips (title, owner_id, timezone, theme) values ('Vecchio','${A}','Asia/Tokyo','japan') returning id`)).rows[0].id
+await db.query(`insert into expenses (trip_id,label,category,amount,currency) values
+  ($1,'Ramen','Cibo',10,'JPY'), ($1,'Sushi',' cibo ',20,'JPY'), ($1,'Treno','Trasporti',30,'JPY'), ($1,'Senza',null,5,'JPY')`, [legacyTrip])
+await db.query(`insert into budget_items (trip_id,label,category,amount,currency) values ($1,'Cene','CIBO',100,'EUR')`, [legacyTrip])
+
+await runMigration('0008_expense_categories.sql')
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -36,6 +45,16 @@ const asUser = async (uid, role = 'authenticated') => {
 let pass = 0, fail = 0
 const check = (name, cond, extra = '') => { (cond ? pass++ : fail++); console.log(`${cond ? 'OK  ' : 'FAIL'} ${name} ${extra}`) }
 const throws = async (name, fn) => { try { await fn(); check(name, false, '(nessun errore)') } catch (e) { check(name, true, `→ ${String(e.message).slice(0, 70)}`) } }
+
+{
+const legacyCats = (await db.query(`select label from expense_categories where trip_id=$1 order by label`, [legacyTrip])).rows.map((r) => r.label)
+check('0008 recupera le categorie a testo libero (una per nome, senza badare alle maiuscole)', legacyCats.length === 2 && legacyCats.includes('Trasporti'), JSON.stringify(legacyCats))
+check('0008 collega le spese esistenti alla categoria', (await db.query(
+  `select count(distinct e.category_id)::int n from expenses e where e.trip_id=$1 and e.category_id is not null`, [legacyTrip])).rows[0].n === 2)
+check('0008 lascia senza categoria le spese senza testo', (await db.query(`select category_id from expenses where label='Senza'`)).rows[0].category_id === null)
+check('0008 collega le voci di budget', (await db.query(`select b.category_id = e.category_id as same from budget_items b, expenses e where b.label='Cene' and e.label='Ramen'`)).rows[0].same === true)
+
+}
 
 // A crea un viaggio
 await asUser(A)
@@ -277,6 +296,27 @@ await throws('più pezzi della quantità rifiutati', () => db.query(`update chec
 await throws('pezzi negativi rifiutati', () => db.query(`update checklist_items set quantity_done = -1 where text='Magliette'`))
 await throws('quantità zero rifiutata', () => db.query(`insert into checklist_items (trip_id,text,quantity) values ($1,'x',0)`, [t]))
 await throws('quantità enorme rifiutata', () => db.query(`insert into checklist_items (trip_id,text,quantity) values ($1,'x',1000)`, [t]))
+
+// categorie di spesa (0008)
+const ec = (await db.query(`insert into expense_categories (trip_id,label,position) values ($1,'Cibo',1000) returning id`, [t])).rows[0].id
+await throws('nome categoria di spesa doppio (anche con maiuscole) rifiutato', () => db.query(`insert into expense_categories (trip_id,label) values ($1,' cibo')`, [t]))
+await throws('nome categoria di spesa vuoto rifiutato', () => db.query(`insert into expense_categories (trip_id,label) values ($1,'  ')`, [t]))
+await db.query(`insert into expenses (trip_id,label,amount,currency,category_id) values ($1,'Ramen di prova',30,'EUR',$2)`, [t, ec])
+check('spesa collegata alla sua categoria', (await db.query(`select 1 from expenses e join expense_categories c on c.id=e.category_id where e.label='Ramen di prova'`)).rows.length === 1)
+await db.query(`update expense_categories set label='Mangiare' where id=$1`, [ec])
+check('rinominare la categoria cambia il nome per tutte le sue spese', (await db.query(`select c.label from expenses e join expense_categories c on c.id=e.category_id where e.label='Ramen di prova'`)).rows[0].label === 'Mangiare')
+await db.query(`update expense_categories set deleted_at=now() where id=$1`, [ec])
+await db.query(`insert into expense_categories (trip_id,label) values ($1,'Mangiare')`, [t])
+check('dopo l\'eliminazione si può ricreare lo stesso nome', true)
+await db.query(`insert into budget_items (trip_id,label,amount,currency,category_id) values ($1,'Cene',100,'EUR',$2)`, [t, ec])
+check('voce di budget collegata a una categoria', true)
+// un viaggio non può usare le categorie di un altro (chiave composta)
+await asUser(C)
+await throws('categorie di spesa: un non membro non le crea', () => db.query(`insert into expense_categories (trip_id,label) values ($1,'Intruso')`, [legacyTrip]))
+check('categorie di spesa: C non vede quelle di un viaggio non suo', (await db.query(`select 1 from expense_categories where trip_id=$1`, [legacyTrip])).rows.length === 0)
+await asUser(A)
+const t8 = (await db.query(`insert into trips (title) values ('Altro viaggio') returning id`)).rows[0].id
+await throws('una spesa non può usare la categoria di un altro viaggio', () => db.query(`insert into expenses (trip_id,label,amount,currency,category_id) values ($1,'X',1,'EUR',$2)`, [t8, ec]))
 
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione
 await asUser(null, 'service_role')

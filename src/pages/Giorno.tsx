@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
 import { expenseBase, fxOf } from '../lib/budget'
+import { canSwap } from '../lib/itemOrder'
 import { daysBetween, formatDayLong, formatShort } from '../lib/dates'
 import { describeLeg } from '../lib/dayRoute'
 import { dayBookings, dayChecklist, dayExpenses, dayMovements, dayStays } from '../lib/dayView'
@@ -9,16 +10,19 @@ import { mapsLinkFor } from '../lib/mapsUrl'
 import { minutesOfDay, sunForDay } from '../lib/sun'
 import { tripToday } from '../lib/today'
 import { useDayRoute } from '../state/dayRoute'
-import { useForecast } from '../state/forecast'
 import { showToast } from '../state/toast'
+import { useForecast } from '../state/forecast'
 import { useTrip, useTrips } from '../state/trip'
 import type { DayItem, Stay } from '../types'
 import { DayMapPanel } from '../ui/DayMapPanel'
 import { DaySheet, type DaySheetState } from '../ui/DaySheet'
+import { TrashButton } from '../ui/ConfirmDialog'
 import { ItemRow } from '../ui/ItemRow'
 import { LightBar } from '../ui/LightBar'
 import { MovementIcon } from '../ui/MovementIcon'
 import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
+import { useDeleter } from '../ui/useDeleter'
+import { useItemActions } from '../ui/useItemActions'
 import { MODE_LABEL } from '../ui/TransportForm'
 import { WeatherCard } from '../ui/WeatherCard'
 
@@ -36,19 +40,24 @@ function Section({ title, aside, children }: { title: string; aside?: string; ch
   )
 }
 
-function StayCard({ stay, label }: { stay: Stay; label: string }) {
+function StayCard({ stay, label, onEdit }: { stay: Stay; label: string; onEdit: () => void }) {
   const meals = [stay.breakfast && 'Colazione', stay.dinner && 'Cena', stay.kitchen && 'Cucina'].filter(Boolean).join(' · ')
   return (
     <div class="py-2">
-      <p class="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
+      <div class="flex items-center justify-between gap-2">
+        <p class="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
+        <button type="button" onClick={onEdit} aria-label={`Modifica ${stay.name}`} class="min-h-11 rounded-full px-3 text-sm font-medium text-accent">
+          Modifica
+        </button>
+      </div>
       <p class="font-medium">{stay.name}</p>
       <p class="text-sm text-muted">
         {[stay.city, stay.checkInInfo && `check-in ${stay.checkInInfo}`, stay.checkOutInfo && `check-out ${stay.checkOutInfo}`].filter(Boolean).join(' · ')}
       </p>
       {meals && <p class="text-sm text-muted">{meals}</p>}
       <p class="mt-1 flex flex-wrap items-center gap-2 text-xs">
-        <span class={stay.booked ? 'text-ok' : 'text-warn'}>{stay.booked ? 'Prenotato' : 'Da prenotare'}</span>
-        <span class={stay.paid ? 'text-ok' : 'text-warn'}>{stay.paid ? 'Pagato' : 'Da pagare'}</span>
+        <span class={stay.booked ? 'text-ok' : 'text-warn'}>{stay.booked ? 'Prenotato' : 'Non prenotato'}</span>
+        <span class={stay.paid ? 'text-ok' : 'text-warn'}>{stay.paid ? 'Pagato' : 'Non pagato'}</span>
         {(stay.address || stay.mapsUrl) && (
           <a
             href={mapsLinkFor({ mapsUrl: stay.mapsUrl, lat: null, lng: null, name: [stay.name, stay.address, stay.city].filter(Boolean).join(' ') })}
@@ -66,7 +75,9 @@ function StayCard({ stay, label }: { stay: Stay; label: string }) {
 
 export function Giorno({ params }: { params: { id: string } }) {
   const trip = useTrip()
+  const actions = useItemActions()
   const t = useTrips()
+  const [del, delDialog] = useDeleter()
   const forecast = useForecast(trip)
   const [sheet, setSheet] = useState<DaySheetState>(null)
   const [reordering, setReordering] = useState(false)
@@ -104,21 +115,36 @@ export function Giorno({ params }: { params: { id: string } }) {
   const relative = rel === 0 ? 'Oggi' : rel === 1 ? 'Domani' : rel === -1 ? 'Ieri' : null
   const subtitle = [`Giorno ${index + 1} di ${trip.days.length}`, day.city, day.title, relative].filter(Boolean).join(' · ')
 
-  async function move(item: DayItem, step: -1 | 1) {
-    const message = await t.moveItem(day.id, item.id, step)
-    if (message) showToast(message)
-  }
-  async function toggleDone(item: DayItem) {
-    const message = await t.setItemDone(item.id, !item.done)
-    if (message) showToast(message)
-  }
 
   // "arrivo da…" per le tappe con posizione: il tempo dalla tappa numerata precedente
   const hintFor = (item: DayItem): string | undefined => {
     const stop = stopByItem.get(item.id)
-    if (!stop || stop.n < 2) return undefined
-    const leg = route.legs[stop.n - 2]
-    return leg ? `Dalla tappa ${stop.n - 1}: ${describeLeg(leg, route.routes[leg.key])}` : undefined
+    if (!stop) return undefined
+    const at = route.stops.findIndex((s) => s.id === stop.id)
+    if (at < 1) return undefined
+    const leg = route.legs[at - 1]
+    return leg ? `Dalla tappa ${route.stops[at - 1].n}: ${describeLeg(leg, route.routes[leg.key])}` : undefined
+  }
+
+  // il luogo collegato alla tappa, se il nome è diverso dal titolo
+  const placeLine = (item: DayItem): string | undefined => {
+    const place = item.placeId ? trip.places.find((p) => p.id === item.placeId) : undefined
+    if (!place) return undefined
+    const same = place.name.trim().toLowerCase() === item.title.trim().toLowerCase()
+    return [same ? '' : place.name, place.city].filter(Boolean).join(' · ') || undefined
+  }
+
+  const openMovement = (ref: NonNullable<(typeof movements)[number]['ref']>) => {
+    if (ref.type === 'flight') {
+      const flight = trip.flights.find((f) => f.id === ref.id)
+      if (flight) setSheet({ kind: 'edit-flight', flight })
+    } else if (ref.type === 'stay') {
+      const stay = trip.stays.find((s) => s.id === ref.id)
+      if (stay) setSheet({ kind: 'edit-stay', stay })
+    } else {
+      const transport = trip.transports.find((x) => x.id === ref.id)
+      if (transport) setSheet({ kind: 'edit-transport', transport })
+    }
   }
 
   return (
@@ -159,20 +185,28 @@ export function Giorno({ params }: { params: { id: string } }) {
         </Section>
 
         <Section title="Tappe" aside={day.items.length > 0 ? `${day.items.length}` : undefined}>
+          {reordering && (
+            <p class="mb-1 rounded-xl bg-accent-soft px-3 py-2 text-xs text-accent">
+              Le tappe con un orario seguono l'orario: per spostarne una, cambia il suo orario. Le altre si spostano con le frecce.
+            </p>
+          )}
           {day.items.length > 0 ? (
             <ul class="divide-y divide-line">
               {day.items.map((item, i) => (
                 <ItemRow
                   item={item}
-                  n={stopByItem.get(item.id)?.n}
+                  n={i + 1}
+                  onMap={stopByItem.has(item.id)}
                   hint={hintFor(item)}
+                  place={placeLine(item)}
                   onOpen={reordering ? undefined : () => setSheet({ kind: 'edit-item', day, item })}
-                  onToggleDone={reordering ? undefined : () => void toggleDone(item)}
+                  onToggleDone={reordering ? undefined : () => void actions.toggleDone(item)}
+                  onDelete={() => actions.remove(item)}
                   reorder={
                     reordering
                       ? {
-                          onUp: i > 0 ? () => void move(item, -1) : undefined,
-                          onDown: i < day.items.length - 1 ? () => void move(item, 1) : undefined,
+                          onUp: i > 0 && canSwap(day.items[i - 1], item) ? () => void actions.move(day.id, item, -1) : undefined,
+                          onDown: i < day.items.length - 1 && canSwap(item, day.items[i + 1]) ? () => void actions.move(day.id, item, 1) : undefined,
                         }
                       : undefined
                   }
@@ -203,7 +237,14 @@ export function Giorno({ params }: { params: { id: string } }) {
           {movements.length > 0 ? (
             <ul class="divide-y divide-line">
               {movements.map((e) => (
-                <li class="flex min-h-14 items-center gap-3 py-2">
+                <li class="flex min-h-14 items-center">
+                  <button
+                    type="button"
+                    disabled={!e.ref}
+                    onClick={() => e.ref && openMovement(e.ref)}
+                    aria-label={`Modifica: ${e.title}`}
+                    class="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2 text-left"
+                  >
                   <span class="grid size-10 shrink-0 place-items-center rounded-full bg-accent-soft text-accent">
                     <MovementIcon event={e} />
                   </span>
@@ -220,33 +261,62 @@ export function Giorno({ params }: { params: { id: string } }) {
                     </span>
                     {e.flag && <span class={`block text-xs ${e.flag.ok ? 'text-ok' : 'text-warn'}`}>{e.flag.text}</span>}
                   </span>
+                  </button>
+                  {e.ref?.type === 'transport' && (
+                    <TrashButton
+                      label={`Elimina il trasporto ${e.title}`}
+                      onClick={() => {
+                        const id = (e.ref as { id: string }).id
+                        void del({
+                          title: `Eliminare «${e.title}»?`,
+                          done: 'Trasporto eliminato',
+                          run: () => t.setTransportDeleted(id, true),
+                          undo: () => t.setTransportDeleted(id, false),
+                        })
+                      }}
+                    />
+                  )}
                 </li>
               ))}
             </ul>
           ) : (
             <p class="py-2 text-sm text-muted">Nessun volo, treno o spostamento in programma per questo giorno.</p>
           )}
-          {movements.length > 0 && <p class="mt-1 text-xs text-muted">Voli, treni e check-in/out. Orari nel fuso di ogni luogo.</p>}
-          <Link href="/altro/trasporti" class="mt-1 inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-accent">
-            Gestisci i trasporti
-          </Link>
+          {movements.length > 0 && <p class="mt-1 text-xs text-muted">Voli, treni e check-in/out: tocca per modificare. Orari nel fuso di ogni luogo.</p>}
+          <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-1">
+            <button type="button" onClick={() => setSheet({ kind: 'new-transport', day })} class="min-h-11 rounded-full px-3 text-sm font-medium text-accent">
+              + Trasporto
+            </button>
+            <Link href="/altro/trasporti" class="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-muted">
+              Tutti i trasporti
+            </Link>
+          </div>
         </Section>
 
         <Section title="Alloggio">
           {stays.night || stays.checkIn.length > 0 || stays.checkOut.length > 0 ? (
             <div class="divide-y divide-line">
-              {stays.checkOut.map((s) => <StayCard stay={s} label="Check-out oggi" />)}
-              {stays.checkIn.filter((s) => s.id !== stays.night?.id).map((s) => <StayCard stay={s} label="Check-in oggi" />)}
+              {stays.checkOut.map((s) => <StayCard stay={s} label="Check-out oggi" onEdit={() => setSheet({ kind: 'edit-stay', stay: s })} />)}
+              {stays.checkIn.filter((s) => s.id !== stays.night?.id).map((s) => <StayCard stay={s} label="Check-in oggi" onEdit={() => setSheet({ kind: 'edit-stay', stay: s })} />)}
               {stays.night && (
-                <StayCard stay={stays.night} label={stays.night.checkIn === day.date ? 'Check-in oggi · dormi qui' : 'Dormi qui'} />
+                <StayCard
+                  stay={stays.night}
+                  label={stays.night.checkIn === day.date ? 'Check-in oggi · dormi qui' : 'Dormi qui'}
+                  onEdit={() => setSheet({ kind: 'edit-stay', stay: stays.night as Stay })}
+                />
               )}
             </div>
           ) : (
             <p class="py-2 text-sm text-muted">Nessun alloggio per questa notte.</p>
           )}
-          <Link href="/altro/alloggi" class="mt-1 inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-accent">
-            Gestisci gli alloggi
-          </Link>
+          <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-1">
+            <button type="button" onClick={() => setSheet({ kind: 'new-stay', day })} class="min-h-11 rounded-full px-3 text-sm font-medium text-accent">
+              + Alloggio
+            </button>
+            <Link href="/altro/alloggi" class="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-muted">
+              Tutti gli alloggi
+            </Link>
+          </div>
         </Section>
 
         <WeatherCard forecast={forecast} date={day.date} today={today} tripDates={trip.days.map((d) => d.date)} />
@@ -269,19 +339,33 @@ export function Giorno({ params }: { params: { id: string } }) {
               {expenses.map((e) => {
                 const inBase = expenseBase(e, fx)
                 return (
-                  <li class="flex min-h-12 items-center gap-3 py-2">
-                    <span class="min-w-0 flex-1">
-                      <span class="block truncate font-medium">{e.label}</span>
-                      <span class="block truncate text-xs text-muted">
-                        {[e.category, e.paidBy && payer.get(e.paidBy) && `pagato da ${payer.get(e.paidBy)}`].filter(Boolean).join(' · ')}
+                  <li class="flex items-center">
+                    <button type="button" onClick={() => setSheet({ kind: 'edit-expense', expense: e })} class="flex min-h-12 min-w-0 flex-1 items-center gap-3 py-2 text-left">
+                      <span class="min-w-0 flex-1">
+                        <span class="block truncate font-medium">{e.label}</span>
+                        <span class="block truncate text-xs text-muted">
+                          {[e.category, e.paidBy && payer.get(e.paidBy) && `pagato da ${payer.get(e.paidBy)}`].filter(Boolean).join(' · ')}
+                        </span>
                       </span>
-                    </span>
-                    <span class="shrink-0 text-right">
-                      <span class="block font-semibold">{formatMoney(e.amount, e.currency)}</span>
-                      {e.currency !== trip.baseCurrency && inBase !== null && (
-                        <span class="block text-xs text-muted">≈ {formatMoney(inBase, trip.baseCurrency)}</span>
-                      )}
-                    </span>
+                      <span class="shrink-0 text-right">
+                        <span class="block font-semibold">{formatMoney(e.amount, e.currency)}</span>
+                        {e.currency !== trip.baseCurrency && inBase !== null && (
+                          <span class="block text-xs text-muted">≈ {formatMoney(inBase, trip.baseCurrency)}</span>
+                        )}
+                      </span>
+                    </button>
+                    <TrashButton
+                      label={`Elimina la spesa ${e.label}`}
+                      onClick={() =>
+                        void del({
+                          title: `Eliminare la spesa «${e.label}»?`,
+                          text: 'Sparisce dai totali della categoria e dai conti tra voi. Puoi annullare subito dopo.',
+                          done: 'Spesa eliminata',
+                          run: () => t.setExpenseDeleted(e.id, true),
+                          undo: () => t.setExpenseDeleted(e.id, false),
+                        })
+                      }
+                    />
                   </li>
                 )
               })}
@@ -289,9 +373,14 @@ export function Giorno({ params }: { params: { id: string } }) {
           ) : (
             <p class="py-2 text-sm text-muted">Nessuna spesa registrata per questo giorno.</p>
           )}
-          <Link href="/altro/spese" class="mt-1 inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-accent">
-            Vai alle spese
-          </Link>
+          <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-1">
+            <button type="button" onClick={() => setSheet({ kind: 'new-expense', day })} class="min-h-11 rounded-full px-3 text-sm font-medium text-accent">
+              + Spesa
+            </button>
+            <Link href="/altro/spese" class="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-muted">
+              Tutte le spese
+            </Link>
+          </div>
         </Section>
 
         {(bookings.length > 0 || todos.length > 0) && (
@@ -299,11 +388,22 @@ export function Giorno({ params }: { params: { id: string } }) {
             {bookings.length > 0 && (
               <ul class="divide-y divide-line" aria-label="Prenotazioni valide oggi">
                 {bookings.map((b) => (
-                  <li class="py-2">
-                    <Link href="/altro/prenotazioni" class="block">
+                  <li class="flex items-center">
+                    <button type="button" onClick={() => setSheet({ kind: 'edit-booking', booking: b })} aria-label={`Modifica ${b.title}`} class="block min-h-12 min-w-0 flex-1 py-2 text-left">
                       <span class="block truncate font-medium">{b.title}</span>
                       <span class="block truncate text-xs text-muted">{b.code ? `Codice ${b.code}` : 'Prenotazione'}</span>
-                    </Link>
+                    </button>
+                    <TrashButton
+                      label={`Elimina ${b.title}`}
+                      onClick={() =>
+                        void del({
+                          title: `Eliminare «${b.title}»?`,
+                          done: 'Prenotazione eliminata',
+                          run: () => t.setBookingDeleted(b.id, true),
+                          undo: () => t.setBookingDeleted(b.id, false),
+                        })
+                      }
+                    />
                   </li>
                 ))}
               </ul>
@@ -311,7 +411,37 @@ export function Giorno({ params }: { params: { id: string } }) {
             {todos.length > 0 && (
               <ul class={`divide-y divide-line ${bookings.length > 0 ? 'mt-2 border-t border-line' : ''}`} aria-label="Da fare oggi">
                 {todos.map((c) => (
-                  <li class={`py-2 text-sm ${c.done ? 'text-muted line-through' : ''}`}>{c.text}</li>
+                  <li class="flex items-center">
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={c.done}
+                      aria-label={`${c.done ? 'Da rifare' : 'Fatto'}: ${c.text}`}
+                      onClick={async () => {
+                        const message = await t.setChecklistDone(c.id, !c.done)
+                        if (message) showToast(message)
+                      }}
+                      class="grid h-11 w-11 shrink-0 place-items-center"
+                    >
+                      <span class={`grid h-6 w-6 place-items-center rounded-md border-2 text-sm ${c.done ? 'border-accent bg-accent text-accent-ink' : 'border-line'}`}>
+                        {c.done ? '✓' : ''}
+                      </span>
+                    </button>
+                    <button type="button" onClick={() => setSheet({ kind: 'edit-checklist', item: c })} class={`min-h-12 min-w-0 flex-1 py-2 text-left text-sm ${c.done ? 'text-muted line-through' : ''}`}>
+                      {c.text}
+                    </button>
+                    <TrashButton
+                      label={`Elimina ${c.text}`}
+                      onClick={() =>
+                        void del({
+                          title: `Eliminare «${c.text}»?`,
+                          done: 'Voce eliminata',
+                          run: () => t.setChecklistDeleted(c.id, true),
+                          undo: () => t.setChecklistDeleted(c.id, false),
+                        })
+                      }
+                    />
+                  </li>
                 ))}
               </ul>
             )}
@@ -319,7 +449,9 @@ export function Giorno({ params }: { params: { id: string } }) {
         )}
       </div>
 
-      <DaySheet trip={trip} state={sheet} onClose={() => setSheet(null)} />
+      {actions.dialog}
+      {delDialog}
+      <DaySheet trip={trip} state={sheet} onChange={setSheet} />
     </div>
   )
 }

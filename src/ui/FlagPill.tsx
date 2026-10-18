@@ -1,4 +1,5 @@
-export function FlagPill({ on, label, onClick }: { on: boolean; label: string; onClick: () => void }) {
+/** Interruttore a pillola. `offLabel`: testo quando è spento (es. "Non pagato"); se manca, resta `label`. */
+export function FlagPill({ on, label, offLabel, onClick }: { on: boolean; label: string; offLabel?: string; onClick: () => void }) {
   return (
     <button
       type="button"
@@ -9,7 +10,7 @@ export function FlagPill({ on, label, onClick }: { on: boolean; label: string; o
       }`}
     >
       <span aria-hidden="true">{on ? '✓' : '○'}</span>
-      {label}
+      {on ? label : (offLabel ?? label)}
     </button>
   )
 }

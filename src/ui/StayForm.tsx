@@ -1,23 +1,27 @@
 import { useState } from 'preact/hooks'
+import { useConfirm } from './ConfirmDialog'
 import { amountToText, parseAmount } from '../lib/money'
 import type { StayInput } from '../lib/logistics'
 import type { Stay, Trip } from '../types'
 import { CheckField, CostFields, FormError, PrimaryButton, SecondaryButton, TextArea, TextField } from './Field'
+import { Select } from './Select'
 import { uniqueCities } from './placeMeta'
 
 interface Props {
   trip: Trip
   initial?: Stay
+  /** Date di partenza per un alloggio nuovo (es. dalla pagina di un giorno). */
+  defaults?: { checkIn?: string; checkOut?: string }
   onSubmit: (input: StayInput) => Promise<string | null>
   onDelete?: () => Promise<string | null>
   onDone: () => void
 }
 
-export function StayForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
+export function StayForm({ trip, initial, defaults, onSubmit, onDelete, onDone }: Props) {
   const [name, setName] = useState(initial?.name ?? '')
   const [city, setCity] = useState(initial?.city ?? '')
-  const [checkIn, setCheckIn] = useState(initial?.checkIn ?? trip.startDate)
-  const [checkOut, setCheckOut] = useState(initial?.checkOut ?? trip.startDate)
+  const [checkIn, setCheckIn] = useState(initial?.checkIn ?? defaults?.checkIn ?? trip.startDate)
+  const [checkOut, setCheckOut] = useState(initial?.checkOut ?? defaults?.checkOut ?? defaults?.checkIn ?? trip.startDate)
   const [checkInInfo, setCheckInInfo] = useState(initial?.checkInInfo ?? '')
   const [checkOutInfo, setCheckOutInfo] = useState(initial?.checkOutInfo ?? '')
   const [address, setAddress] = useState(initial?.address ?? '')
@@ -54,8 +58,11 @@ export function StayForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
     else onDone()
   }
 
+  const [confirm, confirmDialog] = useConfirm()
+
   async function remove() {
     if (!onDelete) return
+    if (!(await confirm({ title: 'Eliminare questo alloggio?', text: 'Puoi annullare subito dopo.' }))) return
     setBusy(true)
     const message = await onDelete()
     setBusy(false)
@@ -66,8 +73,7 @@ export function StayForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
   return (
     <form class="space-y-4" onSubmit={submit} noValidate>
       <TextField label="Nome" value={name} onInput={setName} maxLength={120} />
-      <TextField label="Città" value={city} onInput={setCity} list="stay-cities" />
-      <datalist id="stay-cities">{cities.map((c) => <option value={c} />)}</datalist>
+      <Select label="Città" value={city} onChange={setCity} creatable placeholder="Scegli o scrivi" options={cities.map((c) => ({ value: c, label: c }))} />
 
       <div class="grid grid-cols-2 gap-3">
         <TextField label="Check-in" type="date" value={checkIn} onInput={setCheckIn} />
@@ -103,6 +109,7 @@ export function StayForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva alloggio' : 'Aggiungi alloggio'}</PrimaryButton>
       {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina alloggio</SecondaryButton>}
+    {confirmDialog}
     </form>
   )
 }

@@ -1,5 +1,6 @@
 import type { ComponentChildren } from 'preact'
 import { useEffect, useRef } from 'preact/hooks'
+import { stampOpen } from './dialogStack'
 
 interface Props {
   open: boolean
@@ -18,7 +19,10 @@ export function Sheet({ open, title, onClose, children }: Props) {
   useEffect(() => {
     const dialog = ref.current
     if (!dialog) return
-    if (open && !dialog.open) dialog.showModal()
+    if (open && !dialog.open) {
+      dialog.showModal()
+      stampOpen(dialog)
+    }
     if (!open && dialog.open) dialog.close()
   }, [open])
 

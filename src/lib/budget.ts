@@ -61,7 +61,7 @@ export function budgetLines(items: BudgetItem[]): Line[] {
 }
 
 /** Costi già inseriti in voli, alloggi e trasporti, come voci di budget (sola lettura). */
-export function logisticsLines(trip: Pick<Trip, 'flights' | 'stays' | 'transports' | 'travelers'>): Line[] {
+export function logisticsLines<T extends { id: string }>(trip: Pick<Trip, 'flights' | 'stays' | 'transports'> & { travelers: readonly T[] }): Line[] {
   const everyone = (paid: boolean) => trip.travelers.map((t) => ({ travelerId: t.id, paid }))
   const lines: Line[] = []
   for (const f of trip.flights)
@@ -97,7 +97,7 @@ export interface BudgetSummary {
   unconverted: string[]
 }
 
-export function summarizeLines(lines: Line[], travelers: Pick<Traveler, 'id'>[], fx: FxContext): BudgetSummary {
+export function summarizeLines(lines: Line[], travelers: readonly Pick<Traveler, 'id'>[], fx: FxContext): BudgetSummary {
   const per = new Map<string, PersonTotals>(travelers.map((t) => [t.id, { travelerId: t.id, planned: 0, paid: 0, outstanding: 0 }]))
   const unconverted = new Set<string>()
   for (const line of lines) {
@@ -133,6 +133,69 @@ export function groupByCategory<T extends { category: string }>(lines: T[]): { c
   return Array.from(map, ([category, ls]) => ({ category, lines: ls })).sort((a, b) =>
     a.category === 'Altro' ? 1 : b.category === 'Altro' ? -1 : a.category.localeCompare(b.category, 'it'),
   )
+}
+
+// ---------- categorie ----------
+
+export const OTHER_CATEGORY = 'Altro'
+const catKey = (label: string) => label.trim().toLowerCase()
+
+export interface CategoryOverview {
+  /** nome in minuscolo: unisce le categorie di spesa e quelle ricavate da voli, alloggi e trasporti */
+  key: string
+  /** categoria vera del viaggio (si può rinominare ed eliminare); assente per Voli, Alloggi… e "Altro" */
+  id?: string
+  label: string
+  color?: string
+  /** previsto: somma delle voci di budget della categoria (nella valuta base) */
+  planned: number
+  /** speso davvero: somma delle spese registrate nella categoria. Si calcola, non si scrive a mano. */
+  spent: number
+  lines: Line[]
+  expenses: Expense[]
+  /** valute senza tasso: quelle spese non sono nei totali */
+  unconverted: string[]
+}
+
+/**
+ * Una riga per categoria: il "previsto" viene dalle voci di budget, lo "speso" dalle spese registrate.
+ * Le categorie create dall'utente compaiono anche se ancora vuote; "Altro" solo se ha qualcosa dentro.
+ */
+export function categoryOverview(
+  trip: Pick<Trip, 'expenseCategories' | 'budget' | 'expenses' | 'flights' | 'stays' | 'transports'> & { travelers: readonly { id: string }[] },
+  fx: FxContext,
+): CategoryOverview[] {
+  const map = new Map<string, CategoryOverview>()
+  const slot = (label: string, id?: string, color?: string): CategoryOverview => {
+    const key = catKey(label)
+    let c = map.get(key)
+    if (!c) {
+      c = { key, id, label: label.trim(), color, planned: 0, spent: 0, lines: [], expenses: [], unconverted: [] }
+      map.set(key, c)
+    }
+    return c
+  }
+  for (const c of trip.expenseCategories) slot(c.label, c.id, c.color)
+  const lines = [...budgetLines(trip.budget), ...logisticsLines(trip)]
+  for (const l of lines) slot(l.category).lines.push(l)
+  for (const e of trip.expenses) slot(e.category?.trim() || OTHER_CATEGORY).expenses.push(e)
+
+  for (const c of map.values()) {
+    const planned = summarizeLines(c.lines, trip.travelers, fx)
+    c.planned = planned.planned
+    const unconverted = new Set(planned.unconverted)
+    let spent = 0
+    for (const e of c.expenses) {
+      const b = expenseBase(e, fx)
+      if (b === null) unconverted.add(e.currency)
+      else spent += b
+    }
+    c.spent = round2(spent)
+    c.unconverted = Array.from(unconverted).sort()
+  }
+  return Array.from(map.values())
+    .filter((c) => c.id !== undefined || c.lines.length > 0 || c.expenses.length > 0)
+    .sort((a, b) => (a.key === catKey(OTHER_CATEGORY) ? 1 : b.key === catKey(OTHER_CATEGORY) ? -1 : a.label.localeCompare(b.label, 'it')))
 }
 
 // ---------- spese ----------

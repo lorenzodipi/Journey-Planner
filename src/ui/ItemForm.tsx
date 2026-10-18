@@ -1,8 +1,10 @@
 import { useState } from 'preact/hooks'
+import { useConfirm } from './ConfirmDialog'
 import type { ItemInput } from '../lib/tripApi'
 import type { DayItem, ItemKind, Trip } from '../types'
 import { FormError, PrimaryButton, SecondaryButton, TextArea, TextField } from './Field'
 import { KIND_LABEL } from './ItemRow'
+import { Select } from './Select'
 
 interface Props {
   trip: Trip
@@ -10,12 +12,14 @@ interface Props {
   onSubmit: (input: ItemInput) => Promise<string | null>
   /** Presente solo in modifica. */
   onDelete?: () => Promise<string | null>
+  /** Apre la scheda del luogo collegato. */
+  onOpenPlace?: (placeId: string) => void
   onDone: () => void
 }
 
 const KINDS: ItemKind[] = ['visit', 'meal', 'transport', 'free', 'note']
 
-export function ItemForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
+export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDone }: Props) {
   const [title, setTitle] = useState(initial?.title ?? '')
   const [kind, setKind] = useState<ItemKind>(initial?.kind ?? 'visit')
   const [startTime, setStartTime] = useState(initial?.time ?? '')
@@ -43,8 +47,11 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
     else onDone()
   }
 
+  const [confirm, confirmDialog] = useConfirm()
+
   async function remove() {
     if (!onDelete) return
+    if (!(await confirm({ title: 'Eliminare questa tappa?', text: 'Puoi annullare subito dopo.' }))) return
     setBusy(true)
     const message = await onDelete()
     setBusy(false)
@@ -55,22 +62,22 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
   return (
     <form class="space-y-4" onSubmit={submit} noValidate>
       {trip.places.length > 0 && (
-        <label class="block">
-          <span class="mb-1 block text-sm font-medium">Luogo collegato</span>
-          <select
-            value={placeId}
-            onChange={(e) => onPlace(e.currentTarget.value)}
-            class="min-h-12 w-full rounded-2xl border border-line bg-bg px-4"
-          >
-            <option value="">Nessuno</option>
-            {trip.places.map((p) => (
-              <option value={p.id}>
-                {p.name}
-                {p.city ? ` · ${p.city}` : ''}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Select
+          label="Luogo collegato"
+          value={placeId}
+          onChange={onPlace}
+          placeholder="Nessuno"
+          options={[
+            { value: '', label: 'Nessuno' },
+            ...trip.places.map((p) => ({ value: p.id, label: p.name, hint: [p.city, p.category].filter(Boolean).join(' · ') || undefined })),
+          ]}
+        />
+      )}
+
+      {placeId && onOpenPlace && trip.places.some((p) => p.id === placeId) && (
+        <button type="button" onClick={() => onOpenPlace(placeId)} class="-mt-2 min-h-11 rounded-full px-3 text-sm font-medium text-accent">
+          Apri la scheda del luogo
+        </button>
       )}
 
       <TextField label="Cosa fai" value={title} onInput={setTitle} maxLength={120} />
@@ -102,6 +109,7 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva tappa' : 'Aggiungi tappa'}</PrimaryButton>
       {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina tappa</SecondaryButton>}
+    {confirmDialog}
     </form>
   )
 }

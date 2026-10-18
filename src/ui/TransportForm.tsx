@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks'
+import { useConfirm } from './ConfirmDialog'
 import { amountToText, parseAmount } from '../lib/money'
 import { transportToForm, type TransportInput } from '../lib/logistics'
 import { isShortMapsLink, parseDirectionsUrl } from '../lib/mapsUrl'
@@ -24,13 +25,15 @@ const MODES = (Object.keys(MODE_LABEL) as TransportMode[]).map((value) => ({ val
 interface Props {
   trip: Trip
   initial?: Transport
+  /** Data di partenza per un trasporto nuovo (es. dalla pagina di un giorno). */
+  defaults?: { departDate?: string }
   onSubmit: (input: TransportInput) => Promise<string | null>
   onDelete?: () => Promise<string | null>
   onDone: () => void
 }
 
-export function TransportForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
-  const times = initial ? transportToForm(initial, trip.timezone) : { departDate: trip.startDate, departTime: '', arriveDate: '', arriveTime: '' }
+export function TransportForm({ trip, initial, defaults, onSubmit, onDelete, onDone }: Props) {
+  const times = initial ? transportToForm(initial, trip.timezone) : { departDate: defaults?.departDate ?? trip.startDate, departTime: '', arriveDate: '', arriveTime: '' }
   const [from, setFrom] = useState(initial?.from ?? '')
   const [to, setTo] = useState(initial?.to ?? '')
   const [mode, setMode] = useState<TransportMode>(initial?.mode ?? 'train')
@@ -110,8 +113,11 @@ export function TransportForm({ trip, initial, onSubmit, onDelete, onDone }: Pro
     else onDone()
   }
 
+  const [confirm, confirmDialog] = useConfirm()
+
   async function remove() {
     if (!onDelete) return
+    if (!(await confirm({ title: 'Eliminare questo trasporto?', text: 'Puoi annullare subito dopo.' }))) return
     setBusy(true)
     const message = await onDelete()
     setBusy(false)
@@ -174,6 +180,7 @@ export function TransportForm({ trip, initial, onSubmit, onDelete, onDone }: Pro
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva trasporto' : 'Aggiungi trasporto'}</PrimaryButton>
       {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina trasporto</SecondaryButton>}
+    {confirmDialog}
     </form>
   )
 }

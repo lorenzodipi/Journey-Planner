@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { BudgetItem, Day, Expense } from '../types'
+import type { BudgetItem, Category } from '../types'
 import { client } from './db'
-import { budgetColumns, expenseColumns, type BudgetInput, type ExpenseInput } from './moneyData'
+import { budgetColumns, type BudgetInput } from './moneyData'
 
 // Scritture e letture per budget, spese e tasso di cambio.
 
@@ -33,24 +33,56 @@ async function syncBudgetShares(tripId: string, itemId: string, input: BudgetInp
   if (res.error) throw res.error
 }
 
-async function syncExpenseShares(tripId: string, expenseId: string, travelerIds: string[]) {
+// ---------- categorie di spesa ----------
+
+const MIGRATION_0008 = 'Manca la migrazione 0008 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0008_expense_categories.sql).'
+const needs0008 = (error: { message: string }) => (/expense_categories|category_id/i.test(error.message) ? new Error(MIGRATION_0008) : error)
+
+/** Trova la categoria per nome (senza badare alle maiuscole) o la crea. Nome vuoto = nessuna categoria. */
+export async function resolveExpenseCategory(tripId: string, label: string, known: Category[]): Promise<string | null> {
+  const clean = label.trim()
+  if (!clean) return null
+  const hit = known.find((c) => c.label.toLowerCase() === clean.toLowerCase())
+  if (hit) return hit.id
   const db = client()
-  if (travelerIds.length > 0) {
-    const rows = travelerIds.map((id) => ({ trip_id: tripId, expense_id: expenseId, traveler_id: id, weight: 1, deleted_at: null }))
-    const up = await db.from('expense_shares').upsert(rows, { onConflict: 'expense_id,traveler_id' })
-    if (up.error) throw up.error
-  }
-  let del = db.from('expense_shares').delete().eq('expense_id', expenseId)
-  if (travelerIds.length > 0) del = del.not('traveler_id', 'in', `(${travelerIds.join(',')})`)
-  const res = await del
-  if (res.error) throw res.error
+  const { data, error } = await db
+    .from('expense_categories')
+    .insert({ trip_id: tripId, label: clean, position: (known.length + 1) * 1000 })
+    .select('id')
+    .single()
+  if (!error) return (data as { id: string }).id
+  // creata nel frattempo da un altro telefono: la recupero
+  const found = await db.from('expense_categories').select('id').eq('trip_id', tripId).is('deleted_at', null).ilike('label', clean).limit(1)
+  if (found.error || !found.data?.length) throw needs0008(error)
+  return (found.data[0] as { id: string }).id
+}
+
+export async function createExpenseCategory(tripId: string, label: string, known: Category[]): Promise<void> {
+  const clean = label.trim()
+  if (!clean) throw new Error('Scrivi il nome della categoria.')
+  if (known.some((c) => c.label.toLowerCase() === clean.toLowerCase())) throw new Error(`La categoria «${clean}» esiste già.`)
+  await resolveExpenseCategory(tripId, clean, known)
+}
+
+export async function renameExpenseCategory(id: string, label: string, known: Category[]): Promise<void> {
+  const clean = label.trim()
+  if (!clean) throw new Error('Scrivi il nome della categoria.')
+  if (known.some((c) => c.id !== id && c.label.toLowerCase() === clean.toLowerCase())) throw new Error(`Esiste già una categoria «${clean}».`)
+  const { error } = await client().from('expense_categories').update({ label: clean }).eq('id', id)
+  if (error) throw needs0008(error)
+}
+
+export async function setExpenseCategoryDeleted(id: string, deleted: boolean): Promise<void> {
+  const { error } = await client().from('expense_categories').update({ deleted_at: deleted ? now() : null }).eq('id', id)
+  if (error) throw needs0008(error)
 }
 
 // ---------- budget ----------
 
-export async function createBudgetItem(tripId: string, input: BudgetInput): Promise<void> {
+export async function createBudgetItem(tripId: string, input: BudgetInput, known: Category[]): Promise<void> {
   const db = client()
-  const { data, error } = await db.from('budget_items').insert({ trip_id: tripId, ...budgetColumns(input) }).select('id').single()
+  const categoryId = await resolveExpenseCategory(tripId, input.category, known)
+  const { data, error } = await db.from('budget_items').insert({ trip_id: tripId, ...budgetColumns(input, categoryId) }).select('id').single()
   if (error) throw error
   const id = (data as { id: string }).id
   try {
@@ -61,9 +93,10 @@ export async function createBudgetItem(tripId: string, input: BudgetInput): Prom
   }
 }
 
-export async function updateBudgetItem(item: BudgetItem, tripId: string, input: BudgetInput): Promise<void> {
+export async function updateBudgetItem(item: BudgetItem, tripId: string, input: BudgetInput, known: Category[]): Promise<void> {
   const db = client()
-  const { error } = await db.from('budget_items').update(budgetColumns(input)).eq('id', item.id)
+  const categoryId = await resolveExpenseCategory(tripId, input.category, known)
+  const { error } = await db.from('budget_items').update(budgetColumns(input, categoryId)).eq('id', item.id)
   if (error) throw error
   await syncBudgetShares(tripId, item.id, input)
 }
@@ -79,25 +112,7 @@ export async function setBudgetItemDeleted(id: string, deleted: boolean): Promis
 }
 
 // ---------- spese ----------
-
-export async function createExpense(tripId: string, input: ExpenseInput, timeZone: string, days: Pick<Day, 'id' | 'date'>[]): Promise<void> {
-  const db = client()
-  const { data, error } = await db.from('expenses').insert({ trip_id: tripId, ...expenseColumns(input, timeZone, days) }).select('id').single()
-  if (error) throw error
-  const id = (data as { id: string }).id
-  try {
-    await syncExpenseShares(tripId, id, input.travelerIds)
-  } catch (e) {
-    await db.from('expenses').update({ deleted_at: now() }).eq('id', id)
-    throw e
-  }
-}
-
-export async function updateExpense(expense: Expense, tripId: string, input: ExpenseInput, timeZone: string, days: Pick<Day, 'id' | 'date'>[]): Promise<void> {
-  const { error } = await client().from('expenses').update(expenseColumns(input, timeZone, days)).eq('id', expense.id)
-  if (error) throw error
-  await syncExpenseShares(tripId, expense.id, input.travelerIds)
-}
+// Creare e modificare una spesa passa dalla coda offline (lib/outboxLocal); qui resta solo l'eliminazione.
 
 export async function setExpenseDeleted(id: string, deleted: boolean): Promise<void> {
   const { error } = await client().from('expenses').update({ deleted_at: deleted ? now() : null }).eq('id', id)

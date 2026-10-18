@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks'
+import { useConfirm } from './ConfirmDialog'
 import { KIND_LABEL, KINDS, parseQuantity } from '../lib/checklist'
 import type { ChecklistInput } from '../lib/planningData'
 import type { ChecklistItem, Trip } from '../types'
@@ -32,7 +33,10 @@ export function ChecklistItemForm({ trip, initial, onSubmit, onDelete, onDone }:
     else onDone()
   }
 
+  const [confirm, confirmDialog] = useConfirm()
+
   async function remove() {
+    if (!(await confirm({ title: 'Eliminare questa voce?', text: 'Puoi annullare subito dopo.' }))) return
     setBusy(true)
     const message = await onDelete()
     setBusy(false)
@@ -57,6 +61,7 @@ export function ChecklistItemForm({ trip, initial, onSubmit, onDelete, onDone }:
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : 'Salva'}</PrimaryButton>
       <SecondaryButton danger onClick={() => void remove()}>Elimina voce</SecondaryButton>
+    {confirmDialog}
     </form>
   )
 }

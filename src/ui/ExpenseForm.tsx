@@ -1,8 +1,10 @@
 import { useState } from 'preact/hooks'
+import { useConfirm } from './ConfirmDialog'
 import { dateInZone } from '../lib/flights'
 import { amountToText, formatMoney, parseAmount, parseRate } from '../lib/money'
 import type { ExpenseInput } from '../lib/moneyData'
 import type { Expense, Trip } from '../types'
+import { CategorySelect } from './CategorySelect'
 import { CostFields, FormError, PrimaryButton, SecondaryButton, TextArea, TextField } from './Field'
 import { TravelerChips } from './TravelerChips'
 
@@ -11,6 +13,8 @@ const SUGGESTED = ['Cibo', 'Trasporti', 'Biglietti e ingressi', 'Shopping', 'Sou
 interface Props {
   trip: Trip
   initial?: Expense
+  /** Valori di partenza per una spesa nuova (es. dalla scheda di una categoria o dalla pagina di un giorno). */
+  defaults?: { category?: string; date?: string }
   onSubmit: (input: ExpenseInput) => Promise<string | null>
   onDelete?: () => Promise<string | null>
   onDone: () => void
@@ -22,11 +26,11 @@ function defaultDate(trip: Trip): string {
   return today >= trip.startDate && today <= trip.endDate ? today : trip.startDate
 }
 
-export function ExpenseForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
+export function ExpenseForm({ trip, initial, defaults, onSubmit, onDelete, onDone }: Props) {
   const everyone = trip.travelers.map((t) => t.id)
   const startCurrency = initial?.currency ?? trip.localCurrency ?? trip.baseCurrency
   const [label, setLabel] = useState(initial?.label ?? '')
-  const [category, setCategory] = useState(initial?.category ?? '')
+  const [category, setCategory] = useState(initial?.category ?? defaults?.category ?? '')
   const [amount, setAmount] = useState(amountToText(initial?.amount))
   const [currency, setCurrency] = useState(startCurrency)
   const [rate, setRate] = useState(
@@ -35,7 +39,7 @@ export function ExpenseForm({ trip, initial, onSubmit, onDelete, onDone }: Props
   const [rateTouched, setRateTouched] = useState(!!initial?.fxRate)
   const [paidBy, setPaidBy] = useState<string>(initial?.paidBy ?? everyone[0] ?? '')
   const [sharedWith, setSharedWith] = useState<string[]>(initial && initial.shares.length ? initial.shares.map((s) => s.travelerId) : everyone)
-  const [date, setDate] = useState(initial ? dateInZone(initial.spentAt, trip.timezone) : defaultDate(trip))
+  const [date, setDate] = useState(initial ? dateInZone(initial.spentAt, trip.timezone) : (defaults?.date ?? defaultDate(trip)))
   const [notes, setNotes] = useState(initial?.notes ?? '')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -45,7 +49,6 @@ export function ExpenseForm({ trip, initial, onSubmit, onDelete, onDone }: Props
   const value = parseAmount(amount)
   const rateValue = parseRate(rate)
   const preview = foreign && value !== null && rateValue ? Math.round(value * rateValue * 100) / 100 : null
-  const categories = Array.from(new Set([...trip.expenses.map((e) => e.category ?? '').filter(Boolean), ...SUGGESTED]))
 
   function onCurrency(v: string) {
     setCurrency(v)
@@ -74,8 +77,11 @@ export function ExpenseForm({ trip, initial, onSubmit, onDelete, onDone }: Props
     else onDone()
   }
 
+  const [confirm, confirmDialog] = useConfirm()
+
   async function remove() {
     if (!onDelete) return
+    if (!(await confirm({ title: 'Eliminare questa spesa?', text: 'Puoi annullare subito dopo.' }))) return
     setBusy(true)
     const message = await onDelete()
     setBusy(false)
@@ -117,12 +123,12 @@ export function ExpenseForm({ trip, initial, onSubmit, onDelete, onDone }: Props
         </>
       )}
       <TextField label="Data" type="date" value={date} onInput={setDate} />
-      <TextField label="Categoria" value={category} onInput={setCategory} list="expense-cats" />
-      <datalist id="expense-cats">{categories.map((c) => <option value={c} />)}</datalist>
+      <CategorySelect value={category} onChange={setCategory} categories={trip.expenseCategories} suggestions={SUGGESTED} />
       <TextArea label="Note" value={notes} onInput={setNotes} />
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva spesa' : 'Aggiungi spesa'}</PrimaryButton>
       {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina spesa</SecondaryButton>}
+    {confirmDialog}
     </form>
   )
 }

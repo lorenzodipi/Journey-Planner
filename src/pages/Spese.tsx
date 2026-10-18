@@ -6,16 +6,19 @@ import { formatMoney, round2 } from '../lib/money'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { Expense, Traveler } from '../types'
+import { TrashButton } from '../ui/ConfirmDialog'
 import { ExpenseForm } from '../ui/ExpenseForm'
 import { FxCard } from '../ui/FxCard'
 import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
 import { Sheet } from '../ui/Sheet'
+import { useDeleter } from '../ui/useDeleter'
 
 type SheetState = { kind: 'new' } | { kind: 'edit'; expense: Expense } | null
 
 export function Spese() {
   const trip = useTrip()
   const t = useTrips()
+  const [del, delDialog] = useDeleter()
   const [sheet, setSheet] = useState<SheetState>(null)
   const close = () => setSheet(null)
   const fx = fxOf(trip)
@@ -172,8 +175,8 @@ export function Spese() {
                       const payer = e.paidBy ? person.get(e.paidBy) : undefined
                       const share = mine(e)
                       return (
-                        <li>
-                          <button type="button" onClick={() => setSheet({ kind: 'edit', expense: e })} class="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left">
+                        <li class="flex items-center pr-1">
+                          <button type="button" onClick={() => setSheet({ kind: 'edit', expense: e })} class="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2 pl-4 text-left">
                             <span class="min-w-0 flex-1">
                               <span class="block truncate font-medium">{e.label}</span>
                               <span class="block truncate text-xs text-muted">
@@ -188,6 +191,18 @@ export function Spese() {
                               )}
                             </span>
                           </button>
+                          <TrashButton
+                            label={`Elimina la spesa ${e.label}`}
+                            onClick={() =>
+                              void del({
+                                title: `Eliminare la spesa «${e.label}»?`,
+                                text: `${formatMoney(e.amount, e.currency)}: sparisce dai totali e dai conti tra voi. Puoi annullare subito dopo.`,
+                                done: 'Spesa eliminata',
+                                run: () => t.setExpenseDeleted(e.id, true),
+                                undo: () => t.setExpenseDeleted(e.id, false),
+                              })
+                            }
+                          />
                         </li>
                       )
                     })}
@@ -210,6 +225,7 @@ export function Spese() {
         Spesa
       </button>
 
+      {delDialog}
       <Sheet open={sheet !== null} title={sheet?.kind === 'new' ? 'Nuova spesa' : 'Modifica spesa'} onClose={close}>
         {sheet?.kind === 'new' && <ExpenseForm trip={trip} onSubmit={(i) => t.createExpense(trip.id, i)} onDone={close} />}
         {sheet?.kind === 'edit' && (

@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks'
+import { useConfirm } from './ConfirmDialog'
 import { BOOKING_LABEL, BOOKING_TYPES } from '../lib/bookingMeta'
 import { checkFile } from '../lib/bookingFiles'
 import { dateInZone } from '../lib/flights'
@@ -56,8 +57,11 @@ export function BookingForm({ trip, initial, onSubmit, onDelete, onDone }: Props
     else onDone()
   }
 
+  const [confirm, confirmDialog] = useConfirm()
+
   async function remove() {
     if (!onDelete) return
+    if (!(await confirm({ title: 'Eliminare questa prenotazione?', text: 'Puoi annullare subito dopo.' }))) return
     setBusy(true)
     const message = await onDelete()
     setBusy(false)
@@ -107,6 +111,7 @@ export function BookingForm({ trip, initial, onSubmit, onDelete, onDone }: Props
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva' : 'Aggiungi'}</PrimaryButton>
       {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina prenotazione</SecondaryButton>}
+    {confirmDialog}
     </form>
   )
 }

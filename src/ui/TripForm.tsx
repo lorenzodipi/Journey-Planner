@@ -11,6 +11,8 @@ import {
 } from '../lib/tripForm'
 import type { ThemeName, Trip } from '../types'
 import { FormError, PrimaryButton, TextField } from './Field'
+import { Select } from './Select'
+import { timezoneOptions } from '../lib/timezones'
 
 interface Props {
   /** Se presente il form modifica quel viaggio, altrimenti ne crea uno nuovo. */
@@ -19,14 +21,6 @@ interface Props {
   /** Chiamata dopo un salvataggio riuscito. */
   onDone: () => void
 }
-
-const allTimezones: string[] = (() => {
-  try {
-    return (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.('timeZone') ?? []
-  } catch {
-    return []
-  }
-})()
 
 export function TripForm({ trip, onSubmit, onDone }: Props) {
   const editing = Boolean(trip)
@@ -199,30 +193,19 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
           Tema, fuso e valute
         </summary>
         <div class="space-y-4 pb-4">
-          <label class="block">
-            <span class="mb-1 block text-sm font-medium">Tema</span>
-            <select
-              value={theme}
-              onChange={(e) => setTheme(e.currentTarget.value as ThemeName)}
-              class="min-h-12 w-full rounded-2xl border border-line bg-bg px-4"
-            >
-              {(Object.keys(THEME_LABELS) as ThemeName[]).map((t) => (
-                <option value={t}>{THEME_LABELS[t]}</option>
-              ))}
-            </select>
-          </label>
-          <TextField
+          <Select
+            label="Tema"
+            value={theme}
+            onChange={(v) => setTheme(v as ThemeName)}
+            options={(Object.keys(THEME_LABELS) as ThemeName[]).map((t) => ({ value: t, label: THEME_LABELS[t] }))}
+          />
+          <Select
             label="Fuso orario della destinazione"
             value={timezone}
-            onInput={setTimezone}
-            list="timezones"
-            autoComplete="off"
+            onChange={setTimezone}
+            creatable
+            options={timezoneOptions(timezone)}
           />
-          <datalist id="timezones">
-            {allTimezones.map((tz) => (
-              <option value={tz} />
-            ))}
-          </datalist>
           <div class="grid grid-cols-2 gap-3">
             <TextField label="Valuta base" value={baseCurrency} onInput={setBaseCurrency} maxLength={3} />
             <TextField label="Valuta locale" value={localCurrency} onInput={setLocalCurrency} maxLength={3} />

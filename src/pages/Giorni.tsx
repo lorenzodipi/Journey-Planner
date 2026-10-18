@@ -1,28 +1,19 @@
 import { useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
 import { formatDay } from '../lib/dates'
-import { showToast } from '../state/toast'
-import { useTrip, useTrips } from '../state/trip'
-import type { Day, DayItem } from '../types'
+import { canSwap } from '../lib/itemOrder'
+import { useTrip } from '../state/trip'
 import { DaySheet, type DaySheetState } from '../ui/DaySheet'
 import { ItemRow } from '../ui/ItemRow'
 import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
+import { useItemActions } from '../ui/useItemActions'
 
 export function Giorni() {
   const trip = useTrip()
-  const t = useTrips()
+  const actions = useItemActions()
   const [sheet, setSheet] = useState<DaySheetState>(null)
   const [reordering, setReordering] = useState<string | null>(null) // id del giorno in riordino
 
-  async function move(day: Day, item: DayItem, step: -1 | 1) {
-    const message = await t.moveItem(day.id, item.id, step)
-    if (message) showToast(message)
-  }
-
-  async function toggleDone(item: DayItem) {
-    const message = await t.setItemDone(item.id, !item.done)
-    if (message) showToast(message)
-  }
 
   return (
     <>
@@ -66,18 +57,25 @@ export function Giorni() {
 
               {day.notes && <p class="mt-2 whitespace-pre-line text-sm text-muted">{day.notes}</p>}
 
+              {isReordering && (
+                <p class="mt-2 rounded-xl bg-accent-soft px-3 py-2 text-xs text-accent">
+                  Le tappe con un orario seguono l'orario: per spostarne una, cambia il suo orario. Le altre si spostano con le frecce.
+                </p>
+              )}
               {day.items.length > 0 && (
                 <ul class="mt-2 divide-y divide-line border-t border-line">
                   {day.items.map((item, i) => (
                     <ItemRow
                       item={item}
+                      n={i + 1}
                       onOpen={isReordering ? undefined : () => setSheet({ kind: 'edit-item', day, item })}
-                      onToggleDone={isReordering ? undefined : () => void toggleDone(item)}
+                      onToggleDone={isReordering ? undefined : () => void actions.toggleDone(item)}
+                      onDelete={() => actions.remove(item)}
                       reorder={
                         isReordering
                           ? {
-                              onUp: i > 0 ? () => void move(day, item, -1) : undefined,
-                              onDown: i < day.items.length - 1 ? () => void move(day, item, 1) : undefined,
+                              onUp: i > 0 && canSwap(day.items[i - 1], item) ? () => void actions.move(day.id, item, -1) : undefined,
+                              onDown: i < day.items.length - 1 && canSwap(item, day.items[i + 1]) ? () => void actions.move(day.id, item, 1) : undefined,
                             }
                           : undefined
                       }
@@ -110,7 +108,8 @@ export function Giorni() {
         })}
       </div>
 
-      <DaySheet trip={trip} state={sheet} onClose={() => setSheet(null)} />
+      {actions.dialog}
+      <DaySheet trip={trip} state={sheet} onChange={setSheet} />
     </>
   )
 }

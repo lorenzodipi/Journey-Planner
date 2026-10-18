@@ -8,14 +8,17 @@ import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { Booking } from '../types'
 import { BookingForm } from '../ui/BookingForm'
+import { TrashButton } from '../ui/ConfirmDialog'
 import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
 import { Sheet } from '../ui/Sheet'
+import { useDeleter } from '../ui/useDeleter'
 
 type SheetState = { kind: 'new' } | { kind: 'edit'; booking: Booking } | null
 
 export function Prenotazioni() {
   const trip = useTrip()
   const t = useTrips()
+  const [del, delDialog] = useDeleter()
   const [sheet, setSheet] = useState<SheetState>(null)
   const [cached, setCached] = useState<Set<string>>(new Set())
   const close = () => setSheet(null)
@@ -78,6 +81,18 @@ export function Prenotazioni() {
                   <button type="button" onClick={() => setSheet({ kind: 'edit', booking: b })} class="min-h-11 shrink-0 rounded-full px-3 text-sm font-medium text-accent">
                     Modifica
                   </button>
+                  <TrashButton
+                    label={`Elimina ${b.title}`}
+                    onClick={() =>
+                      void del({
+                        title: `Eliminare «${b.title}»?`,
+                        text: b.filePath ? 'Anche il file allegato non sarà più disponibile. Puoi annullare subito dopo.' : undefined,
+                        done: 'Prenotazione eliminata',
+                        run: () => t.setBookingDeleted(b.id, true),
+                        undo: () => t.setBookingDeleted(b.id, false),
+                      })
+                    }
+                  />
                 </div>
                 {b.code && (
                   <button
@@ -123,6 +138,7 @@ export function Prenotazioni() {
         Prenotazione
       </button>
 
+      {delDialog}
       <Sheet open={sheet !== null} title={sheet?.kind === 'new' ? 'Nuova prenotazione' : 'Modifica prenotazione'} onClose={close}>
         {sheet?.kind === 'new' && <BookingForm trip={trip} onSubmit={(i) => t.createBooking(trip.id, i)} onDone={close} />}
         {sheet?.kind === 'edit' && (

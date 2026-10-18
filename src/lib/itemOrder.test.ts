@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { positionForNew, positionForStep } from './itemOrder'
+import { canSwap, orderItems, positionForNew, positionForStep, renumber } from './itemOrder'
 
 const list = [
   { position: 1000, time: '09:00' },
@@ -23,5 +23,53 @@ describe('positionForStep', () => {
   it('ai bordi non si sposta', () => {
     expect(positionForStep(list, 0, -1)).toBeNull()
     expect(positionForStep(list, 2, 1)).toBeNull()
+  })
+})
+
+describe('orderItems', () => {
+  const ids = (l: { id: string }[]) => l.map((x) => x.id).join('')
+  it('senza orari segue le posizioni', () => {
+    expect(ids(orderItems([{ id: 'b', position: 2 }, { id: 'a', position: 1 }]))).toBe('ab')
+  })
+  it('le tappe con orario si dispongono per orario nei propri posti', () => {
+    const l = [
+      { id: 'a', position: 1, time: '10:00' },
+      { id: 'u', position: 2 },
+      { id: 'c', position: 3, time: '09:00' },
+    ]
+    expect(ids(orderItems(l))).toBe('cua')
+  })
+  it('le tappe senza orario non si spostano', () => {
+    const l = [
+      { id: 'u1', position: 1 },
+      { id: 'b', position: 2, time: '12:00' },
+      { id: 'u2', position: 3 },
+      { id: 'a', position: 4, time: '08:00' },
+    ]
+    expect(ids(orderItems(l))).toBe('u1au2b')
+  })
+  it('a parità di orario resta l\'ordine di posizione', () => {
+    const l = [
+      { id: 'x', position: 1, time: '09:00' },
+      { id: 'y', position: 2, time: '09:00' },
+    ]
+    expect(ids(orderItems(l))).toBe('xy')
+  })
+  it('già in ordine non cambia nulla e non modifica la lista di partenza', () => {
+    const l = [{ id: 'a', position: 1, time: '08:00' }, { id: 'b', position: 2, time: '09:00' }]
+    expect(ids(orderItems(l))).toBe('ab')
+    expect(ids(l)).toBe('ab')
+  })
+})
+
+describe('canSwap / renumber', () => {
+  it('due orari diversi non si scambiano', () => expect(canSwap({ time: '09:00' }, { time: '10:00' })).toBe(false))
+  it('con uno senza orario o orari uguali sì', () => {
+    expect(canSwap({ time: '09:00' }, {})).toBe(true)
+    expect(canSwap({}, {})).toBe(true)
+    expect(canSwap({ time: '09:00' }, { time: '09:00' })).toBe(true)
+  })
+  it('renumber assegna 1000, 2000…', () => {
+    expect(renumber([{ id: 'a' }, { id: 'b' }])).toEqual([{ id: 'a', position: 1000 }, { id: 'b', position: 2000 }])
   })
 })

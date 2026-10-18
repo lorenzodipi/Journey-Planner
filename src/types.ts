@@ -141,7 +141,9 @@ export interface BudgetShare {
 export interface BudgetItem {
   id: string
   label: string
+  /** Nome della categoria di spesa (ricavato da `categoryId`). */
   category?: string
+  categoryId?: string
   amount: number
   currency: string
   scope: Scope
@@ -158,7 +160,9 @@ export interface ExpenseShare {
 export interface Expense {
   id: string
   label: string
+  /** Nome della categoria di spesa (ricavato da `categoryId`). */
   category?: string
+  categoryId?: string
   amount: number
   currency: string
   fxRate?: number // unità di valuta base per 1 unità di `currency`
@@ -216,7 +220,10 @@ export interface Trip {
   myRole?: MemberRole
   days: Day[]
   places: Place[]
+  /** Categorie dei luoghi (Tempio, Ristorante…). */
   categories: Category[]
+  /** Categorie delle spese e del budget (Cibo, Trasporti…): i totali si calcolano dalle spese che le usano. */
+  expenseCategories: Category[]
   stays: Stay[]
   transports: Transport[]
   flights: Flight[]

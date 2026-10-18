@@ -1,4 +1,4 @@
-import type { ChecklistItem, Expense, PlaceStatus } from '../types'
+import type { Category, ChecklistItem, Expense, PlaceStatus } from '../types'
 
 // Coda delle modifiche fatte senza rete (o con rete instabile).
 // Ogni voce contiene le scritture da inviare (`ops`) e come si vede la modifica nell'app
@@ -12,7 +12,8 @@ export type Op =
 
 /** Come la modifica appare nell'app prima dell'invio. */
 export type Local =
-  | { t: 'expense.save'; tripId: string; expense: Expense }
+  /** `category`: la categoria creata insieme alla spesa (se il nome non esisteva ancora) */
+  | { t: 'expense.save'; tripId: string; expense: Expense; category?: Category }
   | { t: 'expense.deleted'; id: string; deleted: boolean }
   | { t: 'checklist.save'; tripId: string; item: ChecklistItem }
   | { t: 'checklist.done'; id: string; done: boolean }

@@ -1,8 +1,10 @@
 import { useState } from 'preact/hooks'
+import { useConfirm } from './ConfirmDialog'
 import { formatMoney, parseAmount, amountToText } from '../lib/money'
 import { shareAmounts } from '../lib/budget'
 import type { BudgetInput } from '../lib/moneyData'
 import type { BudgetItem, Trip } from '../types'
+import { CategorySelect } from './CategorySelect'
 import { CheckField, CostFields, FormError, PrimaryButton, SecondaryButton, TextArea, TextField } from './Field'
 import { TravelerChips } from './TravelerChips'
 
@@ -11,15 +13,17 @@ const SUGGESTED = ['Voli', 'Alloggi', 'Trasporti', 'Cibo', 'Biglietti e ingressi
 interface Props {
   trip: Trip
   initial?: BudgetItem
+  /** Categoria di partenza per una voce nuova. */
+  defaultCategory?: string
   onSubmit: (input: BudgetInput) => Promise<string | null>
   onDelete?: () => Promise<string | null>
   onDone: () => void
 }
 
-export function BudgetItemForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
+export function BudgetItemForm({ trip, initial, defaultCategory, onSubmit, onDelete, onDone }: Props) {
   const everyone = trip.travelers.map((t) => t.id)
   const [label, setLabel] = useState(initial?.label ?? '')
-  const [category, setCategory] = useState(initial?.category ?? '')
+  const [category, setCategory] = useState(initial?.category ?? defaultCategory ?? '')
   const [amount, setAmount] = useState(amountToText(initial?.amount))
   const [currency, setCurrency] = useState(initial?.currency ?? trip.baseCurrency)
   const [scope, setScope] = useState<'per_person' | 'total'>(initial?.scope ?? 'per_person')
@@ -30,7 +34,6 @@ export function BudgetItemForm({ trip, initial, onSubmit, onDelete, onDone }: Pr
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const categories = Array.from(new Set([...trip.budget.map((b) => b.category ?? '').filter(Boolean), ...SUGGESTED]))
   const value = parseAmount(amount)
   const each = value !== null && payers.length > 0 ? shareAmounts({ amount: value, scope }, payers.length)[0] : null
 
@@ -56,8 +59,11 @@ export function BudgetItemForm({ trip, initial, onSubmit, onDelete, onDone }: Pr
     else onDone()
   }
 
+  const [confirm, confirmDialog] = useConfirm()
+
   async function remove() {
     if (!onDelete) return
+    if (!(await confirm({ title: 'Eliminare questa voce?', text: 'Puoi annullare subito dopo.' }))) return
     setBusy(true)
     const message = await onDelete()
     setBusy(false)
@@ -68,8 +74,7 @@ export function BudgetItemForm({ trip, initial, onSubmit, onDelete, onDone }: Pr
   return (
     <form class="space-y-4" onSubmit={submit} noValidate>
       <TextField label="Voce" value={label} onInput={setLabel} maxLength={120} />
-      <TextField label="Categoria" value={category} onInput={setCategory} list="budget-cats" />
-      <datalist id="budget-cats">{categories.map((c) => <option value={c} />)}</datalist>
+      <CategorySelect value={category} onChange={setCategory} categories={trip.expenseCategories} suggestions={SUGGESTED} />
 
       <CostFields amountLabel="Importo" amount={amount} currency={currency} scope={scope} onAmount={setAmount} onCurrency={setCurrency} onScope={setScope} />
 
@@ -106,6 +111,7 @@ export function BudgetItemForm({ trip, initial, onSubmit, onDelete, onDone }: Pr
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva voce' : 'Aggiungi voce'}</PrimaryButton>
       {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina voce</SecondaryButton>}
+    {confirmDialog}
     </form>
   )
 }

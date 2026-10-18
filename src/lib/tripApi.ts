@@ -109,6 +109,7 @@ interface ItemRow {
 interface Extras {
   places: PlaceRow[]
   categories: CategoryRow[]
+  expenseCategories: CategoryRow[]
   items: ItemRow[]
   stays: StayRow[]
   transports: TransportRow[]
@@ -153,6 +154,12 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     .sort((a, b) => a.position - b.position)
     .map((c) => ({ id: c.id, label: c.label, color: c.color ?? undefined }))
   const categoryLabel = new Map(categories.map((c) => [c.id, c.label]))
+
+  const expenseCategories: Category[] = extras.expenseCategories
+    .filter((c) => c.trip_id === row.id)
+    .sort((a, b) => a.position - b.position || a.label.localeCompare(b.label, 'it'))
+    .map((c) => ({ id: c.id, label: c.label, color: c.color ?? undefined }))
+  const expenseCategoryLabel = new Map(expenseCategories.map((c) => [c.id, c.label]))
 
   const places: Place[] = extras.places
     .filter((p) => p.trip_id === row.id)
@@ -224,11 +231,12 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     days,
     places,
     categories,
+    expenseCategories,
     stays: mapStays(extras.stays, row.id),
     transports: mapTransports(extras.transports, row.id),
     flights: mapFlights(extras.flights, extras.legs, row.id),
-    budget: mapBudget(extras.budgetItems, extras.budgetShares, row.id),
-    expenses: mapExpenses(extras.expenses, extras.expenseShares, row.id),
+    budget: mapBudget(extras.budgetItems, extras.budgetShares, row.id, expenseCategoryLabel),
+    expenses: mapExpenses(extras.expenses, extras.expenseShares, row.id, expenseCategoryLabel),
     checklist: mapChecklist(extras.checklist, row.id),
     bookings: mapBookings(extras.bookings, row.id),
     fxRate: row.fx_rate == null ? undefined : Number(row.fx_rate),
@@ -238,7 +246,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
 export async function fetchTrips(): Promise<Trip[]> {
   const db = client()
   // Richieste separate e in parallelo: più semplici e robuste degli "embed" annidati.
-  const [trips, places, categories, items, [stays, transports, flights, legs], [budgetItems, budgetShares, expenses, expenseShares], [checklist, bookings]] = await Promise.all([
+  const [trips, places, categories, expenseCategories, items, [stays, transports, flights, legs], [budgetItems, budgetShares, expenses, expenseShares], [checklist, bookings]] = await Promise.all([
     db
       .from('trips')
       .select('*, trip_travelers(*), days(*)')
@@ -246,15 +254,18 @@ export async function fetchTrips(): Promise<Trip[]> {
       .order('start_date', { ascending: true, nullsFirst: false }),
     db.from('places').select('*').is('deleted_at', null),
     db.from('categories').select('*').is('deleted_at', null),
+    // prima della migrazione 0008 la tabella non esiste: l'app funziona lo stesso, senza categorie di spesa
+    db.from('expense_categories').select('*').is('deleted_at', null).then((r) => (r.error && /expense_categories|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: [], error: null } : r)),
     db.from('day_items').select('*').is('deleted_at', null),
     queryLogistics(db),
     queryMoney(db),
     queryPlanning(db),
   ])
-  for (const r of [trips, places, categories, items, stays, transports, flights, legs, budgetItems, budgetShares, expenses, expenseShares, checklist, bookings]) if (r.error) throw r.error
+  for (const r of [trips, places, categories, expenseCategories, items, stays, transports, flights, legs, budgetItems, budgetShares, expenses, expenseShares, checklist, bookings]) if (r.error) throw r.error
   const extras: Extras = {
     places: places.data as PlaceRow[],
     categories: categories.data as CategoryRow[],
+    expenseCategories: expenseCategories.data as CategoryRow[],
     items: items.data as ItemRow[],
     stays: stays.data as StayRow[],
     transports: transports.data as TransportRow[],
@@ -478,10 +489,20 @@ export async function createPlace(tripId: string, input: PlaceInput, known: Cate
   return (data as { id: string }).id
 }
 
-export async function updatePlace(id: string, tripId: string, input: PlaceInput, known: Category[]): Promise<void> {
+/**
+ * Salva il luogo. Se è stato rinominato, le tappe che si chiamano ancora come il vecchio nome (cioè non
+ * personalizzate) prendono il nuovo: il luogo e le sue tappe nei giorni restano la stessa cosa.
+ */
+export async function updatePlace(id: string, tripId: string, input: PlaceInput, known: Category[], oldName?: string): Promise<void> {
   const categoryId = await resolveCategory(tripId, input.category, known)
-  const { error } = await client().from('places').update(placeColumns(input, categoryId)).eq('id', id)
+  const db = client()
+  const { error } = await db.from('places').update(placeColumns(input, categoryId)).eq('id', id)
   if (error) throw error
+  const newName = input.name.trim()
+  if (oldName && newName && oldName !== newName) {
+    const renamed = await db.from('day_items').update({ title: newName }).eq('place_id', id).eq('title', oldName)
+    if (renamed.error) throw renamed.error
+  }
 }
 
 export async function setPlaceStatus(id: string, status: PlaceStatus): Promise<void> {
@@ -533,9 +554,11 @@ export async function updateItem(id: string, input: ItemInput): Promise<void> {
   if (error) throw error
 }
 
-export async function setItemPosition(id: string, position: number): Promise<void> {
-  const { error } = await client().from('day_items').update({ position }).eq('id', id)
-  if (error) throw error
+export async function setItemPositions(list: { id: string; position: number }[]): Promise<void> {
+  const db = client()
+  const results = await Promise.all(list.map((x) => db.from('day_items').update({ position: x.position }).eq('id', x.id)))
+  const failed = results.find((r) => r.error)
+  if (failed?.error) throw failed.error
 }
 
 export async function setItemDone(id: string, done: boolean): Promise<void> {

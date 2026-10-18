@@ -34,6 +34,8 @@ export interface DayEvent {
   endTime?: string // ora di arrivo, nell'ora locale del posto di arrivo
   mode?: TransportMode
   flag?: { text: string; ok: boolean }
+  /** L'elemento da cui nasce l'evento: serve per aprirlo e modificarlo dalla pagina del giorno. */
+  ref?: { type: 'flight' | 'stay' | 'transport'; id: string }
 }
 
 /** Voli, check-in/out e trasporti del giorno `ymd` (giorno di calendario della destinazione). */
@@ -43,17 +45,17 @@ export function eventsForDay(trip: Pick<Trip, 'timezone' | 'flights' | 'stays' |
     for (const leg of f.legs) {
       const code = leg.flightNumber ? `${leg.flightNumber} · ` : ''
       if (dateInZone(leg.departAt, leg.fromTz) === ymd) {
-        out.push({ at: leg.departAt, time: formatInZone(leg.departAt, leg.fromTz), title: `Volo da ${leg.from}`, sub: `${code}${leg.from} → ${leg.to}`, kind: 'flight', endTime: formatInZone(leg.arriveAt, leg.toTz) })
+        out.push({ at: leg.departAt, time: formatInZone(leg.departAt, leg.fromTz), title: `Volo da ${leg.from}`, sub: `${code}${leg.from} → ${leg.to}`, kind: 'flight', ref: { type: 'flight', id: f.id }, endTime: formatInZone(leg.arriveAt, leg.toTz) })
       }
       if (dateInZone(leg.arriveAt, leg.toTz) === ymd) {
-        out.push({ at: leg.arriveAt, time: formatInZone(leg.arriveAt, leg.toTz), title: `Arrivo a ${leg.to}`, sub: `${code}${leg.from} → ${leg.to}`, kind: 'flight' })
+        out.push({ at: leg.arriveAt, time: formatInZone(leg.arriveAt, leg.toTz), title: `Arrivo a ${leg.to}`, sub: `${code}${leg.from} → ${leg.to}`, kind: 'flight', ref: { type: 'flight', id: f.id } })
       }
     }
   }
   for (const s of trip.stays) {
     // check-in/out non hanno un orario esatto: il check-out va in testa, il check-in in coda, con le indicazioni in sottotitolo
-    if (s.checkIn === ymd) out.push({ at: `${ymd}T23:00:00.000Z`, time: '', title: `Check-in · ${s.name}`, sub: s.checkInInfo ?? s.city, kind: 'stay' })
-    if (s.checkOut === ymd) out.push({ at: `${ymd}T00:00:00.000Z`, time: '', title: `Check-out · ${s.name}`, sub: s.checkOutInfo ?? s.city, kind: 'stay' })
+    if (s.checkIn === ymd) out.push({ at: `${ymd}T23:00:00.000Z`, time: '', title: `Check-in · ${s.name}`, sub: s.checkInInfo ?? s.city, kind: 'stay', ref: { type: 'stay', id: s.id } })
+    if (s.checkOut === ymd) out.push({ at: `${ymd}T00:00:00.000Z`, time: '', title: `Check-out · ${s.name}`, sub: s.checkOutInfo ?? s.city, kind: 'stay', ref: { type: 'stay', id: s.id } })
   }
   for (const t of trip.transports) {
     if (t.departAt && dateInZone(t.departAt, trip.timezone) === ymd) {
@@ -63,9 +65,10 @@ export function eventsForDay(trip: Pick<Trip, 'timezone' | 'flights' | 'stays' |
         title: `${t.from} → ${t.to}`,
         sub: t.refCode ? `Codice ${t.refCode}` : undefined,
         kind: 'transport',
+        ref: { type: 'transport', id: t.id },
         mode: t.mode,
         endTime: t.arriveAt ? formatInZone(t.arriveAt, trip.timezone) : undefined,
-        flag: t.bought ? { text: 'Biglietto acquistato', ok: true } : { text: 'Biglietto da acquistare', ok: false },
+        flag: t.bought ? { text: 'Biglietto acquistato', ok: true } : { text: 'Biglietto non acquistato', ok: false },
       })
     }
   }

@@ -4,6 +4,7 @@ import { parseMapsUrl } from '../lib/mapsUrl'
 import type { PlaceInput } from '../lib/tripApi'
 import type { Place, PlaceStatus, Trip } from '../types'
 import { FormError, PrimaryButton, TextArea, TextField } from './Field'
+import { Select } from './Select'
 import { STATUSES, STATUS_LABEL, SUGGESTED_CATEGORIES, uniqueCities } from './placeMeta'
 
 type PinPickerComponent = typeof import('./MapView').PinPicker
@@ -175,19 +176,23 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
       <TextField label="Nome" value={name} onInput={setName} maxLength={120} />
       <TextField label="Nome in lingua locale (da mostrare a un tassista)" value={nameLocal} onInput={setNameLocal} maxLength={120} />
       <div class="grid grid-cols-2 gap-3">
-        <TextField label="Città" value={city} onInput={setCity} list="place-cities" autoComplete="off" maxLength={60} />
-        <TextField label="Categoria" value={category} onInput={setCategory} list="place-categories" autoComplete="off" maxLength={40} />
+        <Select
+          label="Città"
+          value={city}
+          onChange={setCity}
+          creatable
+          placeholder="Scegli o scrivi"
+          options={uniqueCities(trip.places).map((c) => ({ value: c, label: c }))}
+        />
+        <Select
+          label="Categoria"
+          value={category}
+          onChange={setCategory}
+          creatable
+          placeholder="Scegli o scrivi"
+          options={[{ value: '', label: 'Nessuna' }, ...categories.map((c) => ({ value: c, label: c }))]}
+        />
       </div>
-      <datalist id="place-cities">
-        {uniqueCities(trip.places).map((c) => (
-          <option value={c} />
-        ))}
-      </datalist>
-      <datalist id="place-categories">
-        {categories.map((c) => (
-          <option value={c} />
-        ))}
-      </datalist>
 
       <fieldset>
         <legend class="mb-1 block text-sm font-medium">Stato</legend>

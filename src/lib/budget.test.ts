@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Expense } from '../types'
-import { budgetLines, expenseBase, expenseOwed, expensesOf, groupByCategory, involvesTraveler, personSummary, shareOf, logisticsLines, settle, shareAmounts, splitEvenly, summarizeExpenses, summarizeLines, toBase, type Line } from './budget'
+import { budgetLines, categoryOverview, expenseBase, expenseOwed, expensesOf, groupByCategory, involvesTraveler, personSummary, shareOf, logisticsLines, settle, shareAmounts, splitEvenly, summarizeExpenses, summarizeLines, toBase, type Line } from './budget'
 
 // Cifre FITTIZIE: servono solo a verificare i calcoli.
 const T1 = { id: 't1' }
@@ -166,5 +166,60 @@ describe('vista per persona', () => {
     const total = ['t1', 't2', 't3'].reduce((n, id) => n + personSummary(s, id).net, 0)
     expect(total).toBeCloseTo(0, 2)
     expect(personSummary(s, 'zz')).toMatchObject({ paid: 0, share: 0, net: 0 })
+  })
+})
+
+describe('categorie: previsto e speso', () => {
+  const base = { flights: [], stays: [], transports: [], travelers }
+  const exp = (id: string, category: string | undefined, amount: number, currency = 'EUR'): Expense => ({
+    id, label: id, category, categoryId: category ? `c-${category.toLowerCase()}` : undefined, amount, currency, spentAt: '2026-11-22T03:00:00Z', shares: [],
+  })
+
+  it('30 € di cibo aggiornano da soli la categoria Cibo', () => {
+    const trip = { ...base, expenseCategories: [{ id: 'c-cibo', label: 'Cibo' }], budget: [], expenses: [exp('a', 'Cibo', 30)] }
+    const [cibo] = categoryOverview(trip, fx)
+    expect(cibo).toMatchObject({ label: 'Cibo', id: 'c-cibo', spent: 30, planned: 0 })
+    const more = categoryOverview({ ...trip, expenses: [...trip.expenses, exp('b', 'Cibo', 12.5), exp('c', 'Cibo', 2000, 'JPY')] }, fx)
+    expect(more[0].spent).toBe(52.5) // 30 + 12,50 + 2000 JPY (=10 €)
+  })
+
+  it('una categoria nuova compare anche se vuota; "Altro" solo se ha qualcosa', () => {
+    const trip = { ...base, expenseCategories: [{ id: 'x', label: 'Souvenir' }], budget: [], expenses: [] }
+    expect(categoryOverview(trip, fx).map((c) => c.label)).toEqual(['Souvenir'])
+    const other = categoryOverview({ ...trip, expenses: [exp('a', undefined, 5)] }, fx)
+    expect(other.map((c) => c.label)).toEqual(['Souvenir', 'Altro'])
+  })
+
+  it('il nome è la chiave: maiuscole diverse e voci di budget finiscono nella stessa categoria', () => {
+    const trip = {
+      ...base,
+      expenseCategories: [{ id: 'c-cibo', label: 'Cibo' }],
+      budget: [{ id: 'b', label: 'Cene', category: 'cibo', amount: 100, currency: 'EUR', scope: 'total' as const, shares: [] }],
+      expenses: [exp('a', 'Cibo', 30)],
+    }
+    const list = categoryOverview(trip, fx)
+    expect(list).toHaveLength(1)
+    expect(list[0]).toMatchObject({ planned: 100, spent: 30 })
+    expect(list[0].lines).toHaveLength(1)
+    expect(list[0].expenses).toHaveLength(1)
+  })
+
+  it('i trasporti inseriti nella pagina Trasporti alimentano la categoria Trasporti', () => {
+    const trip = {
+      ...base,
+      expenseCategories: [{ id: 't', label: 'Trasporti' }],
+      transports: [{ id: 'x', from: 'A', to: 'B', mode: 'train' as const, cost: 40, currency: 'EUR', scope: 'total' as const, bought: false }],
+      budget: [],
+      expenses: [exp('taxi', 'Trasporti', 15)],
+    }
+    const [t] = categoryOverview(trip, fx)
+    expect(t).toMatchObject({ id: 't', planned: 40, spent: 15 })
+  })
+
+  it('una spesa in una valuta senza tasso non entra nel totale ma viene segnalata', () => {
+    const trip = { ...base, expenseCategories: [], budget: [], expenses: [exp('a', 'Cibo', 10), exp('b', 'Cibo', 5, 'USD')] }
+    const [c] = categoryOverview(trip, fx)
+    expect(c.spent).toBe(10)
+    expect(c.unconverted).toEqual(['USD'])
   })
 })

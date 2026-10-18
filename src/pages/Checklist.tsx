@@ -5,12 +5,15 @@ import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { ChecklistItem, ChecklistKind } from '../types'
 import { ChecklistItemForm } from '../ui/ChecklistItemForm'
+import { TrashButton } from '../ui/ConfirmDialog'
 import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
 import { Sheet } from '../ui/Sheet'
+import { useDeleter } from '../ui/useDeleter'
 
 export function Checklist() {
   const trip = useTrip()
   const t = useTrips()
+  const [del, delDialog] = useDeleter()
   const [kind, setKind] = useState<ChecklistKind>('todo')
   const [who, setWho] = useState<'all' | string>('all')
   const [text, setText] = useState('')
@@ -238,6 +241,17 @@ export function Checklist() {
                         </button>
                       </div>
                     )}
+                    <TrashButton
+                      label={`Elimina ${i.text}`}
+                      onClick={() =>
+                        void del({
+                          title: `Eliminare «${i.text}»?`,
+                          done: 'Voce eliminata',
+                          run: () => t.setChecklistDeleted(i.id, true),
+                          undo: () => t.setChecklistDeleted(i.id, false),
+                        })
+                      }
+                    />
                   </li>
                 )
               })}
@@ -250,6 +264,7 @@ export function Checklist() {
         </button>
       </div>
 
+      {delDialog}
       <Sheet open={edit !== null} title="Modifica voce" onClose={() => setEdit(null)}>
         {edit && (
           <ChecklistItemForm

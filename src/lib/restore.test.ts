@@ -20,6 +20,7 @@ const trip: Trip = {
     { id: 'tr2', name: 'Gaia', color: '#264653', position: 2000 },
   ],
   categories: [{ id: 'c1', label: 'Tempio', color: '#aa0000' }],
+  expenseCategories: [{ id: 'xc1', label: 'Cibo', color: '#aa5500' }],
   places: [
     { id: 'p1', name: 'Senso-ji', city: 'Tokyo', category: 'Tempio', categoryId: 'c1', status: 'planned', lat: 35.71, lng: 139.79, estCost: 500, currency: 'JPY' },
     { id: 'p2', name: 'Ramen Ichiran', city: 'Tokyo', category: 'Cibo', status: 'idea', lat: null, lng: null },
@@ -90,6 +91,7 @@ const trip: Trip = {
     {
       id: 'b1',
       label: 'Volo',
+      category: 'Trasporti',
       amount: 800,
       currency: 'EUR',
       scope: 'per_person',
@@ -103,6 +105,8 @@ const trip: Trip = {
     {
       id: 'e1',
       label: 'Ramen',
+      category: 'cibo',
+      categoryId: 'xc1',
       amount: 2400,
       currency: 'JPY',
       fxRate: 0.0056,
@@ -260,6 +264,22 @@ describe('buildSteps', () => {
     expect(rows('expenses')[0]).toMatchObject({ paid_by: expect.stringMatching(/^id-/), day_id: expect.stringMatching(/^id-/) })
     expect(rows('transports')[0].day_id).toBe(rows('days').find((d) => d.date === '2026-11-23')?.id)
     expect(rows('checklist_items').find((c) => c.text === 'Adattatore')?.traveler_id).toBe(rows('trip_travelers').find((t) => t.name === 'Gaia')?.id)
+  })
+
+  it('le categorie di spesa si ricollegano alle spese e alle voci (anche se citate solo per nome)', () => {
+    const cats = rows('expense_categories')
+    expect(cats.map((c) => c.label).sort()).toEqual(['Cibo', 'Trasporti'])
+    expect(rows('expenses')[0].category_id).toBe(cats.find((c) => c.label === 'Cibo')?.id)
+    expect(rows('budget_items')[0].category_id).toBe(cats.find((c) => c.label === 'Trasporti')?.id)
+    expect('category' in rows('expenses')[0]).toBe(false) // il testo libero non si scrive più
+  })
+
+  it('senza categorie di spesa nel file, le colonne nuove non si scrivono (database senza la 0008)', () => {
+    const plain = parseExport(exported({ ...trip, expenseCategories: [], budget: [], expenses: [{ ...trip.expenses[0], category: undefined, categoryId: undefined }] }))
+    if (!plain.ok) throw new Error(plain.error)
+    const steps2 = buildSteps(plain.trips[0].trip, 'T', () => crypto.randomUUID())
+    expect(steps2.some((x) => x.table === 'expense_categories')).toBe(false)
+    expect(steps2.find((x) => x.table === 'expenses')?.rows.every((r) => !('category_id' in r))).toBe(true)
   })
 
   it('le etichette dei luoghi senza categoria nel file diventano categorie', () => {

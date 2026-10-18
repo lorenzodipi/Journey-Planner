@@ -28,3 +28,44 @@ export function positionForStep(items: Ordered[], index: number, step: -1 | 1): 
     to,
   )
 }
+
+// ---------- ordine mostrato ----------
+
+interface Timed {
+  position?: number
+  time?: string
+}
+
+/**
+ * Ordine con cui si mostrano le tappe di un giorno: segue le posizioni salvate, ma le tappe con
+ * un orario si dispongono in ordine di orario tra i loro posti. Le tappe senza orario restano
+ * dove le ha messe chi ha scritto il programma. Così cambiare un'ora dalla modifica rimette a
+ * posto la lista, senza dover riordinare a mano.
+ */
+export function orderItems<T extends Timed>(items: T[]): T[] {
+  const byPosition = items
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => (a.item.position ?? 0) - (b.item.position ?? 0) || a.index - b.index)
+    .map((x) => x.item)
+  const slots: number[] = []
+  byPosition.forEach((it, i) => {
+    if (it.time) slots.push(i)
+  })
+  // sort stabile: a parità di orario resta l'ordine di posizione
+  const timed = slots.map((i) => byPosition[i]).sort((a, b) => (a.time as string).localeCompare(b.time as string))
+  const out = byPosition.slice()
+  slots.forEach((slot, k) => {
+    out[slot] = timed[k]
+  })
+  return out
+}
+
+/** Due tappe con orari diversi hanno un ordine fisso (quello dell'orario): non si possono scambiare a mano. */
+export function canSwap(a: Timed, b: Timed): boolean {
+  return !(a.time && b.time && a.time !== b.time)
+}
+
+/** Posizioni 1000, 2000… da assegnare a una lista già nell'ordine voluto. */
+export function renumber<T extends { id: string }>(items: T[]): { id: string; position: number }[] {
+  return items.map((it, i) => ({ id: it.id, position: (i + 1) * 1000 }))
+}

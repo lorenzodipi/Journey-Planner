@@ -9,7 +9,7 @@ import { execOp } from '../lib/outboxExec'
 import { countChange } from '../lib/checklist'
 import { applyQueue, checklistEntry, deletedPatch, expenseEntry } from '../lib/outboxLocal'
 import { showToast } from './toast'
-import { positionForNew, positionForStep } from '../lib/itemOrder'
+import { canSwap, orderItems, positionForNew, renumber } from '../lib/itemOrder'
 import * as api from '../lib/tripApi'
 import * as logistics from '../lib/logisticsApi'
 import * as money from '../lib/moneyApi'
@@ -73,6 +73,9 @@ interface TripsValue {
   setFlightPaid: (id: string, paid: boolean) => Result
   setFlightDeleted: (id: string, deleted: boolean) => Result
   createBudgetItem: (tripId: string, input: BudgetInput) => Result
+  createExpenseCategory: (tripId: string, label: string) => Result
+  renameExpenseCategory: (tripId: string, id: string, label: string) => Result
+  setExpenseCategoryDeleted: (id: string, deleted: boolean) => Result
   updateBudgetItem: (tripId: string, item: BudgetItem, input: BudgetInput) => Result
   setBudgetSharePaid: (shareId: string, paid: boolean) => Result
   setBudgetItemDeleted: (id: string, deleted: boolean) => Result
@@ -106,7 +109,11 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
   const [queue, setQueueState] = useState<Entry[]>(() => (demo ? [] : loadQueue()))
   const queueRef = useRef<Entry[]>(queue)
   const flushing = useRef(false)
-  const trips = useMemo(() => applyQueue(serverTrips, queue), [serverTrips, queue])
+  // le tappe di ogni giorno sono sempre nell'ordine mostrato (posizione + orario)
+  const trips = useMemo(
+    () => applyQueue(serverTrips, queue).map((t) => ({ ...t, days: t.days.map((d) => ({ ...d, items: orderItems(d.items) })) })),
+    [serverTrips, queue],
+  )
   const [status, setStatus] = useState<TripsStatus>(demo ? 'ready' : 'loading')
   const [stale, setStale] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -313,7 +320,15 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     createPlace: (tripId, input) =>
       run(() => api.createPlace(tripId, input, trips.find((t) => t.id === tripId)?.categories ?? [])),
     updatePlace: (id, tripId, input) =>
-      run(() => api.updatePlace(id, tripId, input, trips.find((t) => t.id === tripId)?.categories ?? [])),
+      run(() =>
+        api.updatePlace(
+          id,
+          tripId,
+          input,
+          trips.find((t) => t.id === tripId)?.categories ?? [],
+          trips.find((t) => t.id === tripId)?.places.find((p) => p.id === id)?.name,
+        ),
+      ),
     setPlaceStatus: (id, status) => queued('Stato del luogo', [{ k: 'update', table: 'places', id, patch: { status } }], { t: 'place.status', id, status }),
     setPlaceDeleted: (id, deleted) => run(() => api.setPlaceDeleted(id, deleted)),
     createItem: (tripId, dayId, input) => {
@@ -327,11 +342,15 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     updateItem: (id, input) => run(() => api.updateItem(id, input)),
     moveItem: async (dayId, itemId, step) => {
       const day = trips.flatMap((t) => t.days).find((d) => d.id === dayId)
-      const items = (day?.items ?? []).map((i) => ({ id: i.id, position: i.position ?? 0, time: i.time }))
+      const items = day?.items ?? []
       const index = items.findIndex((i) => i.id === itemId)
-      const position = index === -1 ? null : positionForStep(items, index, step)
-      if (position === null) return null
-      return run(() => api.setItemPosition(itemId, position))
+      const to = index + step
+      if (index === -1 || to < 0 || to >= items.length) return null
+      if (!canSwap(items[index], items[to])) return "Queste due tappe hanno orari diversi: l'ordine segue l'orario. Cambia l'orario per spostarle."
+      const next = items.slice()
+      ;[next[index], next[to]] = [next[to], next[index]]
+      // si rinumera tutto il giorno: le posizioni salvate tornano uguali all'ordine che si vede
+      return run(() => api.setItemPositions(renumber(next)))
     },
     setItemDone: (id, done) => queued('Tappa fatta', [{ k: 'update', table: 'day_items', id, patch: { done } }], { t: 'item.done', id, done }),
     setItemDeleted: (id, deleted) => run(() => api.setItemDeleted(id, deleted)),
@@ -353,8 +372,11 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     updateFlight: (tripId, flight, input) => run(() => logistics.updateFlight(flight, tripId, input)),
     setFlightPaid: (id, paid) => run(() => logistics.setFlightPaid(id, paid)),
     setFlightDeleted: (id, deleted) => run(() => logistics.setFlightDeleted(id, deleted)),
-    createBudgetItem: (tripId, input) => run(() => money.createBudgetItem(tripId, input)),
-    updateBudgetItem: (tripId, item, input) => run(() => money.updateBudgetItem(item, tripId, input)),
+    createBudgetItem: (tripId, input) => run(() => money.createBudgetItem(tripId, input, trips.find((x) => x.id === tripId)?.expenseCategories ?? [])),
+    updateBudgetItem: (tripId, item, input) => run(() => money.updateBudgetItem(item, tripId, input, trips.find((x) => x.id === tripId)?.expenseCategories ?? [])),
+    createExpenseCategory: (tripId, label) => run(() => money.createExpenseCategory(tripId, label, trips.find((x) => x.id === tripId)?.expenseCategories ?? [])),
+    renameExpenseCategory: (tripId, id, label) => run(() => money.renameExpenseCategory(id, label, trips.find((x) => x.id === tripId)?.expenseCategories ?? [])),
+    setExpenseCategoryDeleted: (id, deleted) => run(() => money.setExpenseCategoryDeleted(id, deleted)),
     setBudgetSharePaid: (shareId, paid) => run(() => money.setBudgetSharePaid(shareId, paid)),
     setBudgetItemDeleted: (id, deleted) => run(() => money.setBudgetItemDeleted(id, deleted)),
     createExpense: (tripId, input) => {

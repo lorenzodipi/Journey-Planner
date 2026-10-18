@@ -86,3 +86,20 @@ describe('dayChecklist', () => {
     expect(dayChecklist(list, day).map((x) => x.id)).toEqual(['da-fare', 'fatta'])
   })
 })
+
+describe('movimenti: da dove nascono', () => {
+  it('ogni evento sa quale volo, alloggio o trasporto lo ha generato (per aprirlo e modificarlo)', () => {
+    const trip = {
+      timezone: 'Asia/Tokyo',
+      stays: [{ id: 's1', name: 'Hotel', city: '', checkIn: '2026-11-23', checkOut: '2026-11-25', currency: 'JPY', breakfast: false, dinner: false, kitchen: false, booked: true, paid: false }],
+      flights: [],
+      transports: [
+        { id: 't1', from: 'A', to: 'B', mode: 'train' as const, currency: 'JPY', scope: 'per_person' as const, bought: false, dayId: 'd2', departAt: '2026-11-23T01:00:00Z' },
+        { id: 't2', from: 'C', to: 'D', mode: 'bus' as const, currency: 'JPY', scope: 'per_person' as const, bought: false, dayId: 'd2' },
+      ],
+    }
+    const refs = dayMovements(trip, day).map((e) => e.ref)
+    expect(refs).toEqual(expect.arrayContaining([{ type: 'stay', id: 's1' }, { type: 'transport', id: 't1' }, { type: 'transport', id: 't2' }]))
+    expect(refs.every(Boolean)).toBe(true)
+  })
+})

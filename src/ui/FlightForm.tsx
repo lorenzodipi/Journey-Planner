@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks'
+import { useConfirm } from './ConfirmDialog'
 import { isIata, timezoneForAirport } from '../lib/airports'
 import { legDuration } from '../lib/flights'
 import { amountToText, parseAmount } from '../lib/money'
@@ -7,6 +8,8 @@ import { isValidTimezone } from '../lib/tripForm'
 import { isCompleteZoned, zonedToInstant } from '../lib/zoned'
 import type { Flight, Trip } from '../types'
 import { CheckField, CostFields, FormError, PrimaryButton, SecondaryButton, TextArea, TextField } from './Field'
+import { Select } from './Select'
+import { timezoneOptions } from '../lib/timezones'
 
 interface Props {
   trip: Trip
@@ -98,14 +101,19 @@ export function FlightForm({ trip, initial, onSubmit, onDelete, onDone }: Props)
     else onDone()
   }
 
+  const [confirm, confirmDialog] = useConfirm()
+
   async function remove() {
     if (!onDelete) return
+    if (!(await confirm({ title: 'Eliminare questo volo?', text: 'Puoi annullare subito dopo.' }))) return
     setBusy(true)
     const message = await onDelete()
     setBusy(false)
     if (message) setError(message)
     else onDone()
   }
+
+  const tzOptions = timezoneOptions(trip.timezone)
 
   return (
     <form class="space-y-4" onSubmit={submit} noValidate>
@@ -132,8 +140,8 @@ export function FlightForm({ trip, initial, onSubmit, onDelete, onDone }: Props)
             </div>
             <p class="-mt-1 text-xs text-muted">Ogni orario è quello locale dell'aeroporto indicato.</p>
             <div class="grid grid-cols-2 gap-3">
-              <TextField label="Fuso partenza" value={l.fromTz} list="flight-tz" onInput={(v) => patchLeg(l.key, { fromTz: v, fromTzAuto: false })} />
-              <TextField label="Fuso arrivo" value={l.toTz} list="flight-tz" onInput={(v) => patchLeg(l.key, { toTz: v, toTzAuto: false })} />
+              <Select label="Fuso partenza" value={l.fromTz} creatable options={tzOptions} onChange={(v) => patchLeg(l.key, { fromTz: v, fromTzAuto: false })} />
+              <Select label="Fuso arrivo" value={l.toTz} creatable options={tzOptions} onChange={(v) => patchLeg(l.key, { toTz: v, toTzAuto: false })} />
             </div>
             <div class="grid grid-cols-2 gap-3">
               <TextField label="Posti" value={l.seats} onInput={(v) => patchLeg(l.key, { seats: v })} />
@@ -152,11 +160,6 @@ export function FlightForm({ trip, initial, onSubmit, onDelete, onDone }: Props)
         ))}
         <SecondaryButton onClick={addLeg}>+ Aggiungi tratta (scalo)</SecondaryButton>
       </div>
-      <datalist id="flight-tz">
-        {Array.from(new Set([trip.timezone, 'Europe/Rome', 'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Seoul', 'Asia/Dubai', 'Europe/London', 'America/New_York'])).map((z) => (
-          <option value={z} />
-        ))}
-      </datalist>
 
       <CostFields amount={cost} currency={currency} scope={scope} onAmount={setCost} onCurrency={setCurrency} onScope={setScope} />
       <CheckField label="Già pagato" checked={paid} onChange={setPaid} />
@@ -164,6 +167,7 @@ export function FlightForm({ trip, initial, onSubmit, onDelete, onDone }: Props)
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva volo' : 'Aggiungi volo'}</PrimaryButton>
       {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina volo</SecondaryButton>}
+    {confirmDialog}
     </form>
   )
 }

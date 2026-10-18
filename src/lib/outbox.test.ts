@@ -5,7 +5,7 @@ import { applyQueue, checklistEntry, expenseEntry } from './outboxLocal'
 import type { ExpenseInput } from './moneyData'
 import type { Trip } from '../types'
 
-const trip: Trip = { ...demoTrip, expenses: [], checklist: [] }
+const trip: Trip = { ...demoTrip, expenses: [], checklist: [], expenseCategories: [] }
 
 const input: ExpenseInput = {
   label: 'Ramen', category: 'Cibo', amount: 1200, currency: 'JPY', fxRate: 0.0056,
@@ -60,12 +60,34 @@ describe('coda offline: invio', () => {
 describe('coda offline: vista locale', () => {
   it('una nuova spesa compare subito, con quote e giorno', () => {
     const e = expenseEntry(trip, input)
-    expect(e.ops).toHaveLength(2)
-    expect(e.ops[0]).toMatchObject({ k: 'upsert', table: 'expenses' })
+    // la categoria «Cibo» non esiste ancora: si crea prima della spesa che la usa
+    expect(e.ops).toHaveLength(3)
+    expect(e.ops[0]).toMatchObject({ k: 'upsert', table: 'expense_categories', row: { label: 'Cibo', trip_id: trip.id } })
+    expect(e.ops[1]).toMatchObject({ k: 'upsert', table: 'expenses' })
     const shown = applyQueue([trip], [entry('1', e.ops, e.local)])
     expect(shown[0].expenses).toHaveLength(1)
-    expect(shown[0].expenses[0]).toMatchObject({ label: 'Ramen', amount: 1200, currency: 'JPY' })
+    expect(shown[0].expenses[0]).toMatchObject({ label: 'Ramen', amount: 1200, currency: 'JPY', category: 'Cibo' })
     expect(shown[0].expenses[0].shares).toHaveLength(trip.travelers.length)
+    expect(shown[0].expenseCategories.map((c) => c.label)).toEqual(['Cibo'])
+    expect(shown[0].expenses[0].categoryId).toBe(shown[0].expenseCategories[0].id)
+  })
+
+  it('una categoria che esiste già (anche con altre maiuscole) non viene creata di nuovo', () => {
+    const first = expenseEntry(trip, input)
+    const base = applyQueue([trip], [entry('1', first.ops, first.local)])[0]
+    const second = expenseEntry(base, { ...input, label: 'Sushi', category: ' cibo ' })
+    expect(second.ops).toHaveLength(2) // spesa + quote, nessuna nuova categoria
+    const shown = applyQueue([base], [entry('2', second.ops, second.local)])[0]
+    expect(shown.expenseCategories).toHaveLength(1)
+    expect(shown.expenses.every((x) => x.categoryId === shown.expenseCategories[0].id)).toBe(true)
+  })
+
+  it('senza categoria: nessuna categoria creata e spesa senza collegamento', () => {
+    const e = expenseEntry(trip, { ...input, category: '  ' })
+    expect(e.ops).toHaveLength(2)
+    const shown = applyQueue([trip], [entry('1', e.ops, e.local)])[0]
+    expect(shown.expenses[0].categoryId).toBeUndefined()
+    expect(shown.expenseCategories).toHaveLength(0)
   })
 
   it('applicare due volte la stessa voce non duplica', () => {
@@ -82,6 +104,7 @@ describe('coda offline: vista locale', () => {
     const existing = base[0].expenses[0]
     const edit = expenseEntry(base[0], { ...input, label: 'Ramen speciale' }, existing)
     expect(edit.ops[0]).toMatchObject({ k: 'update', id: existing.id })
+    expect(edit.ops).toHaveLength(2) // la categoria «Cibo» c'è già
     const edited = applyQueue(base, [entry('2', edit.ops, edit.local)])
     expect(edited[0].expenses[0].label).toBe('Ramen speciale')
     const gone = applyQueue(edited, [entry('3', [], { t: 'expense.deleted', id: existing.id, deleted: true })])

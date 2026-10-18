@@ -5,6 +5,7 @@ import {
   localRouteStore,
   planLegs,
   resolveWalkLegs,
+  walkLegs,
   type DayStop,
   type Leg,
   type TransportLine,
@@ -22,6 +23,8 @@ export interface DayRoute {
   /** tappe di un luogo senza posizione */
   missing: number
   legs: Leg[]
+  /** i tratti a piedi da calcolare e disegnare (anche da/verso le stazioni dei trasporti) */
+  walks: Leg[]
   /** percorso a piedi per tratto: `undefined` = in calcolo, `null` = non disponibile */
   routes: Record<string, WalkRoute | null>
   transports: TransportLine[]
@@ -34,14 +37,15 @@ export function useDayRoute(trip: Pick<Trip, 'places' | 'transports'>, day: Day)
   const [routes, setRoutes] = useState<Record<string, WalkRoute | null>>({})
   const { stops, missing } = useMemo(() => dayStops(day, trip.places), [day, trip.places])
   const transports = useMemo(() => dayTransportLines(day, trip.transports), [day, trip.transports])
-  const legs = useMemo(() => planLegs(stops), [stops])
-  const legsSig = legs.map((l) => `${l.key}:${l.kind}`).join('|')
+  const legs = useMemo(() => planLegs(stops, transports), [stops, transports])
+  const walks = useMemo(() => walkLegs(legs), [legs])
+  const legsSig = walks.map((l) => l.key).join('|')
 
   useEffect(() => {
     setRoutes({})
-    if (!legs.some((l) => l.kind === 'walk')) return
+    if (walks.length === 0) return
     const ctrl = new AbortController()
-    void resolveWalkLegs(legs, {
+    void resolveWalkLegs(walks, {
       store: localRouteStore(),
       signal: ctrl.signal,
       onRoute: (key, route) => !ctrl.signal.aborted && setRoutes((prev) => ({ ...prev, [key]: route })),
@@ -52,18 +56,22 @@ export function useDayRoute(trip: Pick<Trip, 'places' | 'transports'>, day: Day)
   }, [legsSig])
 
   const lines: DayMapLine[] = useMemo(() => {
-    const out: DayMapLine[] = legs.map((leg) => {
+    const straight = (leg: Leg): [number, number][] => [[leg.from.lng, leg.from.lat], [leg.to.lng, leg.to.lat]]
+    // a piedi lungo le strade; la linea d'aria solo se il percorso non è (ancora) disponibile o il tratto è troppo lungo
+    const out: DayMapLine[] = walks.map((leg) => {
       const route = routes[leg.key]
-      const straight: [number, number][] = [[leg.from.lng, leg.from.lat], [leg.to.lng, leg.to.lat]]
-      return leg.kind === 'walk' && route
+      return route
         ? { id: leg.key, coords: route.coords, dashed: false, color: STOP_COLOR }
-        : { id: leg.key, coords: straight, dashed: true, color: STOP_COLOR }
+        : { id: leg.key, coords: straight(leg), dashed: true, color: STOP_COLOR }
     })
+    for (const leg of legs) {
+      if (leg.kind === 'line' && !leg.via) out.push({ id: leg.key, coords: straight(leg), dashed: true, color: STOP_COLOR })
+    }
     for (const t of transports) {
       out.push({ id: t.id, coords: [[t.from.lng, t.from.lat], [t.to.lng, t.to.lat]], dashed: true, color: TRANSPORT_COLOR })
     }
     return out
-  }, [legs, routes, transports])
+  }, [legs, walks, routes, transports])
 
   const ends: DayMapEnd[] = useMemo(
     () =>
@@ -74,5 +82,5 @@ export function useDayRoute(trip: Pick<Trip, 'places' | 'transports'>, day: Day)
     [transports],
   )
 
-  return { stops, missing, legs, routes, transports, lines, ends }
+  return { stops, missing, legs, walks, routes, transports, lines, ends }
 }

@@ -1,4 +1,4 @@
-import type { ChecklistItem, Expense, Trip } from '../types'
+import type { Category, ChecklistItem, Expense, Trip } from '../types'
 import { doneCount } from './checklist'
 import { checklistColumns, type ChecklistInput } from './planningData'
 import { expenseColumns, type ExpenseInput } from './moneyData'
@@ -20,6 +20,7 @@ function apply(trips: Trip[], l: Local): Trip[] {
       return patchTrip(trips, l.tripId, (t) => ({
         ...t,
         expenses: upsertById(t.expenses, l.expense).sort((a, b) => b.spentAt.localeCompare(a.spentAt)),
+        expenseCategories: l.category ? upsertById(t.expenseCategories, l.category) : t.expenseCategories,
       }))
     case 'expense.deleted':
       return l.deleted ? patchTrip(trips, null, (t) => ({ ...t, expenses: t.expenses.filter((e) => e.id !== l.id) })) : trips
@@ -60,17 +61,27 @@ export function applyQueue(trips: Trip[], entries: Entry[]): Trip[] {
 export const newId = (): string => crypto.randomUUID()
 const nowIso = () => new Date().toISOString()
 
+/** La categoria scelta nel modulo: una già esistente (per nome, senza badare alle maiuscole) oppure una nuova da creare. */
+export function pickExpenseCategory(known: Category[], label: string): { category?: Category; isNew: boolean } {
+  const clean = label.trim()
+  if (!clean) return { isNew: false }
+  const hit = known.find((c) => c.label.toLowerCase() === clean.toLowerCase())
+  return hit ? { category: hit, isNew: false } : { category: { id: newId(), label: clean }, isNew: true }
+}
+
 export function expenseEntry(
-  trip: Pick<Trip, 'id' | 'timezone' | 'days'>,
+  trip: Pick<Trip, 'id' | 'timezone' | 'days' | 'expenseCategories'>,
   input: ExpenseInput,
   existing?: Expense,
 ): { ops: Op[]; local: Local; label: string } {
   const id = existing?.id ?? newId()
-  const cols = expenseColumns(input, trip.timezone, trip.days)
+  const { category, isNew } = pickExpenseCategory(trip.expenseCategories, input.category)
+  const cols = expenseColumns(input, trip.timezone, trip.days, category?.id ?? null)
   const expense: Expense = {
     id,
     label: cols.label,
-    category: cols.category ?? undefined,
+    category: category?.label,
+    categoryId: category?.id,
     amount: cols.amount,
     currency: cols.currency,
     fxRate: cols.fx_rate ?? undefined,
@@ -83,9 +94,14 @@ export function expenseEntry(
   const write: Op = existing
     ? { k: 'update', table: 'expenses', id, patch: cols }
     : { k: 'upsert', table: 'expenses', row: { id, trip_id: trip.id, ...cols } }
+  // una categoria nuova va creata prima della spesa che la usa (la spesa ci punta con una chiave esterna)
+  const createCategory: Op[] =
+    isNew && category
+      ? [{ k: 'upsert', table: 'expense_categories', row: { id: category.id, trip_id: trip.id, label: category.label, position: (trip.expenseCategories.length + 1) * 1000 } }]
+      : []
   return {
-    ops: [write, { k: 'expenseShares', tripId: trip.id, expenseId: id, travelerIds: input.travelerIds }],
-    local: { t: 'expense.save', tripId: trip.id, expense },
+    ops: [...createCategory, write, { k: 'expenseShares', tripId: trip.id, expenseId: id, travelerIds: input.travelerIds }],
+    local: { t: 'expense.save', tripId: trip.id, expense, ...(isNew && category ? { category } : {}) },
     label: `Spesa «${expense.label}»`,
   }
 }

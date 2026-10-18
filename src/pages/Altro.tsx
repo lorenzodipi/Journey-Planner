@@ -11,6 +11,8 @@ import { Sheet } from '../ui/Sheet'
 import { InviteForm } from '../ui/InviteForm'
 import { LinkAccount } from '../ui/LinkAccount'
 import { TravelerForm } from '../ui/TravelerForm'
+import { TrashButton } from '../ui/ConfirmDialog'
+import { useDeleter } from '../ui/useDeleter'
 import { TripForm } from '../ui/TripForm'
 
 const sections = [
@@ -63,6 +65,7 @@ type SheetState =
 export function Altro() {
   const t = useTrips()
   const auth = useAuth()
+  const [del, delDialog] = useDeleter()
   const [sheet, setSheet] = useState<SheetState>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const trip = t.active
@@ -136,11 +139,11 @@ export function Altro() {
           ) : (
             <ul class="divide-y divide-line">
               {trip.travelers.map((person) => (
-                <li>
+                <li class="flex items-center">
                   <button
                     type="button"
                     onClick={() => setSheet({ kind: 'edit-traveler', traveler: person })}
-                    class="flex min-h-14 w-full items-center gap-3 text-left"
+                    class="flex min-h-14 min-w-0 flex-1 items-center gap-3 text-left"
                   >
                     <span aria-hidden="true" class="h-4 w-4 shrink-0 rounded-full" style={{ background: person.color }} />
                     <span class="min-w-0 flex-1">
@@ -151,8 +154,21 @@ export function Altro() {
                         <span class="block text-xs text-danger">Senza account · da collegare</span>
                       )}
                     </span>
-                    <span class="text-xs text-muted">Modifica</span>
                   </button>
+                  {isOwner && (
+                    <TrashButton
+                      label={`Rimuovi ${person.name} dal viaggio`}
+                      onClick={() =>
+                        void del({
+                          title: `Rimuovere ${person.name} dal viaggio?`,
+                          text: 'Le spese già assegnate a questa persona restano nel database ma non saranno più visibili. Non si può annullare.',
+                          confirmLabel: 'Rimuovi',
+                          done: `${person.name} rimosso dal viaggio`,
+                          run: () => t.removeTraveler(person.id),
+                        })
+                      }
+                    />
+                  )}
                 </li>
               ))}
             </ul>
@@ -194,6 +210,7 @@ export function Altro() {
         </Card>
       </div>
 
+      {delDialog}
       <Sheet open={sheet !== null} title={title} onClose={close}>
         {sheet?.kind === 'new-trip' && <TripForm onSubmit={t.createTrip} onDone={close} />}
 

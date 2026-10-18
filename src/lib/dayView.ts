@@ -15,8 +15,9 @@ export function dayMovements(trip: Pick<Trip, 'timezone' | 'flights' | 'stays' |
       title: `${t.from} → ${t.to}`,
       sub: t.refCode ? `Codice ${t.refCode}` : 'Orario da definire',
       kind: 'transport' as const,
+      ref: { type: 'transport' as const, id: t.id },
       mode: t.mode,
-      flag: t.bought ? { text: 'Biglietto acquistato', ok: true } : { text: 'Biglietto da acquistare', ok: false },
+      flag: t.bought ? { text: 'Biglietto acquistato', ok: true } : { text: 'Biglietto non acquistato', ok: false },
     }))
   return [...events, ...untimed]
 }

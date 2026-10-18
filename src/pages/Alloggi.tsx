@@ -6,9 +6,11 @@ import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { Stay } from '../types'
 import { FlagPill } from '../ui/FlagPill'
+import { TrashButton } from '../ui/ConfirmDialog'
 import { Sheet } from '../ui/Sheet'
 import { StayForm } from '../ui/StayForm'
 import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
+import { useDeleter } from '../ui/useDeleter'
 
 type SheetState = { kind: 'new' } | { kind: 'edit'; stay: Stay } | null
 
@@ -21,6 +23,7 @@ function mapsHref(s: Stay): string | null {
 export function Alloggi() {
   const trip = useTrip()
   const t = useTrips()
+  const [del, delDialog] = useDeleter()
   const [sheet, setSheet] = useState<SheetState>(null)
   const close = () => setSheet(null)
   const persons = Math.max(1, trip.travelers.length)
@@ -80,8 +83,21 @@ export function Alloggi() {
               const per = s.totalCost != null ? perPerson(s.totalCost, 'total', persons) : null
               return (
                 <li>
-                  <Card>
-                    <button type="button" onClick={() => setSheet({ kind: 'edit', stay: s })} class="block w-full text-left">
+                  <Card class="relative">
+                    <div class="absolute right-2 top-2">
+                      <TrashButton
+                        label={`Elimina ${s.name}`}
+                        onClick={() =>
+                          void del({
+                            title: `Eliminare «${s.name}»?`,
+                            done: 'Alloggio eliminato',
+                            run: () => t.setStayDeleted(s.id, true),
+                            undo: () => t.setStayDeleted(s.id, false),
+                          })
+                        }
+                      />
+                    </div>
+                    <button type="button" onClick={() => setSheet({ kind: 'edit', stay: s })} class="block w-full pr-10 text-left">
                       <span class="flex items-start justify-between gap-3">
                         <span class="min-w-0">
                           <span class="block truncate font-semibold">{s.name}</span>
@@ -90,7 +106,6 @@ export function Alloggi() {
                             {formatDay(s.checkIn)} → {formatDay(s.checkOut)} · {n} {n === 1 ? 'notte' : 'notti'}
                           </span>
                         </span>
-                        <span class="shrink-0 text-xs font-medium text-accent">Modifica</span>
                       </span>
                       {(s.checkInInfo || s.checkOutInfo) && (
                         <span class="mt-1 block text-xs text-muted">
@@ -116,8 +131,8 @@ export function Alloggi() {
                       )}
                     </button>
                     <div class="mt-3 flex flex-wrap items-center gap-2">
-                      <FlagPill on={s.booked} label="Prenotato" onClick={() => void flag(s, 'booked')} />
-                      <FlagPill on={s.paid} label="Pagato" onClick={() => void flag(s, 'paid')} />
+                      <FlagPill on={s.booked} label="Prenotato" offLabel="Non prenotato" onClick={() => void flag(s, 'booked')} />
+                      <FlagPill on={s.paid} label="Pagato" offLabel="Non pagato" onClick={() => void flag(s, 'paid')} />
                       {href && (
                         <a
                           href={href}
@@ -145,6 +160,7 @@ export function Alloggi() {
         </button>
       </div>
 
+      {delDialog}
       <Sheet open={sheet !== null} title={sheet?.kind === 'new' ? 'Nuovo alloggio' : 'Modifica alloggio'} onClose={close}>
         {sheet?.kind === 'new' && <StayForm trip={trip} onSubmit={(i) => t.createStay(trip.id, i)} onDone={close} />}
         {sheet?.kind === 'edit' && (

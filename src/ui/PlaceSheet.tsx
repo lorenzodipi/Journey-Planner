@@ -4,9 +4,11 @@ import { mapsLinkFor } from '../lib/mapsUrl'
 import { showToast } from '../state/toast'
 import { useTrips } from '../state/trip'
 import type { Place, PlaceStatus, Trip } from '../types'
+import { useConfirm } from './ConfirmDialog'
 import { FormError, SecondaryButton } from './Field'
 import { PlaceForm } from './PlaceForm'
 import { STATUSES, STATUS_LABEL } from './placeMeta'
+import { Select } from './Select'
 import { Sheet } from './Sheet'
 
 export type PlaceSheetState = { kind: 'detail'; placeId: string } | { kind: 'edit'; placeId: string } | { kind: 'new' } | null
@@ -74,7 +76,16 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
     onClose()
   }
 
+  const [confirm, confirmDialog] = useConfirm()
+  const plannedDays = trip.days.filter((d) => d.items.some((i) => i.placeId === place.id))
+
   async function remove() {
+    const used = trip.days.reduce((n, d) => n + d.items.filter((i) => i.placeId === place.id).length, 0)
+    const ok = await confirm({
+      title: `Eliminare «${place.name}»?`,
+      text: used > 0 ? `Resta in ${used} ${used === 1 ? 'tappa' : 'tappe'} dei giorni, ma senza più il luogo collegato. Puoi annullare subito dopo.` : 'Puoi annullare subito dopo.',
+    })
+    if (!ok) return
     const message = await t.setPlaceDeleted(place.id, true)
     if (message) return setError(message)
     onClose()
@@ -91,6 +102,11 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
       <p class="text-sm text-muted">
         {[place.category, place.city].filter(Boolean).join(' · ') || 'Senza categoria'}
       </p>
+      {plannedDays.length > 0 && (
+        <p class="rounded-2xl bg-accent-soft px-4 py-3 text-sm text-accent">
+          In programma: {plannedDays.map((d) => formatDay(d.date)).join(' · ')}
+        </p>
+      )}
 
       <div class="flex flex-wrap gap-2" role="group" aria-label="Stato">
         {STATUSES.map((s) => (
@@ -122,21 +138,13 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
 
       {trip.days.length > 0 && (
         <div class="space-y-2 rounded-2xl bg-bg p-3">
-          <label class="block">
-            <span class="mb-1 block text-sm font-medium">Aggiungi a un giorno</span>
-            <select
-              value={dayId}
-              onChange={(e) => setDayId(e.currentTarget.value)}
-              class="min-h-12 w-full rounded-2xl border border-line bg-surface px-4"
-            >
-              {trip.days.map((d, i) => (
-                <option value={d.id}>
-                  {i + 1} · {formatDay(d.date)}
-                  {d.city ? ` · ${d.city}` : ''}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select
+            label="Aggiungi a un giorno"
+            value={dayId}
+            onChange={setDayId}
+            tone="surface"
+            options={trip.days.map((d, i) => ({ value: d.id, label: `${i + 1} · ${formatDay(d.date)}`, hint: d.city || undefined }))}
+          />
           <button
             type="button"
             onClick={() => void addToDay()}
@@ -148,6 +156,7 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
       )}
 
       <FormError message={error} />
+      {confirmDialog}
       <div class="grid grid-cols-2 gap-2">
         <SecondaryButton onClick={onEdit}>Modifica</SecondaryButton>
         <SecondaryButton danger onClick={() => void remove()}>

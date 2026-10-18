@@ -13,6 +13,8 @@ import {
   parseOsrm,
   planLegs,
   resolveWalkLegs,
+  transportBetween,
+  walkLegs,
   WALK_MAX_M,
 } from './dayRoute'
 
@@ -42,9 +44,9 @@ describe('distanza', () => {
 })
 
 describe('tappe del giorno', () => {
-  it('numera solo le tappe con posizione, nell\'ordine del programma', () => {
+  it('il numero è la posizione nel programma; sulla mappa solo le tappe con posizione', () => {
     const { stops, missing } = dayStops(day, places)
-    expect(stops.map((s) => [s.n, s.name])).toEqual([[1, 'Senso-ji'], [2, 'Nakamise'], [3, 'Skytree']])
+    expect(stops.map((s) => [s.n, s.name])).toEqual([[1, 'Senso-ji'], [3, 'Nakamise'], [5, 'Skytree']])
     expect(missing).toBe(2) // pranzo senza luogo + luogo senza posizione; la nota non conta
   })
   it('nessuna tappa', () => {
@@ -53,7 +55,7 @@ describe('tappe del giorno', () => {
 })
 
 describe('tratti', () => {
-  it('a piedi sotto i 2 km, linea tratteggiata oltre', () => {
+  it('a piedi sempre, linea tratteggiata solo se è troppo lontano', () => {
     const { stops } = dayStops(day, places)
     const legs = planLegs(stops)
     expect(legs).toHaveLength(2)
@@ -65,6 +67,27 @@ describe('tratti', () => {
       { id: 'y', n: 2, name: 'y', lat: 35.0, lng: 135.76 },
     ])
     expect(far[0].kind).toBe('line')
+  })
+  it('un trasporto del giorno che copre il tratto: linea d\'aria solo per il mezzo, a piedi da/verso le stazioni', () => {
+    const a = { id: 'x', n: 1, name: 'x', lat: 35.6959, lng: 139.7929 } // vicino a Ryōgoku
+    const b = { id: 'y', n: 2, name: 'y', lat: 35.3191, lng: 139.5504 } // vicino a Kamakura
+    const train = dayTransportLines(day, [
+      { id: 't1', from: 'Ryōgoku', to: 'Kamakura', mode: 'train', currency: 'JPY', scope: 'per_person', bought: false, dayId: 'd1',
+        fromLat: 35.6965, fromLng: 139.7926, toLat: 35.3195, toLng: 139.5506 },
+    ])
+    const legs = planLegs([a, b], train)
+    expect(legs[0].kind).toBe('line')
+    expect(legs[0].via?.id).toBe('t1')
+    const walks = walkLegs(legs)
+    expect(walks).toHaveLength(2) // tappa → stazione, stazione → tappa
+    expect(walks.every((w) => w.kind === 'walk')).toBe(true)
+    expect(describeLeg(legs[0], undefined)).toBe('in viaggio: Ryōgoku → Kamakura')
+  })
+  it('un trasporto lontano dalle tappe non le copre', () => {
+    const t = dayTransportLines(day, [
+      { id: 't1', from: 'A', to: 'B', mode: 'train', currency: 'JPY', scope: 'per_person', bought: false, dayId: 'd1', fromLat: 40, fromLng: 140, toLat: 41, toLng: 141 },
+    ])
+    expect(transportBetween({ lat: 35.7, lng: 139.8 }, { lat: 35.3, lng: 139.5 }, t)).toBeUndefined()
   })
   it('una sola tappa non ha tratti', () => expect(planLegs([{ id: 'x', n: 1, name: 'x', lat: 1, lng: 1 }])).toEqual([]))
   it('chiave stabile e arrotondata', () => {

@@ -4,11 +4,13 @@ import { formatMoney } from '../lib/money'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { Flight, Transport } from '../types'
+import { TrashButton } from '../ui/ConfirmDialog'
 import { FlagPill } from '../ui/FlagPill'
 import { FlightForm } from '../ui/FlightForm'
 import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
 import { Sheet } from '../ui/Sheet'
 import { MODE_LABEL, TransportForm } from '../ui/TransportForm'
+import { useDeleter } from '../ui/useDeleter'
 
 type SheetState =
   | { kind: 'new-flight' }
@@ -22,6 +24,7 @@ const scopeText = (scope: 'per_person' | 'total') => (scope === 'per_person' ? '
 export function Trasporti() {
   const trip = useTrip()
   const t = useTrips()
+  const [del, delDialog] = useDeleter()
   const [sheet, setSheet] = useState<SheetState>(null)
   const close = () => setSheet(null)
 
@@ -53,7 +56,21 @@ export function Trasporti() {
             <EmptyState title="Nessun volo" text="Aggiungi andata e ritorno con tutte le tratte: durate e scali si calcolano da soli." />
           )}
           {trip.flights.map((f) => (
-            <FlightCard key={f.id} flight={f} onEdit={() => setSheet({ kind: 'edit-flight', flight: f })} onTogglePaid={() => void toggleFlightPaid(f)} />
+            <FlightCard
+              key={f.id}
+              flight={f}
+              onEdit={() => setSheet({ kind: 'edit-flight', flight: f })}
+              onTogglePaid={() => void toggleFlightPaid(f)}
+              onDelete={() =>
+                void del({
+                  title: `Eliminare «${f.title}»?`,
+                  text: 'Saranno tolte anche le tratte. Puoi annullare subito dopo.',
+                  done: 'Volo eliminato',
+                  run: () => t.setFlightDeleted(f.id, true),
+                  undo: () => t.setFlightDeleted(f.id, false),
+                })
+              }
+            />
           ))}
           <button
             type="button"
@@ -72,8 +89,21 @@ export function Trasporti() {
           <ul class="space-y-3">
             {trip.transports.map((x) => (
               <li>
-                <Card>
-                  <button type="button" onClick={() => setSheet({ kind: 'edit-transport', transport: x })} class="block w-full text-left">
+                <Card class="relative">
+                  <div class="absolute right-2 top-2">
+                    <TrashButton
+                      label={`Elimina ${x.from} → ${x.to}`}
+                      onClick={() =>
+                        void del({
+                          title: `Eliminare «${x.from} → ${x.to}»?`,
+                          done: 'Trasporto eliminato',
+                          run: () => t.setTransportDeleted(x.id, true),
+                          undo: () => t.setTransportDeleted(x.id, false),
+                        })
+                      }
+                    />
+                  </div>
+                  <button type="button" onClick={() => setSheet({ kind: 'edit-transport', transport: x })} class="block w-full pr-10 text-left">
                     <span class="flex items-start justify-between gap-3">
                       <span class="min-w-0">
                         <span class="block truncate font-semibold">
@@ -85,7 +115,6 @@ export function Trasporti() {
                           {x.arriveAt && `–${formatInZone(x.arriveAt, trip.timezone)}`}
                         </span>
                       </span>
-                      <span class="shrink-0 text-xs font-medium text-accent">Modifica</span>
                     </span>
                     {(x.cost != null || x.refCode) && (
                       <span class="mt-1 block text-sm">
@@ -100,7 +129,7 @@ export function Trasporti() {
                     )}
                   </button>
                   <div class="mt-3">
-                    <FlagPill on={x.bought} label="Acquistato" onClick={() => void toggleBought(x)} />
+                    <FlagPill on={x.bought} label="Acquistato" offLabel="Non acquistato" onClick={() => void toggleBought(x)} />
                   </div>
                 </Card>
               </li>
@@ -116,6 +145,7 @@ export function Trasporti() {
         </section>
       </div>
 
+      {delDialog}
       <Sheet open={sheet !== null} title={title} onClose={close}>
         {sheet?.kind === 'new-flight' && <FlightForm trip={trip} onSubmit={(i) => t.createFlight(trip.id, i)} onDone={close} />}
         {sheet?.kind === 'edit-flight' && (
@@ -156,11 +186,14 @@ export function Trasporti() {
   )
 }
 
-function FlightCard({ flight, onEdit, onTogglePaid }: { flight: Flight; onEdit: () => void; onTogglePaid: () => void }) {
+function FlightCard({ flight, onEdit, onTogglePaid, onDelete }: { flight: Flight; onEdit: () => void; onTogglePaid: () => void; onDelete: () => void }) {
   const times = flight.legs.map((l) => ({ depart: l.departAt, arrive: l.arriveAt }))
   return (
-    <Card>
-      <button type="button" onClick={onEdit} class="block w-full text-left">
+    <Card class="relative">
+      <div class="absolute right-2 top-2">
+        <TrashButton label={`Elimina ${flight.title}`} onClick={onDelete} />
+      </div>
+      <button type="button" onClick={onEdit} class="block w-full pr-10 text-left">
         <span class="flex items-start justify-between gap-3">
           <span class="min-w-0">
             <span class="block truncate font-semibold">{flight.title}</span>
@@ -168,7 +201,6 @@ function FlightCard({ flight, onEdit, onTogglePaid }: { flight: Flight; onEdit: 
               {[flight.airline, flight.bookingRef && `Cod. ${flight.bookingRef}`].filter(Boolean).join(' · ') || 'Volo'}
             </span>
           </span>
-          <span class="shrink-0 text-xs font-medium text-accent">Modifica</span>
         </span>
       </button>
 
@@ -215,7 +247,7 @@ function FlightCard({ flight, onEdit, onTogglePaid }: { flight: Flight; onEdit: 
         )}
       </div>
       <div class="mt-2">
-        <FlagPill on={flight.paid} label="Pagato" onClick={onTogglePaid} />
+        <FlagPill on={flight.paid} label="Pagato" offLabel="Non pagato" onClick={onTogglePaid} />
       </div>
     </Card>
   )

@@ -16,6 +16,13 @@ export function todayYmd(now: Date = new Date()): string {
   return toYmd(now)
 }
 
+/** La data `n` giorni dopo (o prima, se negativo). */
+export function dateAddDays(ymd: string, n: number): string {
+  const d = parseYmd(ymd)
+  d.setDate(d.getDate() + n)
+  return toYmd(d)
+}
+
 /** Giorni di calendario tra due date (b - a). */
 export function daysBetween(aYmd: string, bYmd: string): number {
   const a = parseYmd(aYmd)
