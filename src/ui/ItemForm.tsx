@@ -75,7 +75,7 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
       )}
 
       {placeId && onOpenPlace && trip.places.some((p) => p.id === placeId) && (
-        <button type="button" onClick={() => onOpenPlace(placeId)} class="-mt-2 min-h-11 rounded-full px-3 text-sm font-medium text-accent">
+        <button type="button" onClick={() => onOpenPlace(placeId)} class="-mt-2 min-h-11 rounded-full px-3 text-sm font-extrabold text-accent">
           Apri la scheda del luogo
         </button>
       )}
@@ -83,15 +83,15 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
       <TextField label="Cosa fai" value={title} onInput={setTitle} maxLength={120} />
 
       <fieldset>
-        <legend class="mb-1 block text-sm font-medium">Tipo</legend>
+        <legend class="mb-1 block text-sm font-extrabold">Tipo</legend>
         <div class="flex flex-wrap gap-2">
           {KINDS.map((k) => (
             <button
               type="button"
               aria-pressed={kind === k}
               onClick={() => setKind(k)}
-              class={`min-h-11 rounded-full border px-4 text-sm font-medium ${
-                kind === k ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted'
+              class={`min-h-11 rounded-full border-2 px-4 text-sm font-extrabold ${
+                kind === k ? 'border-accent bg-accent-soft text-pale' : 'border-line text-muted'
               }`}
             >
               {KIND_LABEL[k]}

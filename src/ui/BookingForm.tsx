@@ -82,11 +82,11 @@ export function BookingForm({ trip, initial, onSubmit, onDelete, onDone }: Props
 
       <fieldset class="space-y-2 rounded-2xl bg-bg p-3">
         <legend class="sr-only">File</legend>
-        <p class="text-sm font-medium">File (PDF o immagine, max 10 MB)</p>
+        <p class="text-sm font-extrabold">File (PDF o immagine, max 10 MB)</p>
         {hasFile && !file && (
           <div class="flex items-center justify-between gap-2 text-sm">
             <span class="text-muted">File già caricato</span>
-            <button type="button" onClick={() => setRemoveFile(true)} class="min-h-11 rounded-full px-3 font-medium text-danger">
+            <button type="button" onClick={() => setRemoveFile(true)} class="min-h-11 rounded-full px-3 font-extrabold text-danger">
               Rimuovi
             </button>
           </div>
@@ -94,14 +94,14 @@ export function BookingForm({ trip, initial, onSubmit, onDelete, onDone }: Props
         {removeFile && !file && (
           <p class="text-sm text-muted">
             Il file verrà rimosso al salvataggio.{' '}
-            <button type="button" onClick={() => setRemoveFile(false)} class="font-medium text-accent">Annulla</button>
+            <button type="button" onClick={() => setRemoveFile(false)} class="font-extrabold text-accent">Annulla</button>
           </p>
         )}
         <input
           type="file"
           accept="application/pdf,image/*"
           onChange={(e) => pickFile(e.currentTarget.files?.[0] ?? null)}
-          class="block w-full text-sm file:mr-3 file:min-h-11 file:rounded-full file:border file:border-line file:bg-surface file:px-4 file:font-medium"
+          class="block w-full text-sm file:mr-3 file:min-h-11 file:rounded-full file:border-2 file:border-line file:bg-surface file:px-4 file:font-extrabold"
         />
         {file && <p class="text-xs text-muted">{hasFile ? 'Sostituirà il file attuale: ' : ''}{file.name}</p>}
         <CheckField label="Disponibile offline sul telefono" checked={keepOffline} onChange={setKeepOffline} />

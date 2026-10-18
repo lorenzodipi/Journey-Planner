@@ -73,9 +73,9 @@ export function PointSearch({ label, fallbackQuery, near, value, onChange }: Pro
   }
 
   return (
-    <div class="rounded-2xl border border-line p-3">
+    <div class="rounded-2xl border-2 border-line p-3">
       <div class="flex items-center justify-between gap-2">
-        <p class="text-sm font-medium">{label}</p>
+        <p class="text-sm font-extrabold">{label}</p>
         {value ? (
           <button type="button" onClick={() => onChange(null)} class="min-h-11 rounded-full px-3 text-sm text-muted">
             Rimuovi
@@ -98,13 +98,13 @@ export function PointSearch({ label, fallbackQuery, near, value, onChange }: Pro
               void search()
             }
           }}
-          class="min-h-12 min-w-0 flex-1 rounded-2xl border border-line bg-bg px-4"
+          class="min-h-12 min-w-0 flex-1 rounded-[14px] border-2 border-line bg-bg px-4"
         />
         <button
           type="button"
           disabled={busy || !text}
           onClick={() => void search()}
-          class="min-h-12 shrink-0 rounded-full bg-accent px-4 text-sm font-semibold text-accent-ink disabled:opacity-50"
+          class="min-h-12 shrink-0 rounded-full bg-accent px-4 text-sm font-extrabold text-accent-ink disabled:opacity-50"
         >
           {busy ? 'Cerco…' : 'Cerca'}
         </button>
@@ -115,11 +115,11 @@ export function PointSearch({ label, fallbackQuery, near, value, onChange }: Pro
         </p>
       )}
       {results && results.length > 0 && (
-        <ul class="mt-2 divide-y divide-line rounded-2xl border border-line">
+        <ul class="mt-2 divide-y divide-line rounded-2xl border-2 border-line">
           {results.map((r) => (
             <li>
               <button type="button" onClick={() => pick(r)} class="block min-h-12 w-full px-3 py-2 text-left text-sm">
-                <span class="block font-medium">{r.name}</span>
+                <span class="block font-extrabold">{r.name}</span>
                 <span class="block truncate text-xs text-muted">{r.address}</span>
               </button>
             </li>
@@ -127,14 +127,14 @@ export function PointSearch({ label, fallbackQuery, near, value, onChange }: Pro
         </ul>
       )}
       <label class="mt-3 block">
-        <span class="mb-1 block text-xs font-medium text-muted">Oppure incolla un link di Google Maps</span>
+        <span class="mb-1 block text-xs font-extrabold text-muted">Oppure incolla un link di Google Maps</span>
         <input
           type="url"
           value={link}
           placeholder="https://www.google.com/maps/place/…"
           aria-label={`Link di Google Maps: ${label.toLowerCase()}`}
           onInput={(e) => onLink((e.currentTarget as HTMLInputElement).value)}
-          class="min-h-12 w-full rounded-2xl border border-line bg-bg px-4"
+          class="min-h-12 w-full rounded-[14px] border-2 border-line bg-bg px-4"
         />
       </label>
       {linkHint && (

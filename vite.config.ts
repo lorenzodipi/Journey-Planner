@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
       // nell'app nativa il modulo virtual:pwa-register resta, ma non fa nulla
       disable: native,
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
+      includeAssets: ['favicon.svg', 'favicon-64.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'Journey Planner',
         short_name: 'Journey',
@@ -35,8 +35,8 @@ export default defineConfig(({ mode }) => {
         scope: base,
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#f6f1e7',
-        theme_color: '#c8402f',
+        background_color: '#0b1b33',
+        theme_color: '#0b1b33',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },

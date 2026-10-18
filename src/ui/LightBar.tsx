@@ -1,4 +1,6 @@
-import { formatMinutes } from '../lib/sun'
+import { SunIcon, SunriseIcon, SunsetIcon } from './Icons'
+import { formatDayLong } from '../lib/dates'
+import { formatMinutes, type DaySun } from '../lib/sun'
 
 interface Props {
   sunrise: number | null
@@ -26,15 +28,6 @@ const PHASES = [
   { label: 'Pomeriggio', color: 'var(--phase-afternoon)' },
   { label: 'Sera', color: 'var(--phase-evening)' },
 ]
-
-const ICON = {
-  fill: 'none',
-  stroke: 'currentColor',
-  'stroke-width': 2,
-  'stroke-linecap': 'round',
-  'stroke-linejoin': 'round',
-  'aria-hidden': true,
-} as const
 
 function Marker({ at, children }: { at: number; children: preact.ComponentChildren }) {
   return (
@@ -102,20 +95,13 @@ export function LightBar({ sunrise, sunset, alwaysUp, alwaysDown, nowMin = null 
         </div>
 
         <Marker at={pct(rise)}>
-          <svg width="14" height="14" viewBox="0 0 24 24" {...ICON}>
-            <path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 4v6M9.5 6.5 12 4l2.5 2.5" />
-          </svg>
+          <SunriseIcon size={12} />
         </Marker>
         <Marker at={pct(noon)}>
-          <svg width="14" height="14" viewBox="0 0 24 24" {...ICON}>
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-          </svg>
+          <SunIcon size={14} />
         </Marker>
         <Marker at={pct(set)}>
-          <svg width="14" height="14" viewBox="0 0 24 24" {...ICON}>
-            <path d="M3 19h18M7 19a5 5 0 0 1 10 0M12 10V4M9.5 7.5 12 10l2.5-2.5" />
-          </svg>
+          <SunsetIcon size={12} />
         </Marker>
 
         {showNow && (
@@ -158,5 +144,22 @@ export function LightBar({ sunrise, sunset, alwaysUp, alwaysDown, nowMin = null 
         {remaining != null && <span class="font-semibold text-ink"> · ancora {duration(remaining)}</span>}
       </p>
     </div>
+  )
+}
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+/** La card "luce del giorno": data e città in testa, poi la barra. Usata in Oggi e nella pagina del giorno. */
+export function LightCard({ date, city, sun, nowMin = null }: { date: string; city?: string; sun: DaySun; nowMin?: number | null }) {
+  return (
+    <section class="rise rounded-2xl border-2 border-line bg-surface px-4 pb-3.5 pt-3.5">
+      <div class="flex items-baseline justify-between gap-3">
+        <h2 class="font-display text-lg font-extrabold">{cap(formatDayLong(date))}</h2>
+        {city && <span class="text-[13px] text-muted">{city}</span>}
+      </div>
+      <div class="mt-1.5">
+        <LightBar sunrise={sun.sunrise} sunset={sun.sunset} alwaysUp={sun.alwaysUp} alwaysDown={sun.alwaysDown} nowMin={nowMin} />
+      </div>
+    </section>
   )
 }

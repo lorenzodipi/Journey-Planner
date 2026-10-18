@@ -17,13 +17,13 @@ export function PrimoViaggio() {
         class="mb-5 block h-12 w-12 rounded-full"
         style={{ background: 'linear-gradient(145deg, var(--accent), var(--secondary))' }}
       />
-      <h1 class="font-display text-3xl font-semibold leading-tight">Il tuo primo viaggio</h1>
+      <h1 class="font-display text-3xl font-extrabold leading-tight">Il tuo primo viaggio</h1>
       <p class="mb-6 mt-1 text-muted">Bastano nome, date e chi viaggia: il resto lo aggiungi strada facendo.</p>
       <TripForm onSubmit={trips.createTrip} onDone={() => undefined} />
       <button
         type="button"
         onClick={() => void auth.signOut()}
-        class="mt-6 min-h-11 w-full text-sm font-medium text-muted"
+        class="mt-6 min-h-11 w-full text-sm font-extrabold text-muted"
       >
         Esci
       </button>

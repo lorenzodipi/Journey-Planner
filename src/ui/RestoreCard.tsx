@@ -51,9 +51,9 @@ function Candidate({ item, defaultTitle, onDone }: { item: RestorableTrip; defau
   }
 
   return (
-    <form onSubmit={submit} class="space-y-3 rounded-2xl border border-line p-4">
+    <form onSubmit={submit} class="space-y-3 rounded-2xl border-2 border-line bg-bg p-4">
       <div>
-        <p class="font-medium">{trip.title}</p>
+        <p class="font-extrabold">{trip.title}</p>
         <p class="text-sm text-muted">
           {formatShort(trip.startDate)} – {formatShort(trip.endDate)}
           {trip.destination && ` · ${trip.destination}`}
@@ -61,8 +61,8 @@ function Candidate({ item, defaultTitle, onDone }: { item: RestorableTrip; defau
         <p class="mt-1 text-sm text-muted">{summaryLine(trip)}</p>
       </div>
       {warnings.length > 0 && (
-        <details class="rounded-2xl bg-warn/10 px-4 py-3 text-sm">
-          <summary class="min-h-6 cursor-pointer font-medium text-warn">
+        <details class="rounded-2xl border-2 border-warn px-4 py-3 text-sm">
+          <summary class="min-h-6 cursor-pointer font-extrabold text-warn">
             {warnings.length === 1 ? '1 avviso' : `${warnings.length} avvisi`}
           </summary>
           <ul class="mt-2 list-disc space-y-1 pl-5">
@@ -112,14 +112,16 @@ export function RestoreCard() {
 
   return (
     <Card>
-      <h2 class="font-display text-lg font-semibold">Ripristina da un file</h2>
-      <p class="mt-1 text-sm text-muted">
-        Scegli un file esportato da qui. Viene creato un viaggio nuovo: quelli che hai già non vengono toccati né sovrascritti.
-        Nel file non ci sono gli allegati (PDF) né gli account: i viaggiatori tornano senza account e si collegano da Altro → Viaggiatori (tocca la persona e scrivi la sua email).
+      <h2 class="font-display text-lg font-extrabold">Ripristina da un backup</h2>
+      <p class="mt-1 text-[13px] leading-snug text-muted">
+        Scegli un file JSON esportato dall'app: i viaggi vengono ricreati, quelli che hai già non vengono toccati.
+      </p>
+      <p class="mt-1 text-xs leading-snug text-muted">
+        Nel file non ci sono gli allegati (PDF) né gli account: i viaggiatori tornano senza account e si collegano da Altro → Viaggiatori.
       </p>
       <input ref={input} type="file" accept=".json,application/json" class="sr-only" tabIndex={-1} onChange={(e) => void onFile(e)} aria-label="File di esportazione" />
       <div class="mt-3">
-        <SecondaryButton onClick={() => input.current?.click()}>{reading ? 'Leggo il file…' : outcome ? 'Scegli un altro file' : 'Scegli il file…'}</SecondaryButton>
+        <SecondaryButton onClick={() => input.current?.click()}>{reading ? 'Leggo il file…' : outcome ? 'Scegli un altro file' : 'Scegli il file'}</SecondaryButton>
       </div>
 
       {outcome && !outcome.ok && (
@@ -131,7 +133,7 @@ export function RestoreCard() {
       {outcome?.ok && (
         <div class="mt-3 space-y-3">
           <p class="text-sm text-muted">
-            {fileName && <span class="font-medium text-ink">{fileName}</span>}
+            {fileName && <span class="font-extrabold text-ink">{fileName}</span>}
             {fileName && ' · '}
             {outcome.trips.length === 1 ? '1 viaggio nel file' : `${outcome.trips.length} viaggi nel file`}
           </p>
@@ -139,8 +141,8 @@ export function RestoreCard() {
             <Candidate key={item.trip.id} item={item} defaultTitle={suggest(item.trip.title)} onDone={() => setOutcome(null)} />
           ))}
           {outcome.skipped.map((s) => (
-            <p class="rounded-2xl bg-warn/10 px-4 py-3 text-sm">
-              <span class="font-medium">{s.title}</span> non si può ripristinare: {s.reason}.
+            <p class="rounded-2xl border-2 border-warn px-4 py-3 text-sm">
+              <span class="font-extrabold">{s.title}</span> non si può ripristinare: {s.reason}.
             </p>
           ))}
         </div>

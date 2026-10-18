@@ -34,23 +34,23 @@ function ConfirmDialog({ title, text, confirmLabel = 'Elimina', onAnswer }: Conf
       onClick={(e) => {
         if (e.target === e.currentTarget) onAnswer(false)
       }}
-      class="fixed inset-0 m-auto w-[min(92vw,22rem)] rounded-3xl bg-surface p-0 text-ink shadow-2xl backdrop:bg-black/45"
+      class="fixed inset-0 m-auto w-[min(92vw,22rem)] rounded-3xl border-2 border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-black/55"
     >
       <div class="space-y-4 p-5">
         <div class="flex items-start gap-3">
-          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-danger/10 text-danger">
+          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-danger/15 text-danger">
             <TrashIcon size={20} />
           </span>
           <div class="min-w-0">
-            <h2 class="font-display text-xl font-semibold leading-tight">{title}</h2>
+            <h2 class="font-display text-xl font-extrabold leading-tight">{title}</h2>
             {text && <p class="mt-1 text-sm text-muted">{text}</p>}
           </div>
         </div>
         <div class="grid grid-cols-2 gap-2">
-          <button type="button" onClick={() => onAnswer(false)} class="min-h-12 rounded-full border border-line px-4 font-medium">
+          <button type="button" onClick={() => onAnswer(false)} class="min-h-[52px] rounded-full border-2 border-line px-4 font-extrabold">
             Annulla
           </button>
-          <button type="button" onClick={() => onAnswer(true)} class="min-h-12 rounded-full bg-danger px-4 font-semibold text-white">
+          <button type="button" onClick={() => onAnswer(true)} class="min-h-[52px] rounded-full bg-danger px-4 font-extrabold text-bg">
             {confirmLabel}
           </button>
         </div>

@@ -1,15 +1,20 @@
 import { useState } from 'preact/hooks'
 import { expenseBase, expensesOf, fxOf, personSummary, shareOf, summarizeExpenses } from '../lib/budget'
 import { dateInZone } from '../lib/flights'
-import { formatDay } from '../lib/dates'
-import { formatMoney, round2 } from '../lib/money'
+import { formatShort } from '../lib/dates'
+import { formatMoney } from '../lib/money'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { Expense, Traveler } from '../types'
 import { TrashButton } from '../ui/ConfirmDialog'
 import { ExpenseForm } from '../ui/ExpenseForm'
 import { FxCard } from '../ui/FxCard'
-import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
+import { ChevronRightIcon } from '../ui/Icons'
+import { EmptyState, PageHeader } from '../ui/PageHeader'
+import { PlaceDisc } from '../ui/PlaceDisc'
+import { themeColor } from '../ui/placeMeta'
+import { Receipt } from '../ui/Receipt'
+import { Avatar, Fab, Ticket } from '../ui/Ticket'
 import { Sheet } from '../ui/Sheet'
 import { useDeleter } from '../ui/useDeleter'
 
@@ -34,31 +39,50 @@ export function Spese() {
   const me = selected ? personSummary(summary, selected.id) : undefined
   const mine = (e: Expense) => (selected ? shareOf(e, trip.travelers, selected.id, fx) : null)
 
-  // raggruppate per giorno (nel fuso del viaggio), dalla più recente
-  const byDay = new Map<string, Expense[]>()
-  for (const e of shown) {
-    const day = dateInZone(e.spentAt, trip.timezone)
-    byDay.set(day, [...(byDay.get(day) ?? []), e])
-  }
-  const days = Array.from(byDay.keys()).sort().reverse()
+  // dalla più recente: la data sta nella riga di ogni spesa
+  const list = [...shown].sort((x, y) => y.spentAt.localeCompare(x.spentAt))
+  const pctOfTotal = (n: number) => (summary.total > 0 ? Math.round((n / summary.total) * 100) : 0)
+  const perHead = summary.spentBy.map((x) => ({ p: person.get(x.travelerId), amount: x.amount }))
+  const shares = perHead.every((x) => x.amount === perHead[0]?.amount) ? perHead[0]?.amount : undefined
+
+  const transferBox = (lines: { from: string; to: string; amount: number }[], sub?: string) => (
+    <div class="mt-3.5 rounded-xl border-2 border-paper-ink bg-white px-3 py-2.5">
+      {lines.map((x) => {
+        const from = person.get(x.from)
+        const to = person.get(x.to)
+        return (
+          <div key={`${x.from}-${x.to}`} class="mb-1.5 last:mb-0">
+            <div class="flex items-center gap-2">
+              {from && <Avatar name={from.name} color={from.color} size={30} />}
+              <ChevronRightIcon size={18} class="text-paper-muted" />
+              {to && <Avatar name={to.name} color={to.color} size={30} />}
+              <span class="flex-1" />
+              <span class="text-2xl font-extrabold tracking-[-0.5px] tabular-nums text-[#1559c7]">{formatMoney(x.amount, base)}</span>
+            </div>
+            <p class="mt-1.5 text-sm font-extrabold">
+              {from?.name} deve a {to?.name} {formatMoney(x.amount, base)}
+            </p>
+          </div>
+        )
+      })}
+      {sub && <p class="text-xs text-paper-muted">{sub}</p>}
+    </div>
+  )
+
+  const settleSub = shares !== undefined && trip.travelers.length > 1 ? `Spese divise · ${formatMoney(shares, base)} a testa` : undefined
 
   return (
     <>
-      <PageHeader title="Spese" subtitle="Quello che spendi in viaggio" back={{ href: '/altro/budget', label: 'Budget' }} />
-      <div class="space-y-3 px-4" style={{ paddingBottom: '5rem' }}>
+      <PageHeader title="Spese" back={{ href: '/altro/budget', label: 'Budget' }} />
+      <div class="px-5" style={{ paddingBottom: '8rem' }}>
         {trip.travelers.length > 1 && (
-          <div
-            role="tablist"
-            aria-label="Spese per persona"
-            class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
-            style={{ scrollbarWidth: 'none' }}
-          >
+          <div role="tablist" aria-label="Spese per persona" class="mb-3.5 flex gap-0.5 rounded-[14px] border-2 border-line bg-surface p-[3px]">
             <button
               type="button"
               role="tab"
               aria-selected={!selected}
               onClick={() => setWho('all')}
-              class={`min-h-11 shrink-0 rounded-full border px-4 text-sm font-medium ${!selected ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted'}`}
+              class={`min-h-10 min-w-0 flex-1 truncate rounded-[10px] px-1 text-sm font-extrabold ${!selected ? 'bg-accent text-white' : 'text-muted'}`}
             >
               Tutti
             </button>
@@ -66,164 +90,129 @@ export function Spese() {
               <button
                 type="button"
                 role="tab"
+                key={p.id}
                 aria-selected={selected?.id === p.id}
                 onClick={() => setWho(p.id)}
-                class={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium ${selected?.id === p.id ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted'}`}
+                class={`min-h-10 min-w-0 flex-1 truncate rounded-[10px] px-1 text-sm font-extrabold ${selected?.id === p.id ? 'bg-accent text-white' : 'text-muted'}`}
               >
-                <span aria-hidden="true" class="h-3 w-3 rounded-full" style={{ background: p.color }} />
                 {p.name}
               </button>
             ))}
           </div>
         )}
 
-        {selected && me ? (
-          <Card>
-            <p class="flex items-center gap-2 text-sm text-muted">
-              <span aria-hidden="true" class="h-3 w-3 rounded-full" style={{ background: selected.color }} />
-              {selected.name}
-            </p>
-            <p class="font-display text-2xl font-semibold">{formatMoney(me.share, base)}</p>
-            <p class="text-sm text-muted">la sua parte delle spese</p>
-            <dl class="mt-2 divide-y divide-line border-t border-line text-sm">
-              <div class="flex min-h-11 items-center justify-between">
-                <dt>Ha anticipato</dt>
-                <dd class="font-medium">{formatMoney(me.paid, base)}</dd>
-              </div>
-              <div class="flex min-h-11 items-center justify-between">
-                <dt>Spese che lo riguardano</dt>
-                <dd class="font-medium">{shown.length}</dd>
-              </div>
-            </dl>
-            <div class="mt-2 rounded-xl bg-accent-soft px-3 py-2 text-sm font-medium text-accent">
-              {me.gives.length === 0 && me.receives.length === 0 ? (
-                <p>È pari: non deve né ricevere né dare.</p>
-              ) : (
-                <>
-                  {me.gives.map((x) => (
-                    <p>Deve dare {formatMoney(x.amount, base)} a {person.get(x.to)?.name}</p>
-                  ))}
-                  {me.receives.map((x) => (
-                    <p>Deve ricevere {formatMoney(x.amount, base)} da {person.get(x.from)?.name}</p>
-                  ))}
-                </>
-              )}
-            </div>
-            {summary.unconverted.length > 0 && (
-              <p role="alert" class="mt-3 rounded-xl bg-warn/10 px-3 py-2 text-xs text-warn">
-                Manca il cambio per {summary.unconverted.join(', ')}: quelle spese non sono nei totali.
-              </p>
-            )}
-          </Card>
-        ) : (
-        <Card>
-          <p class="text-sm text-muted">Totale speso</p>
-          <p class="font-display text-2xl font-semibold">{formatMoney(summary.total, base)}</p>
-          {trip.travelers.length > 1 && trip.expenses.length > 0 && (
+        <Receipt>
+          {selected && me ? (
             <>
-              <ul class="mt-2 divide-y divide-line border-t border-line">
-                {summary.spentBy.map((s) => (
-                  <li class="flex min-h-11 items-center gap-2 text-sm">
-                    <span aria-hidden="true" class="h-3 w-3 shrink-0 rounded-full" style={{ background: person.get(s.travelerId)?.color }} />
-                    <span class="min-w-0 flex-1 truncate">{person.get(s.travelerId)?.name}</span>
-                    <span class="font-medium">{formatMoney(s.amount, base)}</span>
-                  </li>
-                ))}
-              </ul>
-              <div class="mt-2 rounded-xl bg-accent-soft px-3 py-2 text-sm font-medium text-accent">
-                {summary.transfers.length === 0
-                  ? 'Siete pari: nessuno deve niente.'
-                  : summary.transfers.map((x) => (
-                      <p>
-                        {person.get(x.from)?.name} deve {formatMoney(x.amount, base)} a {person.get(x.to)?.name}
+              <p class="text-[13px] text-paper-muted">Speso da {selected.name}</p>
+              <p class="font-display text-[44px] font-extrabold leading-[1.05] tracking-[-2px] tabular-nums">{formatMoney(me.paid, base)}</p>
+              <p class="text-[13px] text-paper-muted">
+                in {shown.filter((e) => e.paidBy === selected.id).length} {shown.filter((e) => e.paidBy === selected.id).length === 1 ? 'spesa' : 'spese'} · {pctOfTotal(me.paid)}% del totale
+              </p>
+              <p class="mt-1 text-sm font-extrabold">La sua parte: {formatMoney(me.share, base)}</p>
+              <div class="mt-3 rounded-xl border-2 border-paper-ink bg-white px-3 py-2.5 text-sm font-extrabold">
+                {me.gives.length === 0 && me.receives.length === 0 ? (
+                  <p>È pari: non deve né ricevere né dare.</p>
+                ) : (
+                  <>
+                    {me.gives.map((x) => (
+                      <p key={`g${x.to}`}>
+                        Deve dare {formatMoney(x.amount, base)} a {person.get(x.to)?.name}
                       </p>
                     ))}
+                    {me.receives.map((x) => (
+                      <p key={`r${x.from}`}>
+                        Deve ricevere {formatMoney(x.amount, base)} da {person.get(x.from)?.name}
+                      </p>
+                    ))}
+                  </>
+                )}
               </div>
+            </>
+          ) : (
+            <>
+              <p class="text-[13px] text-paper-muted">Speso finora</p>
+              <p class="font-display text-[44px] font-extrabold leading-[1.05] tracking-[-2px] tabular-nums">{formatMoney(summary.total, base)}</p>
+              <p class="text-[13px] text-paper-muted">
+                in {trip.expenses.length} {trip.expenses.length === 1 ? 'spesa' : 'spese'}
+              </p>
+              {trip.travelers.length > 1 &&
+                trip.expenses.length > 0 &&
+                (summary.transfers.length === 0 ? (
+                  <div class="mt-3.5 rounded-xl border-2 border-paper-ink bg-white px-3 py-2.5 text-sm font-extrabold">Siete pari: nessuno deve niente.</div>
+                ) : (
+                  transferBox(summary.transfers, settleSub)
+                ))}
             </>
           )}
           {summary.unconverted.length > 0 && (
-            <p role="alert" class="mt-3 rounded-xl bg-warn/10 px-3 py-2 text-xs text-warn">
+            <p role="alert" class="mt-3 rounded-lg border-2 border-ink px-3 py-2 text-xs font-extrabold">
               Manca il cambio per {summary.unconverted.join(', ')}: quelle spese non sono nei totali.
             </p>
           )}
-        </Card>
+        </Receipt>
+
+        {trip.localCurrency && trip.localCurrency !== trip.baseCurrency && (
+          <div class="mt-[18px]">
+            <FxCard trip={trip} />
+          </div>
         )}
 
-        {trip.localCurrency && trip.localCurrency !== trip.baseCurrency && <FxCard trip={trip} />}
-
         {trip.expenses.length === 0 ? (
-          <EmptyState title="Nessuna spesa" text="Tocca + e scrivi importo e cosa hai pagato: in yen il cambio si calcola da solo." />
+          <div class="mt-[18px]">
+            <EmptyState title="Nessuna spesa" text="Tocca + e scrivi importo e cosa hai pagato: in yen il cambio si calcola da solo." />
+          </div>
         ) : shown.length === 0 ? (
-          <EmptyState title="Niente qui" text={`Nessuna spesa riguarda ${selected?.name ?? 'questa persona'}.`} />
+          <div class="mt-[18px]">
+            <EmptyState title="Niente qui" text={`Nessuna spesa riguarda ${selected?.name ?? 'questa persona'}.`} />
+          </div>
         ) : (
-          days.map((day) => {
-            const list = byDay.get(day) ?? []
-            const dayTotal = round2(list.reduce((n, e) => n + (selected ? (mine(e) ?? 0) : (expenseBase(e, fx) ?? 0)), 0))
-            return (
-              <section aria-label={formatDay(day)}>
-                <h2 class="mb-1 flex items-baseline justify-between px-1 text-sm font-semibold text-muted">
-                  <span>{formatDay(day)}</span>
-                  <span class="font-medium">
-                    {selected && 'quota '}
-                    {formatMoney(dayTotal, base)}
-                  </span>
-                </h2>
-                <Card class="!p-0">
-                  <ul class="divide-y divide-line">
-                    {list.map((e) => {
-                      const inBase = expenseBase(e, fx)
-                      const payer = e.paidBy ? person.get(e.paidBy) : undefined
-                      const share = mine(e)
-                      return (
-                        <li class="flex items-center pr-1">
-                          <button type="button" onClick={() => setSheet({ kind: 'edit', expense: e })} class="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2 pl-4 text-left">
-                            <span class="min-w-0 flex-1">
-                              <span class="block truncate font-medium">{e.label}</span>
-                              <span class="block truncate text-xs text-muted">
-                                {[e.category, payer && `pagato da ${payer.name}`].filter(Boolean).join(' · ')}
-                              </span>
-                            </span>
-                            <span class="shrink-0 text-right">
-                              <span class="block font-semibold">{formatMoney(e.amount, e.currency)}</span>
-                              {e.currency !== base && inBase !== null && <span class="block text-xs text-muted">≈ {formatMoney(inBase, base)}</span>}
-                              {selected && share !== null && (
-                                <span class="block text-xs font-medium text-accent">quota {formatMoney(share, base)}</span>
-                              )}
-                            </span>
-                          </button>
-                          <TrashButton
-                            label={`Elimina la spesa ${e.label}`}
-                            onClick={() =>
-                              void del({
-                                title: `Eliminare la spesa «${e.label}»?`,
-                                text: `${formatMoney(e.amount, e.currency)}: sparisce dai totali e dai conti tra voi. Puoi annullare subito dopo.`,
-                                done: 'Spesa eliminata',
-                                run: () => t.setExpenseDeleted(e.id, true),
-                                undo: () => t.setExpenseDeleted(e.id, false),
-                              })
-                            }
-                          />
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </Card>
-              </section>
-            )
-          })
+          <ul class="mt-[18px] space-y-3.5">
+            {list.map((e) => {
+              const inBase = expenseBase(e, fx)
+              const payer = e.paidBy ? person.get(e.paidBy) : undefined
+              const share = mine(e)
+              const color = themeColor(e.category ?? '')
+              return (
+                <li key={e.id}>
+                  <Ticket stub={<PlaceDisc category={e.category} color={color} />}>
+                    <button type="button" onClick={() => setSheet({ kind: 'edit', expense: e })} aria-label={`Modifica ${e.label}`} class="flex min-w-0 flex-1 items-center gap-2 text-left">
+                      <span class="min-w-0 flex-1">
+                        <span class="block text-[17px] font-extrabold leading-tight">{e.label}</span>
+                        <span class="mt-0.5 flex items-center gap-1.5 text-[13px] text-muted">
+                          {payer && <Avatar name={payer.name} color={payer.color} size={20} />}
+                          <span class="min-w-0 truncate">
+                            {[payer?.name, formatShort(dateInZone(e.spentAt, trip.timezone))].filter(Boolean).join(' · ')}
+                          </span>
+                        </span>
+                        {selected && share !== null && <span class="block text-xs font-extrabold text-pale">quota {formatMoney(share, base)}</span>}
+                      </span>
+                      <span class="shrink-0 text-right">
+                        <span class="block text-[17px] font-extrabold tabular-nums">{formatMoney(e.amount, e.currency)}</span>
+                        {e.currency !== base && inBase !== null && <span class="block text-xs text-muted">≈ {formatMoney(inBase, base)}</span>}
+                      </span>
+                    </button>
+                    <TrashButton
+                      label={`Elimina la spesa ${e.label}`}
+                      onClick={() =>
+                        void del({
+                          title: `Eliminare la spesa «${e.label}»?`,
+                          text: `${formatMoney(e.amount, e.currency)}: sparisce dai totali e dai conti tra voi. Puoi annullare subito dopo.`,
+                          done: 'Spesa eliminata',
+                          run: () => t.setExpenseDeleted(e.id, true),
+                          undo: () => t.setExpenseDeleted(e.id, false),
+                        })
+                      }
+                    />
+                  </Ticket>
+                </li>
+              )
+            })}
+          </ul>
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={() => setSheet({ kind: 'new' })}
-        aria-label="Aggiungi spesa"
-        class="fixed right-4 z-20 flex min-h-14 items-center gap-2 rounded-full bg-accent px-5 font-semibold text-accent-ink shadow-card"
-        style={{ bottom: 'calc(4.75rem + env(safe-area-inset-bottom))' }}
-      >
-        <span aria-hidden="true" class="text-2xl leading-none">+</span>
-        Spesa
-      </button>
+      <Fab label="Spesa" wide onClick={() => setSheet({ kind: 'new' })} />
 
       {delDialog}
       <Sheet open={sheet !== null} title={sheet?.kind === 'new' ? 'Nuova spesa' : 'Modifica spesa'} onClose={close}>

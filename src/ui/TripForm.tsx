@@ -3,7 +3,6 @@ import { useAuth } from '../lib/auth'
 import type { TripInput, TripPeople } from '../lib/tripApi'
 import {
   PRESETS,
-  THEME_LABELS,
   TRAVELER_COLORS,
   cleanPeople,
   validateTrip,
@@ -90,15 +89,15 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
     <form class="space-y-4" onSubmit={submit} noValidate>
       {!editing && (
         <fieldset>
-          <legend class="mb-1 block text-sm font-medium">Dove vai?</legend>
+          <legend class="mb-1 block text-sm font-extrabold">Dove vai?</legend>
           <div class="flex gap-2">
             {PRESETS.map((p) => (
               <button
                 type="button"
                 aria-pressed={presetId === p.id}
                 onClick={() => applyPreset(p)}
-                class={`min-h-11 flex-1 rounded-full border px-3 text-sm font-medium ${
-                  presetId === p.id ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted'
+                class={`min-h-11 flex-1 rounded-full border-2 px-3 text-sm font-extrabold ${
+                  presetId === p.id ? 'border-accent bg-accent-soft text-pale' : 'border-line text-muted'
                 }`}
               >
                 {p.label}
@@ -118,7 +117,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
 
       {!editing && (
         <fieldset class="space-y-3">
-          <legend class="mb-1 block text-sm font-medium">Chi viaggia</legend>
+          <legend class="mb-1 block text-sm font-extrabold">Chi viaggia</legend>
           <div class="flex items-center gap-2">
             <span aria-hidden="true" class="h-4 w-4 shrink-0 rounded-full" style={{ background: TRAVELER_COLORS[0] }} />
             <input
@@ -129,7 +128,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
               maxLength={40}
               autoComplete="off"
               onInput={(e) => setSelfName(e.currentTarget.value)}
-              class="min-h-12 min-w-0 flex-1 rounded-2xl border border-line bg-bg px-4"
+              class="min-h-12 min-w-0 flex-1 rounded-[14px] border-2 border-line bg-bg px-4"
             />
           </div>
           {ownEmail && <p class="-mt-1 pl-6 text-xs text-muted">Sei tu: {ownEmail}</p>}
@@ -150,7 +149,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
                   autoComplete="off"
                   autoCapitalize="none"
                   onInput={(e) => setOthers(others.map((x, j) => (j === i ? { ...x, email: e.currentTarget.value } : x)))}
-                  class="min-h-12 w-full rounded-2xl border border-line bg-bg px-4"
+                  class="min-h-12 w-full rounded-[14px] border-2 border-line bg-bg px-4"
                 />
                 <input
                   type="text"
@@ -160,7 +159,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
                   maxLength={40}
                   autoComplete="off"
                   onInput={(e) => setOthers(others.map((x, j) => (j === i ? { ...x, name: e.currentTarget.value } : x)))}
-                  class="min-h-12 w-full rounded-2xl border border-line bg-bg px-4"
+                  class="min-h-12 w-full rounded-[14px] border-2 border-line bg-bg px-4"
                 />
               </div>
               <button
@@ -177,7 +176,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
             <button
               type="button"
               onClick={() => setOthers([...others, { email: '', name: '' }])}
-              class="min-h-11 rounded-full px-2 text-sm font-medium text-accent"
+              class="min-h-11 rounded-full px-2 text-sm font-extrabold text-accent"
             >
               + Aggiungi persona
             </button>
@@ -188,17 +187,11 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
         </fieldset>
       )}
 
-      <details class="rounded-2xl border border-line px-4 py-1">
-        <summary class="min-h-11 cursor-pointer list-none py-3 text-sm font-medium">
-          Tema, fuso e valute
+      <details class="rounded-2xl border-2 border-line px-4 py-1">
+        <summary class="min-h-11 cursor-pointer list-none py-3 text-sm font-extrabold">
+          Fuso e valute
         </summary>
         <div class="space-y-4 pb-4">
-          <Select
-            label="Tema"
-            value={theme}
-            onChange={(v) => setTheme(v as ThemeName)}
-            options={(Object.keys(THEME_LABELS) as ThemeName[]).map((t) => ({ value: t, label: THEME_LABELS[t] }))}
-          />
           <Select
             label="Fuso orario della destinazione"
             value={timezone}

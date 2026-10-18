@@ -1,122 +1,66 @@
 @import "tailwindcss";
 
+@import "./fonts/fonts.css";
+
 /* ---------------------------------------------------------------------------
-   Design token. Ogni viaggio sceglie un tema con data-theme sull'elemento <html>.
-   Chiaro e scuro seguono il sistema. Le classi Tailwind usano questi token
-   (bg-bg, bg-surface, text-ink, text-muted, border-line, bg-accent, ...).
+   Design token: tema "Eki Notte" (blu notte da stazione, biglietti e tabelloni).
+   Le classi Tailwind usano questi token (bg-bg, bg-surface, text-ink, text-muted,
+   border-line, bg-accent, text-pale, ...). Il tema è uno solo e scuro.
    --------------------------------------------------------------------------- */
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
+  --color-pale: var(--pale);
   --color-secondary: var(--secondary);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
   --color-danger: var(--danger);
-  --radius-card: 1.25rem;
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 20px -8px rgb(40 30 20 / 0.18);
+  --color-paper: var(--paper);
+  --color-paper-ink: var(--paper-ink);
+  --color-paper-muted: var(--paper-muted);
+  --radius-card: 1rem;
+  --font-sans: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
-/* Tema base (neutro, verde petrolio) */
 :root {
-  color-scheme: light dark;
-  --bg: #f5f3ee;
-  --surface: #ffffff;
-  --ink: #1d2327;
-  --muted: #667075;
-  --line: #e5e1d8;
-  --accent: #2f5d62;
+  color-scheme: dark;
+  --bg: #0b1b33;
+  --surface: #12284a;
+  --surface-2: #0e2140;
+  --ink: #ffffff;
+  --muted: #9fb0c8;
+  --line: #2b4a78;
+  --accent: #3d86ff;
   --accent-ink: #ffffff;
-  --accent-soft: #e0ecec;
-  --secondary: #b4552d;
-  --ok: #2d7a3e;
-  --warn: #a8710f;
-  --danger: #b3382a;
-  --night: #1f2a44;
+  --accent-soft: rgb(61 134 255 / 0.18);
+  --pale: #7fb0ff;
+  --secondary: #ffa23a;
+  --ok: #2cc48a;
+  --warn: #ffa23a;
+  --danger: #ff6b6b;
+  /* scontrino (Budget e Spese) */
+  --paper: #eef3fa;
+  --paper-ink: #0b1b33;
+  --paper-muted: #5b6c86;
+  --night: #0b1b33;
   --day-a: #ffe9a8;
   --day-b: #ffb36b;
-  /* fasi del giorno: sono fisiche, uguali in ogni tema */
-  --phase-night: #243456;
+  /* fasi del giorno: sono fisiche */
+  --phase-night: #3a4d80;
   --phase-morning: #f7b733;
   --phase-afternoon: #f08a3c;
-  --phase-evening: #c8402f;
-}
-
-/* Giappone: carta washi, rosso vermiglio, indaco */
-:root[data-theme="japan"] {
-  --bg: #f6f1e7;
-  --surface: #fffdf8;
-  --ink: #1f2a33;
-  --muted: #6c6a63;
-  --line: #e4dccb;
-  --accent: #c8402f;
-  --accent-ink: #ffffff;
-  --accent-soft: #f8e3de;
-  --secondary: #264653;
-  --night: #1b2a3a;
-}
-
-/* Islanda: blu ghiaccio */
-:root[data-theme="iceland"] {
-  --bg: #eff5f8;
-  --surface: #ffffff;
-  --ink: #12222c;
-  --muted: #5b7280;
-  --line: #d6e2ea;
-  --accent: #1f6f8b;
-  --accent-ink: #ffffff;
-  --accent-soft: #dcecf2;
-  --secondary: #2f4b66;
-  --night: #1d2b4a;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #111518;
-    --surface: #1a2024;
-    --ink: #eeeae1;
-    --muted: #9aa3a8;
-    --line: #2a3238;
-    --accent: #6fb0b5;
-    --accent-ink: #0c1c1e;
-    --accent-soft: #1d3436;
-    --secondary: #e0865a;
-    --ok: #62c27a;
-    --warn: #e0b04a;
-    --danger: #ef7a6a;
-    --night: #0f1626;
-    --phase-night: #3a4d80;
-    --phase-evening: #d9503f;
-  }
-  :root[data-theme="japan"] {
-    --bg: #14171b;
-    --surface: #1d2228;
-    --ink: #f1ece2;
-    --muted: #a09d94;
-    --line: #2e353c;
-    --accent: #ea6a57;
-    --accent-ink: #1c0c09;
-    --accent-soft: #3a211e;
-    --secondary: #7fb0c4;
-    --night: #0e1722;
-  }
-  :root[data-theme="iceland"] {
-    --bg: #0f161b;
-    --surface: #182027;
-    --ink: #e9f1f5;
-    --muted: #8fa6b3;
-    --line: #26323b;
-    --accent: #5fb4d1;
-    --accent-ink: #07161d;
-    --accent-soft: #17303b;
-    --secondary: #8fb0d6;
-    --night: #0c1424;
-  }
+  --phase-evening: #d9503f;
+  /* categorie: Cibo arancio, Visita blu, Alloggio verde */
+  --cat-food: #ffa23a;
+  --cat-visit: #3d86ff;
+  --cat-stay: #2cc48a;
 }
 
 html {
@@ -130,16 +74,22 @@ body {
   min-height: 100dvh;
   background: var(--bg);
   color: var(--ink);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-family: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   line-height: 1.45;
   /* evita il rimbalzo che fa muovere la barra in basso nella PWA */
   overscroll-behavior-y: none;
 }
 
-/* Titoli con un tocco editoriale; font di sistema, niente download (serve offline) */
+/* Titoli: Archivo pesante e compatto. Le etichette giapponesi usano Zen Kaku Gothic New. */
 .font-display {
-  font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", ui-serif, Georgia, "Times New Roman", serif;
-  letter-spacing: -0.01em;
+  font-family: "Archivo", system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.font-jp {
+  font-family: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 /* Input leggibili e senza zoom automatico su iOS (>= 16px) */
@@ -216,7 +166,7 @@ input, select, textarea {
   box-sizing: border-box;
   width: 16px;
   height: 16px;
-  background: #1f6fd0;
+  background: #ffa23a;
   border: 2.5px solid #fff;
   border-radius: 4px;
   box-shadow: 0 1px 4px rgb(0 0 0 / 0.4);
@@ -224,7 +174,11 @@ input, select, textarea {
 }
 .maplibregl-map {
   font: inherit;
-  background: var(--bg);
+  background: #eeeeea;
+}
+/* mappa a tutto schermo: i comandi stanno sotto la ricerca e i filtri */
+.map-full .maplibregl-ctrl-top-right {
+  top: 9.75rem;
 }
 .maplibregl-ctrl-group button {
   width: 40px;
@@ -240,20 +194,9 @@ input, select, textarea {
 }
 .maplibregl-ctrl-attrib {
   font-size: 10px;
-  background: color-mix(in srgb, var(--surface) 80%, transparent) !important;
-  color: var(--muted);
+  background: rgb(255 255 255 / 0.72) !important;
+  color: #333;
 }
 .maplibregl-ctrl-attrib a {
   color: inherit;
-}
-@media (prefers-color-scheme: dark) {
-  .maplibregl-ctrl-group {
-    background: #2b2b2b;
-  }
-  .maplibregl-ctrl-group button.jp-style-toggle {
-    color: #eee;
-  }
-  .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
-    filter: invert(1);
-  }
 }

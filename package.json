@@ -17,7 +17,7 @@
     "test:sql": "node supabase/tests/rls.test.mjs",
     "import:sheet": "node --env-file-if-exists=.env.local scripts/import-sheet/import.mjs",
     "build:native": "tsc --noEmit && vite build --mode native --outDir dist-native --emptyOutDir",
-    "assets:native": "capacitor-assets generate --iconBackgroundColor \"#c8402f\" --splashBackgroundColor \"#f6f1e7\""
+    "assets:native": "capacitor-assets generate --iconBackgroundColor \"#20407b\" --splashBackgroundColor \"#0b1b33\""
   },
   "dependencies": {
     "@capacitor-community/file-opener": "^8.0.1",
@@ -25,6 +25,7 @@
     "@capacitor/core": "^8.5.3",
     "@capacitor/filesystem": "^8.1.5",
     "@capacitor/share": "^8.0.3",
+    "@fortawesome/free-solid-svg-icons": "^7.3.1",
     "@supabase/supabase-js": "^2.118.0",
     "maplibre-gl": "^6.14.0",
     "preact": "^11.0.1",

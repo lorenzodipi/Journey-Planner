@@ -94,8 +94,8 @@ export function BudgetItemForm({ trip, initial, defaultCategory, onSubmit, onDel
             }
           />
           {payers.length > 0 && (
-            <div class="rounded-2xl border border-line px-4 py-1">
-              <p class="pt-2 text-sm font-medium">Ha già pagato</p>
+            <div class="rounded-2xl border-2 border-line px-4 py-1">
+              <p class="pt-2 text-sm font-extrabold">Ha già pagato</p>
               {trip.travelers
                 .filter((t) => payers.includes(t.id))
                 .map((t) => (

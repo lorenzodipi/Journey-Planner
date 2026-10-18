@@ -3,6 +3,7 @@ import {
   LngLatBounds,
   Map as MLMap,
   Marker,
+  GeolocateControl,
   NavigationControl,
   setWorkerUrl,
   type GeoJSONSource,
@@ -18,9 +19,9 @@ setWorkerUrl(workerUrl)
 
 // Mappa vettoriale di OpenFreeMap: gratuita, senza chiave API, nitida a qualsiasi zoom.
 // Le etichette sono bilingui (nome latino + nome locale, es. "Shinjuku 新宿").
+// La mappa è sempre chiara (come nei disegni): carta color crema con strade bianche, anche con il telefono in tema scuro.
 const STYLES = {
-  light: 'https://tiles.openfreemap.org/styles/positron', // grigio pulito
-  dark: 'https://tiles.openfreemap.org/styles/dark',
+  light: 'https://tiles.openfreemap.org/styles/bright', // pulita, simile alla carta stradale
   detail: 'https://tiles.openfreemap.org/styles/liberty', // più colorata e dettagliata
 }
 
@@ -43,14 +44,11 @@ function savePref(pref: StylePref): void {
   }
 }
 
-const darkQuery = () => window.matchMedia?.('(prefers-color-scheme: dark)')
-
 function styleFor(pref: StylePref): string {
-  if (pref === 'detail') return STYLES.detail
-  return darkQuery()?.matches ? STYLES.dark : STYLES.light
+  return pref === 'detail' ? STYLES.detail : STYLES.light
 }
 
-/** Pulsante sulla mappa per passare tra stile pulito (automatico chiaro/scuro) e dettagliato. */
+/** Pulsante sulla mappa per passare tra stile pulito e dettagliato. */
 class StyleToggle implements IControl {
   private el = document.createElement('div')
   private button = document.createElement('button')
@@ -86,7 +84,7 @@ class StyleToggle implements IControl {
   }
 }
 
-function newMap(el: HTMLElement, center: { lat: number; lng: number }, zoom: number, withToggle: boolean, cooperative = false): MLMap {
+function newMap(el: HTMLElement, center: { lat: number; lng: number }, zoom: number, withToggle: boolean, cooperative = false, locate = false): MLMap {
   let pref = loadPref()
   let current = styleFor(pref)
   const map = new MLMap({
@@ -113,6 +111,7 @@ function newMap(el: HTMLElement, center: { lat: number; lng: number }, zoom: num
   })
   map.touchZoomRotate.disableRotation()
   map.addControl(new NavigationControl({ showCompass: false }), 'top-right')
+  if (locate) map.addControl(new GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: false }), 'top-right')
   map.addControl(new AttributionControl({ compact: true }), 'bottom-left')
 
   const apply = (style: string) => {
@@ -130,13 +129,7 @@ function newMap(el: HTMLElement, center: { lat: number; lng: number }, zoom: num
     )
   }
 
-  // se il telefono cambia tema mentre la mappa è aperta
-  const query = darkQuery()
-  const onScheme = () => apply(styleFor(pref))
-  query?.addEventListener?.('change', onScheme)
-  map.once('remove', () => query?.removeEventListener?.('change', onScheme))
-
-  // se uno stile non si scarica (es. lo stile scuro non disponibile), ripiego su quello chiaro
+  // se lo stile scelto non si scarica, ripiego su quello pulito
   map.on('error', (e) => {
     const url = (e as unknown as { error?: { url?: string } }).error?.url ?? ''
     if (url.includes('/styles/') && current !== STYLES.light) apply(STYLES.light)
@@ -195,7 +188,7 @@ export function MapView({ pins, center, selectedId, onSelect }: MapViewProps) {
 
   useEffect(() => {
     if (!el.current) return
-    const m = newMap(el.current, center, 11, true)
+    const m = newMap(el.current, center, 11, true, false, true)
     map.current = m
     m.on('click', () => onSelectRef.current(null))
     // i pin sono elementi HTML: servono solo dopo che la mappa esiste
@@ -275,7 +268,7 @@ export function PinPicker({ lat, lng, center, onMove }: PinPickerProps) {
     const m = newMap(el.current, start, lat != null ? 16 : 11, false)
     map.current = m
     const mk = new Marker({
-      element: pinElement({ name: 'Posizione', color: '#c8402f' }, true),
+      element: pinElement({ name: 'Posizione', color: '#3d86ff' }, true),
       anchor: 'center',
       draggable: true,
     })
@@ -337,7 +330,7 @@ export interface DayMapEnd {
 }
 
 const LINES_SOURCE = 'day-lines'
-const STOP_COLOR = '#c8402f'
+const STOP_COLOR = '#3d86ff'
 
 function applyLines(m: MLMap, lines: DayMapLine[]) {
   const data = {

@@ -9,7 +9,7 @@ const config: CapacitorConfig = {
   appId: 'it.lorenzodipi.journeyplanner',
   appName: 'Journey Planner',
   webDir: 'dist-native',
-  backgroundColor: '#f6f1e7',
+  backgroundColor: '#0b1b33',
   server: {
     androidScheme: 'https',
   },

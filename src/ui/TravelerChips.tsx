@@ -17,7 +17,7 @@ export function TravelerChips({
   const toggle = (id: string) => onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id])
   return (
     <fieldset>
-      <legend class="mb-1 block text-sm font-medium">{label}</legend>
+      <legend class="mb-1 block text-[13px] font-extrabold">{label}</legend>
       <div class="flex flex-wrap gap-2">
         {travelers.map((t) => {
           const on = selected.includes(t.id)
@@ -26,8 +26,8 @@ export function TravelerChips({
               type="button"
               aria-pressed={on}
               onClick={() => toggle(t.id)}
-              class={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium ${
-                on ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted'
+              class={`inline-flex min-h-11 items-center gap-2 rounded-full border-2 px-4 text-sm font-extrabold ${
+                on ? 'border-accent bg-accent-soft text-pale' : 'border-line text-muted'
               }`}
             >
               <span aria-hidden="true" class="h-3 w-3 rounded-full" style={{ background: t.color }} />

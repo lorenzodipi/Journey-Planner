@@ -15,8 +15,8 @@ import type { DayMapEnd, DayMapLine } from '../ui/MapView'
 import { MODE_LABEL } from '../ui/TransportForm'
 import type { Day, Trip } from '../types'
 
-export const STOP_COLOR = '#c8402f'
-export const TRANSPORT_COLOR = '#1f6fd0'
+export const STOP_COLOR = '#3d86ff'
+export const TRANSPORT_COLOR = '#ffa23a'
 
 export interface DayRoute {
   stops: DayStop[]

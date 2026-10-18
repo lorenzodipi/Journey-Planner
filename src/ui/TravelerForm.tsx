@@ -38,7 +38,7 @@ export function TravelerForm({ initial, onSubmit, onRemove, onDone, defaultColor
     <form class="space-y-4" onSubmit={submit} noValidate>
       <TextField label="Nome" value={name} onInput={setName} maxLength={40} autoComplete="off" />
       <fieldset>
-        <legend class="mb-2 block text-sm font-medium">Colore</legend>
+        <legend class="mb-2 block text-sm font-extrabold">Colore</legend>
         <div class="flex flex-wrap gap-3">
           {TRAVELER_COLORS.map((c) => (
             <button

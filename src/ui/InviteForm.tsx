@@ -34,7 +34,7 @@ export function InviteForm({ defaultColor, onSubmit, onDone }: Props) {
       <TextField label="Email del suo account" value={email} onInput={setEmail} autoComplete="off" />
       <TextField label="Nome (facoltativo)" value={name} onInput={setName} maxLength={40} autoComplete="off" />
       <fieldset>
-        <legend class="mb-2 block text-sm font-medium">Colore</legend>
+        <legend class="mb-2 block text-sm font-extrabold">Colore</legend>
         <div class="flex flex-wrap gap-3">
           {TRAVELER_COLORS.map((c) => (
             <button

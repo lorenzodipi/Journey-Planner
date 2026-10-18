@@ -125,8 +125,8 @@ export function FlightForm({ trip, initial, onSubmit, onDelete, onDone }: Props)
 
       <div class="space-y-3">
         {legs.map((l, i) => (
-          <fieldset key={l.key} class="space-y-3 rounded-2xl border border-line p-3">
-            <legend class="px-1 text-sm font-semibold">Tratta {i + 1}</legend>
+          <fieldset key={l.key} class="space-y-3 rounded-2xl border-2 border-line p-3">
+            <legend class="px-1 text-sm font-extrabold">Tratta {i + 1}</legend>
             <div class="grid grid-cols-3 gap-3">
               <TextField label="Da" value={l.from} onInput={(v) => setAirport(l, 'from', v)} placeholder="MXP" autoComplete="off" />
               <TextField label="A" value={l.to} onInput={(v) => setAirport(l, 'to', v)} placeholder="PEK" autoComplete="off" />
@@ -151,7 +151,7 @@ export function FlightForm({ trip, initial, onSubmit, onDelete, onDone }: Props)
               <button
                 type="button"
                 onClick={() => setLegs(legs.filter((x) => x.key !== l.key))}
-                class="min-h-11 text-sm font-medium text-danger"
+                class="min-h-11 text-sm font-extrabold text-danger"
               >
                 Rimuovi tratta
               </button>

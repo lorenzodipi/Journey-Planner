@@ -130,7 +130,7 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
     <form class="space-y-4" onSubmit={submit} noValidate>
       <section class="space-y-2 rounded-2xl bg-bg p-3">
         <label class="block">
-          <span class="mb-1 block text-sm font-medium">Cerca su OpenStreetMap</span>
+          <span class="mb-1 block text-sm font-extrabold">Cerca su OpenStreetMap</span>
           <div class="flex gap-2">
             <input
               type="search"
@@ -143,13 +143,13 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
                   void search()
                 }
               }}
-              class="min-h-12 min-w-0 flex-1 rounded-2xl border border-line bg-surface px-4"
+              class="min-h-12 min-w-0 flex-1 rounded-[14px] border-2 border-line bg-surface px-4"
             />
             <button
               type="button"
               onClick={() => void search()}
               disabled={searching || !query.trim()}
-              class="min-h-12 shrink-0 rounded-full bg-accent px-5 font-semibold text-accent-ink disabled:opacity-50"
+              class="min-h-12 shrink-0 rounded-full bg-accent px-5 font-extrabold text-accent-ink disabled:opacity-50"
             >
               {searching ? '…' : 'Cerca'}
             </button>
@@ -158,11 +158,11 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
         {searchError && <p class="text-sm text-danger">{searchError}</p>}
         {results && results.length === 0 && <p class="text-sm text-muted">Nessun risultato: prova con un altro nome.</p>}
         {results && results.length > 0 && (
-          <ul class="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+          <ul class="divide-y divide-line overflow-hidden rounded-2xl border-2 border-line bg-surface">
             {results.map((r) => (
               <li>
                 <button type="button" onClick={() => pick(r)} class="block min-h-12 w-full px-4 py-2 text-left">
-                  <span class="block truncate font-medium">{r.name}</span>
+                  <span class="block truncate font-extrabold">{r.name}</span>
                   <span class="block truncate text-xs text-muted">{r.address}</span>
                 </button>
               </li>
@@ -195,15 +195,15 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
       </div>
 
       <fieldset>
-        <legend class="mb-1 block text-sm font-medium">Stato</legend>
+        <legend class="mb-1 block text-sm font-extrabold">Stato</legend>
         <div class="flex flex-wrap gap-2">
           {STATUSES.map((s) => (
             <button
               type="button"
               aria-pressed={status === s}
               onClick={() => setStatus(s)}
-              class={`min-h-11 rounded-full border px-4 text-sm font-medium ${
-                status === s ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted'
+              class={`min-h-11 rounded-full border-2 px-4 text-sm font-extrabold ${
+                status === s ? 'border-accent bg-accent-soft text-pale' : 'border-line text-muted'
               }`}
             >
               {STATUS_LABEL[s]}
@@ -214,8 +214,8 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
 
       <TextArea label="Note" value={notes} onInput={setNotes} placeholder="Consigli, orari migliori, cosa ordinare…" />
 
-      <details class="rounded-2xl border border-line px-4 py-1">
-        <summary class="min-h-11 cursor-pointer list-none py-3 text-sm font-medium">Indirizzo, orari e coordinate</summary>
+      <details class="rounded-2xl border-2 border-line px-4 py-1">
+        <summary class="min-h-11 cursor-pointer list-none py-3 text-sm font-extrabold">Indirizzo, orari e coordinate</summary>
         <div class="space-y-4 pb-4">
           <TextField label="Indirizzo" value={address} onInput={setAddress} />
           <TextField label="Orari di apertura" value={openingHours} onInput={setOpeningHours} placeholder="9:00–17:00, chiuso il lunedì" />
@@ -244,7 +244,7 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
             <button
               type="button"
               onClick={() => setShowMap(true)}
-              class="min-h-11 rounded-full border border-line px-4 text-sm font-medium"
+              class="min-h-11 rounded-full border-2 border-line px-4 text-sm font-extrabold"
             >
               Aggiusta il pin sulla mappa
             </button>

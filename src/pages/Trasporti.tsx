@@ -1,16 +1,40 @@
 import { useState } from 'preact/hooks'
 import { dayOffset, formatDateInZone, formatDuration, formatInZone, layover, legDuration, totalTravelTime } from '../lib/flights'
-import { formatMoney } from '../lib/money'
+import { convert, formatMoney } from '../lib/money'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
+import type { ComponentChildren } from 'preact'
 import type { Flight, Transport } from '../types'
 import { TrashButton } from '../ui/ConfirmDialog'
-import { FlagPill } from '../ui/FlagPill'
 import { FlightForm } from '../ui/FlightForm'
-import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
+import { CardDetail, useOpenCard } from '../ui/CardDetail'
+import { ChevronDownIcon, ChevronRightIcon, PlaneIcon } from '../ui/Icons'
+import { MovementIcon } from '../ui/MovementIcon'
+import { EmptyState, PageHeader } from '../ui/PageHeader'
+import { Disc, Fab, Tag, Ticket } from '../ui/Ticket'
 import { Sheet } from '../ui/Sheet'
 import { MODE_LABEL, TransportForm } from '../ui/TransportForm'
 import { useDeleter } from '../ui/useDeleter'
+
+function transportRows(x: Transport, tz: string, trip: { baseCurrency: string; localCurrency?: string; fxRate?: number }) {
+  const rows: { label: string; value: ComponentChildren }[] = [{ label: 'Mezzo', value: MODE_LABEL[x.mode] }]
+  if (x.departAt) rows.push({ label: 'Partenza', value: `${formatDateInZone(x.departAt, tz)} · ${formatInZone(x.departAt, tz)}` })
+  if (x.arriveAt) rows.push({ label: 'Arrivo', value: `${formatDateInZone(x.arriveAt, tz)} · ${formatInZone(x.arriveAt, tz)}` })
+  if (x.refCode) rows.push({ label: 'Codice', value: <span class="tracking-[1.5px]">{x.refCode}</span> })
+  if (x.cost != null) {
+    const approx = x.currency === trip.localCurrency && trip.fxRate && trip.baseCurrency !== x.currency ? convert(x.cost, trip.fxRate) : null
+    rows.push({
+      label: x.scope === 'per_person' ? 'Costo a persona' : 'Costo totale',
+      value: (
+        <>
+          {formatMoney(x.cost, x.currency)}
+          {approx != null && <span class="block text-xs font-normal text-muted">≈ {formatMoney(approx, trip.baseCurrency)}</span>}
+        </>
+      ),
+    })
+  }
+  return rows
+}
 
 type SheetState =
   | { kind: 'new-flight' }
@@ -19,23 +43,13 @@ type SheetState =
   | { kind: 'edit-transport'; transport: Transport }
   | null
 
-const scopeText = (scope: 'per_person' | 'total') => (scope === 'per_person' ? 'a persona' : 'totale')
-
 export function Trasporti() {
   const trip = useTrip()
   const t = useTrips()
   const [del, delDialog] = useDeleter()
   const [sheet, setSheet] = useState<SheetState>(null)
   const close = () => setSheet(null)
-
-  async function toggleBought(x: Transport) {
-    const message = await t.setTransportBought(x.id, !x.bought)
-    if (message) showToast(message)
-  }
-  async function toggleFlightPaid(f: Flight) {
-    const message = await t.setFlightPaid(f.id, !f.paid)
-    if (message) showToast(message)
-  }
+  const [openId, toggle] = useOpenCard()
 
   const title =
     sheet?.kind === 'new-flight'
@@ -46,104 +60,92 @@ export function Trasporti() {
           ? 'Nuovo trasporto'
           : 'Modifica trasporto'
 
+  const notBought = trip.transports.filter((x) => !x.bought).length + trip.flights.filter((f) => !f.paid).length
+  const count = trip.transports.length + trip.flights.length
+  const subtitle = count === 0 ? 'Voli, treni e spostamenti' : `${count} ${count === 1 ? 'voce' : 'voci'}${notBought > 0 ? ` · ${notBought} non ${notBought === 1 ? 'acquistato' : 'acquistati'}` : ''}`
+
   return (
     <>
-      <PageHeader title="Trasporti e voli" subtitle="Voli con scali, treni e spostamenti" back={{ href: '/altro', label: 'Altro' }} />
-      <div class="space-y-6 px-4">
-        <section aria-label="Voli" class="space-y-3">
-          <h2 class="font-display text-lg font-semibold">Voli</h2>
-          {trip.flights.length === 0 && (
-            <EmptyState title="Nessun volo" text="Aggiungi andata e ritorno con tutte le tratte: durate e scali si calcolano da soli." />
-          )}
+      <PageHeader title="Trasporti" subtitle={subtitle} back={{ href: '/altro', label: 'Altro' }} />
+      <div class="px-5 pb-28">
+        {count === 0 && <EmptyState title="Nessun trasporto" text="Voli con scali, treni, pass metro, bus e taxi: orari, costo e se il biglietto è già comprato." />}
+        <ul class="mt-1 space-y-3.5">
           {trip.flights.map((f) => (
-            <FlightCard
-              key={f.id}
-              flight={f}
-              onEdit={() => setSheet({ kind: 'edit-flight', flight: f })}
-              onTogglePaid={() => void toggleFlightPaid(f)}
-              onDelete={() =>
-                void del({
-                  title: `Eliminare «${f.title}»?`,
-                  text: 'Saranno tolte anche le tratte. Puoi annullare subito dopo.',
-                  done: 'Volo eliminato',
-                  run: () => t.setFlightDeleted(f.id, true),
-                  undo: () => t.setFlightDeleted(f.id, false),
-                })
-              }
-            />
+            <li key={f.id}>
+              <FlightCard
+                flight={f}
+                onEdit={() => setSheet({ kind: 'edit-flight', flight: f })}
+                onDelete={() =>
+                  void del({
+                    title: `Eliminare «${f.title}»?`,
+                    text: 'Saranno tolte anche le tratte. Puoi annullare subito dopo.',
+                    done: 'Volo eliminato',
+                    run: () => t.setFlightDeleted(f.id, true),
+                    undo: () => t.setFlightDeleted(f.id, false),
+                  })
+                }
+              />
+            </li>
           ))}
-          <button
-            type="button"
-            onClick={() => setSheet({ kind: 'new-flight' })}
-            class="min-h-12 w-full rounded-full border border-line px-6 font-medium"
-          >
-            + Aggiungi volo
-          </button>
-        </section>
-
-        <section aria-label="Treni e spostamenti" class="space-y-3">
-          <h2 class="font-display text-lg font-semibold">Treni e spostamenti</h2>
-          {trip.transports.length === 0 && (
-            <EmptyState title="Nessun trasporto" text="Treni, pass metro, bus e taxi: orari, costo e se il biglietto è già comprato." />
-          )}
-          <ul class="space-y-3">
-            {trip.transports.map((x) => (
-              <li>
-                <Card class="relative">
-                  <div class="absolute right-2 top-2">
-                    <TrashButton
-                      label={`Elimina ${x.from} → ${x.to}`}
-                      onClick={() =>
-                        void del({
-                          title: `Eliminare «${x.from} → ${x.to}»?`,
-                          done: 'Trasporto eliminato',
-                          run: () => t.setTransportDeleted(x.id, true),
-                          undo: () => t.setTransportDeleted(x.id, false),
-                        })
-                      }
-                    />
-                  </div>
-                  <button type="button" onClick={() => setSheet({ kind: 'edit-transport', transport: x })} class="block w-full pr-10 text-left">
-                    <span class="flex items-start justify-between gap-3">
-                      <span class="min-w-0">
-                        <span class="block truncate font-semibold">
-                          {x.from} → {x.to}
+          {trip.transports.map((x) => (
+            <li key={x.id}>
+              <Ticket
+                tone={x.bought ? 'line' : 'warn'}
+                stubWidth={76}
+                stub={
+                  <Disc color={x.bought ? 'var(--ok)' : 'var(--warn)'}>
+                    <MovementIcon event={{ kind: 'transport', mode: x.mode, title: '' }} size={22} />
+                  </Disc>
+                }
+              >
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-start gap-1">
+                    <button type="button" onClick={() => toggle(x.id)} aria-expanded={openId === x.id} aria-label={`${openId === x.id ? 'Chiudi' : 'Apri'} ${x.from} → ${x.to}`} class="flex min-w-0 flex-1 items-center gap-1 text-left">
+                      <span class="min-w-0 flex-1">
+                        <span class="flex flex-wrap items-center gap-x-2 text-lg font-extrabold leading-tight">
+                          {x.from}
+                          <ChevronRightIcon size={16} class="shrink-0 text-pale" />
+                          {x.to}
                         </span>
-                        <span class="block text-sm text-muted">
-                          {MODE_LABEL[x.mode]}
-                          {x.departAt && ` · ${formatDateInZone(x.departAt, trip.timezone)} ${formatInZone(x.departAt, trip.timezone)}`}
-                          {x.arriveAt && `–${formatInZone(x.arriveAt, trip.timezone)}`}
+                        <span class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span class="text-[13px] text-muted">
+                            {[MODE_LABEL[x.mode], x.departAt && `${formatDateInZone(x.departAt, trip.timezone)}${x.arriveAt ? '' : ` ${formatInZone(x.departAt, trip.timezone)}`}`].filter(Boolean).join(' · ')}
+                          </span>
+                          <Tag tone={x.bought ? 'ok' : 'warn'}>{x.bought ? 'Acquistato' : 'Non acquistato'}</Tag>
                         </span>
                       </span>
-                    </span>
-                    {(x.cost != null || x.refCode) && (
-                      <span class="mt-1 block text-sm">
-                        {x.cost != null && (
-                          <>
-                            <span class="font-semibold">{formatMoney(x.cost, x.currency)}</span>
-                            <span class="text-muted"> {scopeText(x.scope)}</span>
-                          </>
-                        )}
-                        {x.refCode && <span class="text-muted">{x.cost != null ? ' · ' : ''}Cod. {x.refCode}</span>}
-                      </span>
-                    )}
-                  </button>
-                  <div class="mt-3">
-                    <FlagPill on={x.bought} label="Acquistato" offLabel="Non acquistato" onClick={() => void toggleBought(x)} />
+                      <ChevronDownIcon size={20} class={`shrink-0 text-muted transition-transform ${openId === x.id ? 'rotate-180' : ''}`} />
+                    </button>
+                  <TrashButton
+                    label={`Elimina ${x.from} → ${x.to}`}
+                    onClick={() =>
+                      void del({
+                        title: `Eliminare «${x.from} → ${x.to}»?`,
+                        done: 'Trasporto eliminato',
+                        run: () => t.setTransportDeleted(x.id, true),
+                        undo: () => t.setTransportDeleted(x.id, false),
+                      })
+                    }
+                  />
                   </div>
-                </Card>
-              </li>
-            ))}
-          </ul>
-          <button
-            type="button"
-            onClick={() => setSheet({ kind: 'new-transport' })}
-            class="min-h-12 w-full rounded-full bg-accent px-6 font-semibold text-accent-ink"
-          >
-            + Aggiungi trasporto
-          </button>
-        </section>
+                  {openId === x.id && (
+                    <CardDetail rows={transportRows(x, trip.timezone, trip)} note={x.notes} editLabel={`Modifica ${x.from} → ${x.to}`} onEdit={() => setSheet({ kind: 'edit-transport', transport: x })} />
+                  )}
+                </div>
+              </Ticket>
+            </li>
+          ))}
+        </ul>
+        <button
+          type="button"
+          onClick={() => setSheet({ kind: 'new-flight' })}
+          class="mt-4 grid min-h-[52px] w-full place-items-center rounded-[14px] border-2 border-dashed border-accent text-base font-extrabold text-pale"
+        >
+          + Aggiungi volo
+        </button>
       </div>
+
+      <Fab label="Trasporto" wide onClick={() => setSheet({ kind: 'new-transport' })} />
 
       {delDialog}
       <Sheet open={sheet !== null} title={title} onClose={close}>
@@ -186,69 +188,63 @@ export function Trasporti() {
   )
 }
 
-function FlightCard({ flight, onEdit, onTogglePaid, onDelete }: { flight: Flight; onEdit: () => void; onTogglePaid: () => void; onDelete: () => void }) {
+function FlightCard({ flight, onEdit, onDelete }: { flight: Flight; onEdit: () => void; onDelete: () => void }) {
   const times = flight.legs.map((l) => ({ depart: l.departAt, arrive: l.arriveAt }))
   return (
-    <Card class="relative">
-      <div class="absolute right-2 top-2">
-        <TrashButton label={`Elimina ${flight.title}`} onClick={onDelete} />
-      </div>
-      <button type="button" onClick={onEdit} class="block w-full pr-10 text-left">
-        <span class="flex items-start justify-between gap-3">
-          <span class="min-w-0">
-            <span class="block truncate font-semibold">{flight.title}</span>
-            <span class="block text-sm text-muted">
-              {[flight.airline, flight.bookingRef && `Cod. ${flight.bookingRef}`].filter(Boolean).join(' · ') || 'Volo'}
-            </span>
-          </span>
-        </span>
-      </button>
-
-      <ol class="mt-3 space-y-0">
-        {flight.legs.map((l, i) => {
-          const off = dayOffset(times[i], l.fromTz, l.toTz)
-          return (
-            <li>
-              {i > 0 && (
-                <p class="my-2 rounded-xl bg-accent-soft px-3 py-1.5 text-xs font-medium text-accent">
-                  Scalo a {l.from}: {formatDuration(layover(times[i - 1], times[i]))}
+    <Ticket
+      tone={flight.paid ? 'line' : 'warn'}
+      stubWidth={76}
+      stub={
+        <Disc color={flight.paid ? 'var(--ok)' : 'var(--warn)'}>
+          <PlaneIcon size={22} />
+        </Disc>
+      }
+    >
+      <div class="min-w-0 flex-1">
+        <div class="flex items-start gap-1">
+          <button type="button" onClick={onEdit} aria-label={`Modifica ${flight.title}`} class="min-w-0 flex-1 text-left">
+            <span class="block text-lg font-extrabold leading-tight">{flight.title}</span>
+            <span class="block text-[13px] text-muted">{[flight.airline, flight.bookingRef && `Cod. ${flight.bookingRef}`].filter(Boolean).join(' · ') || 'Volo'}</span>
+          </button>
+          <TrashButton label={`Elimina ${flight.title}`} onClick={onDelete} />
+        </div>
+        <ol class="mt-1 space-y-1.5">
+          {flight.legs.map((l, i) => {
+            const off = dayOffset(times[i], l.fromTz, l.toTz)
+            return (
+              <li>
+                {i > 0 && (
+                  <p class="mb-1.5 inline-block rounded-md border-2 border-dashed border-line px-1.5 text-xs font-extrabold text-pale">
+                    Scalo a {l.from}: {formatDuration(layover(times[i - 1], times[i]))}
+                  </p>
+                )}
+                <p class="text-sm font-extrabold">
+                  {l.from} → {l.to}
+                  {l.flightNumber && <span class="font-normal text-muted"> · {l.flightNumber}</span>}
                 </p>
-              )}
-              <div class="flex items-start gap-3">
-                <span aria-hidden="true" class="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-secondary" />
-                <div class="min-w-0 flex-1">
-                  <p class="font-medium">
-                    {l.from} → {l.to}
-                    {l.flightNumber && <span class="text-sm font-normal text-muted"> · {l.flightNumber}</span>}
-                  </p>
-                  <p class="text-sm text-muted tabular-nums">
-                    {formatDateInZone(l.departAt, l.fromTz)} {formatInZone(l.departAt, l.fromTz)} → {formatInZone(l.arriveAt, l.toTz)}
-                    {off !== 0 && <sup class="ml-0.5 font-medium text-warn">{off > 0 ? `+${off}` : off}</sup>}
-                    {' · '}
-                    {formatDuration(legDuration(times[i]))}
-                  </p>
-                  {(l.seats || l.cabin) && <p class="text-xs text-muted">{[l.cabin, l.seats && `posti ${l.seats}`].filter(Boolean).join(' · ')}</p>}
-                </div>
-              </div>
-            </li>
-          )
-        })}
-      </ol>
-
-      <div class="mt-3 flex flex-wrap items-center gap-2">
-        {flight.legs.length > 1 && (
-          <span class="text-xs text-muted">Totale in viaggio {formatDuration(totalTravelTime(times))}</span>
-        )}
-        {flight.cost != null && (
-          <span class="ml-auto text-sm">
-            <span class="font-semibold">{formatMoney(flight.cost, flight.currency)}</span>
-            <span class="text-muted"> {scopeText(flight.scope)}</span>
-          </span>
-        )}
+                <p class="text-xs tabular-nums text-muted">
+                  {formatDateInZone(l.departAt, l.fromTz)} {formatInZone(l.departAt, l.fromTz)} → {formatInZone(l.arriveAt, l.toTz)}
+                  {off !== 0 && <sup class="ml-0.5 font-extrabold text-warn">{off > 0 ? `+${off}` : off}</sup>}
+                  {' · '}
+                  {formatDuration(legDuration(times[i]))}
+                  {(l.seats || l.cabin) && ` · ${[l.cabin, l.seats && `posti ${l.seats}`].filter(Boolean).join(' · ')}`}
+                </p>
+              </li>
+            )
+          })}
+        </ol>
+        {flight.notes && <p class="mt-2 whitespace-pre-line pr-2 text-xs text-muted">{flight.notes}</p>}
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+          <Tag tone={flight.paid ? 'ok' : 'warn'}>{flight.paid ? 'Acquistato' : 'Non acquistato'}</Tag>
+          {flight.legs.length > 1 && <span class="text-xs text-muted">In viaggio {formatDuration(totalTravelTime(times))}</span>}
+          {flight.cost != null && (
+            <span class="ml-auto pr-2 text-sm">
+              <span class="font-extrabold">{formatMoney(flight.cost, flight.currency)}</span>
+              <span class="text-muted"> {flight.scope === 'per_person' ? 'a persona' : 'totale'}</span>
+            </span>
+          )}
+        </div>
       </div>
-      <div class="mt-2">
-        <FlagPill on={flight.paid} label="Pagato" offLabel="Non pagato" onClick={onTogglePaid} />
-      </div>
-    </Card>
+    </Ticket>
   )
 }

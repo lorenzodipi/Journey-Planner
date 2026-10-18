@@ -67,6 +67,15 @@ export function formatMoney(amount: number, currency: string): string {
   }
 }
 
+/** Simbolo della valuta (€, ¥, $…); se non lo conosce, il codice. */
+export function currencySymbol(currency: string): string {
+  try {
+    return new Intl.NumberFormat('it-IT', { style: 'currency', currency, currencyDisplay: 'narrowSymbol' }).formatToParts(0).find((p) => p.type === 'currency')?.value ?? currency
+  } catch {
+    return currency
+  }
+}
+
 /** Importo per un campo di testo, senza zeri inutili ("30" invece di "30.00"). */
 export function amountToText(amount: number | undefined | null): string {
   return amount == null ? '' : String(amount).replace('.', ',')

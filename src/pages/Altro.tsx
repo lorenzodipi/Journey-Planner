@@ -6,7 +6,9 @@ import { TRAVELER_COLORS } from '../lib/tripForm'
 import { useTrips } from '../state/trip'
 import type { Traveler, Trip } from '../types'
 import { SecondaryButton } from '../ui/Field'
-import { Card, PageHeader } from '../ui/PageHeader'
+import { BedIcon, BudgetIcon, ChecklistIcon, ChevronRightIcon, SettingsIcon, TicketIcon, TrainCarIcon } from '../ui/Icons'
+import { PageHeader } from '../ui/PageHeader'
+import { BoardingNotches, Disc, Jp, Stripe } from '../ui/Ticket'
 import { Sheet } from '../ui/Sheet'
 import { InviteForm } from '../ui/InviteForm'
 import { LinkAccount } from '../ui/LinkAccount'
@@ -19,24 +21,32 @@ const sections = [
   {
     href: '/altro/alloggi',
     title: 'Alloggi',
+    color: 'var(--warn)',
+    Icon: BedIcon,
     text: (t: Trip) => (t.stays.length ? `${t.stays.length} ${t.stays.length === 1 ? 'alloggio' : 'alloggi'}` : 'Hotel, check-in e check-out, costi'),
   },
   {
     href: '/altro/trasporti',
     title: 'Trasporti e voli',
+    color: 'var(--warn)',
+    Icon: TrainCarIcon,
     text: (t: Trip) =>
       t.flights.length + t.transports.length
-        ? `${t.flights.length} voli · ${t.transports.length} spostamenti`
+        ? `${t.flights.length} ${t.flights.length === 1 ? 'volo' : 'voli'} · ${t.transports.length} ${t.transports.length === 1 ? 'spostamento' : 'spostamenti'}`
         : 'Treni, pass, voli con scali e fusi orari',
   },
   {
     href: '/altro/budget',
     title: 'Budget e spese',
+    color: 'var(--ok)',
+    Icon: BudgetIcon,
     text: (t: Trip) => (t.budget.length + t.expenses.length ? `${t.budget.length} voci · ${t.expenses.length} spese` : 'Previsto, speso e chi deve a chi'),
   },
   {
     href: '/altro/checklist',
     title: 'Checklist e valigia',
+    color: 'var(--accent)',
+    Icon: ChecklistIcon,
     text: (t: Trip) => {
       const done = t.checklist.filter((c) => c.done).length
       return t.checklist.length ? `${done} di ${t.checklist.length} fatte` : 'Cose da fare e da portare, per persona'
@@ -45,11 +55,15 @@ const sections = [
   {
     href: '/altro/prenotazioni',
     title: 'Prenotazioni e documenti',
+    color: 'var(--warn)',
+    Icon: TicketIcon,
     text: (t: Trip) => (t.bookings.length ? `${t.bookings.length} ${t.bookings.length === 1 ? 'prenotazione' : 'prenotazioni'}` : 'Codici, link e biglietti, anche offline'),
   },
   {
     href: '/altro/impostazioni',
     title: 'Impostazioni',
+    color: 'var(--pale)',
+    Icon: SettingsIcon,
     text: () => 'Esporta e ripristina i dati, copia sul telefono, info',
   },
 ]
@@ -86,68 +100,67 @@ export function Altro() {
 
   return (
     <>
-      <PageHeader title="Altro" subtitle="Tutto il resto del viaggio" />
-      <div class="space-y-3 px-4">
-        <Card>
-          <p class="text-xs font-medium uppercase tracking-wide text-muted">Viaggio attivo</p>
-          <h2 class="font-display mt-1 text-xl font-semibold leading-tight">{trip.title}</h2>
-          <p class="text-sm text-muted">
-            {trip.destination && `${trip.destination} · `}
-            {formatShort(trip.startDate)} – {formatShort(trip.endDate)} · {trip.days.length} giorni
-          </p>
-
-          {t.trips.length > 1 && (
-            <ul class="mt-3 space-y-1" aria-label="Cambia viaggio">
-              {t.trips.map((other) => (
-                <li>
-                  <button
-                    type="button"
-                    aria-pressed={other.id === trip.id}
-                    onClick={() => t.setActive(other.id)}
-                    class={`min-h-11 w-full rounded-2xl px-4 text-left text-sm font-medium ${
-                      other.id === trip.id ? 'bg-accent-soft text-accent' : 'text-muted'
-                    }`}
-                  >
-                    {other.title}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div class="mt-4 grid grid-cols-2 gap-2">
-            <SecondaryButton onClick={() => setSheet({ kind: 'edit-trip' })}>Modifica</SecondaryButton>
-            <SecondaryButton onClick={() => setSheet({ kind: 'new-trip' })}>Nuovo viaggio</SecondaryButton>
+      <PageHeader title="Altro" jp="設定" />
+      <div class="px-5">
+        <section class="rise relative rounded-[20px] border-2 border-line bg-surface">
+          <Stripe />
+          <div class="px-[18px] pb-3.5 pt-3">
+            <div class="flex justify-between">
+              <span class="text-[13px] text-muted">Viaggio attivo</span>
+              <Jp>日本</Jp>
+            </div>
+            <h2 class="font-display text-[28px] font-extrabold leading-tight tracking-[-0.5px]">{trip.title}</h2>
+            <p class="mt-0.5 text-[13px] text-muted">
+              {trip.destination && `${trip.destination} · `}
+              {formatShort(trip.startDate)} – {formatShort(trip.endDate)} · {trip.days.length} giorni
+            </p>
+            {t.trips.length > 1 && (
+              <ul class="mt-3 space-y-1" aria-label="Cambia viaggio">
+                {t.trips.map((other) => (
+                  <li>
+                    <button
+                      type="button"
+                      aria-pressed={other.id === trip.id}
+                      onClick={() => t.setActive(other.id)}
+                      class={`min-h-11 w-full rounded-xl px-4 text-left text-sm font-extrabold ${other.id === trip.id ? 'bg-accent-soft text-pale' : 'text-muted'}`}
+                    >
+                      {other.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-        </Card>
+          <BoardingNotches />
+          <div class="grid grid-cols-2 border-t-2 border-dashed border-line">
+            <button type="button" onClick={() => setSheet({ kind: 'edit-trip' })} class="min-h-[52px] text-[15px] font-extrabold text-pale">
+              Modifica
+            </button>
+            <button type="button" onClick={() => setSheet({ kind: 'new-trip' })} class="min-h-[52px] border-l-2 border-dashed border-line text-[15px] font-extrabold text-pale">
+              Nuovo viaggio
+            </button>
+          </div>
+        </section>
 
-        <Card>
-          <div class="mb-2 flex items-center justify-between">
-            <h2 class="font-display text-lg font-semibold">Viaggiatori</h2>
+        <section class="mt-4 rounded-2xl border-2 border-line bg-surface px-4 py-1.5">
+          <div class="flex min-h-12 items-center justify-between">
+            <h2 class="font-display text-lg font-extrabold">Viaggiatori</h2>
             {isOwner && (
-              <button
-                type="button"
-                onClick={() => setSheet({ kind: 'new-traveler' })}
-                class="min-h-11 rounded-full px-3 text-sm font-medium text-accent"
-              >
+              <button type="button" onClick={() => setSheet({ kind: 'new-traveler' })} class="min-h-11 px-1 text-sm font-extrabold text-pale">
                 + Aggiungi
               </button>
             )}
           </div>
           {trip.travelers.length === 0 ? (
-            <p class="py-2 text-sm text-muted">Nessun viaggiatore: aggiungi una persona con la sua email per assegnare costi e spese.</p>
+            <p class="border-t-2 border-dashed border-line py-3 text-sm text-muted">Nessun viaggiatore: aggiungi una persona con la sua email per assegnare costi e spese.</p>
           ) : (
-            <ul class="divide-y divide-line">
+            <ul>
               {trip.travelers.map((person) => (
-                <li class="flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => setSheet({ kind: 'edit-traveler', traveler: person })}
-                    class="flex min-h-14 min-w-0 flex-1 items-center gap-3 text-left"
-                  >
-                    <span aria-hidden="true" class="h-4 w-4 shrink-0 rounded-full" style={{ background: person.color }} />
+                <li class="flex items-center border-t-2 border-dashed border-line">
+                  <button type="button" onClick={() => setSheet({ kind: 'edit-traveler', traveler: person })} class="flex min-h-[60px] min-w-0 flex-1 items-center gap-3 text-left">
+                    <span aria-hidden="true" class="size-4 shrink-0 rounded-full" style={{ background: person.color }} />
                     <span class="min-w-0 flex-1">
-                      <span class="block truncate font-medium">{person.name}</span>
+                      <span class="block truncate text-base font-extrabold">{person.name}</span>
                       {person.userId ? (
                         person.email && <span class="block truncate text-xs text-muted">{person.email}</span>
                       ) : (
@@ -173,41 +186,49 @@ export function Altro() {
               ))}
             </ul>
           )}
-        </Card>
+        </section>
 
-        <Card class="!p-0">
-          <ul class="divide-y divide-line">
-            {sections.map((s) => (
-              <li>
-                <Link href={s.href} class="flex min-h-16 items-center gap-3 px-4 py-3">
-                  <span class="min-w-0 flex-1">
-                    <span class="block font-medium">{s.title}</span>
-                    <span class="block truncate text-xs text-muted">{s.text(trip)}</span>
+        {/* pila di carte come nel Wallet: ogni voce ha la linguetta del suo colore */}
+        <ul class="mt-5">
+          {sections.map((sec, i) => {
+            const last = i === sections.length - 1
+            return (
+              <li class="relative" style={{ zIndex: i + 1, marginTop: i ? '-50px' : 0 }}>
+                <Link
+                  href={sec.href}
+                  class="block box-border rounded-[18px] border-2 border-line bg-surface px-[18px] py-3 shadow-[0_-4px_12px_rgb(0_0_0/0.35)]"
+                  style={{ borderTop: `8px solid ${sec.color}`, height: last ? '112px' : '126px' }}
+                >
+                  <span class="flex items-center gap-3">
+                    <Disc color={sec.color}>
+                      <sec.Icon size={22} />
+                    </Disc>
+                    <span class="min-w-0 flex-1">
+                      <span class="block text-[17px] font-extrabold">{sec.title}</span>
+                      <span class="block truncate text-xs text-muted">{sec.text(trip)}</span>
+                    </span>
+                    <ChevronRightIcon size={18} class="shrink-0 text-muted" />
                   </span>
-                  <span aria-hidden="true" class="text-muted">›</span>
                 </Link>
               </li>
-            ))}
-          </ul>
-        </Card>
+            )
+          })}
+        </ul>
 
-        <Card>
-          {auth.status === 'demo' && (
-            <p class="text-sm text-muted">Anteprima con dati fittizi: Supabase non è ancora collegato.</p>
-          )}
+        <section class="mt-[18px] flex items-center gap-3 rounded-2xl border-2 border-line bg-surface px-4 py-3">
+          {auth.status === 'demo' && <p class="text-sm text-muted">Anteprima con dati fittizi: Supabase non è ancora collegato.</p>}
           {auth.status === 'signed-in' && (
             <>
-              <p class="truncate text-sm text-muted">Accesso come {auth.session?.user.email}</p>
-              <button
-                type="button"
-                onClick={() => void auth.signOut()}
-                class="mt-3 min-h-11 w-full rounded-full border border-line px-4 text-sm font-medium text-danger"
-              >
+              <div class="min-w-0 flex-1">
+                <p class="text-[13px] text-muted">Accesso come</p>
+                <p class="truncate text-sm font-extrabold">{auth.session?.user.email}</p>
+              </div>
+              <button type="button" onClick={() => void auth.signOut()} class="min-h-11 rounded-full border-2 border-line px-4 text-sm font-extrabold">
                 Esci
               </button>
             </>
           )}
-        </Card>
+        </section>
       </div>
 
       {delDialog}

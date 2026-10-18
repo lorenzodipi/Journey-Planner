@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { categoryIcon, PIN_ICON_PATHS, pinIconSvg, type PinIcon } from './categoryIcon'
+import { categoryIcon, PIN_ICONS, pinIconSvg, type PinIcon } from './categoryIcon'
 
 describe('icona della categoria', () => {
   const cases: [string, PinIcon][] = [
@@ -20,6 +20,8 @@ describe('icona della categoria', () => {
     ['Castello', 'castle'],
     ['Onsen', 'spa'],
     ['Alloggio', 'stay'],
+    ['Casa', 'stay'],
+    ['Appartamento', 'stay'],
     ['Stazione', 'transit'],
     ['Vita notturna', 'night'],
     ['  TEMPIO  ', 'temple'],
@@ -34,6 +36,6 @@ describe('icona della categoria', () => {
   })
 
   it('ogni icona ha un disegno', () => {
-    for (const icon of Object.keys(PIN_ICON_PATHS) as PinIcon[]) expect(pinIconSvg(icon)).toContain('<path d="M')
+    for (const icon of Object.keys(PIN_ICONS) as PinIcon[]) expect(pinIconSvg(icon)).toContain('<path')
   })
 })

@@ -1,6 +1,8 @@
 import type { ComponentChildren } from 'preact'
+import { TickIcon } from './Icons'
 
-const inputClass = 'min-h-12 w-full rounded-2xl border border-line bg-bg px-4'
+const inputClass = 'min-h-12 w-full rounded-[14px] border-2 border-line bg-bg px-3.5 text-base placeholder:text-muted/70'
+const labelClass = 'mb-1 block text-[13px] font-extrabold'
 
 interface TextProps {
   label: string
@@ -24,7 +26,7 @@ export function TextField({ label, value, onInput, type = 'text', list, ...rest 
   }
   return (
     <label class="block">
-      <span class="mb-1 block text-sm font-medium">{label}</span>
+      <span class={labelClass}>{label}</span>
       {list ? (
         <input type="text" list={list} {...common} />
       ) : type === 'date' ? (
@@ -51,13 +53,13 @@ export function TextArea({
 }) {
   return (
     <label class="block">
-      <span class="mb-1 block text-sm font-medium">{label}</span>
+      <span class={labelClass}>{label}</span>
       <textarea
         rows={3}
         value={value}
         placeholder={placeholder}
         onInput={(e) => onInput(e.currentTarget.value)}
-        class="w-full rounded-2xl border border-line bg-bg px-4 py-3"
+        class="w-full rounded-[14px] border-2 border-line bg-bg px-3.5 py-3 text-base"
       />
     </label>
   )
@@ -66,7 +68,7 @@ export function TextArea({
 export function FormError({ message }: { message: string | null }) {
   if (!message) return null
   return (
-    <p role="alert" class="rounded-2xl bg-danger/10 px-4 py-3 text-sm text-danger">
+    <p role="alert" class="rounded-2xl border-2 border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
       {message}
     </p>
   )
@@ -85,7 +87,7 @@ export function PrimaryButton({
     <button
       type="submit"
       disabled={busy || disabled}
-      class="min-h-12 w-full rounded-full bg-accent px-6 font-semibold text-accent-ink transition-opacity disabled:opacity-50"
+      class="min-h-[52px] w-full rounded-full bg-accent px-6 text-base font-extrabold text-accent-ink transition-opacity disabled:opacity-50"
     >
       {children}
     </button>
@@ -105,7 +107,7 @@ export function SecondaryButton({
     <button
       type="button"
       onClick={onClick}
-      class={`min-h-12 w-full rounded-full border border-line px-6 font-medium ${danger ? 'text-danger' : ''}`}
+      class={`min-h-[52px] w-full rounded-full border-2 px-6 text-base font-extrabold ${danger ? 'border-danger text-danger' : 'border-line'}`}
     >
       {children}
     </button>
@@ -115,14 +117,12 @@ export function SecondaryButton({
 /** Casella da spuntare con etichetta, area di tocco ampia. */
 export function CheckField({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label class="flex min-h-11 items-center gap-3">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.currentTarget.checked)}
-        class="h-5 w-5 shrink-0 accent-[var(--accent)]"
-      />
-      <span class="text-sm font-medium">{label}</span>
+    <label class="flex min-h-11 cursor-pointer items-center gap-2.5">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.currentTarget.checked)} class="peer sr-only" />
+      <span class="grid size-6 shrink-0 place-items-center rounded-[7px] border-2 border-line text-accent-ink peer-checked:border-accent peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent [&>svg]:opacity-0 peer-checked:[&>svg]:opacity-100">
+        <TickIcon size={16} stroke-width={3.4} />
+      </span>
+      <span class="text-[15px] font-extrabold">{label}</span>
     </label>
   )
 }
@@ -141,15 +141,15 @@ export function ChipSelect<T extends string>({
 }) {
   return (
     <fieldset>
-      <legend class="mb-1 block text-sm font-medium">{label}</legend>
+      <legend class={labelClass}>{label}</legend>
       <div class="flex flex-wrap gap-2">
         {options.map((o) => (
           <button
             type="button"
             aria-pressed={value === o.value}
             onClick={() => onChange(o.value)}
-            class={`min-h-11 rounded-full border px-4 text-sm font-medium ${
-              value === o.value ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted'
+            class={`min-h-11 rounded-full border-2 px-4 text-sm font-extrabold ${
+              value === o.value ? 'border-accent bg-accent-soft text-pale' : 'border-line text-muted'
             }`}
           >
             {o.label}

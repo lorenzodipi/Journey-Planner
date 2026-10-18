@@ -95,7 +95,7 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
   return (
     <div class="space-y-4">
       {place.nameLocal && (
-        <p lang="ja" class="rounded-2xl bg-accent-soft px-4 py-3 text-xl font-medium text-accent">
+        <p lang="ja" class="rounded-2xl bg-accent-soft px-4 py-3 text-xl font-extrabold text-accent">
           {place.nameLocal}
         </p>
       )}
@@ -114,8 +114,8 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
             type="button"
             aria-pressed={place.status === s}
             onClick={() => void setStatus(s)}
-            class={`min-h-11 rounded-full border px-4 text-sm font-medium ${
-              place.status === s ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted'
+            class={`min-h-11 rounded-full border-2 px-4 text-sm font-extrabold ${
+              place.status === s ? 'border-accent bg-accent-soft text-pale' : 'border-line text-muted'
             }`}
           >
             {STATUS_LABEL[s]}
@@ -131,7 +131,7 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
         href={mapsLinkFor(place)}
         target="_blank"
         rel="noopener noreferrer"
-        class="grid min-h-12 w-full place-items-center rounded-full border border-line px-6 font-medium"
+        class="grid min-h-12 w-full place-items-center rounded-full border-2 border-line px-6 font-extrabold"
       >
         Apri in Maps
       </a>
@@ -148,7 +148,7 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
           <button
             type="button"
             onClick={() => void addToDay()}
-            class="min-h-12 w-full rounded-full bg-accent px-6 font-semibold text-accent-ink"
+            class="min-h-12 w-full rounded-full bg-accent px-6 font-extrabold text-accent-ink"
           >
             Aggiungi al giorno
           </button>

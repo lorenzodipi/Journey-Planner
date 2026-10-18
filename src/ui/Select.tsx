@@ -58,13 +58,13 @@ export function Select({ label, value, options, onChange, placeholder = 'Scegliâ
 
   return (
     <div class="block">
-      <span class="mb-1 block text-sm font-medium">{label}</span>
+      <span class="mb-1 block text-sm font-extrabold">{label}</span>
       <button
         type="button"
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen(true)}
-        class={`flex min-h-12 w-full items-center gap-3 rounded-2xl border border-line px-4 text-left ${tone === 'surface' ? 'bg-surface' : 'bg-bg'}`}
+        class={`flex min-h-12 w-full items-center gap-3 rounded-2xl border-2 border-line px-4 text-left ${tone === 'surface' ? 'bg-surface' : 'bg-bg'}`}
       >
         {selected?.color && <span aria-hidden="true" class="h-3 w-3 shrink-0 rounded-full" style={{ background: selected.color }} />}
         <span class={`min-w-0 flex-1 truncate ${shownLabel ? '' : 'text-muted'}`}>{shownLabel || placeholder}</span>
@@ -83,7 +83,7 @@ export function Select({ label, value, options, onChange, placeholder = 'Scegliâ
               placeholder="Cercaâ€¦"
               autoComplete="off"
               enterkeyhint="search"
-              class="min-h-12 w-full rounded-2xl border border-line bg-bg pl-11 pr-4"
+              class="min-h-12 w-full rounded-2xl border-2 border-line bg-bg pl-11 pr-4"
               onKeyDown={(e) => {
                 // Invio non deve inviare il modulo che sta sotto
                 if (e.key === 'Enter') {
@@ -103,7 +103,7 @@ export function Select({ label, value, options, onChange, placeholder = 'Scegliâ
                 role="option"
                 aria-selected="false"
                 onClick={() => pick(query.trim())}
-                class="flex min-h-12 w-full items-center gap-3 rounded-2xl px-3 text-left font-medium text-accent"
+                class="flex min-h-12 w-full items-center gap-3 rounded-2xl px-3 text-left font-extrabold text-accent"
               >
                 {createLabel ? createLabel(query.trim()) : `Usa Â«${query.trim()}Â»`}
               </button>
@@ -122,7 +122,7 @@ export function Select({ label, value, options, onChange, placeholder = 'Scegliâ
                 >
                   {o.color && <span aria-hidden="true" class="h-3 w-3 shrink-0 rounded-full" style={{ background: o.color }} />}
                   <span class="min-w-0 flex-1">
-                    <span class={`block truncate ${on ? 'font-semibold text-accent' : 'font-medium'}`}>{o.label}</span>
+                    <span class={`block truncate ${on ? 'font-extrabold text-accent' : 'font-extrabold'}`}>{o.label}</span>
                     {o.hint && <span class="block truncate text-xs text-muted">{o.hint}</span>}
                   </span>
                   {on && <CheckIcon size={20} class="shrink-0 text-accent" />}

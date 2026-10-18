@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'preact/hooks'
 import { mapsLinkFor } from '../lib/mapsUrl'
 import { filterPlaces } from '../lib/placeFilter'
-import { formatShort } from '../lib/dates'
+import { formatShort, parseYmd } from '../lib/dates'
 import { usePlaceFilters } from '../state/placeFilters'
 import { useTrip } from '../state/trip'
-import { FilterBar } from '../ui/FilterBar'
+import { FilterIcon, SearchIcon } from '../ui/Icons'
+import { CategoryTag, PlaceDisc } from '../ui/PlaceDisc'
+import { Ticket } from '../ui/Ticket'
 import { FilterSheet } from '../ui/FilterSheet'
 import { categoryIcon } from '../lib/categoryIcon'
 import type { MapPin } from '../ui/MapView'
@@ -13,13 +15,13 @@ import { PlaceSheet, type PlaceSheetState } from '../ui/PlaceSheet'
 import { NO_CATEGORY_COLOR, PALETTE, STATUS_LABEL, STATUS_STYLE, categoryColor, colorForCategory } from '../ui/placeMeta'
 
 type Mode = 'category' | 'day'
-const UNPLANNED = '#8a8f94'
+const UNPLANNED = '#9fb0c8'
 
 type MapViewComponent = typeof import('../ui/MapView').MapView
 
 export function Mappa() {
   const trip = useTrip()
-  const [filters, setFilters] = usePlaceFilters(trip.id)
+  const [filters, setFilters] = usePlaceFilters('mappa', trip.id)
   const [View, setView] = useState<MapViewComponent | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [mode, setMode] = useState<Mode>('category')
@@ -41,7 +43,8 @@ export function Mappa() {
 
   const withCoords = trip.places.filter((p) => p.lat != null && p.lng != null)
   const missing = trip.places.length - withCoords.length
-  const visible = useMemo(() => filterPlaces(withCoords, filters), [trip.places, filters])
+  const [text, setText] = useState('')
+  const visible = useMemo(() => filterPlaces(withCoords, filters, text), [trip.places, filters, text])
 
   // giorno in cui compare per primo ogni luogo (per il colore "per giorno")
   const dayOf = useMemo(() => {
@@ -89,78 +92,129 @@ export function Mappa() {
           ...(visible.some((p) => !dayOf.has(p.id)) ? [{ label: 'Non ancora in un giorno', color: UNPLANNED }] : []),
         ]
 
+  const assignedDay = selected ? dayOf.get(selected.id) : undefined
+  const assignedDate = assignedDay !== undefined ? parseYmd(trip.days[assignedDay].date) : null
+  const selectedColor = selected ? categoryColor(trip, selected) : NO_CATEGORY_COLOR
+  // pulsanti rapidi per categoria: una alla volta, "Tutti" le toglie
+  const cats = trip.categories.filter((c) => withCoords.some((p) => p.categoryId === c.id))
+  const onlyCat = filters.categories.length === 1 ? filters.categories[0] : null
+
   return (
-    <div class="flex flex-col" style={{ height: 'calc(100dvh - 5.5rem - env(safe-area-inset-bottom))' }}>
-      <header class="shrink-0 px-4 pb-2" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
-        <div class="mb-2 flex items-baseline justify-between gap-3 px-1">
-          <h1 class="font-display text-2xl font-semibold leading-tight">Mappa</h1>
-          <p class="truncate text-xs text-muted">
-            {visible.length} {visible.length === 1 ? 'luogo' : 'luoghi'}
-            {missing > 0 ? ` · ${missing} senza posizione` : ''}
-          </p>
+    <div class="map-full fixed inset-0 z-0 bg-bg">
+      {withCoords.length === 0 ? (
+        <div class="grid h-full place-items-center px-5">
+          <EmptyState
+            title="Nessun luogo con posizione"
+            text="Aggiungi luoghi dalla scheda Luoghi: cercandoli per nome o incollando un link di Google Maps, compariranno qui."
+          />
         </div>
-        <FilterBar filters={filters} onChange={setFilters} onOpen={() => setFilterOpen(true)} label="Filtri e colori" />
-      </header>
+      ) : View ? (
+        <View pins={pins} center={trip.center} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
+      ) : (
+        <p class="grid h-full place-items-center px-6 text-center text-sm text-muted" role="status">
+          {loadError ? 'Non riesco a caricare la mappa: serve la connessione la prima volta.' : 'Carico la mappa…'}
+        </p>
+      )}
 
-      <div class="relative mx-3 mb-2 min-h-0 flex-1 overflow-hidden rounded-card bg-surface shadow-card">
-        {withCoords.length === 0 ? (
-          <div class="grid h-full place-items-center px-4">
-            <EmptyState
-              title="Nessun luogo con posizione"
-              text="Aggiungi luoghi dalla scheda Luoghi: cercandoli per nome o incollando un link di Google Maps, compariranno qui."
-            />
-          </div>
-        ) : View ? (
-          <View pins={pins} center={trip.center} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
-        ) : (
-          <p class="grid h-full place-items-center px-6 text-center text-sm text-muted" role="status">
-            {loadError ? 'Non riesco a caricare la mappa: serve la connessione la prima volta.' : 'Carico la mappa…'}
-          </p>
-        )}
-
-        {visible.length === 0 && withCoords.length > 0 && (
-          <p class="pointer-events-none absolute inset-x-6 top-4 z-[1000] rounded-2xl bg-surface/95 px-4 py-3 text-center text-sm text-muted shadow-card">
-            Nessun luogo con questi filtri.
-          </p>
-        )}
-
-        {selected && (
-          <div class="absolute inset-x-3 bottom-3 z-[1000] rounded-2xl bg-surface p-3 shadow-card">
-            <div class="flex items-start gap-3">
-              <div class="min-w-0 flex-1">
-                <p class="truncate font-medium">{selected.name}</p>
-                <p class="truncate text-xs text-muted">{[selected.category, selected.city].filter(Boolean).join(' · ')}</p>
-              </div>
-              {selected.status !== 'idea' && (
-                <span class={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLE[selected.status]}`}>
-                  {STATUS_LABEL[selected.status]}
-                </span>
-              )}
-            </div>
-            <div class="mt-2 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setSheet({ kind: 'detail', placeId: selected.id })}
-                class="min-h-11 rounded-full bg-accent px-4 text-sm font-semibold text-accent-ink"
-              >
-                Dettagli
-              </button>
-              <a
-                href={mapsLinkFor(selected)}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="grid min-h-11 place-items-center rounded-full border border-line px-4 text-sm font-medium"
-              >
-                Apri in Maps
-              </a>
-            </div>
-          </div>
-        )}
+      {/* ricerca e categorie sopra la mappa */}
+      <div class="pointer-events-none absolute inset-x-3.5 z-10 space-y-2.5" style={{ top: 'calc(3.25rem + env(safe-area-inset-top))' }}>
+        <label class="pointer-events-auto relative block">
+          <SearchIcon size={20} class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+          <input
+            type="search"
+            value={text}
+            placeholder="Cerca sulla mappa"
+            aria-label="Cerca sulla mappa"
+            onInput={(e) => setText(e.currentTarget.value)}
+            class="min-h-[52px] w-full rounded-2xl border-2 border-line bg-bg pl-11 pr-4 text-base shadow-[0_6px_16px_rgb(0_0_0/0.35)]"
+          />
+        </label>
+        <div class="no-scrollbar pointer-events-auto flex items-center gap-2 overflow-x-auto">
+          <button
+            type="button"
+            aria-pressed={filters.categories.length === 0}
+            onClick={() => setFilters({ ...filters, categories: [] })}
+            class={`min-h-11 shrink-0 rounded-full border-2 px-4 text-sm font-extrabold ${filters.categories.length === 0 ? 'border-accent bg-accent text-white' : 'border-line bg-bg text-ink'}`}
+          >
+            Tutti
+          </button>
+          {cats.map((c) => (
+            <button
+              type="button"
+              key={c.id}
+              aria-pressed={onlyCat === c.label}
+              onClick={() => setFilters({ ...filters, categories: onlyCat === c.label ? [] : [c.label] })}
+              class={`flex min-h-11 shrink-0 items-center gap-2 rounded-full border-2 px-3.5 text-sm font-extrabold ${onlyCat === c.label ? 'border-accent bg-accent text-white' : 'border-line bg-bg text-ink'}`}
+            >
+              <span aria-hidden="true" class="size-2.5 rounded-full" style={{ background: colorForCategory(trip, c.id) }} />
+              {c.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setFilterOpen(true)}
+            aria-label="Filtri e colori"
+            class="grid min-h-11 min-w-11 shrink-0 place-items-center rounded-full border-2 border-line bg-bg text-ink"
+          >
+            <FilterIcon size={20} />
+          </button>
+        </div>
       </div>
+
+      {visible.length === 0 && withCoords.length > 0 && (
+        <p class="pointer-events-none absolute inset-x-6 top-44 z-10 rounded-2xl border-2 border-line bg-bg px-4 py-3 text-center text-sm text-muted">Nessun luogo con questi filtri.</p>
+      )}
+
+      {selected && (
+        <div class="absolute inset-x-3.5 z-10" style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}>
+          <Ticket
+            tone="accent"
+            stubWidth={76}
+            stub={
+              assignedDate ? (
+                <span>
+                  <span class="font-display block text-[28px] font-extrabold leading-none tabular-nums text-pale">{assignedDate.getDate()}</span>
+                  <span class="block text-[13px] text-muted">{assignedDate.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '')}</span>
+                </span>
+              ) : (
+                <PlaceDisc category={selected.category} color={selectedColor} />
+              )
+            }
+          >
+            <div class="min-w-0 flex-1 pr-2">
+              <p class="truncate text-xl font-extrabold leading-tight">{selected.name}</p>
+              <p class="mt-1 flex flex-wrap items-center gap-2">
+                {selected.category && <CategoryTag label={selected.category} color={selectedColor} />}
+                <span class="text-[13px] text-muted">{selected.city}</span>
+                {selected.status !== 'idea' && (
+                  <span class={`rounded-md border-2 px-1.5 text-xs font-extrabold leading-snug ${STATUS_STYLE[selected.status]}`}>{STATUS_LABEL[selected.status]}</span>
+                )}
+              </p>
+              <div class="mt-2.5 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSheet({ kind: 'detail', placeId: selected.id })}
+                  class="min-h-11 flex-1 rounded-xl bg-accent px-3 text-sm font-extrabold text-accent-ink"
+                >
+                  {assignedDate ? 'Dettagli' : 'Aggiungi a un giorno'}
+                </button>
+                <a
+                  href={mapsLinkFor(selected)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="grid min-h-11 place-items-center rounded-xl border-2 border-line px-4 text-sm font-extrabold"
+                >
+                  Vai
+                </a>
+              </div>
+            </div>
+          </Ticket>
+        </div>
+      )}
 
       <FilterSheet trip={trip} open={filterOpen} filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)}>
         <fieldset>
-          <legend class="mb-2 text-sm font-medium">Colora i pin per</legend>
+          <legend class="mb-2 text-sm font-extrabold">Colora i pin per</legend>
           <div class="grid grid-cols-2 gap-2">
             {(
               [
@@ -172,7 +226,7 @@ export function Mappa() {
                 type="button"
                 aria-pressed={mode === value}
                 onClick={() => setMode(value)}
-                class={`min-h-11 rounded-full border px-4 text-sm font-medium ${
+                class={`min-h-11 rounded-full border-2 px-4 text-sm font-extrabold ${
                   mode === value ? 'border-accent bg-accent text-accent-ink' : 'border-line'
                 }`}
               >
@@ -189,6 +243,11 @@ export function Mappa() {
                 </li>
               ))}
             </ul>
+          )}
+          {missing > 0 && (
+            <p class="mt-3 text-xs text-muted">
+              {missing} {missing === 1 ? 'luogo non ha' : 'luoghi non hanno'} una posizione e non {missing === 1 ? 'compare' : 'compaiono'} sulla mappa.
+            </p>
           )}
         </fieldset>
       </FilterSheet>

@@ -3,7 +3,7 @@ import { Link } from 'wouter-preact'
 import { budgetLines, categoryOverview, expenseBase, fxOf, logisticsLines, shareAmounts, summarizeExpenses, summarizeLines, toBase, type CategoryOverview, type Line } from '../lib/budget'
 import { formatShort } from '../lib/dates'
 import { dateInZone } from '../lib/flights'
-import { formatMoney } from '../lib/money'
+import { formatMoney, round2 } from '../lib/money'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { BudgetItem, Expense } from '../types'
@@ -13,7 +13,10 @@ import { ExpenseForm } from '../ui/ExpenseForm'
 import { TrashButton } from '../ui/ConfirmDialog'
 import { FxCard } from '../ui/FxCard'
 import { FxForm } from '../ui/FxForm'
-import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
+import { BudgetIcon, ChevronRightIcon, TrashIcon } from '../ui/Icons'
+import { PageHeader } from '../ui/PageHeader'
+import { DASH, Leader, Receipt } from '../ui/Receipt'
+import { Disc, Ticket } from '../ui/Ticket'
 import { Sheet } from '../ui/Sheet'
 import { useDeleter } from '../ui/useDeleter'
 
@@ -25,6 +28,7 @@ type SheetState =
   | { kind: 'new-category' }
   | { kind: 'rename-category'; id: string; label: string }
   | { kind: 'fx' }
+  | { kind: 'category'; key: string }
   | null
 
 const SOURCE_HREF = { flight: '/altro/trasporti', stay: '/altro/alloggi', transport: '/altro/trasporti' } as const
@@ -59,7 +63,7 @@ export function Budget() {
                     const body = (
                       <>
                         <span class="min-w-0 flex-1">
-                          <span class="block truncate font-medium">{l.label}</span>
+                          <span class="block truncate font-extrabold">{l.label}</span>
                           <span class="block text-xs text-muted">
                             {l.scope === 'per_person' ? 'a persona' : 'totale'}
                             {item?.dueDate && ` · entro ${formatShort(item.dueDate)}`}
@@ -67,7 +71,7 @@ export function Budget() {
                           </span>
                         </span>
                         <span class="shrink-0 text-right">
-                          <span class="block font-semibold">{formatMoney(l.amount, l.currency)}</span>
+                          <span class="block font-extrabold">{formatMoney(l.amount, l.currency)}</span>
                           {l.currency !== base && mine !== null && l.scope === 'per_person' && (
                             <span class="block text-xs text-muted">≈ {formatMoney(mine, base)} a testa</span>
                           )}
@@ -110,8 +114,8 @@ export function Budget() {
                                   type="button"
                                   aria-pressed={s.paid}
                                   onClick={() => void togglePaid(s.id, s.paid)}
-                                  class={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-xs font-medium ${
-                                    s.paid ? 'border-ok/40 bg-ok/10 text-ok' : 'border-line text-muted'
+                                  class={`inline-flex min-h-11 items-center gap-1.5 rounded-full border-2 px-3 text-xs font-extrabold ${
+                                    s.paid ? 'border-ok text-ok' : 'border-line text-muted'
                                   }`}
                                 >
                                   <span aria-hidden="true">{s.paid ? '✓' : '○'}</span>
@@ -136,7 +140,7 @@ export function Budget() {
         <button
           type="button"
           onClick={() => setSheet({ kind: 'rename-category', id: c.id as string, label: c.label })}
-          class="min-h-11 rounded-full px-3 text-sm font-medium text-accent"
+          class="min-h-11 px-3 text-sm font-extrabold text-pale"
         >
           Rinomina
         </button>
@@ -165,13 +169,13 @@ export function Budget() {
       <li class="flex items-center">
         <button type="button" onClick={() => setSheet({ kind: 'edit-expense', expense: e })} class="flex min-h-12 min-w-0 flex-1 items-center gap-3 py-2 text-left">
           <span class="min-w-0 flex-1">
-            <span class="block truncate font-medium">{e.label}</span>
+            <span class="block truncate font-extrabold">{e.label}</span>
             <span class="block truncate text-xs text-muted">
               {[formatShort(dateInZone(e.spentAt, trip.timezone)), payer && `pagato da ${payer.name}`].filter(Boolean).join(' · ')}
             </span>
           </span>
           <span class="shrink-0 text-right">
-            <span class="block font-semibold">{formatMoney(e.amount, e.currency)}</span>
+            <span class="block font-extrabold">{formatMoney(e.amount, e.currency)}</span>
             {e.currency !== base && inBase !== null && <span class="block text-xs text-muted">≈ {formatMoney(inBase, base)}</span>}
           </span>
         </button>
@@ -190,158 +194,189 @@ export function Budget() {
     )
   }
 
-  const categoryCard = (c: CategoryOverview) => {
+  const openCategory = sheet?.kind === 'category' ? categories.find((c) => c.key === sheet.key) : undefined
+
+  // dettaglio di una categoria (si apre toccando la riga sullo scontrino)
+  const categoryDetail = (c: CategoryOverview) => {
     const over = c.planned > 0 && c.spent > c.planned
     const pct = c.planned > 0 ? Math.min(100, (c.spent / c.planned) * 100) : 0
     return (
-      <section key={c.key} aria-label={c.label}>
-        <Card class="!p-0">
-          <div class="flex items-center gap-2 pl-4 pr-1 pt-2">
-            {c.color && <span aria-hidden="true" class="h-3 w-3 shrink-0 rounded-full" style={{ background: c.color }} />}
-            <h3 class="font-display min-w-0 flex-1 truncate text-lg font-semibold">{c.label}</h3>
-            {categoryActions(c)}
-          </div>
-          <div class="px-4 pb-3">
-            <p class="flex items-baseline justify-between gap-3">
-              <span class="text-sm text-muted">Speso</span>
-              <span class="font-display text-2xl font-semibold">{formatMoney(c.spent, base)}</span>
-            </p>
-            {c.planned > 0 && (
-              <>
-                <div role="progressbar" aria-valuemin={0} aria-valuemax={c.planned} aria-valuenow={Math.min(c.spent, c.planned)} class="mt-1 h-2 overflow-hidden rounded-full bg-line">
-                  <div class={`h-full rounded-full ${over ? 'bg-danger' : 'bg-accent'}`} style={{ width: `${pct}%` }} />
-                </div>
-                <p class={`mt-1 text-xs ${over ? 'font-medium text-danger' : 'text-muted'}`}>
-                  Previsto {formatMoney(c.planned, base)}
-                  {over ? ` · oltre di ${formatMoney(c.spent - c.planned, base)}` : ` · restano ${formatMoney(c.planned - c.spent, base)}`}
-                </p>
-              </>
-            )}
-            {c.spent === 0 && c.planned === 0 && c.expenses.length === 0 && c.lines.length === 0 && (
-              <p class="mt-1 text-xs text-muted">Ancora vuota: registra una spesa e il totale si aggiorna da solo.</p>
-            )}
-            {c.unconverted.length > 0 && (
-              <p role="alert" class="mt-2 rounded-xl bg-warn/10 px-3 py-2 text-xs text-warn">
-                Manca il cambio per {c.unconverted.join(', ')}: quelle voci non sono nel totale.
-              </p>
-            )}
-          </div>
-
-          {c.expenses.length > 0 && (
-            <details class="border-t border-line">
-              <summary class="flex min-h-12 cursor-pointer items-center px-4 text-sm font-medium">
-                {c.expenses.length} {c.expenses.length === 1 ? 'spesa' : 'spese'}
-              </summary>
-              <ul class="divide-y divide-line px-4 pb-1">{c.expenses.map(expenseRow)}</ul>
-            </details>
-          )}
-
-          {c.lines.length > 0 && (
-            <div class="border-t border-line">
-              <p class="px-4 pt-2 text-xs font-medium text-muted">Costi previsti</p>
-              <ul class="divide-y divide-line">{c.lines.map(lineRow)}</ul>
+      <div class="-mx-1">
+        <p class="flex items-baseline justify-between gap-3 px-1">
+          <span class="text-sm text-muted">Speso</span>
+          <span class="font-display text-2xl font-extrabold">{formatMoney(c.spent, base)}</span>
+        </p>
+        {c.planned > 0 && (
+          <div class="px-1">
+            <div role="progressbar" aria-valuemin={0} aria-valuemax={c.planned} aria-valuenow={Math.min(c.spent, c.planned)} class="mt-1 h-2.5 overflow-hidden rounded-[5px] border-2 border-line bg-surface">
+              <i class={`block h-full ${over ? 'bg-danger' : 'bg-accent'}`} style={{ width: `${pct}%` }} />
             </div>
-          )}
-
-          <div class="flex flex-wrap border-t border-line px-2">
-            <button type="button" onClick={() => setSheet({ kind: 'new-expense', category: c.label })} class="min-h-11 rounded-full px-3 text-sm font-medium text-accent">
-              + Spesa
-            </button>
-            <button type="button" onClick={() => setSheet({ kind: 'new', category: c.label })} class="min-h-11 rounded-full px-3 text-sm font-medium text-muted">
-              + Costo previsto
-            </button>
+            <p class={`mt-1 text-xs ${over ? 'font-extrabold text-danger' : 'text-muted'}`}>
+              Previsto {formatMoney(c.planned, base)}
+              {over ? ` · oltre di ${formatMoney(c.spent - c.planned, base)}` : ` · restano ${formatMoney(c.planned - c.spent, base)}`}
+            </p>
           </div>
-        </Card>
-      </section>
+        )}
+        {c.unconverted.length > 0 && (
+          <p role="alert" class="mx-1 mt-2 rounded-xl border-2 border-warn px-3 py-2 text-xs font-extrabold text-warn">
+            Manca il cambio per {c.unconverted.join(', ')}: quelle voci non sono nel totale.
+          </p>
+        )}
+
+        {c.expenses.length > 0 && (
+          <div class="mt-3 border-t-2 border-dashed border-line">
+            <p class="px-1 pt-2 text-xs font-extrabold text-muted">
+              {c.expenses.length} {c.expenses.length === 1 ? 'spesa' : 'spese'}
+            </p>
+            <ul class="divide-y-2 divide-dashed divide-line px-1">{c.expenses.map(expenseRow)}</ul>
+          </div>
+        )}
+
+        {c.lines.length > 0 && (
+          <div class="mt-2 border-t-2 border-dashed border-line">
+            <p class="px-1 pt-2 text-xs font-extrabold text-muted">Costi previsti</p>
+            <ul class="divide-y-2 divide-dashed divide-line">{c.lines.map(lineRow)}</ul>
+          </div>
+        )}
+
+        <div class="mt-2 flex flex-wrap items-center border-t-2 border-dashed border-line">
+          <button type="button" onClick={() => setSheet({ kind: 'new-expense', category: c.label })} class="min-h-11 px-2 text-sm font-extrabold text-pale">
+            + Spesa
+          </button>
+          <button type="button" onClick={() => setSheet({ kind: 'new', category: c.label })} class="min-h-11 px-2 text-sm font-extrabold text-muted">
+            + Costo previsto
+          </button>
+          <span class="ml-auto">{categoryActions(c)}</span>
+        </div>
+      </div>
     )
   }
 
+  const paidBy = new Map(spentAll.balances.map((b) => [b.travelerId, b.paid]))
+  const planned = summary.planned
+  const left = round2(planned - spentAll.total)
+
   return (
     <>
-      <PageHeader title="Budget" subtitle="Previsto, pagato e da pagare" back={{ href: '/altro', label: 'Altro' }} />
-      <div class="space-y-3 px-4">
-        <Card>
-          <dl class="grid grid-cols-3 gap-2 text-sm">
-            <div>
-              <dt class="text-muted">Previsto</dt>
-              <dd class="font-semibold">{formatMoney(summary.planned, base)}</dd>
-            </div>
-            <div>
-              <dt class="text-muted">Pagato</dt>
-              <dd class="font-semibold text-ok">{formatMoney(summary.paid, base)}</dd>
-            </div>
-            <div>
-              <dt class="text-muted">Da pagare</dt>
-              <dd class="font-semibold">{formatMoney(summary.outstanding, base)}</dd>
-            </div>
-          </dl>
-          <p class="mt-3 flex items-baseline justify-between gap-3 border-t border-line pt-2 text-sm">
-            <span class="text-muted">Speso finora ({trip.expenses.length} {trip.expenses.length === 1 ? 'spesa' : 'spese'})</span>
-            <span class="font-display text-xl font-semibold">{formatMoney(spentAll.total, base)}</span>
+      <PageHeader title="Budget" back={{ href: '/altro', label: 'Altro' }} />
+      <div class="px-5 pb-28">
+        <Receipt>
+          <p class="text-[13px] text-paper-muted">Speso finora</p>
+          <p class="font-display text-[50px] font-extrabold leading-[1.05] tracking-[-2px] tabular-nums">{formatMoney(spentAll.total, base)}</p>
+          <p class="text-[13px] text-paper-muted">
+            {planned > 0
+              ? `su ${formatMoney(planned, base)} previsti · ${left >= 0 ? `restano ${formatMoney(left, base)}` : `oltre di ${formatMoney(-left, base)}`}`
+              : `${trip.expenses.length} ${trip.expenses.length === 1 ? 'spesa' : 'spese'}`}
           </p>
-          {trip.travelers.length > 1 && (
-            <ul class="mt-3 divide-y divide-line border-t border-line">
-              {summary.perTraveler.map((p) => {
-                const person = traveler.get(p.travelerId)
-                return (
-                  <li class="flex min-h-11 items-center gap-2 text-sm">
-                    <span aria-hidden="true" class="h-3 w-3 shrink-0 rounded-full" style={{ background: person?.color }} />
-                    <span class="min-w-0 flex-1 truncate font-medium">{person?.name}</span>
-                    <span class="text-muted">{formatMoney(p.planned, base)}</span>
-                    <span class="w-24 text-right font-medium">{formatMoney(p.outstanding, base)}</span>
-                  </li>
-                )
-              })}
-              <li class="flex justify-end gap-2 pt-1 text-[11px] text-muted">
-                <span>previsto</span>
-                <span class="w-24 text-right">da pagare</span>
-              </li>
-            </ul>
+
+          <div class={`${DASH} mb-1.5 mt-3.5`} />
+          {categories.length === 0 ? (
+            <p class="py-3 text-sm text-paper-muted">Nessuna categoria: creane una (Cibo, Souvenir…) e il totale si aggiorna da solo.</p>
+          ) : (
+            categories.map((c) => (
+              <div key={c.key} class="flex min-h-[58px] items-center gap-1">
+                <button type="button" onClick={() => setSheet({ kind: 'category', key: c.key })} aria-label={`Apri ${c.label}`} class="min-w-0 flex-1 py-1.5 text-left">
+                  <Leader label={c.label} value={formatMoney(c.spent, base)} />
+                  <span class="block text-xs text-paper-muted">
+                    {[
+                      c.expenses.length > 0 ? `${c.expenses.length} ${c.expenses.length === 1 ? 'spesa' : 'spese'}` : null,
+                      c.planned > 0 ? `costo previsto ${formatMoney(c.planned, base)}` : c.expenses.length > 0 ? 'nessun costo previsto' : 'Ancora vuota · registra una spesa',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                    {c.unconverted.length > 0 && ` · manca il cambio per ${c.unconverted.join(', ')}`}
+                  </span>
+                </button>
+                {c.id ? (
+                  <button
+                    type="button"
+                    aria-label={`Elimina la categoria ${c.label}`}
+                    onClick={() =>
+                      void del({
+                        title: `Eliminare la categoria «${c.label}»?`,
+                        text:
+                          c.expenses.length + c.lines.filter((l) => l.source === 'budget').length > 0
+                            ? 'Le spese e le voci restano, ma finiscono in «Altro». Puoi annullare subito dopo.'
+                            : undefined,
+                        done: 'Categoria eliminata',
+                        run: () => t.setExpenseCategoryDeleted(c.id as string, true),
+                        undo: () => t.setExpenseCategoryDeleted(c.id as string, false),
+                      })
+                    }
+                    class="grid size-11 shrink-0 place-items-center text-paper-muted"
+                  >
+                    <TrashIcon size={20} />
+                  </button>
+                ) : (
+                  <span class="size-11 shrink-0" />
+                )}
+              </div>
+            ))
           )}
-          {summary.unconverted.length > 0 && (
-            <p role="alert" class="mt-3 rounded-xl bg-warn/10 px-3 py-2 text-xs text-warn">
-              Mancano i tassi per {summary.unconverted.join(', ')}: queste voci non sono nei totali.
+
+          {planned > 0 && (
+            <>
+              <div class={`${DASH} mb-2.5 mt-2`} />
+              <div class="space-y-1.5">
+                <Leader label="Previsto" value={formatMoney(summary.planned, base)} bold={false} />
+                <Leader label="Già pagato" value={formatMoney(summary.paid, base)} bold={false} />
+                <Leader label="Da pagare" value={formatMoney(summary.outstanding, base)} />
+              </div>
+            </>
+          )}
+
+          {trip.travelers.length > 1 && trip.expenses.length > 0 && (
+            <>
+              <div class={`${DASH} mb-2.5 mt-2`} />
+              <div class="space-y-1.5">
+                {trip.travelers.map((p) => (
+                  <Leader key={p.id} label={`${p.name} ha pagato`} value={formatMoney(paidBy.get(p.id) ?? 0, base)} />
+                ))}
+              </div>
+            </>
+          )}
+
+          {(summary.unconverted.length > 0 || spentAll.unconverted.length > 0) && (
+            <p role="alert" class="mt-3 rounded-lg border-2 border-ink px-3 py-2 text-xs font-extrabold">
+              Mancano i tassi per {Array.from(new Set([...summary.unconverted, ...spentAll.unconverted])).join(', ')}: queste voci non sono nei totali.
             </p>
           )}
-        </Card>
+        </Receipt>
 
-        {hasLocal && <FxCard trip={trip} onEdit={() => setSheet({ kind: 'fx' })} />}
-
-        <Link href="/altro/spese" class="block">
-          <Card class="flex min-h-14 items-center gap-3">
-            <span class="min-w-0 flex-1">
-              <span class="block font-medium">Spese del viaggio</span>
-              <span class="block text-xs text-muted">
-                {trip.expenses.length ? `${trip.expenses.length} spese registrate · chi deve a chi` : 'Registra cosa spendi, anche in yen'}
-              </span>
-            </span>
-            <span aria-hidden="true" class="text-muted">›</span>
-          </Card>
-        </Link>
-
-        <div class="flex items-center justify-between gap-3 px-1">
-          <h2 class="font-display text-lg font-semibold">Categorie</h2>
-          <button type="button" onClick={() => setSheet({ kind: 'new-category' })} class="min-h-11 rounded-full px-3 text-sm font-medium text-accent">
-            + Categoria
-          </button>
-        </div>
-
-        {categories.length === 0 ? (
-          <EmptyState
-            title="Nessuna categoria"
-            text="Crea una categoria (Cibo, Souvenir…) e scegline una quando registri una spesa: il totale della categoria si aggiorna da solo."
-          />
-        ) : (
-          categories.map(categoryCard)
+        {hasLocal && (
+          <div class="mt-[18px]">
+            <FxCard trip={trip} onEdit={() => setSheet({ kind: 'fx' })} />
+          </div>
         )}
 
-        <button type="button" onClick={() => setSheet({ kind: 'new' })} class="min-h-12 w-full rounded-full bg-accent px-6 font-semibold text-accent-ink">
-          + Aggiungi costo previsto
+        <Link href="/altro/spese" class="mt-3.5 block">
+          <Ticket stub={<Disc color="var(--accent)"><BudgetIcon size={22} /></Disc>} stubWidth={76}>
+            <span class="min-w-0 flex-1">
+              <span class="block text-[17px] font-extrabold leading-tight">Spese del viaggio</span>
+              <span class="block text-[13px] text-muted">
+                {trip.expenses.length ? `${trip.expenses.length} ${trip.expenses.length === 1 ? 'spesa registrata' : 'spese registrate'} · chi deve a chi` : 'Registra cosa spendi, anche in yen'}
+              </span>
+            </span>
+            <ChevronRightIcon size={20} class="mr-2 shrink-0 text-muted" />
+          </Ticket>
+        </Link>
+
+        <div class="mt-5 flex gap-2.5">
+          <button type="button" onClick={() => setSheet({ kind: 'new-category' })} class="grid min-h-[52px] flex-1 place-items-center rounded-[14px] border-2 border-line text-[15px] font-extrabold">
+            + Categoria
+          </button>
+          <button type="button" onClick={() => setSheet({ kind: 'new-expense' })} class="grid min-h-[52px] flex-1 place-items-center rounded-[14px] bg-accent text-[15px] font-extrabold text-white">
+            + Spesa
+          </button>
+        </div>
+        <button type="button" onClick={() => setSheet({ kind: 'new' })} class="mx-auto mt-1 block min-h-11 px-3 text-sm font-extrabold text-muted">
+          + Costo previsto
         </button>
       </div>
 
       {delDialog}
-      <Sheet open={sheet !== null} title={sheetTitle(sheet)} onClose={close}>
+      <Sheet open={sheet !== null} title={sheetTitle(sheet, openCategory?.label)} onClose={close}>
+        {sheet?.kind === 'category' && (openCategory ? categoryDetail(openCategory) : <p class="text-sm text-muted">Questa categoria non esiste più.</p>)}
         {sheet?.kind === 'new' && (
           <BudgetItemForm trip={trip} defaultCategory={sheet.category} onSubmit={(i) => t.createBudgetItem(trip.id, i)} onDone={close} />
         )}
@@ -396,8 +431,10 @@ export function Budget() {
   )
 }
 
-function sheetTitle(sheet: SheetState): string {
+function sheetTitle(sheet: SheetState, categoryLabel?: string): string {
   switch (sheet?.kind) {
+    case 'category':
+      return categoryLabel ?? 'Categoria'
     case 'new':
       return 'Nuovo costo previsto'
     case 'edit':

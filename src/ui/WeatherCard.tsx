@@ -31,7 +31,7 @@ export function WeatherCard({ forecast, date, today, tripDates }: Props) {
   return (
     <Card class="rise">
       <div class="mb-2 flex items-baseline justify-between gap-3">
-        <h2 class="font-display text-lg font-semibold">Meteo</h2>
+        <h2 class="font-display text-lg font-extrabold">Meteo</h2>
         {forecast.savedAt && <span class="text-xs text-muted">aggiornato alle {hhmm(forecast.savedAt)}</span>}
       </div>
       {body}
@@ -43,7 +43,7 @@ export function WeatherCard({ forecast, date, today, tripDates }: Props) {
               <li class="text-center text-xs">
                 <p class="text-muted">{formatDay(d).split(' ')[0]}</p>
                 <p class="text-xl" aria-label={weatherLabel(w.code).label}>{weatherLabel(w.code).icon}</p>
-                <p class="font-medium tabular-nums">{w.max}°</p>
+                <p class="font-extrabold tabular-nums">{w.max}°</p>
                 <p class="tabular-nums text-muted">{w.min}°</p>
               </li>
             )
@@ -60,9 +60,9 @@ function Main({ day }: { day: DayWeather }) {
     <div class="flex items-center gap-4">
       <span class="text-5xl leading-none" aria-hidden="true">{w.icon}</span>
       <div class="min-w-0 flex-1">
-        <p class="font-medium">{w.label}</p>
+        <p class="font-extrabold">{w.label}</p>
         <p class="text-sm text-muted">
-          Max <span class="font-medium text-ink tabular-nums">{day.max}°</span> · min <span class="tabular-nums">{day.min}°</span>
+          Max <span class="font-extrabold text-ink tabular-nums">{day.max}°</span> · min <span class="tabular-nums">{day.min}°</span>
           {day.rainPct != null && ` · pioggia ${day.rainPct}%`}
         </p>
       </div>

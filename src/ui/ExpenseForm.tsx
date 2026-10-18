@@ -102,15 +102,15 @@ export function ExpenseForm({ trip, initial, defaults, onSubmit, onDelete, onDon
       {trip.travelers.length > 0 && (
         <>
           <fieldset>
-            <legend class="mb-1 block text-sm font-medium">Chi ha pagato</legend>
+            <legend class="mb-1 block text-sm font-extrabold">Chi ha pagato</legend>
             <div class="flex flex-wrap gap-2">
               {trip.travelers.map((t) => (
                 <button
                   type="button"
                   aria-pressed={paidBy === t.id}
                   onClick={() => setPaidBy(paidBy === t.id ? '' : t.id)}
-                  class={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium ${
-                    paidBy === t.id ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted'
+                  class={`inline-flex min-h-11 items-center gap-2 rounded-full border-2 px-4 text-sm font-extrabold ${
+                    paidBy === t.id ? 'border-accent bg-accent-soft text-pale' : 'border-line text-muted'
                   }`}
                 >
                   <span aria-hidden="true" class="h-3 w-3 rounded-full" style={{ background: t.color }} />

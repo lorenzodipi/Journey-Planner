@@ -26,7 +26,7 @@ export function DayMapPanel({ route, center }: { route: DayRoute; center: Trip['
 
   if (stops.length === 0 && transports.length === 0) {
     return (
-      <p class="rounded-2xl bg-accent-soft px-4 py-3 text-sm text-muted">
+      <p class="bg-accent-soft px-4 py-3 text-sm text-pale">
         Nessuna tappa di questo giorno ha ancora una posizione: collega le tappe a luoghi con una posizione sulla mappa, oppure imposta partenza e arrivo di un trasporto.
       </p>
     )
@@ -34,7 +34,7 @@ export function DayMapPanel({ route, center }: { route: DayRoute; center: Trip['
 
   return (
     <div>
-      <div class="h-72 overflow-hidden rounded-2xl border border-line bg-bg">
+      <div class="h-[170px] overflow-hidden bg-bg">
         {View ? (
           <View stops={stops} lines={lines} ends={ends} center={stops[0] ?? transports[0]?.from ?? center} />
         ) : (
@@ -45,7 +45,7 @@ export function DayMapPanel({ route, center }: { route: DayRoute; center: Trip['
       </div>
 
       {transports.length > 0 && (
-        <ul class="mt-2 space-y-1 text-sm" aria-label="Trasporti sulla mappa">
+        <ul class="space-y-1 border-t-2 border-dashed border-line px-4 py-2.5 text-sm" aria-label="Trasporti sulla mappa">
           {transports.map((t) => (
             <li class="flex items-center gap-3">
               <span
@@ -62,7 +62,7 @@ export function DayMapPanel({ route, center }: { route: DayRoute; center: Trip['
       )}
 
       {missing > 0 && (
-        <p class="mt-2 text-xs text-muted">
+        <p class="border-t-2 border-dashed border-line px-4 py-2.5 text-xs text-muted">
           {missing} {missing === 1 ? 'tappa non ha' : 'tappe non hanno'} una posizione e non compare sulla mappa.
         </p>
       )}

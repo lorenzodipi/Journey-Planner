@@ -1,115 +1,61 @@
-import { useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
-import { formatDay } from '../lib/dates'
-import { canSwap } from '../lib/itemOrder'
+import { parseYmd } from '../lib/dates'
+import { eventsForDay } from '../lib/today'
 import { useTrip } from '../state/trip'
-import { DaySheet, type DaySheetState } from '../ui/DaySheet'
-import { ItemRow } from '../ui/ItemRow'
-import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
-import { useItemActions } from '../ui/useItemActions'
+import type { Day, Trip } from '../types'
+import { EmptyState, PageHeader } from '../ui/PageHeader'
 
+const wd = new Intl.DateTimeFormat('it-IT', { weekday: 'short' })
+const mon = new Intl.DateTimeFormat('it-IT', { month: 'short' })
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace('.', '')
+
+/** Il giorno ha qualcosa da sistemare: un biglietto non acquistato o un alloggio da prenotare. */
+function needsAttention(trip: Trip, day: Day): boolean {
+  if (eventsForDay(trip, day.date).some((e) => e.flag && !e.flag.ok)) return true
+  if (trip.flights.some((f) => !f.paid && f.legs.some((l) => l.departAt.slice(0, 10) === day.date))) return true
+  return trip.stays.some((s) => !s.booked && s.checkIn === day.date)
+}
+
+/** Foglio di calendario: linguetta colorata con i fori, numero grande, titolo del giorno. */
 export function Giorni() {
   const trip = useTrip()
-  const actions = useItemActions()
-  const [sheet, setSheet] = useState<DaySheetState>(null)
-  const [reordering, setReordering] = useState<string | null>(null) // id del giorno in riordino
-
 
   return (
     <>
-      <PageHeader title="Giorni" subtitle={`${trip.days.length} giorni in programma · tocca un giorno per aprirlo`} />
-      <div class="space-y-3 px-4">
+      <PageHeader title="Giorni" aside={`${trip.days.length} in tutto`} />
+      <div class="px-5">
         {trip.days.length === 0 && (
-          <EmptyState
-            title="Nessun giorno"
-            text="Imposta le date del viaggio da Altro → Modifica viaggio: i giorni si creano da soli."
-          />
+          <EmptyState title="Nessun giorno" text="Imposta le date del viaggio da Altro → Modifica viaggio: i giorni si creano da soli." />
         )}
-        {trip.days.map((day, index) => {
-          const isReordering = reordering === day.id
-          return (
-            <Card class="rise">
-              <Link
-                href={`/giorni/${day.id}`}
-                aria-label={`Apri ${formatDay(day.date)}`}
-                class="-m-1 flex min-h-12 w-[calc(100%+0.5rem)] items-center gap-3 rounded-2xl p-1 text-left"
-              >
-                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent-soft text-sm font-semibold text-accent">
-                  {index + 1}
-                </span>
-                <span class="min-w-0 flex-1">
-                  <span class="font-display block truncate text-lg font-semibold leading-tight first-letter:uppercase">
-                    {formatDay(day.date)}
-                  </span>
-                  <span class="block truncate text-xs text-muted">
-                    {day.city || day.title
-                      ? `${day.city}${day.city && day.title ? ' · ' : ''}${day.title ?? ''}`
-                      : 'Aggiungi città e titolo'}
-                  </span>
-                </span>
-                {day.items.length > 0 && (
-                  <span class="text-xs tabular-nums text-muted">
-                    {day.items.length} {day.items.length === 1 ? 'tappa' : 'tappe'}
-                  </span>
-                )}
-                <span aria-hidden="true" class="text-xl text-muted">›</span>
-              </Link>
-
-              {day.notes && <p class="mt-2 whitespace-pre-line text-sm text-muted">{day.notes}</p>}
-
-              {isReordering && (
-                <p class="mt-2 rounded-xl bg-accent-soft px-3 py-2 text-xs text-accent">
-                  Le tappe con un orario seguono l'orario: per spostarne una, cambia il suo orario. Le altre si spostano con le frecce.
-                </p>
-              )}
-              {day.items.length > 0 && (
-                <ul class="mt-2 divide-y divide-line border-t border-line">
-                  {day.items.map((item, i) => (
-                    <ItemRow
-                      item={item}
-                      n={i + 1}
-                      onOpen={isReordering ? undefined : () => setSheet({ kind: 'edit-item', day, item })}
-                      onToggleDone={isReordering ? undefined : () => void actions.toggleDone(item)}
-                      onDelete={() => actions.remove(item)}
-                      reorder={
-                        isReordering
-                          ? {
-                              onUp: i > 0 && canSwap(day.items[i - 1], item) ? () => void actions.move(day.id, item, -1) : undefined,
-                              onDown: i < day.items.length - 1 && canSwap(item, day.items[i + 1]) ? () => void actions.move(day.id, item, 1) : undefined,
-                            }
-                          : undefined
-                      }
-                    />
-                  ))}
-                </ul>
-              )}
-
-              <div class="mt-2 flex items-center justify-between gap-2 border-t border-line pt-2">
-                <button
-                  type="button"
-                  onClick={() => setSheet({ kind: 'new-item', day })}
-                  class="min-h-11 rounded-full px-3 text-sm font-medium text-accent"
+        <ul class="grid grid-cols-2 gap-3.5">
+          {trip.days.map((day) => {
+            const d = parseYmd(day.date)
+            const warn = needsAttention(trip, day)
+            const label = day.title || day.city
+            return (
+              <li>
+                <Link
+                  href={`/giorni/${day.id}`}
+                  aria-label={`Apri ${cap(wd.format(d))} ${d.getDate()} ${mon.format(d)}${label ? `, ${label}` : ''}${warn ? ', da sistemare' : ''}`}
+                  class="rise block overflow-hidden rounded-2xl border-2 bg-surface text-ink"
+                  style={{ borderColor: warn ? 'var(--warn)' : 'var(--line)' }}
                 >
-                  + Tappa
-                </button>
-                {day.items.length > 1 && (
-                  <button
-                    type="button"
-                    aria-pressed={isReordering}
-                    onClick={() => setReordering(isReordering ? null : day.id)}
-                    class="min-h-11 rounded-full px-3 text-sm font-medium text-muted"
+                  <div
+                    class="relative px-0 pb-1.5 pt-3.5 text-center text-[13px] font-extrabold"
+                    style={{ background: warn ? 'var(--warn)' : 'var(--accent)', color: warn ? 'var(--bg)' : '#fff' }}
                   >
-                    {isReordering ? 'Fine' : 'Riordina'}
-                  </button>
-                )}
-              </div>
-            </Card>
-          )
-        })}
+                    {cap(wd.format(d))} · {mon.format(d).replace('.', '')}
+                    <i class="absolute left-6 top-1 size-2 rounded-full bg-bg" />
+                    <i class="absolute right-6 top-1 size-2 rounded-full bg-bg" />
+                  </div>
+                  <div class="font-display pb-1 pt-2.5 text-center text-[56px] font-extrabold leading-none tracking-[-2px] tabular-nums">{d.getDate()}</div>
+                  <div class={`min-h-[42px] px-2 pb-3 text-center text-xs leading-tight ${label ? '' : 'text-muted'}`}>{label || 'Da pianificare'}</div>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
       </div>
-
-      {actions.dialog}
-      <DaySheet trip={trip} state={sheet} onChange={setSheet} />
     </>
   )
 }

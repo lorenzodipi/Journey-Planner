@@ -32,7 +32,7 @@ export function ShareForm({ onSubmit, onDone }: Props) {
         <button
           type="button"
           onClick={onDone}
-          class="min-h-12 w-full rounded-full bg-accent px-6 font-semibold text-accent-ink"
+          class="min-h-12 w-full rounded-full bg-accent px-6 font-extrabold text-accent-ink"
         >
           Ok
         </button>

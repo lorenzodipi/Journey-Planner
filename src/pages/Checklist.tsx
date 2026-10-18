@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks'
+import { Link } from 'wouter-preact'
 import { doneCount, KIND_LABEL, KINDS, parseQuantity, progress, visibleItems } from '../lib/checklist'
 import { formatShort } from '../lib/dates'
 import { showToast } from '../state/toast'
@@ -6,7 +7,9 @@ import { useTrip, useTrips } from '../state/trip'
 import type { ChecklistItem, ChecklistKind } from '../types'
 import { ChecklistItemForm } from '../ui/ChecklistItemForm'
 import { TrashButton } from '../ui/ConfirmDialog'
-import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
+import { MinusIcon, PlusIcon, TickIcon, TrashIcon } from '../ui/Icons'
+import { EmptyState } from '../ui/PageHeader'
+import { Avatar, Ticket } from '../ui/Ticket'
 import { Sheet } from '../ui/Sheet'
 import { useDeleter } from '../ui/useDeleter'
 
@@ -112,265 +115,263 @@ export function Checklist() {
     showToast(message ?? 'Modello aggiunto: modifica o elimina le voci che non ti servono.')
   }
 
+  const count = (i: ChecklistItem) => (i.quantity ?? 1) > 1
+  const allSelected = items.length > 0 && chosen.length === items.length
+  const chip = (on: boolean) =>
+    `inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-full border-2 px-3.5 text-sm font-extrabold ${on ? 'border-accent bg-accent text-white' : 'border-line text-ink'}`
+
   return (
     <>
-      <PageHeader title="Checklist" subtitle="Cose da fare e da portare" back={{ href: '/altro', label: 'Altro' }} />
-      <div class="space-y-3 px-4" style={{ paddingBottom: '5rem' }}>
-        <div role="tablist" aria-label="Elenco" class="grid grid-cols-3 gap-1 rounded-full bg-line/60 p-1">
-          {KINDS.map((k) => {
-            const p = progress(visibleItems(trip.checklist, k, who))
-            return (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={kind === k}
-                onClick={() => setKind(k)}
-                class={`min-h-11 rounded-full px-2 text-sm font-medium ${kind === k ? 'bg-surface text-accent shadow-card' : 'text-muted'}`}
-              >
-                {KIND_LABEL[k]}
-                {p.total > 0 && <span class="ml-1 text-xs opacity-70">{p.done}/{p.total}</span>}
+      <header class="px-5 pb-1" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
+        {selecting ? (
+          <>
+            <div class="flex min-h-11 items-center justify-between">
+              <button type="button" onClick={stopSelecting} class="min-h-11 text-[15px] font-extrabold text-pale">
+                Annulla
               </button>
-            )
-          })}
-        </div>
+              <button type="button" onClick={() => setSel(allSelected ? new Set() : new Set(items.map((i) => i.id)))} class="min-h-11 text-[15px] text-muted">
+                {allSelected ? 'Deseleziona tutte' : 'Seleziona tutte'}
+              </button>
+            </div>
+            <h1 class="font-display text-[28px] font-extrabold leading-tight" aria-live="polite">
+              {chosen.length === 0 ? 'Tocca le voci' : chosen.length === 1 ? '1 selezionata' : `${chosen.length} selezionate`}
+            </h1>
+          </>
+        ) : (
+          <>
+            <Link href="/altro" class="-ml-0.5 inline-flex min-h-11 items-center text-[15px] font-extrabold text-pale">
+              ‹ Altro
+            </Link>
+            <div class="flex items-center justify-between gap-3">
+              <h1 class="font-display text-[28px] font-extrabold leading-tight">Checklist</h1>
+              {items.length > 0 && (
+                <button type="button" onClick={() => setSelecting(true)} class="min-h-11 text-sm font-extrabold text-pale">
+                  Seleziona
+                </button>
+              )}
+            </div>
+            <p class="mt-0.5 text-sm text-muted">{trip.checklist.length === 0 ? 'Cose da fare e da portare' : `${progress(trip.checklist).done} di ${trip.checklist.length} fatte`}</p>
+          </>
+        )}
+      </header>
 
+      <div class="px-5" style={{ paddingBottom: selecting ? '6rem' : '11rem' }}>
         {many && (
-          <div class="flex flex-wrap gap-2" role="group" aria-label="Per chi">
-            <button
-              type="button"
-              aria-pressed={who === 'all'}
-              onClick={() => setWho('all')}
-              class={`min-h-11 rounded-full border px-4 text-sm font-medium ${who === 'all' ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted'}`}
-            >
+          <div class="no-scrollbar mt-3 flex gap-2 overflow-x-auto" role="group" aria-label="Per chi">
+            <button type="button" aria-pressed={who === 'all'} onClick={() => setWho('all')} class={chip(who === 'all')}>
               Tutti
             </button>
             {trip.travelers.map((p) => (
-              <button
-                type="button"
-                aria-pressed={who === p.id}
-                onClick={() => setWho(p.id)}
-                class={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium ${who === p.id ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted'}`}
-              >
-                <span aria-hidden="true" class="h-3 w-3 rounded-full" style={{ background: p.color }} />
+              <button type="button" key={p.id} aria-pressed={who === p.id} onClick={() => setWho(p.id)} class={chip(who === p.id)}>
+                <span aria-hidden="true" class="size-2.5 rounded-full" style={{ background: p.color }} />
                 {p.name}
               </button>
             ))}
           </div>
         )}
 
+        <div role="tablist" aria-label="Elenco" class="mt-3 flex gap-0.5 rounded-[14px] border-2 border-line bg-surface p-[3px]">
+          {KINDS.map((k) => (
+            <button
+              type="button"
+              role="tab"
+              key={k}
+              aria-selected={kind === k}
+              onClick={() => setKind(k)}
+              class={`min-h-10 flex-1 rounded-[10px] text-sm font-extrabold ${kind === k ? 'bg-accent text-white' : 'text-muted'}`}
+            >
+              {KIND_LABEL[k]}
+            </button>
+          ))}
+        </div>
+
         {total.total > 0 && (
-          <div>
-            <div class="mb-1 flex justify-between text-xs text-muted">
-              <span>{total.done} di {total.total} fatte</span>
-              <span>{Math.round((total.done / total.total) * 100)}%</span>
-            </div>
-            <div role="progressbar" aria-valuemin={0} aria-valuemax={total.total} aria-valuenow={total.done} class="h-2 overflow-hidden rounded-full bg-line">
-              <div class="h-full rounded-full bg-accent transition-all" style={{ width: `${(total.done / total.total) * 100}%` }} />
-            </div>
-          </div>
-        )}
-
-        <form onSubmit={add} class="flex gap-2">
-          <input
-            type="text"
-            value={text}
-            maxLength={200}
-            placeholder={`Aggiungi a «${KIND_LABEL[kind]}»${who !== 'all' ? ` per ${person.get(who)?.name}` : ''}`}
-            aria-label="Nuova voce"
-            onInput={(e) => setText(e.currentTarget.value)}
-            class="min-h-12 min-w-0 flex-1 rounded-2xl border border-line bg-surface px-4"
-          />
-          <label class="relative shrink-0">
-            <span aria-hidden="true" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted">×</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={qty}
-              maxLength={3}
-              aria-label="Quantità"
-              title="Quantità"
-              onInput={(e) => setQty(e.currentTarget.value.replace(/\D/g, ''))}
-              onBlur={() => setQty(String(parseQuantity(qty)))}
-              onFocus={(e) => e.currentTarget.select()}
-              class="min-h-12 w-16 rounded-2xl border border-line bg-surface pl-6 pr-2 text-center tabular-nums"
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={adding || !text.trim()}
-            class="min-h-12 shrink-0 rounded-full bg-accent px-5 font-semibold text-accent-ink disabled:opacity-50"
+          <div
+            role="progressbar"
+            aria-label={`${total.done} di ${total.total} fatte`}
+            aria-valuemin={0}
+            aria-valuemax={total.total}
+            aria-valuenow={total.done}
+            class="mt-3.5 h-2.5 overflow-hidden rounded-[5px] border-2 border-line bg-surface"
           >
-            {adding ? '…' : 'Aggiungi'}
-          </button>
-        </form>
-
-        {items.length > 0 && (
-          <div class="flex min-h-11 items-center justify-between gap-2">
-            {selecting ? (
-              <>
-                <span class="text-sm text-muted" aria-live="polite">
-                  {chosen.length === 0 ? 'Tocca le voci da eliminare' : chosen.length === 1 ? '1 voce selezionata' : `${chosen.length} voci selezionate`}
-                </span>
-                <span class="flex shrink-0 items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setSel(chosen.length === items.length ? new Set() : new Set(items.map((i) => i.id)))}
-                    class="min-h-11 rounded-full px-3 text-sm font-medium text-accent"
-                  >
-                    {chosen.length === items.length ? 'Nessuna' : 'Tutte'}
-                  </button>
-                  <button type="button" onClick={stopSelecting} class="min-h-11 rounded-full px-3 text-sm font-medium text-muted">
-                    Fine
-                  </button>
-                </span>
-              </>
-            ) : (
-              <>
-                <span />
-                <button type="button" onClick={() => setSelecting(true)} class="min-h-11 rounded-full px-3 text-sm font-medium text-accent">
-                  Seleziona
-                </button>
-              </>
-            )}
+            <i class="block h-full bg-accent transition-all" style={{ width: `${(total.done / total.total) * 100}%` }} />
           </div>
         )}
 
         {items.length === 0 ? (
-          trip.checklist.length === 0 ? (
-            <EmptyState title="Checklist vuota" text="Scrivi la prima voce qui sopra, oppure parti da un modello con le cose che di solito servono." />
-          ) : (
-            <EmptyState title="Niente qui" text="Nessuna voce in questo elenco per la persona scelta." />
-          )
+          <div class="mt-4">
+            {trip.checklist.length === 0 ? (
+              <EmptyState title="Checklist vuota" text="Scrivi la prima voce qui sotto, oppure parti da un modello con le cose che di solito servono." />
+            ) : (
+              <EmptyState title="Niente qui" text="Nessuna voce in questo elenco per la persona scelta." />
+            )}
+          </div>
         ) : (
-          <Card class="!p-0">
-            <ul class="divide-y divide-line">
-              {items.map((i) => {
-                const owner = i.travelerId ? person.get(i.travelerId) : undefined
-                const late = !i.done && !!i.dueDate && i.dueDate < today
-                const multi = (i.quantity ?? 1) > 1
-                const have = doneCount(i)
-                const partial = multi && have > 0 && !i.done
-                return (
-                  <li class={`flex items-center ${selecting && sel.has(i.id) ? 'bg-accent-soft/50' : ''}`}>
-                    {selecting && (
-                      <button
-                        type="button"
-                        role="checkbox"
-                        aria-checked={sel.has(i.id)}
-                        aria-label={`Seleziona: ${i.text}`}
-                        onClick={() => toggleSel(i.id)}
-                        class="grid min-h-14 w-14 shrink-0 place-items-center"
-                      >
-                        <span
-                          class={`grid h-6 w-6 place-items-center rounded-full border-2 text-sm ${
-                            sel.has(i.id) ? 'border-danger bg-danger text-white' : 'border-line'
-                          }`}
+          <ul class="mt-4 space-y-3.5">
+            {items.map((i) => {
+              const owner = i.travelerId ? person.get(i.travelerId) : undefined
+              const late = !i.done && !!i.dueDate && i.dueDate < today
+              const multi = count(i)
+              const have = doneCount(i)
+              const partial = multi && have > 0 && !i.done
+              const picked = selecting && sel.has(i.id)
+              return (
+                <li key={i.id}>
+                  <Ticket
+                    stubWidth={64}
+                    tone={picked ? 'accent' : 'line'}
+                    stub={
+                      selecting ? (
+                        <button type="button" role="checkbox" aria-checked={picked} aria-label={`Seleziona: ${i.text}`} onClick={() => toggleSel(i.id)} class="grid size-11 place-items-center">
+                          <span class={`grid size-7 place-items-center rounded-lg border-2 text-white ${picked ? 'border-accent bg-accent' : 'border-line'}`}>{picked && <TickIcon size={16} />}</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          role="checkbox"
+                          aria-checked={partial ? 'mixed' : i.done}
+                          aria-label={`${i.done ? 'Da rifare' : multi ? 'Tutti a posto' : 'Fatto'}: ${i.text}`}
+                          disabled={pending.has(i.id)}
+                          onClick={() => void toggle(i)}
+                          class="grid size-11 place-items-center disabled:opacity-50"
                         >
-                          {sel.has(i.id) ? '✓' : ''}
-                        </span>
-                      </button>
-                    )}
-                    {!selecting && (
-                    <button
-                      type="button"
-                      role="checkbox"
-                      aria-checked={partial ? 'mixed' : i.done}
-                      aria-label={`${i.done ? 'Da rifare' : multi ? 'Tutti a posto' : 'Fatto'}: ${i.text}`}
-                      disabled={pending.has(i.id)}
-                      onClick={() => void toggle(i)}
-                      class="grid min-h-14 w-14 shrink-0 place-items-center disabled:opacity-50"
-                    >
-                      <span
-                        class={`grid h-6 w-6 place-items-center rounded-md border-2 text-sm ${
-                          i.done ? 'border-accent bg-accent text-accent-ink' : partial ? 'border-accent text-accent' : 'border-line'
-                        }`}
-                      >
-                        {i.done ? '✓' : partial ? '–' : ''}
-                      </span>
-                    </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => (selecting ? toggleSel(i.id) : setEdit(i))}
-                      class="min-h-14 min-w-0 flex-1 py-2 pr-4 text-left"
-                    >
-                      <span class={`block ${i.done ? 'text-muted line-through' : ''}`}>
-                        {multi && (
-                          <span class={`mr-1.5 inline-block rounded-full px-2 text-sm font-semibold tabular-nums ${i.done ? 'bg-line text-muted' : 'bg-accent-soft text-accent'}`}>
-                            {have}/{i.quantity}
+                          <span
+                            class={`grid size-7 place-items-center rounded-full border-2 ${i.done ? 'border-ok bg-ok text-bg' : partial ? 'border-accent text-pale' : 'border-line'}`}
+                          >
+                            {i.done ? <TickIcon size={16} /> : partial ? <MinusIcon size={16} /> : null}
                           </span>
-                        )}
-                        {i.text}
-                      </span>
-                      {(owner || i.dueDate) && (
-                        <span class={`mt-0.5 flex items-center gap-2 text-xs ${late ? 'text-danger' : 'text-muted'}`}>
-                          {owner && (
-                            <span class="inline-flex items-center gap-1">
-                              <span aria-hidden="true" class="h-2.5 w-2.5 rounded-full" style={{ background: owner.color }} />
-                              {owner.name}
+                        </button>
+                      )
+                    }
+                  >
+                    <div class="min-w-0 flex-1">
+                      <button type="button" onClick={() => (selecting ? toggleSel(i.id) : setEdit(i))} class="block w-full text-left">
+                        <span class={`block text-xl font-extrabold leading-tight ${i.done ? 'text-muted line-through' : ''}`}>
+                          {multi && (
+                            <span class={`mr-1.5 inline-block rounded-xl px-2 align-middle text-sm font-extrabold tabular-nums no-underline ${i.done ? 'bg-line text-muted' : 'bg-accent-soft text-pale'}`}>
+                              {have}/{i.quantity}
                             </span>
                           )}
-                          {i.dueDate && <span>entro {formatShort(i.dueDate)}</span>}
+                          {i.text}
                         </span>
-                      )}
-                    </button>
-                    {multi && !selecting && (
-                      <div class="mr-2 flex shrink-0 items-center" role="group" aria-label={`Pezzi a posto: ${i.text}`}>
-                        <button
-                          type="button"
-                          aria-label="Un pezzo in meno"
-                          disabled={pending.has(i.id) || have <= 0}
-                          onClick={() => void setCount(i, have - 1)}
-                          class="grid h-11 w-11 place-items-center rounded-full text-xl text-muted disabled:opacity-30"
-                        >
-                          −
-                        </button>
-                        <button
-                          type="button"
-                          aria-label="Un pezzo in più"
-                          disabled={pending.has(i.id) || have >= (i.quantity as number)}
-                          onClick={() => void setCount(i, have + 1)}
-                          class="grid h-11 w-11 place-items-center rounded-full bg-accent-soft text-xl text-accent disabled:opacity-30"
-                        >
-                          +
-                        </button>
+                        {i.dueDate && <span class={`mt-0.5 block text-xs ${late ? 'text-danger' : 'text-muted'}`}>entro {formatShort(i.dueDate)}</span>}
+                      </button>
+                      <div class="mt-1 flex items-center">
+                        {multi && !selecting && (
+                          <div class="flex gap-1.5" role="group" aria-label={`Pezzi a posto: ${i.text}`}>
+                            <button
+                              type="button"
+                              aria-label="Un pezzo in meno"
+                              disabled={pending.has(i.id) || have <= 0}
+                              onClick={() => void setCount(i, have - 1)}
+                              class="grid size-[34px] place-items-center rounded-full border-2 border-line text-muted disabled:text-line"
+                            >
+                              <MinusIcon size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              aria-label="Un pezzo in più"
+                              disabled={pending.has(i.id) || have >= (i.quantity as number)}
+                              onClick={() => void setCount(i, have + 1)}
+                              class="grid size-[34px] place-items-center rounded-full bg-accent-soft text-pale disabled:text-line"
+                            >
+                              <PlusIcon size={16} />
+                            </button>
+                          </div>
+                        )}
+                        <span class="ml-auto inline-flex items-center gap-1.5">
+                          {owner ? (
+                            <Avatar name={owner.name} color={owner.color} size={20} />
+                          ) : (
+                            trip.travelers.length > 1 && (
+                              <span class="inline-flex">
+                                {trip.travelers.slice(0, 2).map((p, n) => (
+                                  <span class={n ? '-ml-1.5' : ''}>
+                                    <Avatar name={p.name} color={p.color} size={20} />
+                                  </span>
+                                ))}
+                              </span>
+                            )
+                          )}
+                          {(owner || trip.travelers.length > 1) && <span class="text-xs text-muted">{owner ? owner.name : 'Tutti'}</span>}
+                        </span>
                       </div>
+                    </div>
+                    {!selecting && (
+                      <TrashButton
+                        label={`Elimina ${i.text}`}
+                        onClick={() =>
+                          void del({
+                            title: `Eliminare «${i.text}»?`,
+                            done: 'Voce eliminata',
+                            run: () => t.setChecklistDeleted(i.id, true),
+                            undo: () => t.setChecklistDeleted(i.id, false),
+                          })
+                        }
+                      />
                     )}
-                    {!selecting && <TrashButton
-                      label={`Elimina ${i.text}`}
-                      onClick={() =>
-                        void del({
-                          title: `Eliminare «${i.text}»?`,
-                          done: 'Voce eliminata',
-                          run: () => t.setChecklistDeleted(i.id, true),
-                          undo: () => t.setChecklistDeleted(i.id, false),
-                        })
-                      }
-                    />}
-                  </li>
-                )
-              })}
-            </ul>
-          </Card>
+                  </Ticket>
+                </li>
+              )
+            })}
+          </ul>
         )}
 
-        {selecting && (
-          <div class="sticky bottom-[4.75rem] z-10">
-            <button
-              type="button"
-              disabled={chosen.length === 0}
-              onClick={() => void deleteChosen()}
-              class="min-h-12 w-full rounded-full bg-danger px-6 font-semibold text-white shadow-card disabled:opacity-40"
-            >
-              {chosen.length === 0 ? 'Elimina' : chosen.length === 1 ? 'Elimina 1 voce' : `Elimina ${chosen.length} voci`}
-            </button>
-          </div>
-        )}
-
-        <button type="button" onClick={() => void addTemplate()} class="min-h-12 w-full rounded-full border border-line px-6 text-sm font-medium">
+        <button type="button" onClick={() => void addTemplate()} class="mx-auto mt-4 block min-h-11 px-3 text-sm font-extrabold text-muted">
           {trip.checklist.length === 0 ? 'Parti da un modello' : 'Aggiungi le voci del modello mancanti'}
         </button>
       </div>
+
+      {/* barra per aggiungere una voce (nome, quantità, +) o, in selezione, il pulsante per eliminare */}
+      {selecting ? (
+        <div class="fixed inset-x-5 z-30" style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
+          <button
+            type="button"
+            disabled={chosen.length === 0}
+            onClick={() => void deleteChosen()}
+            class="inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-full bg-danger text-base font-extrabold text-bg shadow-[0_8px_20px_rgb(0_0_0/0.45)] disabled:opacity-40"
+          >
+            <TrashIcon size={22} />
+            {chosen.length === 0 ? 'Elimina' : chosen.length === 1 ? 'Elimina 1 voce' : `Elimina ${chosen.length} voci`}
+          </button>
+        </div>
+      ) : (
+        <form
+          onSubmit={add}
+          class="fixed inset-x-5 z-10 flex h-14 items-center gap-2.5 rounded-full border-2 border-line bg-surface pl-5 pr-1.5"
+          style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}
+        >
+          <input
+            type="text"
+            value={text}
+            maxLength={200}
+            placeholder="Aggiungi una voce"
+            aria-label={`Nuova voce in «${KIND_LABEL[kind]}»${who !== 'all' ? ` per ${person.get(who)?.name}` : ''}`}
+            onInput={(e) => setText(e.currentTarget.value)}
+            class="min-w-0 flex-1 bg-transparent text-[15px] placeholder:text-muted"
+          />
+          <input
+            type="text"
+            inputMode="numeric"
+            value={qty}
+            maxLength={3}
+            aria-label="Quantità"
+            title="Quantità"
+            onInput={(e) => setQty(e.currentTarget.value.replace(/\D/g, ''))}
+            onBlur={() => setQty(String(parseQuantity(qty)))}
+            onFocus={(e) => e.currentTarget.select()}
+            class="h-9 w-11 rounded-xl border-2 border-line bg-bg text-center text-[15px] font-extrabold tabular-nums"
+          />
+          <button
+            type="submit"
+            disabled={adding || !text.trim()}
+            aria-label="Aggiungi la voce"
+            class="grid size-11 shrink-0 place-items-center rounded-full bg-accent text-white disabled:opacity-50"
+          >
+            <PlusIcon size={22} />
+          </button>
+        </form>
+      )}
 
       {delDialog}
       <Sheet open={edit !== null} title="Modifica voce" onClose={() => setEdit(null)}>

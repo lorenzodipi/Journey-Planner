@@ -1,18 +1,46 @@
 import { useState } from 'preact/hooks'
 import { formatDay, formatShort } from '../lib/dates'
-import { formatMoney, perPerson, sumByCurrency } from '../lib/money'
+import { convert, formatMoney } from '../lib/money'
 import { nightsOf, overlappingStays, uncoveredNights } from '../lib/stays'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
-import type { Stay } from '../types'
-import { FlagPill } from '../ui/FlagPill'
+import type { ComponentChildren } from 'preact'
+import type { Stay, Trip } from '../types'
 import { TrashButton } from '../ui/ConfirmDialog'
 import { Sheet } from '../ui/Sheet'
 import { StayForm } from '../ui/StayForm'
-import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
+import { CardDetail, useOpenCard } from '../ui/CardDetail'
+import { ChevronDownIcon, PinOutIcon } from '../ui/Icons'
+import { EmptyState, PageHeader } from '../ui/PageHeader'
+import { Fab, Tag, Ticket } from '../ui/Ticket'
 import { useDeleter } from '../ui/useDeleter'
 
 type SheetState = { kind: 'new' } | { kind: 'edit'; stay: Stay } | null
+
+function stayRows(s: Stay, trip: Trip) {
+  const rows: { label: string; value: ComponentChildren }[] = [
+    { label: 'Check-in', value: [formatDay(s.checkIn), s.checkInInfo].filter(Boolean).join(' · ') },
+    { label: 'Check-out', value: [formatDay(s.checkOut), s.checkOutInfo].filter(Boolean).join(' · ') },
+  ]
+  if (s.address) rows.push({ label: 'Indirizzo', value: s.address })
+  if (s.totalCost != null) {
+    const approx = s.currency === trip.localCurrency && trip.fxRate && trip.baseCurrency !== s.currency ? convert(s.totalCost, trip.fxRate) : null
+    rows.push({
+      label: 'Costo totale',
+      value: (
+        <>
+          {formatMoney(s.totalCost, s.currency)}
+          {approx != null && <span class="block text-xs font-normal text-muted">≈ {formatMoney(approx, trip.baseCurrency)}</span>}
+        </>
+      ),
+    })
+    if (trip.travelers.length > 1) rows.push({ label: 'A persona', value: formatMoney(s.totalCost / trip.travelers.length, s.currency) })
+  }
+  const included = [s.breakfast && 'Colazione', s.dinner && 'Cena', s.kitchen && 'Cucina'].filter(Boolean)
+  rows.push({ label: 'Include', value: included.length ? included.join(', ') : 'Solo pernottamento' })
+  rows.push({ label: 'Pagamento', value: <Tag tone={s.paid ? 'ok' : 'warn'}>{s.paid ? 'Pagato' : 'Da pagare'}</Tag> })
+  return rows
+}
 
 function mapsHref(s: Stay): string | null {
   if (s.mapsUrl) return s.mapsUrl
@@ -26,139 +54,104 @@ export function Alloggi() {
   const [del, delDialog] = useDeleter()
   const [sheet, setSheet] = useState<SheetState>(null)
   const close = () => setSheet(null)
-  const persons = Math.max(1, trip.travelers.length)
+  const [openId, toggle] = useOpenCard()
 
   const nights = trip.stays.reduce((n, s) => n + nightsOf(s), 0)
-  const costed = trip.stays.filter((s) => s.totalCost != null)
-  const total = sumByCurrency(costed.map((s) => ({ amount: s.totalCost as number, currency: s.currency })))
-  const toPay = sumByCurrency(costed.filter((s) => !s.paid).map((s) => ({ amount: s.totalCost as number, currency: s.currency })))
   const gaps = uncoveredNights(trip.startDate, trip.endDate, trip.stays)
   const overlaps = overlappingStays(trip.stays)
 
-  async function flag(s: Stay, which: 'booked' | 'paid') {
-    const message = await t.setStayFlag(s.id, which, !s[which])
-    if (message) showToast(message)
-  }
+  const cities = new Set(trip.stays.map((s) => s.city).filter(Boolean)).size
 
   return (
     <>
       <PageHeader
         title="Alloggi"
-        subtitle={trip.stays.length ? `${trip.stays.length} ${trip.stays.length === 1 ? 'alloggio' : 'alloggi'} · ${nights} ${nights === 1 ? 'notte' : 'notti'}` : 'Hotel e case prenotate'}
+        subtitle={trip.stays.length ? `${nights} ${nights === 1 ? 'notte' : 'notti'} in ${cities || trip.stays.length} ${(cities || trip.stays.length) === 1 ? 'città' : 'città'}` : 'Hotel e case prenotate'}
         back={{ href: '/altro', label: 'Altro' }}
       />
-      <div class="space-y-3 px-4">
-        {trip.stays.length > 0 && (
-          <Card>
-            <dl class="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <dt class="text-muted">Costo totale</dt>
-                <dd class="font-semibold">{total.length ? total.map((x) => formatMoney(x.amount, x.currency)).join(' + ') : '—'}</dd>
-              </div>
-              <div>
-                <dt class="text-muted">Da pagare</dt>
-                <dd class="font-semibold">{toPay.length ? toPay.map((x) => formatMoney(x.amount, x.currency)).join(' + ') : 'Tutto pagato'}</dd>
-              </div>
-            </dl>
-            {gaps.length > 0 && (
-              <p class="mt-3 text-xs text-muted">
-                Notti senza alloggio: {gaps.map(formatShort).join(', ')} (ok se sei in volo o in treno di notte).
-              </p>
-            )}
-            {overlaps.length > 0 && (
-              <p role="alert" class="mt-2 text-xs text-warn">
-                Attenzione: {overlaps.map(([a, b]) => `${trip.stays[a].name} e ${trip.stays[b].name}`).join('; ')} si sovrappongono.
-              </p>
-            )}
-          </Card>
+      <div class="space-y-3.5 px-5 pb-24">
+        {gaps.length > 0 && (
+          <p class="rounded-2xl border-2 border-dashed border-line px-4 py-3 text-xs text-muted">
+            Notti senza alloggio: {gaps.map(formatShort).join(', ')} (ok se sei in volo o in treno di notte).
+          </p>
+        )}
+        {overlaps.length > 0 && (
+          <p role="alert" class="rounded-2xl border-2 border-warn px-4 py-3 text-xs font-extrabold text-warn">
+            Attenzione: {overlaps.map(([a, b]) => `${trip.stays[a].name} e ${trip.stays[b].name}`).join('; ')} si sovrappongono.
+          </p>
         )}
 
         {trip.stays.length === 0 ? (
           <EmptyState title="Nessun alloggio" text="Aggiungi hotel e case con date, costo e stato di prenotazione." />
         ) : (
-          <ul class="space-y-3">
+          <ul class="space-y-3.5">
             {trip.stays.map((s) => {
               const n = nightsOf(s)
               const href = mapsHref(s)
-              const per = s.totalCost != null ? perPerson(s.totalCost, 'total', persons) : null
+              const open = openId === s.id
               return (
                 <li>
-                  <Card class="relative">
-                    <div class="absolute right-2 top-2">
-                      <TrashButton
-                        label={`Elimina ${s.name}`}
-                        onClick={() =>
-                          void del({
-                            title: `Eliminare «${s.name}»?`,
-                            done: 'Alloggio eliminato',
-                            run: () => t.setStayDeleted(s.id, true),
-                            undo: () => t.setStayDeleted(s.id, false),
-                          })
-                        }
-                      />
-                    </div>
-                    <button type="button" onClick={() => setSheet({ kind: 'edit', stay: s })} class="block w-full pr-10 text-left">
-                      <span class="flex items-start justify-between gap-3">
-                        <span class="min-w-0">
-                          <span class="block truncate font-semibold">{s.name}</span>
-                          <span class="block text-sm text-muted">
-                            {s.city && `${s.city} · `}
-                            {formatDay(s.checkIn)} → {formatDay(s.checkOut)} · {n} {n === 1 ? 'notte' : 'notti'}
-                          </span>
-                        </span>
-                      </span>
-                      {(s.checkInInfo || s.checkOutInfo) && (
-                        <span class="mt-1 block text-xs text-muted">
-                          {s.checkInInfo && `Check-in ${s.checkInInfo}`}
-                          {s.checkInInfo && s.checkOutInfo && ' · '}
-                          {s.checkOutInfo && `Check-out ${s.checkOutInfo}`}
-                        </span>
-                      )}
-                      {(s.breakfast || s.dinner || s.kitchen) && (
-                        <span class="mt-1 block text-xs text-muted">
-                          {[s.breakfast && 'Colazione', s.dinner && 'Cena', s.kitchen && 'Cucina'].filter(Boolean).join(' · ')}
-                        </span>
-                      )}
-                      {s.totalCost != null && (
-                        <span class="mt-2 block text-sm">
-                          <span class="font-semibold">{formatMoney(s.totalCost, s.currency)}</span>
-                          <span class="text-muted">
-                            {' '}
-                            · {formatMoney(per as number, s.currency)} a persona
-                            {n > 0 && ` · ${formatMoney(Math.round(((per as number) / n) * 100) / 100, s.currency)} a notte`}
-                          </span>
-                        </span>
-                      )}
-                    </button>
-                    <div class="mt-3 flex flex-wrap items-center gap-2">
-                      <FlagPill on={s.booked} label="Prenotato" offLabel="Non prenotato" onClick={() => void flag(s, 'booked')} />
-                      <FlagPill on={s.paid} label="Pagato" offLabel="Non pagato" onClick={() => void flag(s, 'paid')} />
-                      {href && (
-                        <a
-                          href={href}
-                          target="_blank"
-                          rel="noreferrer"
-                          class="ml-auto inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-accent"
+                  <Ticket
+                    tone={s.booked ? 'line' : 'warn'}
+                    stub={
+                      <div>
+                        <div class={`text-[34px] font-extrabold leading-[0.9] tabular-nums ${s.booked ? 'text-ok' : 'text-warn'}`}>{n}</div>
+                        <div class="mt-0.5 text-xs text-muted">{n === 1 ? 'notte' : 'notti'}</div>
+                      </div>
+                    }
+                  >
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => toggle(s.id)}
+                          aria-expanded={open}
+                          aria-label={`${open ? 'Chiudi' : 'Apri'} ${s.name}`}
+                          class="flex min-w-0 flex-1 items-center gap-1 text-left"
                         >
-                          Apri in Maps
-                        </a>
+                          <span class="min-w-0 flex-1">
+                            <span class={`block text-[19px] font-extrabold leading-tight ${open ? '' : 'truncate'}`}>{s.name}</span>
+                            <span class="mt-0.5 block text-[13px] text-muted">
+                              {s.city && s.city !== s.name && `${s.city} · `}
+                              {formatDay(s.checkIn)} → {formatDay(s.checkOut)}
+                            </span>
+                          </span>
+                          <ChevronDownIcon size={20} class={`shrink-0 text-muted transition-transform ${open ? 'rotate-180' : ''}`} />
+                        </button>
+                        <TrashButton
+                          label={`Elimina ${s.name}`}
+                          onClick={() =>
+                            void del({
+                              title: `Eliminare «${s.name}»?`,
+                              done: 'Alloggio eliminato',
+                              run: () => t.setStayDeleted(s.id, true),
+                              undo: () => t.setStayDeleted(s.id, false),
+                            })
+                          }
+                        />
+                      </div>
+                      <div class="mt-0.5 flex items-center gap-2">
+                        <Tag tone={s.booked ? 'ok' : 'warn'}>{s.booked ? 'Prenotato' : 'Non prenotato'}</Tag>
+                        {href && (
+                          <a href={href} target="_blank" rel="noreferrer" class="ml-auto inline-flex min-h-11 items-center gap-1 pr-3 text-sm font-extrabold text-pale">
+                            <PinOutIcon size={18} />
+                            Apri in Maps
+                          </a>
+                        )}
+                      </div>
+                      {open && (
+                        <CardDetail rows={stayRows(s, trip)} note={s.notes} editLabel={`Modifica ${s.name}`} onEdit={() => setSheet({ kind: 'edit', stay: s })} />
                       )}
                     </div>
-                  </Card>
+                  </Ticket>
                 </li>
               )
             })}
           </ul>
         )}
-
-        <button
-          type="button"
-          onClick={() => setSheet({ kind: 'new' })}
-          class="min-h-12 w-full rounded-full bg-accent px-6 font-semibold text-accent-ink"
-        >
-          + Aggiungi alloggio
-        </button>
       </div>
+
+      <Fab label="Alloggio" wide onClick={() => setSheet({ kind: 'new' })} />
 
       {delDialog}
       <Sheet open={sheet !== null} title={sheet?.kind === 'new' ? 'Nuovo alloggio' : 'Modifica alloggio'} onClose={close}>

@@ -128,14 +128,14 @@ export function TransportForm({ trip, initial, defaults, onSubmit, onDelete, onD
   return (
     <form class="space-y-4" onSubmit={submit} noValidate>
       <label class="block">
-        <span class="mb-1 block text-sm font-medium">Compila da un link di Google Maps</span>
+        <span class="mb-1 block text-sm font-extrabold">Compila da un link di Google Maps</span>
         <input
           type="url"
           value={dirLink}
           placeholder="https://www.google.com/maps/dir/…"
           aria-label="Link di Google Maps con le indicazioni"
           onInput={(e) => onDirectionsLink((e.currentTarget as HTMLInputElement).value)}
-          class="min-h-12 w-full rounded-2xl border border-line bg-bg px-4"
+          class="min-h-12 w-full rounded-[14px] border-2 border-line bg-bg px-4"
         />
         <span class={`mt-1 block text-xs ${dirHint && !dirHint.ok ? 'text-danger' : 'text-muted'}`} role={dirHint && !dirHint.ok ? 'alert' : 'status'}>
           {dirHint?.text ?? 'Facoltativo: incolla le indicazioni da Google Maps e compilo partenza, arrivo, posizioni e mezzo.'}
@@ -155,8 +155,8 @@ export function TransportForm({ trip, initial, defaults, onSubmit, onDelete, onD
       </div>
       <p class="-mt-2 text-xs text-muted">Orari nel fuso del viaggio ({trip.timezone}). Puoi lasciarli vuoti.</p>
 
-      <details class="rounded-2xl border border-line px-3 py-2" open={fromPos != null || toPos != null}>
-        <summary class="min-h-11 cursor-pointer py-2 text-sm font-medium">Posizione sulla mappa (facoltativa)</summary>
+      <details class="rounded-2xl border-2 border-line px-3 py-2" open={fromPos != null || toPos != null}>
+        <summary class="min-h-11 cursor-pointer py-2 text-sm font-extrabold">Posizione sulla mappa (facoltativa)</summary>
         <div class="space-y-3 pb-2">
           <p class="text-xs text-muted">
             Serve per disegnare il tragitto sulla mappa del giorno (es. lo shinkansen da Tokyo Station a Kyoto Station).

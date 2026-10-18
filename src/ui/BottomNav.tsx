@@ -9,35 +9,33 @@ const tabs = [
   { href: '/altro', label: 'Altro', Icon: MoreIcon },
 ]
 
+/** Barra a pillola che galleggia in basso: la scheda attiva mostra anche il nome. */
 export function BottomNav() {
   const [location] = useLocation()
 
   return (
     <nav
       aria-label="Navigazione principale"
-      class="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/90 backdrop-blur-md"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      class="fixed inset-x-0 bottom-0 z-20 px-3.5 pointer-events-none"
+      style={{ paddingBottom: 'calc(1.125rem + env(safe-area-inset-bottom))' }}
     >
-      <ul class="mx-auto flex max-w-xl">
+      <ul class="pointer-events-auto mx-auto flex h-[66px] max-w-xl items-center justify-between rounded-full border-2 border-line bg-surface px-2 shadow-[0_8px_20px_rgb(0_0_0/0.45)]">
         {tabs.map(({ href, label, Icon }) => {
           const active = href === '/' ? location === '/' : location.startsWith(href)
           return (
-            <li class="flex-1">
+            <li>
               <Link
                 href={href}
                 aria-current={active ? 'page' : undefined}
-                class={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors ${
-                  active ? 'text-accent' : 'text-muted'
-                }`}
+                aria-label={label}
+                class={
+                  active
+                    ? 'inline-flex h-12 items-center gap-2 rounded-full bg-accent px-4 text-sm font-extrabold text-accent-ink'
+                    : 'grid h-12 w-[46px] place-items-center text-muted'
+                }
               >
-                <span
-                  class={`grid h-7 w-12 place-items-center rounded-full transition-colors ${
-                    active ? 'bg-accent-soft' : ''
-                  }`}
-                >
-                  <Icon size={22} />
-                </span>
-                {label}
+                <Icon size={active ? 22 : 24} stroke-width={active ? 2.2 : 2} />
+                {active && label}
               </Link>
             </li>
           )

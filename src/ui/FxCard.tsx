@@ -1,8 +1,9 @@
 import { useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
 import { baseToLocal, examples, fieldText, formatRateNumber, localPerBase, localToBase } from '../lib/fx'
-import { formatMoney, parseAmount } from '../lib/money'
+import { currencySymbol, formatMoney, parseAmount } from '../lib/money'
 import type { Trip } from '../types'
+import { SwapIcon } from './Icons'
 import { Card } from './PageHeader'
 
 interface Props {
@@ -27,22 +28,23 @@ export function FxCard({ trip, onEdit }: Props) {
   const editLabel = rate ? 'Modifica' : 'Imposta'
   const header = (
     <div class="flex items-center gap-3">
+      <SwapIcon size={24} class="shrink-0 text-pale" />
       <div class="min-w-0 flex-1">
-        <p class="text-xs font-medium uppercase tracking-wide text-muted">Cambio</p>
+        <p class="text-[13px] text-muted">Cambio</p>
         {rate ? (
-          <p class="font-display text-xl font-semibold">
-            1 {base} = {formatRateNumber(localPerBase(rate))} {local}
+          <p class="font-display text-[22px] font-extrabold leading-tight tracking-[-0.5px]">
+            1 {currencySymbol(base)} = {formatRateNumber(localPerBase(rate))} {currencySymbol(local)}
           </p>
         ) : (
-          <p class="font-medium">Imposta il cambio {base} ↔ {local}</p>
+          <p class="font-extrabold">Imposta il cambio {base} ↔ {local}</p>
         )}
       </div>
       {onEdit ? (
-        <button type="button" onClick={onEdit} class="min-h-11 rounded-full px-3 text-sm font-medium text-accent">
+        <button type="button" onClick={onEdit} class="min-h-11 px-1 text-sm font-extrabold text-pale">
           {editLabel}
         </button>
       ) : (
-        <Link href="/altro/budget" class="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-accent">
+        <Link href="/altro/budget" class="inline-flex min-h-11 items-center px-1 text-sm font-extrabold text-pale">
           {editLabel}
         </Link>
       )}
@@ -54,22 +56,23 @@ export function FxCard({ trip, onEdit }: Props) {
   const typed = parseAmount(raw)
   const baseText = side === 'base' ? raw : typed === null ? '' : fieldText(localToBase(typed, rate, base))
   const localText = side === 'local' ? raw : typed === null ? '' : fieldText(baseToLocal(typed, rate, local))
+  const ex = examples(rate, local, [10, 100])
 
   return (
-    <Card>
+    <Card class="px-4 py-3.5">
       {header}
-      <ul class="mt-3 divide-y divide-line border-t border-line text-sm" aria-label={`Esempi di cambio da ${base} a ${local}`}>
-        {examples(rate, local, [10, 100]).map((x) => (
-          <li class="flex min-h-11 items-center justify-between gap-2">
+      <ul class="mt-2 flex border-t-2 border-dashed border-line text-sm" aria-label={`Esempi di cambio da ${base} a ${local}`}>
+        {ex.map((x, i) => (
+          <li class={`flex min-h-11 flex-1 items-center justify-between ${i === 0 ? 'border-r-2 border-dashed border-line pr-3' : 'pl-3'}`}>
             <span class="text-muted">{formatMoney(x.base, base)}</span>
-            <span class="font-medium">{formatMoney(x.local, local)}</span>
+            <span class="font-extrabold">{formatMoney(x.local, local)}</span>
           </li>
         ))}
       </ul>
 
-      <div class="mt-3 rounded-2xl bg-bg p-3">
-        <p class="mb-2 text-sm font-medium">Calcola un importo</p>
-        <div class="grid grid-cols-2 gap-3">
+      <div class="mt-1.5 rounded-xl bg-bg px-3 py-2.5">
+        <p class="mb-2 text-sm font-extrabold">Calcola un importo</p>
+        <div class="grid grid-cols-2 gap-2.5">
           <label class="block">
             <span class="mb-1 block text-xs text-muted">{base}</span>
             <input
@@ -82,7 +85,7 @@ export function FxCard({ trip, onEdit }: Props) {
                 setSide('base')
                 setRaw(e.currentTarget.value)
               }}
-              class="min-h-12 w-full rounded-2xl border border-line bg-surface px-4"
+              class="min-h-12 w-full rounded-[14px] border-2 border-line bg-surface px-3.5 text-base"
             />
           </label>
           <label class="block">
@@ -97,7 +100,7 @@ export function FxCard({ trip, onEdit }: Props) {
                 setSide('local')
                 setRaw(e.currentTarget.value)
               }}
-              class="min-h-12 w-full rounded-2xl border border-line bg-surface px-4"
+              class="min-h-12 w-full rounded-[14px] border-2 border-line bg-surface px-3.5 text-base"
             />
           </label>
         </div>

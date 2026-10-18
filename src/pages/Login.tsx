@@ -28,12 +28,12 @@ export function Login() {
           class="mb-6 block h-14 w-14 rounded-full"
           style={{ background: 'linear-gradient(145deg, var(--accent), var(--secondary))' }}
         />
-        <h1 class="font-display text-4xl font-semibold leading-none">Journey Planner</h1>
+        <h1 class="font-display text-4xl font-extrabold leading-none">Journey Planner</h1>
         <p class="mt-2 text-muted">Accedi per aprire i tuoi viaggi.</p>
 
         <form class="mt-8 space-y-4" onSubmit={onSubmit} noValidate>
           <label class="block">
-            <span class="mb-1 block text-sm font-medium">Email</span>
+            <span class="mb-1 block text-sm font-extrabold">Email</span>
             <input
               type="email"
               inputMode="email"
@@ -41,18 +41,18 @@ export function Login() {
               required
               value={email}
               onInput={(e) => setEmail(e.currentTarget.value)}
-              class="min-h-12 w-full rounded-2xl border border-line bg-surface px-4"
+              class="min-h-12 w-full rounded-[14px] border-2 border-line bg-surface px-4"
             />
           </label>
           <label class="block">
-            <span class="mb-1 block text-sm font-medium">Password</span>
+            <span class="mb-1 block text-sm font-extrabold">Password</span>
             <input
               type="password"
               autoComplete="current-password"
               required
               value={password}
               onInput={(e) => setPassword(e.currentTarget.value)}
-              class="min-h-12 w-full rounded-2xl border border-line bg-surface px-4"
+              class="min-h-12 w-full rounded-[14px] border-2 border-line bg-surface px-4"
             />
           </label>
 
@@ -65,7 +65,7 @@ export function Login() {
           <button
             type="submit"
             disabled={busy || !email || !password}
-            class="min-h-12 w-full rounded-full bg-accent px-6 font-semibold text-accent-ink transition-opacity disabled:opacity-50"
+            class="min-h-12 w-full rounded-full bg-accent px-6 font-extrabold text-accent-ink transition-opacity disabled:opacity-50"
           >
             {busy ? 'Accesso in corso…' : 'Accedi'}
           </button>

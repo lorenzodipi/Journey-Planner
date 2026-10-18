@@ -43,12 +43,6 @@ export function App() {
   const auth = useAuth()
   const { active: trip, status, error, refresh } = useTrips()
 
-  // Il tema cambia con il viaggio attivo
-  const theme = trip?.theme ?? 'default'
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme
-  }, [theme])
-
   if (auth.status === 'loading') {
     return (
       <div class="grid min-h-dvh place-items-center text-muted" role="status">
@@ -70,12 +64,12 @@ export function App() {
   if (status === 'error') {
     return (
       <main class="mx-auto grid min-h-dvh max-w-sm place-content-center gap-4 px-6 text-center">
-        <h1 class="font-display text-2xl font-semibold">Non riesco a caricare i viaggi</h1>
+        <h1 class="font-display text-2xl font-extrabold">Non riesco a caricare i viaggi</h1>
         <p role="alert" class="text-sm text-muted">{error}</p>
         <button
           type="button"
           onClick={() => void refresh()}
-          class="min-h-12 rounded-full bg-accent px-6 font-semibold text-accent-ink"
+          class="min-h-[52px] rounded-full bg-accent px-6 font-extrabold text-accent-ink"
         >
           Riprova
         </button>
@@ -90,11 +84,11 @@ export function App() {
       <ScrollToTop />
       <div
         class="mx-auto min-h-dvh max-w-xl"
-        style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'calc(7.25rem + env(safe-area-inset-bottom))' }}
       >
         {auth.status === 'demo' && (
           <p
-            class="bg-accent-soft px-4 py-2 text-center text-xs font-medium text-accent"
+            class="bg-accent-soft px-4 py-2 text-center text-xs font-bold text-pale"
             style={{ paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}
           >
             Anteprima demo · dati fittizi

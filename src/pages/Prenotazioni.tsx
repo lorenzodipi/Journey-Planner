@@ -3,25 +3,41 @@ import { BOOKING_LABEL } from '../lib/bookingMeta'
 import { isFileCached, openBookingFile } from '../lib/bookingFiles'
 import { dateInZone } from '../lib/flights'
 import { formatShort } from '../lib/dates'
+import { formatDateInZone, formatInZone } from '../lib/flights'
 import { safeUrl } from '../lib/planningData'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
+import type { ComponentChildren } from 'preact'
 import type { Booking } from '../types'
 import { BookingForm } from '../ui/BookingForm'
-import { TrashButton } from '../ui/ConfirmDialog'
-import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
+import { CardDetail, useOpenCard } from '../ui/CardDetail'
+import { BedIcon, ChevronDownIcon, CloudIcon, CopyIcon, FileIcon, PlaneIcon, ShieldIcon, SimIcon, TicketIcon, TrainCarIcon } from '../ui/Icons'
+import { EmptyState, PageHeader } from '../ui/PageHeader'
+import { Disc, Fab, Tag, Ticket } from '../ui/Ticket'
 import { Sheet } from '../ui/Sheet'
-import { useDeleter } from '../ui/useDeleter'
+
+function bookingRows(b: Booking, tz: string, link: string | null, offline: boolean) {
+  const rows: { label: string; value: ComponentChildren }[] = [{ label: 'Tipo', value: BOOKING_LABEL[b.type] }]
+  const when = (iso: string) => {
+    const time = formatInZone(iso, tz)
+    return time === '00:00' ? formatDateInZone(iso, tz) : `${formatDateInZone(iso, tz)} · ${time}`
+  }
+  if (b.validFrom) rows.push({ label: 'Valido dal', value: when(b.validFrom) })
+  if (b.validTo) rows.push({ label: 'Valido fino al', value: when(b.validTo) })
+  if (link) rows.push({ label: 'Link', value: <span class="break-all">{new URL(link).host}</span> })
+  if (b.filePath) rows.push({ label: 'File', value: offline ? 'Salvato sul telefono' : 'Si scarica quando lo apri' })
+  return rows
+}
 
 type SheetState = { kind: 'new' } | { kind: 'edit'; booking: Booking } | null
 
 export function Prenotazioni() {
   const trip = useTrip()
   const t = useTrips()
-  const [del, delDialog] = useDeleter()
   const [sheet, setSheet] = useState<SheetState>(null)
   const [cached, setCached] = useState<Set<string>>(new Set())
   const close = () => setSheet(null)
+  const [openId, toggle] = useOpenCard()
 
   // quali file sono già salvati sul telefono (si aggiorna quando cambiano le prenotazioni)
   const fileKey = trip.bookings.map((b) => b.filePath ?? '').join('|')
@@ -61,84 +77,100 @@ export function Prenotazioni() {
     return null
   }
 
+  const ICON: Record<Booking['type'], typeof PlaneIcon> = {
+    flight: PlaneIcon,
+    hotel: BedIcon,
+    train: TrainCarIcon,
+    ticket: TicketIcon,
+    insurance: ShieldIcon,
+    esim: SimIcon,
+    other: FileIcon,
+  }
+
   return (
     <>
       <PageHeader title="Prenotazioni" subtitle="Codici, link e biglietti" back={{ href: '/altro', label: 'Altro' }} />
-      <div class="space-y-3 px-4" style={{ paddingBottom: '5rem' }}>
+      <div class="px-5 pb-28">
         {trip.bookings.length === 0 ? (
           <EmptyState title="Nessuna prenotazione" text="Aggiungi codici di conferma, link e il PDF dei biglietti: quelli marcati offline si aprono anche senza rete." />
         ) : (
-          trip.bookings.map((b) => {
-            const link = b.url ? safeUrl(b.url) : null
-            const when = range(b)
-            return (
-              <Card>
-                <div class="flex items-start gap-2">
-                  <div class="min-w-0 flex-1">
-                    <p class="text-xs font-medium uppercase tracking-wide text-muted">{BOOKING_LABEL[b.type]}{when && ` · ${when}`}</p>
-                    <h2 class="font-display text-lg font-semibold leading-tight">{b.title}</h2>
-                  </div>
-                  <button type="button" onClick={() => setSheet({ kind: 'edit', booking: b })} class="min-h-11 shrink-0 rounded-full px-3 text-sm font-medium text-accent">
-                    Modifica
-                  </button>
-                  <TrashButton
-                    label={`Elimina ${b.title}`}
-                    onClick={() =>
-                      void del({
-                        title: `Eliminare «${b.title}»?`,
-                        text: b.filePath ? 'Anche il file allegato non sarà più disponibile. Puoi annullare subito dopo.' : undefined,
-                        done: 'Prenotazione eliminata',
-                        run: () => t.setBookingDeleted(b.id, true),
-                        undo: () => t.setBookingDeleted(b.id, false),
-                      })
+          <ul class="mt-1 space-y-3.5">
+            {trip.bookings.map((b) => {
+              const link = b.url ? safeUrl(b.url) : null
+              const when = range(b)
+              const ok = Boolean(b.code || b.filePath || link)
+              const Icon = ICON[b.type]
+              const isOpen = openId === b.id
+              const offline = b.filePath ? cached.has(b.filePath) : false
+              return (
+                <li>
+                  <Ticket
+                    tone={ok ? 'line' : 'warn'}
+                    stub={
+                      <div class="flex flex-col items-center gap-1">
+                        <Disc color={ok ? 'var(--ok)' : 'var(--warn)'}>
+                          <Icon size={22} />
+                        </Disc>
+                        <span class="text-[10px] font-extrabold text-muted">{BOOKING_LABEL[b.type]}</span>
+                      </div>
                     }
-                  />
-                </div>
-                {b.code && (
-                  <button
-                    type="button"
-                    onClick={() => void copy(b.code as string)}
-                    aria-label={`Copia il codice ${b.code}`}
-                    class="mt-2 flex min-h-12 w-full items-center justify-between gap-2 rounded-2xl bg-bg px-4 text-left"
                   >
-                    <span class="font-mono text-lg font-semibold tracking-wider">{b.code}</span>
-                    <span class="text-xs font-medium text-accent">Copia</span>
-                  </button>
-                )}
-                {b.notes && <p class="mt-2 whitespace-pre-line text-sm text-muted">{b.notes}</p>}
-                {(link || b.filePath) && (
-                  <div class="mt-3 flex flex-wrap gap-2">
-                    {link && (
-                      <a href={link} target="_blank" rel="noopener noreferrer" class="inline-flex min-h-11 items-center rounded-full border border-line px-4 text-sm font-medium">
-                        Apri link
-                      </a>
-                    )}
-                    {b.filePath && (
-                      <button type="button" onClick={() => void open(b)} class="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-4 text-sm font-semibold text-accent-ink">
-                        Apri file
-                        {cached.has(b.filePath) && <span class="rounded-full bg-accent-ink/20 px-2 py-0.5 text-[11px] font-medium">offline</span>}
+                    <div class="min-w-0 flex-1">
+                      <button
+                        type="button"
+                        onClick={() => toggle(b.id)}
+                        aria-expanded={isOpen}
+                        aria-label={`${isOpen ? 'Chiudi' : 'Apri'} ${b.title}`}
+                        class="flex w-full min-w-0 items-center gap-1 text-left"
+                      >
+                        <span class="min-w-0 flex-1">
+                          <span class="block text-[17px] font-extrabold leading-tight">{b.title}</span>
+                          {when && <span class="mt-0.5 block text-[13px] text-muted">{when}</span>}
+                        </span>
+                        <ChevronDownIcon size={20} class={`shrink-0 text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                       </button>
-                    )}
-                  </div>
-                )}
-              </Card>
-            )
-          })
+                      <div class="mt-1.5 flex flex-wrap items-center gap-2">
+                        {b.code ? (
+                          <span class="rounded-md border-2 border-dashed border-line px-1.5 text-sm font-extrabold tracking-[1.5px] text-pale">{b.code}</span>
+                        ) : (
+                          !link && !b.filePath && <Tag tone="warn">Da prenotare</Tag>
+                        )}
+                        {offline && (
+                          <span class="inline-flex items-center gap-1 text-xs font-extrabold text-ok">
+                            <CloudIcon size={14} />
+                            Offline
+                          </span>
+                        )}
+                        {link && (
+                          <a href={link} target="_blank" rel="noopener noreferrer" class="inline-flex min-h-11 items-center text-sm font-extrabold text-pale">
+                            Apri link
+                          </a>
+                        )}
+                        {b.filePath && (
+                          <button type="button" onClick={() => void open(b)} class="inline-flex min-h-11 items-center text-sm font-extrabold text-pale">
+                            Apri file
+                          </button>
+                        )}
+                      </div>
+                      {isOpen && (
+                        <CardDetail rows={bookingRows(b, trip.timezone, link, offline)} note={b.notes} editLabel={`Modifica ${b.title}`} onEdit={() => setSheet({ kind: 'edit', booking: b })} />
+                      )}
+                    </div>
+                    {b.code ? (
+                      <button type="button" onClick={() => void copy(b.code as string)} aria-label={`Copia il codice ${b.code}`} class="grid size-11 shrink-0 self-start place-items-center text-muted">
+                        <CopyIcon size={20} />
+                      </button>
+                    ) : null}
+                  </Ticket>
+                </li>
+              )
+            })}
+          </ul>
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={() => setSheet({ kind: 'new' })}
-        aria-label="Aggiungi prenotazione"
-        class="fixed right-4 z-20 flex min-h-14 items-center gap-2 rounded-full bg-accent px-5 font-semibold text-accent-ink shadow-card"
-        style={{ bottom: 'calc(4.75rem + env(safe-area-inset-bottom))' }}
-      >
-        <span aria-hidden="true" class="text-2xl leading-none">+</span>
-        Prenotazione
-      </button>
+      <Fab label="Prenotazione" wide onClick={() => setSheet({ kind: 'new' })} />
 
-      {delDialog}
       <Sheet open={sheet !== null} title={sheet?.kind === 'new' ? 'Nuova prenotazione' : 'Modifica prenotazione'} onClose={close}>
         {sheet?.kind === 'new' && <BookingForm trip={trip} onSubmit={(i) => t.createBooking(trip.id, i)} onDone={close} />}
         {sheet?.kind === 'edit' && (
