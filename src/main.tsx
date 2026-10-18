@@ -9,6 +9,8 @@ import './styles.css'
 // Service worker: l'app si apre anche senza rete e si aggiorna da sola.
 // Nell'app Android/iOS i file sono già dentro il pacchetto: nessun service worker.
 if (!__NATIVE__) registerSW({ immediate: true })
+// App Android: gesto/tasto "indietro"
+else void import('./lib/nativeBack').then((m) => m.setupNativeBack())
 
 // Tiene attivo il progetto Supabase (piano Free) a ogni apertura
 pingSupabase()

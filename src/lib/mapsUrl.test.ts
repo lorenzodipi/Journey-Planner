@@ -47,6 +47,20 @@ describe('parseDirectionsUrl', () => {
       mode: 'train',
     })
   })
+  it('ignora il segmento "am=t" prima dei dati (arrivo = ultima tappa vera)', () => {
+    const url =
+      'https://www.google.com/maps/dir/RY%C5%8CGOKU+STATION,+1+Chome-3-20+Yokoami,+Sumida+City,+Tokyo+130-0015,+Japan/Kamakura+Station,+Kamakura,+Kanagawa,+Japan/@35.4927931,139.4196396,10z/am=t/data=!3m1!5s0x601845c22bef9cc9:0xa230d50a592e65c0!4m14!4m13!1m5!1m1!1s0x6018894ab0f93e71:0xe3089d1d03e380a3!2m2!1d139.7928696!2d35.6959325!1m5!1m1!1s0x601845c22bac7dc1:0x8c89b16df6cec71b!2m2!1d139.5504119!2d35.3190647!3e3!5m1!1e2?entry=ttu&g_ep=EgoyMDI2MTAxNC4wIKXMDSoASAFQAw%3D%3D'
+    expect(parseDirectionsUrl(url)).toEqual({
+      from: { name: 'RYŌGOKU STATION', lat: 35.6959325, lng: 139.7928696 },
+      to: { name: 'Kamakura Station', lat: 35.3190647, lng: 139.5504119 },
+      mode: 'train',
+    })
+  })
+  it('anche con "am=t" subito dopo i luoghi, senza @', () => {
+    const r = parseDirectionsUrl('https://www.google.com/maps/dir/Tokyo+Station/Kyoto+Station/am=t/')
+    expect(r?.from.name).toBe('Tokyo Station')
+    expect(r?.to.name).toBe('Kyoto Station')
+  })
   it('riconosce gli altri mezzi', () => {
     const base = 'https://www.google.com/maps/dir/A/B/data=!2m2!1d10!2d20!1m1!2m2!1d11!2d21'
     expect(parseDirectionsUrl(`${base}!3e0`)?.mode).toBe('car')

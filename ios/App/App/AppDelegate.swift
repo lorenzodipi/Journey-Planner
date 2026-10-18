@@ -1,6 +1,13 @@
 import UIKit
 import Capacitor
 
+/// Schermata principale: abilita il gesto "indietro" dal bordo sinistro (swipe), come in Safari.
+class ViewController: CAPBridgeViewController {
+    override func capacitorDidLoad() {
+        webView?.allowsBackForwardNavigationGestures = true
+    }
+}
+
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 

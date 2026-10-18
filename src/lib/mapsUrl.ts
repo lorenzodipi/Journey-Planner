@@ -107,7 +107,13 @@ export function parseDirectionsUrl(raw: string): DirectionsInfo | null {
   // forma "…/maps/dir/Partenza/Arrivo/@…/data=…"
   const path = url.pathname.match(/\/maps\/dir\/(.+)$/)
   if (path) {
-    const parts = path[1].split('/').filter((p) => p && !p.startsWith('@') && !p.startsWith('data='))
+    // Dopo i luoghi Google aggiunge segmenti tecnici ("@lat,lng,zoom", "am=t", "data=…"): non sono tappe.
+    const parts: string[] = []
+    for (const seg of path[1].split('/')) {
+      if (!seg) continue
+      if (seg.startsWith('@') || /^[a-z]{1,10}=/i.test(seg)) break
+      parts.push(seg)
+    }
     if (parts.length >= 2) {
       from = pointFromText(parts[0])
       to = pointFromText(parts[parts.length - 1])
