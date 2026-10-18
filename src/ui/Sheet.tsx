@@ -21,6 +21,7 @@ export function Sheet({ open, title, onClose, children }: Props) {
     if (!dialog) return
     if (open && !dialog.open) {
       dialog.showModal()
+      dialog.focus({ preventScroll: true }) // non il tasto Chiudi, che altrimenti compare cerchiato
       stampOpen(dialog)
     }
     if (!open && dialog.open) dialog.close()
@@ -32,12 +33,13 @@ export function Sheet({ open, title, onClose, children }: Props) {
     <dialog
       ref={ref}
       aria-label={title}
+      tabIndex={-1}
       onClose={onClose}
       onClick={(e) => {
         // un tocco sullo sfondo oscurato chiude il pannello
         if (e.target === e.currentTarget) onClose()
       }}
-      class="sheet fixed inset-x-0 bottom-0 top-auto m-0 mx-auto max-h-[92dvh] w-full max-w-xl overflow-y-auto overscroll-contain rounded-t-[1.75rem] border-x-0 border-b-0 border-t-2 border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-black/55"
+      class="sheet fixed focus:outline-none inset-x-0 bottom-0 top-auto m-0 mx-auto max-h-[92dvh] w-full max-w-xl overflow-x-hidden overflow-y-auto overscroll-contain rounded-t-[1.75rem] border-x-0 border-b-0 border-t-2 border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-black/55"
     >
       <div class="px-5 pb-6 pt-3" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
         <span aria-hidden="true" class="mx-auto mb-3 block h-1.5 w-10 rounded-full bg-line" />

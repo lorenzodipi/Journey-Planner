@@ -78,6 +78,8 @@ body {
   line-height: 1.45;
   /* evita il rimbalzo che fa muovere la barra in basso nella PWA */
   overscroll-behavior-y: none;
+  /* nessuno scorrimento laterale della pagina, qualunque cosa sbordi */
+  overflow-x: clip;
 }
 
 /* Titoli: Archivo pesante e compatto. Le etichette giapponesi usano Zen Kaku Gothic New. */
@@ -98,6 +100,30 @@ input, select, textarea, button {
 }
 input, select, textarea {
   font-size: 1rem;
+}
+
+/* iOS: i campi data e ora hanno una larghezza propria e sbordano dalla colonna, facendo scorrere il pannello di lato.
+   Si tolgono dall'aspetto nativo e si costringono a stare nella colonna. */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+}
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value,
+input[type="datetime-local"]::-webkit-date-and-time-value {
+  min-height: 1.4em;
+  text-align: left;
+}
+/* le colonne delle griglie e le etichette possono restringersi sotto la larghezza del contenuto */
+.grid > *,
+label,
+fieldset {
+  min-width: 0;
 }
 
 :focus-visible {
