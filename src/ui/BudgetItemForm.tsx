@@ -45,7 +45,7 @@ export function BudgetItemForm({ trip, initial, defaultCategory, onSubmit, onDel
 
   async function submit(e: Event) {
     e.preventDefault()
-    if (!label.trim()) return setError('Scrivi cosa è questa voce (es. Treno per Nikko).')
+    if (!label.trim()) return setError('Scrivi cosa è questo costo (es. Treno per Nikko).')
     if (value === null) return setError("Inserisci l'importo (es. 30 o 12,50).")
     if (!/^[A-Za-z]{3}$/.test(currency.trim())) return setError('La valuta è un codice di 3 lettere (es. EUR).')
     if (trip.travelers.length > 0 && payers.length === 0) return setError('Scegli almeno una persona che paga.')
@@ -63,7 +63,7 @@ export function BudgetItemForm({ trip, initial, defaultCategory, onSubmit, onDel
 
   async function remove() {
     if (!onDelete) return
-    if (!(await confirm({ title: 'Eliminare questa voce?', text: 'Puoi annullare subito dopo.' }))) return
+    if (!(await confirm({ title: 'Eliminare questo costo previsto?', text: 'Puoi annullare subito dopo.' }))) return
     setBusy(true)
     const message = await onDelete()
     setBusy(false)
@@ -109,8 +109,8 @@ export function BudgetItemForm({ trip, initial, defaultCategory, onSubmit, onDel
       <TextField label="Da pagare entro (facoltativo)" type="date" value={dueDate} onInput={setDueDate} />
       <TextArea label="Note" value={notes} onInput={setNotes} />
       <FormError message={error} />
-      <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva voce' : 'Aggiungi voce'}</PrimaryButton>
-      {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina voce</SecondaryButton>}
+      <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva costo' : 'Aggiungi costo'}</PrimaryButton>
+      {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina costo</SecondaryButton>}
     {confirmDialog}
     </form>
   )

@@ -47,7 +47,13 @@ export const demoTrip: Trip = {
     { id: 'e2', label: 'Pranzo ad Asakusa', category: 'Cibo', categoryId: 'xc1', amount: 30, currency: 'EUR', paidBy: 't2', spentAt: '2026-11-23T03:30:00.000Z', dayId: 'd2', shares: [{ travelerId: 't1', weight: 1 }, { travelerId: 't2', weight: 1 }] },
     { id: 'e3', label: 'Suica', category: 'Trasporti', categoryId: 'xc2', amount: 2000, currency: 'JPY', paidBy: 't1', spentAt: '2026-11-22T08:00:00.000Z', dayId: 'd1', shares: [{ travelerId: 't1', weight: 1 }] },
   ],
-  checklist: [],
+  checklist: [
+    { id: 'demo-ck1', kind: 'todo', text: 'Controllare il passaporto', done: true, position: 1 },
+    { id: 'demo-ck2', kind: 'todo', text: 'Comprare la eSIM', done: false, position: 2 },
+    { id: 'demo-ck3', kind: 'todo', text: 'Prenotare il ristorante a Kyoto', done: false, position: 3 },
+    { id: 'demo-ck4', kind: 'packing', text: 'Caricatore e adattatore', done: false, position: 4 },
+    { id: 'demo-ck5', kind: 'packing', text: 'Magliette', done: false, quantity: 4, quantityDone: 1, position: 5 },
+  ],
   bookings: [],
   places: [
     { id: 'p1', name: 'Tempio Senso-ji', city: 'Tokyo', category: 'Tempio', status: 'planned', lat: 35.7148, lng: 139.7967, note: 'Meglio al mattino presto' },

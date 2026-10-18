@@ -86,7 +86,7 @@ export function Budget() {
                               onClick={() =>
                                 void del({
                                   title: `Eliminare «${item.label}»?`,
-                                  done: 'Voce eliminata',
+                                  done: 'Costo eliminato',
                                   run: () => t.setBudgetItemDeleted(item.id, true),
                                   undo: () => t.setBudgetItemDeleted(item.id, false),
                                 })
@@ -238,7 +238,7 @@ export function Budget() {
 
           {c.lines.length > 0 && (
             <div class="border-t border-line">
-              <p class="px-4 pt-2 text-xs font-medium text-muted">Previsto</p>
+              <p class="px-4 pt-2 text-xs font-medium text-muted">Costi previsti</p>
               <ul class="divide-y divide-line">{c.lines.map(lineRow)}</ul>
             </div>
           )}
@@ -248,7 +248,7 @@ export function Budget() {
               + Spesa
             </button>
             <button type="button" onClick={() => setSheet({ kind: 'new', category: c.label })} class="min-h-11 rounded-full px-3 text-sm font-medium text-muted">
-              + Voce prevista
+              + Costo previsto
             </button>
           </div>
         </Card>
@@ -336,7 +336,7 @@ export function Budget() {
         )}
 
         <button type="button" onClick={() => setSheet({ kind: 'new' })} class="min-h-12 w-full rounded-full bg-accent px-6 font-semibold text-accent-ink">
-          + Aggiungi voce prevista
+          + Aggiungi costo previsto
         </button>
       </div>
 
@@ -354,7 +354,7 @@ export function Budget() {
             onDelete={async () => {
               const id = sheet.item.id
               const message = await t.setBudgetItemDeleted(id, true)
-              if (!message) showToast('Voce eliminata', { label: 'Annulla', run: () => void t.setBudgetItemDeleted(id, false) })
+              if (!message) showToast('Costo eliminato', { label: 'Annulla', run: () => void t.setBudgetItemDeleted(id, false) })
               return message
             }}
             onDone={close}
@@ -399,9 +399,9 @@ export function Budget() {
 function sheetTitle(sheet: SheetState): string {
   switch (sheet?.kind) {
     case 'new':
-      return 'Nuova voce prevista'
+      return 'Nuovo costo previsto'
     case 'edit':
-      return 'Modifica voce'
+      return 'Modifica costo previsto'
     case 'new-expense':
       return 'Nuova spesa'
     case 'edit-expense':

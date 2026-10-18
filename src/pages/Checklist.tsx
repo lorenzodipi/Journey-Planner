@@ -21,12 +21,52 @@ export function Checklist() {
   const [adding, setAdding] = useState(false)
   const [pending, setPending] = useState<Set<string>>(new Set())
   const [edit, setEdit] = useState<ChecklistItem | null>(null)
+  const [selecting, setSelecting] = useState(false)
+  const [sel, setSel] = useState<Set<string>>(new Set())
 
   const many = trip.travelers.length > 1
   const items = visibleItems(trip.checklist, kind, who)
   const total = progress(items)
   const person = new Map(trip.travelers.map((p) => [p.id, p]))
   const today = new Date().toISOString().slice(0, 10)
+  // si agisce solo sulle voci che si vedono nell'elenco corrente
+  const chosen = items.filter((i) => sel.has(i.id))
+
+  function stopSelecting() {
+    setSelecting(false)
+    setSel(new Set())
+  }
+
+  function toggleSel(id: string) {
+    setSel((p) => {
+      const n = new Set(p)
+      if (n.has(id)) n.delete(id)
+      else n.add(id)
+      return n
+    })
+  }
+
+  async function setAllDeleted(list: ChecklistItem[], deleted: boolean): Promise<string | null> {
+    let failure: string | null = null
+    for (const i of list) {
+      const message = await t.setChecklistDeleted(i.id, deleted)
+      if (message) failure = message
+    }
+    return failure
+  }
+
+  async function deleteChosen() {
+    const list = chosen
+    if (list.length === 0) return
+    const ok = await del({
+      title: list.length === 1 ? `Eliminare «${list[0].text}»?` : `Eliminare ${list.length} voci?`,
+      done: list.length === 1 ? 'Voce eliminata' : `${list.length} voci eliminate`,
+      confirmLabel: list.length === 1 ? 'Elimina' : `Elimina ${list.length} voci`,
+      run: () => setAllDeleted(list, true),
+      undo: () => setAllDeleted(list, false),
+    })
+    if (ok) stopSelecting()
+  }
 
   async function toggle(i: ChecklistItem) {
     setPending((p) => new Set(p).add(i.id))
@@ -164,6 +204,37 @@ export function Checklist() {
           </button>
         </form>
 
+        {items.length > 0 && (
+          <div class="flex min-h-11 items-center justify-between gap-2">
+            {selecting ? (
+              <>
+                <span class="text-sm text-muted" aria-live="polite">
+                  {chosen.length === 0 ? 'Tocca le voci da eliminare' : chosen.length === 1 ? '1 voce selezionata' : `${chosen.length} voci selezionate`}
+                </span>
+                <span class="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setSel(chosen.length === items.length ? new Set() : new Set(items.map((i) => i.id)))}
+                    class="min-h-11 rounded-full px-3 text-sm font-medium text-accent"
+                  >
+                    {chosen.length === items.length ? 'Nessuna' : 'Tutte'}
+                  </button>
+                  <button type="button" onClick={stopSelecting} class="min-h-11 rounded-full px-3 text-sm font-medium text-muted">
+                    Fine
+                  </button>
+                </span>
+              </>
+            ) : (
+              <>
+                <span />
+                <button type="button" onClick={() => setSelecting(true)} class="min-h-11 rounded-full px-3 text-sm font-medium text-accent">
+                  Seleziona
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
         {items.length === 0 ? (
           trip.checklist.length === 0 ? (
             <EmptyState title="Checklist vuota" text="Scrivi la prima voce qui sopra, oppure parti da un modello con le cose che di solito servono." />
@@ -180,7 +251,26 @@ export function Checklist() {
                 const have = doneCount(i)
                 const partial = multi && have > 0 && !i.done
                 return (
-                  <li class="flex items-center">
+                  <li class={`flex items-center ${selecting && sel.has(i.id) ? 'bg-accent-soft/50' : ''}`}>
+                    {selecting && (
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={sel.has(i.id)}
+                        aria-label={`Seleziona: ${i.text}`}
+                        onClick={() => toggleSel(i.id)}
+                        class="grid min-h-14 w-14 shrink-0 place-items-center"
+                      >
+                        <span
+                          class={`grid h-6 w-6 place-items-center rounded-full border-2 text-sm ${
+                            sel.has(i.id) ? 'border-danger bg-danger text-white' : 'border-line'
+                          }`}
+                        >
+                          {sel.has(i.id) ? '✓' : ''}
+                        </span>
+                      </button>
+                    )}
+                    {!selecting && (
                     <button
                       type="button"
                       role="checkbox"
@@ -198,7 +288,12 @@ export function Checklist() {
                         {i.done ? '✓' : partial ? '–' : ''}
                       </span>
                     </button>
-                    <button type="button" onClick={() => setEdit(i)} class="min-h-14 min-w-0 flex-1 py-2 pr-4 text-left">
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => (selecting ? toggleSel(i.id) : setEdit(i))}
+                      class="min-h-14 min-w-0 flex-1 py-2 pr-4 text-left"
+                    >
                       <span class={`block ${i.done ? 'text-muted line-through' : ''}`}>
                         {multi && (
                           <span class={`mr-1.5 inline-block rounded-full px-2 text-sm font-semibold tabular-nums ${i.done ? 'bg-line text-muted' : 'bg-accent-soft text-accent'}`}>
@@ -219,7 +314,7 @@ export function Checklist() {
                         </span>
                       )}
                     </button>
-                    {multi && (
+                    {multi && !selecting && (
                       <div class="mr-2 flex shrink-0 items-center" role="group" aria-label={`Pezzi a posto: ${i.text}`}>
                         <button
                           type="button"
@@ -241,7 +336,7 @@ export function Checklist() {
                         </button>
                       </div>
                     )}
-                    <TrashButton
+                    {!selecting && <TrashButton
                       label={`Elimina ${i.text}`}
                       onClick={() =>
                         void del({
@@ -251,12 +346,25 @@ export function Checklist() {
                           undo: () => t.setChecklistDeleted(i.id, false),
                         })
                       }
-                    />
+                    />}
                   </li>
                 )
               })}
             </ul>
           </Card>
+        )}
+
+        {selecting && (
+          <div class="sticky bottom-[4.75rem] z-10">
+            <button
+              type="button"
+              disabled={chosen.length === 0}
+              onClick={() => void deleteChosen()}
+              class="min-h-12 w-full rounded-full bg-danger px-6 font-semibold text-white shadow-card disabled:opacity-40"
+            >
+              {chosen.length === 0 ? 'Elimina' : chosen.length === 1 ? 'Elimina 1 voce' : `Elimina ${chosen.length} voci`}
+            </button>
+          </div>
         )}
 
         <button type="button" onClick={() => void addTemplate()} class="min-h-12 w-full rounded-full border border-line px-6 text-sm font-medium">
