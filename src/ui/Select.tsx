@@ -25,6 +25,8 @@ interface Props {
   createLabel?: (typed: string) => string
   /** Sfondo del campo: `surface` dentro riquadri chiari. */
   tone?: 'bg' | 'surface'
+  /** Solo lettura: il valore si vede ma non si cambia (non apre il pannello, senza freccia). */
+  readOnly?: boolean
 }
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
@@ -33,7 +35,7 @@ const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCa
  * Selettore a pannello (al posto della <select> del sistema): righe grandi da toccare con il pollice,
  * la voce scelta è spuntata, con ricerca quando l'elenco è lungo.
  */
-export function Select({ label, value, options, onChange, placeholder = 'Scegli…', searchable, creatable, createLabel, tone = 'bg' }: Props) {
+export function Select({ label, value, options, onChange, placeholder = 'Scegli…', searchable, creatable, createLabel, tone = 'bg', readOnly }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const selected = options.find((o) => o.value === value)
@@ -59,19 +61,30 @@ export function Select({ label, value, options, onChange, placeholder = 'Scegli�
   return (
     <div class="block">
       <span class="mb-1 block text-sm font-extrabold">{label}</span>
-      <button
-        type="button"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={() => setOpen(true)}
-        class={`flex min-h-12 w-full items-center gap-3 rounded-2xl border-2 border-line px-4 text-left ${tone === 'surface' ? 'bg-surface' : 'bg-bg'}`}
-      >
-        {selected?.color && <span aria-hidden="true" class="h-3 w-3 shrink-0 rounded-full" style={{ background: selected.color }} />}
-        <span class={`min-w-0 flex-1 truncate ${shownLabel ? '' : 'text-muted'}`}>{shownLabel || placeholder}</span>
-        <ChevronDownIcon size={18} class="shrink-0 text-muted" />
-      </button>
+      {readOnly ? (
+        <div
+          role="textbox"
+          aria-readonly="true"
+          aria-label={label}
+          class={`flex min-h-12 w-full items-center gap-3 rounded-2xl border-2 border-line px-4 text-left text-muted ${tone === 'surface' ? 'bg-surface' : 'bg-bg'}`}
+        >
+          <span class="min-w-0 flex-1 truncate">{shownLabel || placeholder}</span>
+        </div>
+      ) : (
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          onClick={() => setOpen(true)}
+          class={`flex min-h-12 w-full items-center gap-3 rounded-2xl border-2 border-line px-4 text-left ${tone === 'surface' ? 'bg-surface' : 'bg-bg'}`}
+        >
+          {selected?.color && <span aria-hidden="true" class="h-3 w-3 shrink-0 rounded-full" style={{ background: selected.color }} />}
+          <span class={`min-w-0 flex-1 truncate ${shownLabel ? '' : 'text-muted'}`}>{shownLabel || placeholder}</span>
+          <ChevronDownIcon size={18} class="shrink-0 text-muted" />
+        </button>
+      )}
 
-      <Sheet open={open} title={label} onClose={close}>
+      <Sheet open={open && !readOnly} title={label} onClose={close}>
         {withSearch && (
           <label class="relative mb-3 block">
             <span class="sr-only">Cerca</span>

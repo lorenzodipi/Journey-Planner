@@ -97,3 +97,20 @@ describe('tasso di cambio', () => {
     expect(parseRate('')).toBeNull()
   })
 })
+
+import { tripCurrencies } from './money'
+
+describe('valute scegliibili nel viaggio', () => {
+  it('base e locale, senza doppioni', () => {
+    expect(tripCurrencies({ baseCurrency: 'EUR', localCurrency: 'JPY' })).toEqual(['EUR', 'JPY'])
+    expect(tripCurrencies({ baseCurrency: 'EUR', localCurrency: 'EUR' })).toEqual(['EUR'])
+    expect(tripCurrencies({ baseCurrency: 'EUR' })).toEqual(['EUR'])
+  })
+  it('normalizza maiuscole e spazi', () => {
+    expect(tripCurrencies({ baseCurrency: ' eur ', localCurrency: 'jpy' })).toEqual(['EUR', 'JPY'])
+  })
+  it('tiene la valuta già salvata su una voce, se il viaggio non la prevede', () => {
+    expect(tripCurrencies({ baseCurrency: 'EUR', localCurrency: 'JPY' }, 'USD')).toEqual(['EUR', 'JPY', 'USD'])
+    expect(tripCurrencies({ baseCurrency: 'EUR', localCurrency: 'JPY' }, 'JPY')).toEqual(['EUR', 'JPY'])
+  })
+})

@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks'
 import { useConfirm } from './ConfirmDialog'
 import { isIata, timezoneForAirport } from '../lib/airports'
 import { legDuration } from '../lib/flights'
-import { amountToText, parseAmount } from '../lib/money'
+import { amountToText, parseAmount, tripCurrencies } from '../lib/money'
 import { legToForm, type FlightInput, type LegInput } from '../lib/logistics'
 import { isValidTimezone } from '../lib/tripForm'
 import { isCompleteZoned, zonedToInstant } from '../lib/zoned'
@@ -161,7 +161,7 @@ export function FlightForm({ trip, initial, onSubmit, onDelete, onDone }: Props)
         <SecondaryButton onClick={addLeg}>+ Aggiungi tratta (scalo)</SecondaryButton>
       </div>
 
-      <CostFields amount={cost} currency={currency} scope={scope} onAmount={setCost} onCurrency={setCurrency} onScope={setScope} />
+      <CostFields amount={cost} currency={currency} currencies={tripCurrencies(trip, initial?.currency)} scope={scope} onAmount={setCost} onCurrency={setCurrency} onScope={setScope} />
       <CheckField label="Già pagato" checked={paid} onChange={setPaid} />
       <TextArea label="Note" value={notes} onInput={setNotes} />
       <FormError message={error} />

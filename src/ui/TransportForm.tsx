@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import { useConfirm } from './ConfirmDialog'
-import { amountToText, parseAmount } from '../lib/money'
+import { amountToText, parseAmount, tripCurrencies } from '../lib/money'
 import { transportToForm, type TransportInput } from '../lib/logistics'
 import { isShortMapsLink, parseDirectionsUrl } from '../lib/mapsUrl'
 import { isCompleteZoned, zonedToInstant } from '../lib/zoned'
@@ -169,6 +169,7 @@ export function TransportForm({ trip, initial, defaults, onSubmit, onDelete, onD
       <CostFields
         amount={cost}
         currency={currency}
+        currencies={tripCurrencies(trip, initial?.currency)}
         scope={scope}
         onAmount={setCost}
         onCurrency={setCurrency}

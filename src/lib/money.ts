@@ -89,3 +89,25 @@ export function sumByCurrency(items: { amount: number; currency: string }[]): { 
     a.currency.localeCompare(b.currency),
   )
 }
+
+/**
+ * Valute che si possono scegliere in un viaggio: la base e quella locale (se c'è e se è diversa).
+ * `current` è la valuta già salvata su una voce da modificare: resta nell'elenco anche se il viaggio non la prevede più.
+ */
+export function tripCurrencies(trip: { baseCurrency: string; localCurrency?: string }, current?: string): string[] {
+  const out: string[] = []
+  for (const c of [trip.baseCurrency, trip.localCurrency, current]) {
+    const code = c?.trim().toUpperCase()
+    if (code && !out.includes(code)) out.push(code)
+  }
+  return out
+}
+
+/** Nome esteso della valuta in italiano ("euro", "yen giapponese"); se non lo conosce, niente. */
+export function currencyName(currency: string): string | undefined {
+  try {
+    return new Intl.DisplayNames('it', { type: 'currency' }).of(currency) ?? undefined
+  } catch {
+    return undefined
+  }
+}

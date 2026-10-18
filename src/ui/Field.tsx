@@ -1,5 +1,7 @@
 import type { ComponentChildren } from 'preact'
+import { currencyName } from '../lib/money'
 import { TickIcon } from './Icons'
+import { Select } from './Select'
 
 const inputClass = 'min-h-12 w-full rounded-[14px] border-2 border-line bg-bg px-3.5 text-base placeholder:text-muted/70'
 const labelClass = 'mb-1 block text-[13px] font-extrabold'
@@ -164,6 +166,7 @@ export function ChipSelect<T extends string>({
 export function CostFields({
   amount,
   currency,
+  currencies,
   scope,
   onAmount,
   onCurrency,
@@ -173,6 +176,8 @@ export function CostFields({
 }: {
   amount: string
   currency: string
+  /** Valute tra cui scegliere (quelle del viaggio). Con una sola, il campo è in sola lettura. */
+  currencies: string[]
   scope: 'per_person' | 'total'
   onAmount: (v: string) => void
   onCurrency: (v: string) => void
@@ -182,9 +187,15 @@ export function CostFields({
 }) {
   return (
     <div class="space-y-3">
-      <div class="grid grid-cols-[1fr_6rem] gap-3">
+      <div class="grid grid-cols-[1fr_7.5rem] gap-3">
         <TextField label={amountLabel} value={amount} onInput={onAmount} inputMode="decimal" placeholder="0,00" />
-        <TextField label="Valuta" value={currency} onInput={(v) => onCurrency(v.toUpperCase())} maxLength={3} />
+        <Select
+          label="Valuta"
+          value={currency}
+          onChange={onCurrency}
+          readOnly={currencies.length <= 1}
+          options={currencies.map((c) => ({ value: c, label: c, hint: currencyName(c) }))}
+        />
       </div>
       {withScope && (
         <ChipSelect

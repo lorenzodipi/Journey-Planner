@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import { useConfirm } from './ConfirmDialog'
-import { amountToText, parseAmount } from '../lib/money'
+import { amountToText, parseAmount, tripCurrencies } from '../lib/money'
 import type { StayInput } from '../lib/logistics'
 import type { Stay, Trip } from '../types'
 import { CheckField, CostFields, FormError, PrimaryButton, SecondaryButton, TextArea, TextField } from './Field'
@@ -88,6 +88,7 @@ export function StayForm({ trip, initial, defaults, onSubmit, onDelete, onDone }
         amountLabel="Costo totale (tutti i viaggiatori)"
         amount={cost}
         currency={currency}
+        currencies={tripCurrencies(trip, initial?.currency)}
         scope="total"
         onAmount={setCost}
         onCurrency={setCurrency}

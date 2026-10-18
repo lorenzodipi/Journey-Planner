@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks'
 import { useConfirm } from './ConfirmDialog'
 import { dateInZone } from '../lib/flights'
-import { amountToText, formatMoney, parseAmount, parseRate } from '../lib/money'
+import { amountToText, formatMoney, parseAmount, parseRate, tripCurrencies } from '../lib/money'
 import type { ExpenseInput } from '../lib/moneyData'
 import type { Expense, Trip } from '../types'
 import { CategorySelect } from './CategorySelect'
@@ -92,7 +92,7 @@ export function ExpenseForm({ trip, initial, defaults, onSubmit, onDelete, onDon
   return (
     <form class="space-y-4" onSubmit={submit} noValidate>
       <TextField label="Cosa hai pagato" value={label} onInput={setLabel} maxLength={120} />
-      <CostFields amountLabel="Importo" amount={amount} currency={currency} scope="total" onAmount={setAmount} onCurrency={onCurrency} onScope={() => {}} withScope={false} />
+      <CostFields amountLabel="Importo" amount={amount} currency={currency} currencies={tripCurrencies(trip, initial?.currency)} scope="total" onAmount={setAmount} onCurrency={onCurrency} onScope={() => {}} withScope={false} />
       {foreign && (
         <div class="space-y-1">
           <TextField label={`Cambio: 1 ${cur || '…'} = ? ${trip.baseCurrency}`} value={rate} onInput={(v) => { setRateTouched(true); setRate(v) }} inputMode="decimal" placeholder="0,0056" />

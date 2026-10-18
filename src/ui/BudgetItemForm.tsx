@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import { useConfirm } from './ConfirmDialog'
-import { formatMoney, parseAmount, amountToText } from '../lib/money'
+import { formatMoney, parseAmount, amountToText, tripCurrencies } from '../lib/money'
 import { shareAmounts } from '../lib/budget'
 import type { BudgetInput } from '../lib/moneyData'
 import type { BudgetItem, Trip } from '../types'
@@ -76,7 +76,7 @@ export function BudgetItemForm({ trip, initial, defaultCategory, onSubmit, onDel
       <TextField label="Voce" value={label} onInput={setLabel} maxLength={120} />
       <CategorySelect value={category} onChange={setCategory} categories={trip.expenseCategories} suggestions={SUGGESTED} />
 
-      <CostFields amountLabel="Importo" amount={amount} currency={currency} scope={scope} onAmount={setAmount} onCurrency={setCurrency} onScope={setScope} />
+      <CostFields amountLabel="Importo" amount={amount} currency={currency} currencies={tripCurrencies(trip, initial?.currency)} scope={scope} onAmount={setAmount} onCurrency={setCurrency} onScope={setScope} />
 
       {trip.travelers.length > 0 && (
         <>
