@@ -19,3 +19,26 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+
+# app nativa (Capacitor): i file web vengono rigenerati a ogni build
+dist-native/
+android/.gradle/
+android/build/
+android/app/build/
+android/app/release/
+android/local.properties
+android/capacitor-cordova-android-plugins/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/app/src/main/res/xml/config.xml
+*.keystore
+*.jks
+ios/App/build/
+ios/App/Pods/
+ios/App/App/public/
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+ios/DerivedData/
+.build/
+xcuserdata/

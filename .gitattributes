@@ -1,0 +1,6 @@
+# Su Windows git potrebbe convertire gli a-capo: gradlew deve restare con LF per girare su Linux (GitHub Actions)
+android/gradlew text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+*.png binary
+*.jar binary

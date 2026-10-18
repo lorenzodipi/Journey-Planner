@@ -20,9 +20,13 @@ export function Impostazioni() {
   const savedAt = loadSnapshot()?.savedAt
   const build = typeof __BUILD_TIME__ === 'string' ? __BUILD_TIME__ : ''
 
-  function exportTrips(list: typeof t.trips) {
-    downloadJson(exportFileName(list), serializeExport(buildExport(list)))
-    showToast('File scaricato')
+  async function exportTrips(list: typeof t.trips) {
+    try {
+      await downloadJson(exportFileName(list), serializeExport(buildExport(list)))
+      showToast(__NATIVE__ ? 'File pronto: scegli dove salvarlo' : 'File scaricato')
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Esportazione non riuscita')
+    }
   }
 
   async function clearLocal() {

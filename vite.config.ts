@@ -4,16 +4,26 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // GitHub Pages serve il sito sotto /Journey-Planner/
-const base = '/Journey-Planner/'
+const webBase = '/Journey-Planner/'
 
-export default defineConfig({
+// `vite build --mode native` prepara i file per l'app Android/iOS (Capacitor):
+// percorsi relativi, nessun service worker (i file stanno già dentro l'app).
+export default defineConfig(({ mode }) => {
+  const native = mode === 'native'
+  const base = native ? './' : webBase
+  return {
   base,
   // data di costruzione: in Impostazioni si vede quale versione sta girando sul telefono
-  define: { __BUILD_TIME__: JSON.stringify(new Date().toISOString()) },
+  define: {
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __NATIVE__: JSON.stringify(native),
+  },
   plugins: [
     preact(),
     tailwindcss(),
     VitePWA({
+      // nell'app nativa il modulo virtual:pwa-register resta, ma non fa nulla
+      disable: native,
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
       manifest: {
@@ -54,4 +64,5 @@ export default defineConfig({
   ],
   build: { target: 'es2022' },
   test: { environment: 'node', include: ['src/**/*.test.ts', 'scripts/**/*.test.mjs'] },
+  }
 })

@@ -10,3 +10,5 @@ interface ImportMeta {
 }
 
 declare const __BUILD_TIME__: string
+/** true nella build per l'app Android/iOS (vite build --mode native) */
+declare const __NATIVE__: boolean

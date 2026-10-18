@@ -1,0 +1,94 @@
+name: App iOS (IPA per SideStore)
+
+# Costruisce un IPA NON firmato (senza account Apple a pagamento) e lo pubblica nella
+# release "ios-latest". SideStore lo firma sul telefono con l'Apple ID di chi lo installa.
+# Si lancia a mano: Actions > "App iOS (IPA per SideStore)" > Run workflow.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-build
+  cancel-in-progress: false
+
+jobs:
+  ipa:
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+      - name: Controlla che le variabili ci siano
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::Mancano VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY (Variables del repo): l'app partirebbe in modalità demo."; exit 1
+          fi
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Build web (modalità nativa)
+        run: npm run build:native
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Sincronizza Capacitor
+        run: npx cap sync ios
+
+      - name: Versione
+        run: |
+          BASE=$(node -p "require('./package.json').version.split('.').slice(0,2).join('.')")
+          echo "VERSION_NAME=$BASE.${{ github.run_number }}" >> "$GITHUB_ENV"
+
+      - name: Build senza firma
+        run: |
+          xcodebuild -version
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            MARKETING_VERSION="$VERSION_NAME" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Crea l'IPA
+        run: |
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
+          test -n "$APP" || { echo "::error::App non trovata"; exit 1; }
+          rm -rf Payload JourneyPlanner.ipa
+          mkdir Payload
+          cp -R "$APP" Payload/
+          zip -qry JourneyPlanner.ipa Payload
+          ls -la JourneyPlanner.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JourneyPlanner-ipa
+          path: JourneyPlanner.ipa
+          retention-days: 30
+
+      - name: Pubblica nella release ios-latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete ios-latest --cleanup-tag --yes || true
+          gh release create ios-latest JourneyPlanner.ipa \
+            --target "$GITHUB_SHA" --latest=false \
+            --title "iOS $VERSION_NAME" \
+            --notes "IPA non firmato per SideStore · versione $VERSION_NAME (build #${{ github.run_number }}) · commit ${GITHUB_SHA::7}. Scarica JourneyPlanner.ipa e aprilo con SideStore."

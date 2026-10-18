@@ -43,8 +43,9 @@ export function serializeExport(file: ExportFile): string {
   return JSON.stringify(file, null, 2)
 }
 
-/** Fa scaricare il file dal browser. */
-export function downloadJson(fileName: string, content: string): void {
+/** Fa scaricare il file dal browser; nell'app Android/iOS apre il foglio di condivisione (Salva in File, Drive…). */
+export function downloadJson(fileName: string, content: string): void | Promise<void> {
+  if (__NATIVE__) return import('./nativeFiles').then((m) => m.shareTextFile(fileName, content))
   const url = URL.createObjectURL(new Blob([content], { type: 'application/json' }))
   const a = document.createElement('a')
   a.href = url

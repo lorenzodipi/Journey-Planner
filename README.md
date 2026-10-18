@@ -27,6 +27,11 @@ VITE_SUPABASE_ANON_KEY=sb_publishable_xxxx
 
 Sono valori pubblici per progettazione: la sicurezza sta nella Row Level Security. Non inserire mai la `service_role` / secret key.
 
+## App Android e iOS
+
+Oltre al sito c'è l'app installabile (APK per Android, IPA per iPhone via SideStore), costruita da GitHub Actions:
+istruzioni, Secrets e limiti in [docs/APP_NATIVA.md](docs/APP_NATIVA.md).
+
 ## Comandi
 
 | Comando | Cosa fa |
@@ -36,6 +41,8 @@ Sono valori pubblici per progettazione: la sicurezza sta nella Row Level Securit
 | `npm run preview` | Prova la build locale |
 | `npm test` | Test unitari (voli, soldi, luce, ordinamento) |
 | `npm run test:sql` | Test della sicurezza RLS su un Postgres in memoria (PGlite) |
+| `npm run build:native` | Build per l'app Android/iOS (Capacitor), in `dist-native/` |
+| `npm run assets:native` | Rigenera icone e splash dell'app da `assets/` |
 
 ## Configurare Supabase (una volta)
 
@@ -53,8 +60,6 @@ select add_member_by_email('<id-del-viaggio>', 'email@esempio.it', 'editor');
 ```
 
 ## Pubblicare su GitHub Pages
-
-> **Da fare una volta**: i due file di `docs/github-workflows/` (`deploy.yml`, `keepalive.yml`) vanno spostati in `.github/workflows/`. Quella cartella è protetta e gli strumenti di Claude non possono scriverci.
 
 1. **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 2. **Settings → Secrets and variables → Actions → Variables**: aggiungi `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` (sono pubbliche, vanno come *variabili*, non come segreti).

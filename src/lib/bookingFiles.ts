@@ -43,13 +43,60 @@ async function signedUrl(path: string): Promise<string> {
   return data.signedUrl
 }
 
+// Dove stanno le copie offline: nel browser la Cache API; nell'app Android/iOS la cartella privata
+// dell'app (la Cache API nelle WebView iOS non è affidabile).
+interface Store {
+  has(path: string): Promise<boolean>
+  get(path: string): Promise<Blob | undefined>
+  put(path: string, res: Response): Promise<void>
+  del(path: string): Promise<void>
+  keys(): Promise<string[]>
+  clear(): Promise<void>
+}
+
 const cacheKey = (path: string) => new Request(`https://offline.invalid/booking/${encodeURIComponent(path)}`)
-const hasCache = () => typeof caches !== 'undefined'
+const PREFIX = 'https://offline.invalid/booking/'
+
+const webStore: Store = {
+  async has(path) {
+    return !!(await (await caches.open(CACHE)).match(cacheKey(path)))
+  },
+  async get(path) {
+    const res = await (await caches.open(CACHE)).match(cacheKey(path))
+    return res ? res.blob() : undefined
+  },
+  async put(path, res) {
+    await (await caches.open(CACHE)).put(cacheKey(path), res)
+  },
+  async del(path) {
+    await (await caches.open(CACHE)).delete(cacheKey(path))
+  },
+  async keys() {
+    return (await (await caches.open(CACHE)).keys()).map((r) => decodeURIComponent(r.url.slice(PREFIX.length)))
+  },
+  async clear() {
+    await caches.delete(CACHE)
+  },
+}
+
+async function getStore(): Promise<Store | null> {
+  if (__NATIVE__) {
+    const { fileStore } = await import('./nativeFiles')
+    return {
+      has: fileStore.has,
+      get: fileStore.get,
+      put: async (path, res) => fileStore.put(path, await res.blob()),
+      del: fileStore.del,
+      keys: fileStore.keys,
+      clear: fileStore.clear,
+    }
+  }
+  return typeof caches !== 'undefined' ? webStore : null
+}
 
 export async function isFileCached(path: string): Promise<boolean> {
-  if (!hasCache()) return false
   try {
-    return !!(await (await caches.open(CACHE)).match(cacheKey(path)))
+    return !!(await (await getStore())?.has(path))
   } catch {
     return false
   }
@@ -57,16 +104,16 @@ export async function isFileCached(path: string): Promise<boolean> {
 
 /** Scarica il file e lo tiene sul dispositivo. */
 export async function cacheBookingFile(path: string): Promise<void> {
-  if (!hasCache()) return
+  const store = await getStore()
+  if (!store) return
   const res = await fetch(await signedUrl(path))
   if (!res.ok) throw new Error('Download del file non riuscito.')
-  await (await caches.open(CACHE)).put(cacheKey(path), res)
+  await store.put(path, res)
 }
 
 export async function uncacheBookingFile(path: string): Promise<void> {
-  if (!hasCache()) return
   try {
-    await (await caches.open(CACHE)).delete(cacheKey(path))
+    await (await getStore())?.del(path)
   } catch {
     // ignorato
   }
@@ -74,16 +121,16 @@ export async function uncacheBookingFile(path: string): Promise<void> {
 
 /** Dopo ogni aggiornamento dei dati: scarica i file "offline" mancanti e libera quelli non più richiesti. */
 export async function syncOfflineFiles(trips: Trip[]): Promise<void> {
-  if (!hasCache() || !navigator.onLine) return
+  if (!navigator.onLine) return
   try {
+    const store = await getStore()
+    if (!store) return
     const wanted = new Set<string>()
     for (const t of trips) for (const b of t.bookings) if (b.keepOffline && b.filePath) wanted.add(b.filePath)
-    const cache = await caches.open(CACHE)
     for (const path of wanted) {
-      if (!(await cache.match(cacheKey(path)))) await cacheBookingFile(path).catch(() => undefined)
+      if (!(await store.has(path))) await cacheBookingFile(path).catch(() => undefined)
     }
-    const keep = new Set(Array.from(wanted, (p) => cacheKey(p).url))
-    for (const req of await cache.keys()) if (!keep.has(req.url)) await cache.delete(req)
+    for (const path of await store.keys()) if (!wanted.has(path)) await store.del(path)
   } catch {
     // la sincronizzazione dei file non deve mai disturbare l'app
   }
@@ -91,17 +138,31 @@ export async function syncOfflineFiles(trips: Trip[]): Promise<void> {
 
 /** Dopo l'uscita dall'account i file non devono restare sul dispositivo. */
 export function clearBookingCache(): void {
-  if (hasCache()) void caches.delete(CACHE).catch(() => undefined)
+  void getStore().then((s) => s?.clear()).catch(() => undefined)
 }
 
-/** Apre il file in una nuova scheda: dalla copia locale se c'è, altrimenti con un link temporaneo. */
+/** Apre il file: dalla copia locale se c'è, altrimenti con un link temporaneo.
+ *  Nel browser si usa una nuova scheda; nell'app il file va al lettore PDF / Foto del telefono. */
 export async function openBookingFile(path: string): Promise<void> {
+  if (__NATIVE__) {
+    const store = await getStore()
+    let blob = await store?.get(path)
+    if (!blob) {
+      if (!navigator.onLine) throw new Error('Sei offline e questo file non è salvato sul telefono. Attiva "Disponibile offline" quando sei in rete.')
+      const res = await fetch(await signedUrl(path))
+      if (!res.ok) throw new Error('Download del file non riuscito.')
+      blob = await res.blob()
+    }
+    const { openFile } = await import('./nativeFiles')
+    await openFile(blob, path.slice(path.lastIndexOf('/') + 1))
+    return
+  }
   // la finestra va aperta subito, nel gesto dell'utente: dopo un'attesa il browser la bloccherebbe
   const win = window.open('', '_blank')
   try {
     let url: string
-    const cached = hasCache() ? await (await caches.open(CACHE)).match(cacheKey(path)) : undefined
-    if (cached) url = URL.createObjectURL(await cached.blob())
+    const cached = await (await getStore())?.get(path)
+    if (cached) url = URL.createObjectURL(cached)
     else {
       if (!navigator.onLine) throw new Error('Sei offline e questo file non è salvato sul telefono. Attiva "Disponibile offline" quando sei in rete.')
       url = await signedUrl(path)
