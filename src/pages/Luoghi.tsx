@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks'
+import { isJapanTrip } from '../lib/tripLocale'
 import { countActive, filterPlaces } from '../lib/placeFilter'
 import { GROUP_LABEL, SORT_LABEL, DEFAULT_VIEW, isDefaultView, viewPlaces } from '../lib/placeView'
 import { usePlaceFilters } from '../state/placeFilters'
@@ -45,7 +46,7 @@ export function Luoghi() {
 
   return (
     <>
-      <PageHeader title="Luoghi" jp="場所" />
+      <PageHeader title="Luoghi" jp={isJapanTrip(trip) ? '場所' : undefined} />
 
       {trip.places.length > 0 && (
         <div class="space-y-3 px-5 pb-3.5">

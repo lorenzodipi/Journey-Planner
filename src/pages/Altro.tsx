@@ -8,6 +8,7 @@ import type { Traveler, Trip } from '../types'
 import { SecondaryButton } from '../ui/Field'
 import { BedIcon, BudgetIcon, ChecklistIcon, ChevronRightIcon, SettingsIcon, TicketIcon, TrainCarIcon } from '../ui/Icons'
 import { PageHeader } from '../ui/PageHeader'
+import { isJapanTrip } from '../lib/tripLocale'
 import { BoardingNotches, Disc, Jp, Stripe } from '../ui/Ticket'
 import { Sheet } from '../ui/Sheet'
 import { InviteForm } from '../ui/InviteForm'
@@ -100,14 +101,14 @@ export function Altro() {
 
   return (
     <>
-      <PageHeader title="Altro" jp="設定" />
+      <PageHeader title="Altro" jp={isJapanTrip(trip) ? '設定' : undefined} />
       <div class="px-5">
         <section class="rise relative rounded-[20px] border-2 border-line bg-surface">
           <Stripe />
           <div class="px-[18px] pb-3.5 pt-3">
             <div class="flex justify-between">
               <span class="text-[13px] text-muted">Viaggio attivo</span>
-              <Jp>日本</Jp>
+              {isJapanTrip(trip) && <Jp>日本</Jp>}
             </div>
             <h2 class="font-display text-[28px] font-extrabold leading-tight tracking-[-0.5px]">{trip.title}</h2>
             <p class="mt-0.5 text-[13px] text-muted">

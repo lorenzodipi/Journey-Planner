@@ -13,6 +13,7 @@ import { BedIcon, BudgetIcon, ChecklistIcon, ChevronRightIcon, PlaneIcon, SwapIc
 import { ItemRow } from '../ui/ItemRow'
 import { LightCard } from '../ui/LightBar'
 import { Card } from '../ui/PageHeader'
+import { isJapanTrip } from '../lib/tripLocale'
 import { BoardingNotches, Disc, Jp, Stripe, Tag, Ticket } from '../ui/Ticket'
 import { WeatherCard } from '../ui/WeatherCard'
 
@@ -95,7 +96,7 @@ export function Oggi() {
         <div class="px-5 pb-[18px] pt-4">
           <div class="flex items-center justify-between">
             <span class="text-[13px] text-muted">{before ? 'Alla partenza mancano' : inTrip ? 'Sei in viaggio' : 'Viaggio concluso'}</span>
-            <Jp>{before ? '出発まで' : inTrip ? '旅行中' : '旅の思い出'}</Jp>
+            {isJapanTrip(trip) && <Jp>{before ? '出発まで' : inTrip ? '旅行中' : '旅の思い出'}</Jp>}
           </div>
           {before ? (
             <div class="mt-1.5 flex items-end gap-3.5">
