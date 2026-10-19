@@ -6,10 +6,10 @@ import { daysBetween, formatShort } from '../lib/dates'
 import { localPerBase, formatRateNumber } from '../lib/fx'
 import { currencySymbol, formatMoney } from '../lib/money'
 import { minutesOfDay, sunForDay } from '../lib/sun'
-import { destinationClock, eventsForDay, formatDiffHours, nextItem, tripToday } from '../lib/today'
+import { destinationClock, eventsForDay, formatDiffHours, homeCountry, homeToday, nextItem, tripToday } from '../lib/today'
 import { useForecast } from '../state/forecast'
 import { useTrip } from '../state/trip'
-import { BedIcon, BudgetIcon, ChecklistIcon, ChevronRightIcon, PlaneIcon, SwapIcon } from '../ui/Icons'
+import { BedIcon, BudgetIcon, ChecklistIcon, ChevronRightIcon, ClockIcon, EarthIcon, PlaneIcon, SwapIcon } from '../ui/Icons'
 import { ItemRow } from '../ui/ItemRow'
 import { LightCard } from '../ui/LightBar'
 import { Card } from '../ui/PageHeader'
@@ -63,6 +63,8 @@ export function Oggi() {
   const events = focus ? eventsForDay(trip, focus.date) : []
   const deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone
   const clock = destinationClock(trip.timezone, deviceTz, now)
+  const home = homeToday(deviceTz, now)
+  const homeName = homeCountry(navigator.language)
   const sun = focus ? sunForDay(focus.date, trip.center.lat, trip.center.lng, trip.timezone) : null
 
   // prossimo volo: la prima tratta che parte da adesso in poi (altrimenti la prima del viaggio)
@@ -88,6 +90,26 @@ export function Oggi() {
         <span class="text-[13px] text-muted">
           {formatShort(trip.startDate)} – {formatShort(trip.endDate)}
         </span>
+      </div>
+
+      {/* orario a destinazione e data a casa */}
+      <div class="mb-3.5 flex items-center justify-between gap-2.5">
+        <div class="flex min-h-[52px] min-w-0 flex-1 items-center gap-2 rounded-full border-2 border-line bg-surface px-3.5">
+          <ClockIcon size={16} class="shrink-0 text-pale" />
+          <span class="font-display shrink-0 whitespace-nowrap text-xl font-extrabold leading-none tabular-nums text-pale">{clock.time}</span>
+          <span class="min-w-0 text-xs leading-tight text-muted">
+            <span class="block truncate">{trip.destination || 'Destinazione'}</span>
+            <span class="block truncate">{clock.diffHours === 0 ? 'stesso fuso' : formatDiffHours(clock.diffHours)}</span>
+          </span>
+        </div>
+        <div class="flex min-h-[52px] shrink-0 items-center justify-end gap-2 rounded-full border-2 border-line bg-surface px-3.5">
+          <span class="text-right text-xs leading-tight text-muted">
+            <span class="block whitespace-nowrap">{homeName}</span>
+            <span class="block whitespace-nowrap">{home.weekday}</span>
+          </span>
+          <span class="font-display whitespace-nowrap text-xl font-extrabold leading-none text-pale">{home.date}</span>
+          <EarthIcon size={16} class="shrink-0 text-pale" />
+        </div>
       </div>
 
       {/* carta d'imbarco: conto alla rovescia (o giorno del viaggio) e prossimo volo */}
@@ -116,11 +138,6 @@ export function Oggi() {
             </div>
           ) : (
             <p class="font-display mt-2 text-3xl font-extrabold">Bentornati</p>
-          )}
-          {inTrip && clock.diffHours !== 0 && (
-            <p class="mt-3 text-sm text-muted">
-              Ora {trip.destination ? `in ${trip.destination}` : 'a destinazione'}: <span class="font-extrabold tabular-nums text-ink">{clock.time}</span> ({formatDiffHours(clock.diffHours)})
-            </p>
           )}
         </div>
         <BoardingNotches />

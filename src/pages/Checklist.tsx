@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useRef, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
 import { doneCount, KIND_LABEL, KINDS, parseQuantity, progress, visibleItems } from '../lib/checklist'
 import { formatShort } from '../lib/dates'
@@ -9,7 +9,7 @@ import { ChecklistItemForm } from '../ui/ChecklistItemForm'
 import { TrashButton } from '../ui/ConfirmDialog'
 import { MinusIcon, PlusIcon, TickIcon, TrashIcon } from '../ui/Icons'
 import { EmptyState } from '../ui/PageHeader'
-import { Avatar, Ticket } from '../ui/Ticket'
+import { Avatar, Fab, Ticket } from '../ui/Ticket'
 import { Sheet } from '../ui/Sheet'
 import { useDeleter } from '../ui/useDeleter'
 
@@ -22,6 +22,8 @@ export function Checklist() {
   const [text, setText] = useState('')
   const [qty, setQty] = useState('1')
   const [adding, setAdding] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
+  const textRef = useRef<HTMLInputElement>(null)
   const [pending, setPending] = useState<Set<string>>(new Set())
   const [edit, setEdit] = useState<ChecklistItem | null>(null)
   const [selecting, setSelecting] = useState(false)
@@ -96,6 +98,7 @@ export function Checklist() {
     else {
       setText('')
       setQty('1')
+      textRef.current?.focus()
     }
   }
 
@@ -275,8 +278,24 @@ export function Checklist() {
                         {i.dueDate && <span class={`mt-0.5 block text-xs ${late ? 'text-danger' : 'text-muted'}`}>entro {formatShort(i.dueDate)}</span>}
                       </button>
                       <div class="mt-1 flex items-center">
+                        <span class="inline-flex items-center gap-1.5">
+                          {owner ? (
+                            <Avatar name={owner.name} color={owner.color} size={20} />
+                          ) : (
+                            trip.travelers.length > 1 && (
+                              <span class="inline-flex">
+                                {trip.travelers.slice(0, 2).map((p, n) => (
+                                  <span class={n ? '-ml-1.5' : ''}>
+                                    <Avatar name={p.name} color={p.color} size={20} />
+                                  </span>
+                                ))}
+                              </span>
+                            )
+                          )}
+                          {(owner || trip.travelers.length > 1) && <span class="text-xs text-muted">{owner ? owner.name : 'Tutti'}</span>}
+                        </span>
                         {multi && !selecting && (
-                          <div class="flex gap-1.5" role="group" aria-label={`Pezzi a posto: ${i.text}`}>
+                          <div class="ml-auto flex gap-1.5" role="group" aria-label={`Pezzi a posto: ${i.text}`}>
                             <button
                               type="button"
                               aria-label="Un pezzo in meno"
@@ -297,22 +316,6 @@ export function Checklist() {
                             </button>
                           </div>
                         )}
-                        <span class="ml-auto inline-flex items-center gap-1.5">
-                          {owner ? (
-                            <Avatar name={owner.name} color={owner.color} size={20} />
-                          ) : (
-                            trip.travelers.length > 1 && (
-                              <span class="inline-flex">
-                                {trip.travelers.slice(0, 2).map((p, n) => (
-                                  <span class={n ? '-ml-1.5' : ''}>
-                                    <Avatar name={p.name} color={p.color} size={20} />
-                                  </span>
-                                ))}
-                              </span>
-                            )
-                          )}
-                          {(owner || trip.travelers.length > 1) && <span class="text-xs text-muted">{owner ? owner.name : 'Tutti'}</span>}
-                        </span>
                       </div>
                     </div>
                     {!selecting && (
@@ -355,18 +358,30 @@ export function Checklist() {
           </button>
         </div>
       ) : (
+        !addOpen ? (
+          <Fab label="Voce" onClick={() => setAddOpen(true)} />
+        ) : (
         <form
           onSubmit={add}
-          class="fixed inset-x-5 z-10 flex h-14 items-center gap-2.5 rounded-full border-2 border-line bg-surface pl-5 pr-1.5"
+          onKeyDown={(e) => e.key === 'Escape' && setAddOpen(false)}
+          onFocusOut={(e) => {
+            // si richiude quando il focus esce dalla barra e non c'è nulla di scritto
+            const next = e.relatedTarget as Node | null
+            if (!text.trim() && !(next && e.currentTarget.contains(next))) setAddOpen(false)
+          }}
+          class="fixed inset-x-5 z-10 flex h-14 items-center gap-2.5 rounded-full border-2 border-line bg-surface pl-5 pr-1.5 focus-within:border-accent"
           style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}
         >
           <input
+            ref={textRef}
+            autoFocus
             type="text"
             value={text}
             maxLength={200}
             placeholder="Aggiungi una voce"
             aria-label={`Nuova voce in «${KIND_LABEL[kind]}»${who !== 'all' ? ` per ${person.get(who)?.name}` : ''}`}
             onInput={(e) => setText(e.currentTarget.value)}
+            style={{ outline: 'none' }}
             class="min-w-0 flex-1 bg-transparent text-[15px] placeholder:text-muted"
           />
           <input
@@ -390,6 +405,7 @@ export function Checklist() {
             <PlusIcon size={22} />
           </button>
         </form>
+        )
       )}
 
       {delDialog}

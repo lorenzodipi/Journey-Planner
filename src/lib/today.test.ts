@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { destinationClock, eventsForDay, formatDiffHours, nextItem, tripToday } from './today'
+import { destinationClock, eventsForDay, formatDiffHours, homeCountry, homeToday, nextItem, tripToday } from './today'
 import type { Day, Trip } from '../types'
 
 const items = (list: [string, string?][]): Day['items'] =>
@@ -57,6 +57,15 @@ describe('ora a destinazione', () => {
     const c = destinationClock('Asia/Tokyo', 'Europe/Rome', new Date('2026-11-21T10:00:00Z'))
     expect(c).toEqual({ time: '19:00', diffHours: 8 })
     expect(formatDiffHours(c.diffHours)).toBe('+8 h')
+  })
+  it('data e paese di casa', () => {
+    expect(homeToday('Europe/Rome', new Date('2026-10-19T15:00:00Z'))).toEqual({ date: '19 ott', weekday: 'lunedì' })
+    // a Roma è già il giorno dopo quando a Tokyo è tarda sera, ma «oggi a casa» segue il fuso di casa
+    expect(homeToday('Europe/Rome', new Date('2026-10-19T23:30:00Z')).date).toBe('20 ott')
+    expect(homeCountry('it-IT')).toBe('Italia')
+    expect(homeCountry('en-GB')).toBe('Regno Unito')
+    expect(homeCountry('it')).toBe('A casa')
+    expect(homeCountry(undefined)).toBe('A casa')
   })
   it('stesso fuso: scarto zero', () => expect(destinationClock('Europe/Rome', 'Europe/Rome').diffHours).toBe(0))
   it('giorno del viaggio nel fuso della destinazione', () => {

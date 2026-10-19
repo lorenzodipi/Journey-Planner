@@ -9,9 +9,11 @@ import {
   faCheck,
   faChevronDown,
   faChevronRight,
+  faClock,
   faCloud,
   faCopy,
   faDownload,
+  faEarthEurope,
   faEllipsis,
   faFile,
   faGear,
@@ -68,6 +70,8 @@ const wrap =
 
 export const SunIcon = wrap(faSun)
 export const CalendarIcon = wrap(faCalendarDays)
+export const ClockIcon = wrap(faClock)
+export const EarthIcon = wrap(faEarthEurope)
 export const MapIcon = wrap(faMap)
 export const PinIcon = wrap(faLocationDot)
 export const MoreIcon = wrap(faEllipsis)
