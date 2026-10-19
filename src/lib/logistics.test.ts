@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { layover, legDuration, totalTravelTime } from './flights'
+import { dateInZone, layover, legDuration, totalTravelTime } from './flights'
+import { bookingColumns } from './planningData'
 import { legColumns, legToForm, mapFlights, mapTransports, earliestFirst, stayColumns, transportColumns, transportToForm, transportWhen, whenKey, type FlightLegRow, type LegInput } from './logistics'
 
 const leg = (over: Partial<LegInput>): LegInput => ({
@@ -98,9 +99,22 @@ describe('trasporti', () => {
     expect(c.arrive_date).toBeNull()
   })
 
-  it('la data d’arrivo uguale a quella di partenza, senza orario, non si salva (la propone già il modulo)', () => {
-    const c = transportColumns({ ...base, departTime: '08:00', arriveTime: '' }, 'Asia/Tokyo', days)
-    expect(c.arrive_date).toBeNull()
+  it('la data d’arrivo uguale a quella di partenza si salva e torna nel modulo (anche senza orari)', () => {
+    const row = { id: 'x', trip_id: 't', day_id: null, from_label: 'a', to_label: 'b', mode: 'train' as const, cost: null, currency: 'EUR', scope: 'per_person' as const, bought: false, ref_code: null, notes: null }
+    for (const departTime of ['', '08:00']) {
+      const c = transportColumns({ ...base, departTime, arriveDate: '2026-11-26', arriveTime: '' }, 'Asia/Tokyo', days)
+      expect(c.arrive_date).toBe('2026-11-26')
+      const [t] = mapTransports([{ ...row, depart_at: c.depart_at, arrive_at: c.arrive_at, depart_date: c.depart_date, arrive_date: c.arrive_date, day_id: c.day_id }], 't')
+      const form = transportToForm(t, 'Asia/Tokyo', days)
+      expect(form.arriveDate).toBe('2026-11-26')
+      expect(form.departDate).toBe('2026-11-26')
+    }
+  })
+
+  it('stessa data e stessa ora di partenza e arrivo si salvano entrambe', () => {
+    const c = transportColumns({ ...base, departTime: '09:00', arriveTime: '09:00' }, 'Asia/Tokyo', days)
+    expect(c.depart_at).toBe(c.arrive_at)
+    expect(c.arrive_at).not.toBeNull()
   })
 
   it('una data senza orario torna nel modulo (andata e ritorno di un salvataggio)', () => {
@@ -156,5 +170,22 @@ describe('alloggi', () => {
     const base = { name: 'Ryokan', city: '', checkIn: '2026-11-24', checkOut: '2026-11-25', checkInInfo: '', checkOutInfo: '', address: '', mapsUrl: '', totalCost: null, currency: 'JPY', kitchen: false, booked: true, paid: true, notes: '' }
     expect(stayColumns({ ...base, breakfast: true, dinner: true })).toMatchObject({ breakfast: true, dinner: true })
     expect(stayColumns({ ...base, breakfast: false, dinner: true })).toMatchObject({ breakfast: false, dinner: true })
+  })
+})
+
+describe('intervalli dal–al: lo stesso giorno si salva e si rilegge', () => {
+  it('alloggio con check-in e check-out nello stesso giorno', () => {
+    const c = stayColumns({
+      name: 'Day use', city: '', checkIn: '2026-11-22', checkOut: '2026-11-22', checkInInfo: '', checkOutInfo: '', address: '', mapsUrl: '',
+      totalCost: null, currency: 'JPY', breakfast: false, dinner: false, kitchen: false, booked: true, paid: false, notes: '',
+    })
+    expect(c.check_in).toBe('2026-11-22')
+    expect(c.check_out).toBe('2026-11-22')
+  })
+
+  it('prenotazione valida un solo giorno: «dal» e «al» tornano uguali', () => {
+    const c = bookingColumns({ type: 'other', title: 'Biglietto', code: '', url: '', validFrom: '2026-11-22', validTo: '2026-11-22', keepOffline: false, notes: '', file: null, removeFile: false } as never, 'Asia/Tokyo')
+    expect(c.valid_from && dateInZone(c.valid_from, 'Asia/Tokyo')).toBe('2026-11-22')
+    expect(c.valid_to && dateInZone(c.valid_to, 'Asia/Tokyo')).toBe('2026-11-22')
   })
 })

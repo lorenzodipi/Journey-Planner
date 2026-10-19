@@ -242,8 +242,7 @@ export function transportColumns(i: TransportInput, timeZone: string, days: Pick
     arrive_at: arrive,
     // senza l'ora la data si conserva da sola
     depart_date: depart || !i.departDate ? null : i.departDate,
-    // l'arrivo nello stesso giorno della partenza è il caso normale (e il modulo lo propone da solo): non serve salvarlo
-    arrive_date: arrive || !i.arriveDate || i.arriveDate === i.departDate ? null : i.arriveDate,
+    arrive_date: arrive || !i.arriveDate ? null : i.arriveDate,
     day_id: day?.id ?? null,
     from_lat: i.fromPos?.lat ?? null,
     from_lng: i.fromPos?.lng ?? null,

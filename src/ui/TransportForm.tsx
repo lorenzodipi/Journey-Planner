@@ -162,9 +162,9 @@ export function TransportForm({ trip, initial, defaults, onSubmit, onDelete, onD
       <ChipSelect label="Mezzo" value={mode} options={MODES} onChange={setMode} />
 
       <div class="grid grid-cols-2 gap-3">
-        <TextField label="Partenza" type="date" value={departDate} onInput={onDepartDate} />
+        <TextField label="Partenza" type="date" value={departDate} onInput={onDepartDate} optional />
         <TextField label="Ora partenza" type="time" value={departTime} onInput={onDepartTime} />
-        <TextField label="Arrivo" type="date" value={arriveDate} onInput={setArriveDate} min={departDate || undefined} />
+        <TextField label="Arrivo" type="date" value={arriveDate} onInput={setArriveDate} min={departDate || undefined} optional />
         <TextField label="Ora arrivo" type="time" value={arriveTime} onInput={setArriveTime} min={arriveDate && arriveDate === departDate ? departTime || undefined : undefined} />
       </div>
       <p class="-mt-2 text-xs text-muted">Orari nel fuso del viaggio ({trip.timezone}). Puoi lasciarli vuoti.</p>

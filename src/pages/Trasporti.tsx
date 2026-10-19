@@ -39,6 +39,7 @@ function transportRows(x: Transport, tz: string, days: { id: string; date: strin
 }
 
 type SheetState =
+  | { kind: 'choose' }
   | { kind: 'new-flight' }
   | { kind: 'edit-flight'; flight: Flight }
   | { kind: 'new-transport' }
@@ -54,7 +55,9 @@ export function Trasporti() {
   const [openId, toggle] = useOpenCard()
 
   const title =
-    sheet?.kind === 'new-flight'
+    sheet?.kind === 'choose'
+      ? 'Nuovo trasporto'
+      : sheet?.kind === 'new-flight'
       ? 'Nuovo volo'
       : sheet?.kind === 'edit-flight'
         ? 'Modifica volo'
@@ -145,19 +148,37 @@ export function Trasporti() {
             </li>
           ))}
         </ul>
-        <button
-          type="button"
-          onClick={() => setSheet({ kind: 'new-flight' })}
-          class="mt-4 grid min-h-[52px] w-full place-items-center rounded-[14px] border-2 border-dashed border-accent text-base font-extrabold text-pale"
-        >
-          + Aggiungi volo
-        </button>
       </div>
 
-      <Fab label="Trasporto" wide onClick={() => setSheet({ kind: 'new-transport' })} />
+      <Fab label="Trasporto" wide onClick={() => setSheet({ kind: 'choose' })} />
 
       {delDialog}
       <Sheet open={sheet !== null} title={title} onClose={close}>
+        {sheet?.kind === 'choose' && (
+          <div class="space-y-3" role="group" aria-label="Che tipo di trasporto">
+            <p class="-mt-2 text-sm text-muted">Che cosa aggiungi?</p>
+            {(
+              [
+                { kind: 'new-flight', label: 'Volo', hint: 'Con scali, orari e fusi orari', icon: <PlaneIcon size={26} /> },
+                { kind: 'new-transport', label: 'Altro trasporto', hint: 'Treno, bus, metro, taxi, traghetto…', icon: <MovementIcon event={{ kind: 'transport', mode: 'train', title: '' }} size={26} /> },
+              ] as const
+            ).map((o) => (
+              <button
+                type="button"
+                key={o.kind}
+                onClick={() => setSheet({ kind: o.kind })}
+                class="flex min-h-[72px] w-full items-center gap-4 rounded-[14px] border-2 border-line bg-surface-2 px-4 text-left"
+              >
+                <span class="grid size-12 shrink-0 place-items-center rounded-full bg-accent-soft text-pale">{o.icon}</span>
+                <span class="min-w-0 flex-1">
+                  <span class="block text-lg font-extrabold leading-tight">{o.label}</span>
+                  <span class="block text-sm text-muted">{o.hint}</span>
+                </span>
+                <ChevronRightIcon size={18} class="shrink-0 text-muted" />
+              </button>
+            ))}
+          </div>
+        )}
         {sheet?.kind === 'new-flight' && <FlightForm trip={trip} onSubmit={(i) => t.createFlight(trip.id, i)} onDone={close} />}
         {sheet?.kind === 'edit-flight' && (
           <FlightForm
