@@ -1,4 +1,4 @@
-import { useRef, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
 import { doneCount, KIND_LABEL, KINDS, parseQuantity, progress, visibleItems } from '../lib/checklist'
 import { formatShort } from '../lib/dates'
@@ -24,6 +24,7 @@ export function Checklist() {
   const [adding, setAdding] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const textRef = useRef<HTMLInputElement>(null)
+  const addRef = useRef<HTMLFormElement>(null)
   const [pending, setPending] = useState<Set<string>>(new Set())
   const [edit, setEdit] = useState<ChecklistItem | null>(null)
   const [selecting, setSelecting] = useState(false)
@@ -36,6 +37,17 @@ export function Checklist() {
   const today = new Date().toISOString().slice(0, 10)
   // si agisce solo sulle voci che si vedono nell'elenco corrente
   const chosen = items.filter((i) => sel.has(i.id))
+
+  // la barra «aggiungi una voce» si richiude toccando qualsiasi altro punto dello schermo; il testo e la quantità
+  // già scritti restano in memoria (sono stati del componente) e ricompaiono riaprendola con il +
+  useEffect(() => {
+    if (!addOpen) return
+    const onPointerDown = (e: PointerEvent) => {
+      if (addRef.current && !addRef.current.contains(e.target as Node)) setAddOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    return () => document.removeEventListener('pointerdown', onPointerDown, true)
+  }, [addOpen])
 
   function stopSelecting() {
     setSelecting(false)
@@ -362,13 +374,9 @@ export function Checklist() {
           <Fab label="Voce" onClick={() => setAddOpen(true)} />
         ) : (
         <form
+          ref={addRef}
           onSubmit={add}
           onKeyDown={(e) => e.key === 'Escape' && setAddOpen(false)}
-          onFocusOut={(e) => {
-            // si richiude quando il focus esce dalla barra e non c'è nulla di scritto
-            const next = e.relatedTarget as Node | null
-            if (!text.trim() && !(next && e.currentTarget.contains(next))) setAddOpen(false)
-          }}
           class="fixed inset-x-5 z-10 flex h-14 items-center gap-2.5 rounded-full border-2 border-line bg-surface pl-5 pr-1.5 focus-within:border-accent"
           style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}
         >
