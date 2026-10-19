@@ -106,7 +106,7 @@ export function BudgetItemForm({ trip, initial, defaultCategory, onSubmit, onDel
         </>
       )}
 
-      <TextField label="Da pagare entro (facoltativo)" type="date" value={dueDate} onInput={setDueDate} />
+      <TextField label="Da pagare entro (facoltativo)" type="date" value={dueDate} onInput={setDueDate} optional />
       <TextArea label="Note" value={notes} onInput={setNotes} />
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva costo' : 'Aggiungi costo'}</PrimaryButton>

@@ -1,5 +1,6 @@
 import type { ComponentChildren } from 'preact'
 import { currencyName } from '../lib/money'
+import { DatePicker } from './DatePicker'
 import { TickIcon } from './Icons'
 import { Select } from './Select'
 
@@ -19,12 +20,24 @@ interface TextProps {
   inputMode?: 'decimal' | 'numeric' | 'text'
   /** Per data e ora: il valore più basso scelto (es. «al» non prima di «dal»). */
   min?: string
+  /** Solo per le date: il campo si può svuotare («Nessuna data»). */
+  optional?: boolean
 }
 
-export function TextField({ label, value, onInput, type = 'text', list, ...rest }: TextProps) {
+export function TextField({ label, value, onInput, type = 'text', list, optional, ...rest }: TextProps) {
+  // le date hanno il calendario nostro, dove i giorni oltre il limite non si possono toccare
+  if (type === 'date') return <DatePicker label={label} value={value} onInput={onInput} min={rest.min} optional={optional} />
   const common = {
     value,
-    onInput: (e: Event) => onInput((e.currentTarget as HTMLInputElement).value),
+    onInput: (e: Event) => {
+      const input = e.currentTarget as HTMLInputElement
+      // un orario sotto il minimo (es. «alle» prima di «dalle») torna subito al minimo: il selettore del telefono non può bloccarlo
+      if (type === 'time' && rest.min && input.value && input.value < rest.min) {
+        input.value = rest.min
+        return onInput(rest.min)
+      }
+      onInput(input.value)
+    },
     class: inputClass,
     ...rest,
   }
@@ -33,8 +46,6 @@ export function TextField({ label, value, onInput, type = 'text', list, ...rest 
       <span class={labelClass}>{label}</span>
       {list ? (
         <input type="text" list={list} {...common} />
-      ) : type === 'date' ? (
-        <input type="date" {...common} />
       ) : type === 'time' ? (
         <input type="time" {...common} />
       ) : (

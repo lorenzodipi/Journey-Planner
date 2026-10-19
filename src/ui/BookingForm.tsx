@@ -81,8 +81,8 @@ export function BookingForm({ trip, initial, onSubmit, onDelete, onDone }: Props
       <TextField label="Codice di conferma" value={code} onInput={setCode} autoComplete="off" maxLength={80} />
       <TextField label="Link (sito di prenotazione, check-in…)" value={url} onInput={setUrl} placeholder="https://…" autoComplete="off" />
       <div class="grid grid-cols-2 gap-3">
-        <TextField label="Valido dal" type="date" value={validFrom} onInput={onValidFrom} />
-        <TextField label="Fino al" type="date" value={validTo} onInput={setValidTo} min={validFrom || undefined} />
+        <TextField label="Valido dal" type="date" value={validFrom} onInput={onValidFrom} optional />
+        <TextField label="Fino al" type="date" value={validTo} onInput={setValidTo} min={validFrom || undefined} optional />
       </div>
 
       <fieldset class="space-y-2 rounded-2xl bg-bg p-3">

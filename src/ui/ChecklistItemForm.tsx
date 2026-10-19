@@ -57,7 +57,7 @@ export function ChecklistItemForm({ trip, initial, onSubmit, onDelete, onDone }:
           options={[{ value: 'all', label: 'Per tutti' }, ...trip.travelers.map((t) => ({ value: t.id, label: t.name }))]}
         />
       )}
-      <TextField label="Entro il (facoltativo)" type="date" value={dueDate} onInput={setDueDate} />
+      <TextField label="Entro il (facoltativo)" type="date" value={dueDate} onInput={setDueDate} optional />
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : 'Salva'}</PrimaryButton>
       <SecondaryButton danger onClick={() => void remove()}>Elimina voce</SecondaryButton>
