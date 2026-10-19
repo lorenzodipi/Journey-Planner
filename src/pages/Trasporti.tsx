@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks'
 import { dayOffset, formatDateInZone, formatDuration, formatInZone, layover, legDuration, totalTravelTime } from '../lib/flights'
+import { formatWhen, newestFirst, transportWhen, whenKey } from '../lib/logistics'
 import { convert, formatMoney } from '../lib/money'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
@@ -16,10 +17,11 @@ import { Sheet } from '../ui/Sheet'
 import { MODE_LABEL, TransportForm } from '../ui/TransportForm'
 import { useDeleter } from '../ui/useDeleter'
 
-function transportRows(x: Transport, tz: string, trip: { baseCurrency: string; localCurrency?: string; fxRate?: number }) {
+function transportRows(x: Transport, tz: string, days: { id: string; date: string }[], trip: { baseCurrency: string; localCurrency?: string; fxRate?: number }) {
   const rows: { label: string; value: ComponentChildren }[] = [{ label: 'Mezzo', value: MODE_LABEL[x.mode] }]
-  if (x.departAt) rows.push({ label: 'Partenza', value: `${formatDateInZone(x.departAt, tz)} · ${formatInZone(x.departAt, tz)}` })
-  if (x.arriveAt) rows.push({ label: 'Arrivo', value: `${formatDateInZone(x.arriveAt, tz)} · ${formatInZone(x.arriveAt, tz)}` })
+  const { depart, arrive } = transportWhen(x, tz, days)
+  if (depart) rows.push({ label: 'Partenza', value: formatWhen(depart, tz) })
+  if (arrive) rows.push({ label: 'Arrivo', value: formatWhen(arrive, tz) })
   if (x.refCode) rows.push({ label: 'Codice', value: <span class="tracking-[1.5px]">{x.refCode}</span> })
   if (x.cost != null) {
     const approx = x.currency === trip.localCurrency && trip.fxRate && trip.baseCurrency !== x.currency ? convert(x.cost, trip.fxRate) : null
@@ -60,6 +62,10 @@ export function Trasporti() {
           ? 'Nuovo trasporto'
           : 'Modifica trasporto'
 
+  // voli in alto e gli altri trasporti sotto; in ogni gruppo il più recente (per data e ora) per primo
+  const flights = newestFirst(trip.flights, (f) => f.legs[0]?.departAt ?? '')
+  const transports = newestFirst(trip.transports, (x) => whenKey(transportWhen(x, trip.timezone, trip.days).depart))
+
   const notBought = trip.transports.filter((x) => !x.bought).length + trip.flights.filter((f) => !f.paid).length
   const count = trip.transports.length + trip.flights.length
   const subtitle = count === 0 ? 'Voli, treni e spostamenti' : `${count} ${count === 1 ? 'voce' : 'voci'}${notBought > 0 ? ` · ${notBought} non ${notBought === 1 ? 'acquistato' : 'acquistati'}` : ''}`
@@ -70,7 +76,7 @@ export function Trasporti() {
       <div class="px-5 pb-28">
         {count === 0 && <EmptyState title="Nessun trasporto" text="Voli con scali, treni, pass metro, bus e taxi: orari, costo e se il biglietto è già comprato." />}
         <ul class="mt-1 space-y-3.5">
-          {trip.flights.map((f) => (
+          {flights.map((f) => (
             <li key={f.id}>
               <FlightCard
                 flight={f}
@@ -87,7 +93,7 @@ export function Trasporti() {
               />
             </li>
           ))}
-          {trip.transports.map((x) => (
+          {transports.map((x) => (
             <li key={x.id}>
               <Ticket
                 tone={x.bought ? 'line' : 'warn'}
@@ -109,7 +115,10 @@ export function Trasporti() {
                         </span>
                         <span class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                           <span class="text-[13px] text-muted">
-                            {[MODE_LABEL[x.mode], x.departAt && `${formatDateInZone(x.departAt, trip.timezone)}${x.arriveAt ? '' : ` ${formatInZone(x.departAt, trip.timezone)}`}`].filter(Boolean).join(' · ')}
+                            {[MODE_LABEL[x.mode], (() => {
+                              const { depart } = transportWhen(x, trip.timezone, trip.days)
+                              return depart ? formatWhen(depart, trip.timezone, ' ') : ''
+                            })()].filter(Boolean).join(' · ')}
                           </span>
                           <Tag tone={x.bought ? 'ok' : 'warn'}>{x.bought ? 'Acquistato' : 'Non acquistato'}</Tag>
                         </span>
@@ -129,7 +138,7 @@ export function Trasporti() {
                   />
                   </div>
                   {openId === x.id && (
-                    <CardDetail rows={transportRows(x, trip.timezone, trip)} note={x.notes} editLabel={`Modifica ${x.from} → ${x.to}`} onEdit={() => setSheet({ kind: 'edit-transport', transport: x })} />
+                    <CardDetail rows={transportRows(x, trip.timezone, trip.days, trip)} note={x.notes} editLabel={`Modifica ${x.from} → ${x.to}`} onEdit={() => setSheet({ kind: 'edit-transport', transport: x })} />
                   )}
                 </div>
               </Ticket>

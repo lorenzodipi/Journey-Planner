@@ -89,8 +89,10 @@ export interface Transport {
   from: string
   to: string
   mode: TransportMode
-  departAt?: string // istante ISO (UTC)
+  departAt?: string // istante ISO (UTC), solo se c'è l'ora
   arriveAt?: string
+  departDate?: string // "YYYY-MM-DD", solo se l'ora manca (altrimenti la data è nell'istante)
+  arriveDate?: string
   dayId?: string
   fromLat?: number // posizione di partenza/arrivo, per la mappa del giorno
   fromLng?: number

@@ -263,6 +263,8 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
         mode: oneOf(t.mode, MODES, 'other'),
         departAt: instant(t.departAt),
         arriveAt: instant(t.arriveAt),
+        departDate: t.departAt ? undefined : ymd(t.departDate),
+        arriveDate: t.arriveAt ? undefined : ymd(t.arriveDate),
         dayId: dayId && dayIds.has(dayId) ? dayId : undefined,
         fromLat: from?.lat,
         fromLng: from?.lng,
@@ -632,6 +634,9 @@ export function buildSteps(trip: Trip, tripId: string, newId: () => string): Res
     mode: t.mode,
     depart_at: nul(t.departAt),
     arrive_at: nul(t.arriveAt),
+    // le date senza ora esistono solo dopo la migrazione 0009: si scrivono solo se ci sono
+    ...(t.departDate ? { depart_date: t.departDate } : {}),
+    ...(t.arriveDate ? { arrive_date: t.arriveDate } : {}),
     from_lat: nul(t.fromLat),
     from_lng: nul(t.fromLng),
     to_lat: nul(t.toLat),

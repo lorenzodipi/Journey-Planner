@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { layover, legDuration, totalTravelTime } from './flights'
-import { legColumns, legToForm, mapFlights, stayColumns, transportColumns, transportToForm, type FlightLegRow, type LegInput } from './logistics'
+import { legColumns, legToForm, mapFlights, mapTransports, newestFirst, stayColumns, transportColumns, transportToForm, transportWhen, whenKey, type FlightLegRow, type LegInput } from './logistics'
 
 const leg = (over: Partial<LegInput>): LegInput => ({
   flightNumber: '', from: 'MXP', to: 'PEK', departDate: '2026-11-21', departTime: '12:30',
@@ -83,11 +83,46 @@ describe('trasporti', () => {
     expect(c.ref_code).toBeNull()
   })
 
-  it('senza orari salva null e nessun giorno se la data non è del viaggio', () => {
-    const c = transportColumns({ ...base, departTime: '', arriveDate: '', arriveTime: '', departDate: '2026-12-31' }, 'Asia/Tokyo', days)
+  it('senza orari non perde le date: restano in colonne a parte', () => {
+    const c = transportColumns({ ...base, departTime: '', arriveDate: '2026-11-27', arriveTime: '', departDate: '2026-12-31' }, 'Asia/Tokyo', days)
     expect(c.depart_at).toBeNull()
     expect(c.arrive_at).toBeNull()
-    expect(c.day_id).toBeNull()
+    expect(c.depart_date).toBe('2026-12-31')
+    expect(c.arrive_date).toBe('2026-11-27')
+    expect(c.day_id).toBeNull() // la data non è di un giorno del viaggio
+  })
+
+  it('con l’orario la data sta nell’istante e le colonne delle date restano vuote', () => {
+    const c = transportColumns(base, 'Asia/Tokyo', days)
+    expect(c.depart_date).toBeNull()
+    expect(c.arrive_date).toBeNull()
+  })
+
+  it('la data d’arrivo uguale a quella di partenza, senza orario, non si salva (la propone già il modulo)', () => {
+    const c = transportColumns({ ...base, departTime: '08:00', arriveTime: '' }, 'Asia/Tokyo', days)
+    expect(c.arrive_date).toBeNull()
+  })
+
+  it('una data senza orario torna nel modulo (andata e ritorno di un salvataggio)', () => {
+    const row = { id: 'x', trip_id: 't', day_id: null, from_label: 'a', to_label: 'b', mode: 'train' as const, cost: null, currency: 'EUR', scope: 'per_person' as const, bought: false, ref_code: null, notes: null }
+    const c = transportColumns({ ...base, departTime: '', arriveDate: '2026-11-27', arriveTime: '' }, 'Asia/Tokyo', days)
+    const [t] = mapTransports([{ ...row, depart_at: c.depart_at, arrive_at: c.arrive_at, depart_date: c.depart_date, arrive_date: c.arrive_date, day_id: c.day_id }], 't')
+    expect(transportToForm(t, 'Asia/Tokyo', days)).toEqual({ departDate: '2026-11-26', departTime: '', arriveDate: '2026-11-27', arriveTime: '' })
+  })
+
+  it('un vecchio trasporto senza orario recupera la data dal giorno a cui è legato', () => {
+    expect(transportWhen({ dayId: 'd2' }, 'Asia/Tokyo', days).depart).toEqual({ date: '2026-11-27', time: '' })
+    expect(transportWhen({}, 'Asia/Tokyo', days).depart).toBeNull()
+  })
+
+  it('ordina dal più recente al meno recente, i senza data in fondo', () => {
+    const list = [
+      { n: 'senza data', k: '' },
+      { n: 'vecchio', k: '2026-11-21T09:00' },
+      { n: 'solo data', k: whenKey({ date: '2026-11-26', time: '' }) },
+      { n: 'recente', k: '2026-11-26T18:30' },
+    ]
+    expect(newestFirst(list, (x) => x.k).map((x) => x.n)).toEqual(['recente', 'solo data', 'vecchio', 'senza data'])
   })
 
   it('riporta l’istante nel modulo', () => {

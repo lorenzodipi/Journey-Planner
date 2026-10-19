@@ -49,16 +49,35 @@ export async function setStayDeleted(id: string, deleted: boolean): Promise<void
 
 // ---------- trasporti ----------
 
+const MIGRATION_0009 =
+  "Manca la migrazione 0009 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0009_transport_dates.sql). Senza, le date senza ora non si possono salvare."
+const missingDateColumns = (error: { message?: string } | null) => /depart_date|arrive_date/.test(error?.message ?? '')
+
+function withoutDateColumns<T extends { depart_date?: unknown; arrive_date?: unknown }>(columns: T): Omit<T, 'depart_date' | 'arrive_date'> {
+  const { depart_date: _d, arrive_date: _a, ...rest } = columns
+  return rest
+}
+
+/**
+ * Prima della migrazione 0009 le colonne delle date senza ora non esistono. Se la data va salvata lì si dice di
+ * eseguire la migrazione (meglio che perderla in silenzio); se non serve, si salva come prima.
+ */
+async function saveTransport(columns: ReturnType<typeof transportColumns>, write: (c: object) => PromiseLike<{ error: { message?: string } | null }>): Promise<void> {
+  let { error } = await write(columns)
+  if (missingDateColumns(error)) {
+    if (columns.depart_date || columns.arrive_date) throw new Error(MIGRATION_0009)
+    ;({ error } = await write(withoutDateColumns(columns)))
+  }
+  if (error) throw error
+}
+
 export async function createTransport(
   tripId: string,
   input: TransportInput,
   timeZone: string,
   days: Pick<Day, 'id' | 'date'>[],
 ): Promise<void> {
-  const { error } = await client()
-    .from('transports')
-    .insert({ trip_id: tripId, ...transportColumns(input, timeZone, days) })
-  if (error) throw error
+  await saveTransport(transportColumns(input, timeZone, days), (c) => client().from('transports').insert({ trip_id: tripId, ...c }))
 }
 
 export async function updateTransport(
@@ -67,8 +86,7 @@ export async function updateTransport(
   timeZone: string,
   days: Pick<Day, 'id' | 'date'>[],
 ): Promise<void> {
-  const { error } = await client().from('transports').update(transportColumns(input, timeZone, days)).eq('id', id)
-  if (error) throw error
+  await saveTransport(transportColumns(input, timeZone, days), (c) => client().from('transports').update(c).eq('id', id))
 }
 
 export async function setTransportBought(id: string, bought: boolean): Promise<void> {

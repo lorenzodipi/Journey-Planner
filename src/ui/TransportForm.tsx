@@ -33,7 +33,7 @@ interface Props {
 }
 
 export function TransportForm({ trip, initial, defaults, onSubmit, onDelete, onDone }: Props) {
-  const times = initial ? transportToForm(initial, trip.timezone) : { departDate: defaults?.departDate ?? trip.startDate, departTime: '', arriveDate: '', arriveTime: '' }
+  const times = initial ? transportToForm(initial, trip.timezone, trip.days) : { departDate: defaults?.departDate ?? trip.startDate, departTime: '', arriveDate: '', arriveTime: '' }
   const [from, setFrom] = useState(initial?.from ?? '')
   const [to, setTo] = useState(initial?.to ?? '')
   const [mode, setMode] = useState<TransportMode>(initial?.mode ?? 'train')

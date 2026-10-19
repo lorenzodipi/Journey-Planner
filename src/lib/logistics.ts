@@ -1,4 +1,5 @@
 import type { Day, Flight, FlightLeg, Scope, Stay, Transport, TransportMode } from '../types'
+import { formatDateInZone } from './flights'
 import { instantToZoned, isCompleteZoned, zonedToInstant } from './zoned'
 
 // Alloggi, trasporti e voli: righe del database <-> tipi dell'app, e costruzione delle colonne
@@ -34,6 +35,8 @@ export interface TransportRow {
   mode: TransportMode
   depart_at: string | null
   arrive_at: string | null
+  depart_date?: string | null // assenti finché non è applicata la migrazione 0009
+  arrive_date?: string | null
   from_lat?: number | null // assenti finché non è applicata la migrazione 0005
   from_lng?: number | null
   to_lat?: number | null
@@ -113,6 +116,8 @@ export function mapTransports(rows: TransportRow[], tripId: string): Transport[]
       mode: r.mode,
       departAt: r.depart_at ?? undefined,
       arriveAt: r.arrive_at ?? undefined,
+      departDate: r.depart_at ? undefined : (r.depart_date ?? undefined),
+      arriveDate: r.arrive_at ? undefined : (r.arrive_date ?? undefined),
       dayId: r.day_id ?? undefined,
       fromLat: r.from_lat ?? undefined,
       fromLng: r.from_lng ?? undefined,
@@ -235,6 +240,10 @@ export function transportColumns(i: TransportInput, timeZone: string, days: Pick
     mode: i.mode,
     depart_at: depart,
     arrive_at: arrive,
+    // senza l'ora la data si conserva da sola
+    depart_date: depart || !i.departDate ? null : i.departDate,
+    // l'arrivo nello stesso giorno della partenza è il caso normale (e il modulo lo propone da solo): non serve salvarlo
+    arrive_date: arrive || !i.arriveDate || i.arriveDate === i.departDate ? null : i.arriveDate,
     day_id: day?.id ?? null,
     from_lat: i.fromPos?.lat ?? null,
     from_lng: i.fromPos?.lng ?? null,
@@ -250,10 +259,52 @@ export function transportColumns(i: TransportInput, timeZone: string, days: Pick
 }
 
 /** Valori iniziali del modulo trasporto, dall'istante salvato (nel fuso del viaggio). */
-export function transportToForm(t: Transport, timeZone: string) {
-  const dep = t.departAt ? instantToZoned(t.departAt, timeZone) : { date: '', time: '' }
-  const arr = t.arriveAt ? instantToZoned(t.arriveAt, timeZone) : { date: '', time: '' }
-  return { departDate: dep.date, departTime: dep.time, arriveDate: arr.date, arriveTime: arr.time }
+export function transportToForm(t: Transport, timeZone: string, days: Pick<Day, 'id' | 'date'>[] = []) {
+  const { depart, arrive } = transportWhen(t, timeZone, days)
+  return { departDate: depart?.date ?? '', departTime: depart?.time ?? '', arriveDate: arrive?.date ?? '', arriveTime: arrive?.time ?? '' }
+}
+
+/** Data (e ora, se c'è) di un istante o di una data sola, nel fuso del viaggio. `time` è '' quando l'ora non è stata scritta. */
+export interface When {
+  date: string
+  time: string
+}
+
+/**
+ * Quando parte e quando arriva un trasporto. Con l'ora vale l'istante; senza, la data salvata a parte
+ * (per la partenza, nei trasporti più vecchi, anche il giorno a cui sono legati).
+ */
+export function transportWhen(
+  t: Pick<Transport, 'departAt' | 'arriveAt' | 'departDate' | 'arriveDate' | 'dayId'>,
+  timeZone: string,
+  days: Pick<Day, 'id' | 'date'>[] = [],
+): { depart: When | null; arrive: When | null } {
+  const depart: When | null = t.departAt
+    ? instantToZoned(t.departAt, timeZone)
+    : (t.departDate ?? days.find((d) => d.id === t.dayId)?.date)
+      ? { date: (t.departDate ?? days.find((d) => d.id === t.dayId)?.date) as string, time: '' }
+      : null
+  const arrive: When | null = t.arriveAt ? instantToZoned(t.arriveAt, timeZone) : t.arriveDate ? { date: t.arriveDate, time: '' } : null
+  return { depart, arrive }
+}
+
+/** «gio 26 nov» oppure «gio 26 nov · 09:00» se l'ora c'è. */
+export function formatWhen(w: When, timeZone: string, separator = ' · '): string {
+  const day = formatDateInZone(zonedToInstant(w.date, '12:00', timeZone), timeZone)
+  return w.time ? `${day}${separator}${w.time}` : day
+}
+
+/** Dal più recente al meno recente (chiave testuale confrontata al contrario); chi non ha la chiave in fondo. */
+export function newestFirst<T>(list: T[], key: (item: T) => string): T[] {
+  return list
+    .map((item) => ({ item, k: key(item) }))
+    .sort((a, b) => (a.k && b.k ? b.k.localeCompare(a.k) : a.k ? -1 : b.k ? 1 : 0))
+    .map(({ item }) => item)
+}
+
+/** Chiave per ordinare per data e ora (la data sola vale mezzanotte). Vuota se il trasporto non ha date. */
+export function whenKey(w: When | null): string {
+  return w ? `${w.date}T${w.time || '00:00'}` : ''
 }
 
 export interface LegInput {
