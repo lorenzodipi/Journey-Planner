@@ -67,13 +67,13 @@ export function progress(items: Pick<ChecklistItem, 'done'>[]): { done: number; 
 }
 
 /**
- * Voci di un tipo, per tutti o per una persona. Quelle da fare per prime, le fatte in fondo;
- * a parità, nell'ordine scelto. `traveler`: 'all' = tutte, altrimenti id (include anche le voci "per tutti").
+ * Voci di un tipo, per tutti o per una persona, nell'ordine scelto: spuntare una voce non la sposta.
+ * `traveler`: 'all' = tutte, altrimenti id (include anche le voci "per tutti").
  */
 export function visibleItems(items: ChecklistItem[], kind: ChecklistKind, traveler: 'all' | string): ChecklistItem[] {
   return items
     .filter((i) => i.kind === kind && (traveler === 'all' || !i.travelerId || i.travelerId === traveler))
-    .sort((a, b) => Number(a.done) - Number(b.done) || a.position - b.position)
+    .sort((a, b) => a.position - b.position)
 }
 
 /** Voci del modello non ancora presenti (confronto senza badare a maiuscole), con posizioni in coda. */

@@ -12,14 +12,14 @@ describe('checklist', () => {
     expect(progress([])).toEqual({ done: 0, total: 0 })
   })
 
-  it('mostra prima le da fare, poi le fatte, nell’ordine scelto', () => {
+  it('tiene l’ordine scelto: le voci fatte restano al loro posto', () => {
     const list = [
       item({ id: 'a', done: true, position: 1000 }),
       item({ id: 'b', position: 3000 }),
       item({ id: 'c', position: 2000 }),
       item({ id: 'd', kind: 'packing' }),
     ]
-    expect(visibleItems(list, 'todo', 'all').map((i) => i.id)).toEqual(['c', 'b', 'a'])
+    expect(visibleItems(list, 'todo', 'all').map((i) => i.id)).toEqual(['a', 'c', 'b'])
   })
 
   it('per una persona: le sue voci e quelle per tutti', () => {

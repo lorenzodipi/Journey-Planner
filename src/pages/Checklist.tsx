@@ -126,16 +126,15 @@ export function Checklist() {
         {selecting ? (
           <>
             <div class="flex min-h-11 items-center justify-between">
-              <button type="button" onClick={stopSelecting} class="min-h-11 text-[15px] font-extrabold text-pale">
+              <button type="button" onClick={stopSelecting} class="inline-flex min-h-11 items-center gap-2 text-[15px] font-extrabold text-pale">
+                <span aria-hidden="true">‹</span>
                 Annulla
-              </button>
-              <button type="button" onClick={() => setSel(allSelected ? new Set() : new Set(items.map((i) => i.id)))} class="min-h-11 text-[15px] text-muted">
-                {allSelected ? 'Deseleziona tutte' : 'Seleziona tutte'}
               </button>
             </div>
             <h1 class="font-display text-[28px] font-extrabold leading-tight" aria-live="polite">
               {chosen.length === 0 ? 'Tocca le voci' : chosen.length === 1 ? '1 selezionata' : `${chosen.length} selezionate`}
             </h1>
+            <p class="mt-0.5 text-sm text-muted">in {KIND_LABEL[kind]} · tocca le voci per sceglierle</p>
           </>
         ) : (
           <>
@@ -207,6 +206,25 @@ export function Checklist() {
             )}
           </div>
         ) : (
+          <>
+          {selecting && (
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={allSelected ? true : chosen.length > 0 ? 'mixed' : false}
+              aria-label={allSelected ? `Deseleziona tutte le ${items.length} voci` : `Seleziona tutte le ${items.length} voci`}
+              onClick={() => setSel(allSelected ? new Set() : new Set(items.map((i) => i.id)))}
+              class="mt-4 flex min-h-14 w-full items-center gap-3.5 rounded-[14px] border-2 border-line bg-surface-2 px-4 text-left"
+            >
+              <span class={`grid size-7 shrink-0 place-items-center rounded-lg border-2 text-white ${chosen.length > 0 ? 'border-accent bg-accent' : 'border-line'}`}>
+                {allSelected ? <TickIcon size={16} /> : chosen.length > 0 ? <MinusIcon size={16} /> : null}
+              </span>
+              <span class="flex-1 text-base font-extrabold">{allSelected ? 'Deseleziona tutte' : 'Seleziona tutte'}</span>
+              <span class="text-sm font-extrabold text-pale">
+                {chosen.length} su {items.length}
+              </span>
+            </button>
+          )}
           <ul class="mt-4 space-y-3.5">
             {items.map((i) => {
               const owner = i.travelerId ? person.get(i.travelerId) : undefined
@@ -246,7 +264,7 @@ export function Checklist() {
                   >
                     <div class="min-w-0 flex-1">
                       <button type="button" onClick={() => (selecting ? toggleSel(i.id) : setEdit(i))} class="block w-full text-left">
-                        <span class={`block text-xl font-extrabold leading-tight ${i.done ? 'text-muted line-through' : ''}`}>
+                        <span class={`block text-base leading-tight ${i.done ? 'font-semibold text-muted line-through' : 'font-extrabold'}`}>
                           {multi && (
                             <span class={`mr-1.5 inline-block rounded-xl px-2 align-middle text-sm font-extrabold tabular-nums no-underline ${i.done ? 'bg-line text-muted' : 'bg-accent-soft text-pale'}`}>
                               {have}/{i.quantity}
@@ -315,6 +333,7 @@ export function Checklist() {
               )
             })}
           </ul>
+          </>
         )}
 
         <button type="button" onClick={() => void addTemplate()} class="mx-auto mt-4 block min-h-11 px-3 text-sm font-extrabold text-muted">
