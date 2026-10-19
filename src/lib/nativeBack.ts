@@ -8,25 +8,33 @@ const isHome = () => {
   return h === '' || h === '/'
 }
 
+/**
+ * «Indietro» dell'app, uguale per il tasto Android e per lo swipe dal bordo di iOS.
+ * Restituisce `false` se non c'è nulla a cui tornare (già su «Oggi», nessun pannello aperto).
+ */
+export function goBack(): boolean {
+  // 1) un pannello aperto (nuova tappa, modifica…) si chiude per primo
+  // (il più in alto è quello aperto per ultimo: una conferma o un selettore si chiudono prima del pannello sotto)
+  const top = topDialog()
+  if (top) {
+    top.close()
+    return true
+  }
+  // 2) altrimenti torna alla pagina precedente; se non ce n'è, va a "Oggi"
+  if (!isHome()) {
+    const before = location.hash
+    history.back()
+    setTimeout(() => {
+      if (location.hash === before) location.hash = '#/'
+    }, 200)
+    return true
+  }
+  return false
+}
+
 export function setupNativeBack(): void {
   void App.addListener('backButton', () => {
-    // 1) un pannello aperto (nuova tappa, modifica…) si chiude per primo
-    // (il più in alto è quello aperto per ultimo: una conferma o un selettore si chiudono prima del pannello sotto)
-    const top = topDialog()
-    if (top) {
-      top.close()
-      return
-    }
-    // 2) altrimenti torna alla pagina precedente; se non ce n'è, va a "Oggi"
-    if (!isHome()) {
-      const before = location.hash
-      history.back()
-      setTimeout(() => {
-        if (location.hash === before) location.hash = '#/'
-      }, 200)
-      return
-    }
     // 3) già su "Oggi": esce dall'app
-    void App.exitApp()
+    if (!goBack()) void App.exitApp()
   })
 }
