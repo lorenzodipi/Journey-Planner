@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { layover, legDuration, totalTravelTime } from './flights'
-import { legColumns, legToForm, mapFlights, mapTransports, newestFirst, stayColumns, transportColumns, transportToForm, transportWhen, whenKey, type FlightLegRow, type LegInput } from './logistics'
+import { legColumns, legToForm, mapFlights, mapTransports, earliestFirst, stayColumns, transportColumns, transportToForm, transportWhen, whenKey, type FlightLegRow, type LegInput } from './logistics'
 
 const leg = (over: Partial<LegInput>): LegInput => ({
   flightNumber: '', from: 'MXP', to: 'PEK', departDate: '2026-11-21', departTime: '12:30',
@@ -115,14 +115,14 @@ describe('trasporti', () => {
     expect(transportWhen({}, 'Asia/Tokyo', days).depart).toBeNull()
   })
 
-  it('ordina dal più recente al meno recente, i senza data in fondo', () => {
+  it('ordina per data e ora (il primo in alto), i senza data in fondo', () => {
     const list = [
       { n: 'senza data', k: '' },
       { n: 'vecchio', k: '2026-11-21T09:00' },
       { n: 'solo data', k: whenKey({ date: '2026-11-26', time: '' }) },
       { n: 'recente', k: '2026-11-26T18:30' },
     ]
-    expect(newestFirst(list, (x) => x.k).map((x) => x.n)).toEqual(['recente', 'solo data', 'vecchio', 'senza data'])
+    expect(earliestFirst(list, (x) => x.k).map((x) => x.n)).toEqual(['vecchio', 'solo data', 'recente', 'senza data'])
   })
 
   it('riporta l’istante nel modulo', () => {

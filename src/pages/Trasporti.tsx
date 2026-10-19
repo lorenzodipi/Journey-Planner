@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import { dayOffset, formatDateInZone, formatDuration, formatInZone, layover, legDuration, totalTravelTime } from '../lib/flights'
-import { formatWhen, newestFirst, transportWhen, whenKey } from '../lib/logistics'
+import { formatWhen, earliestFirst, transportWhen, whenKey } from '../lib/logistics'
 import { convert, formatMoney } from '../lib/money'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
@@ -62,9 +62,9 @@ export function Trasporti() {
           ? 'Nuovo trasporto'
           : 'Modifica trasporto'
 
-  // voli in alto e gli altri trasporti sotto; in ogni gruppo il più recente (per data e ora) per primo
-  const flights = newestFirst(trip.flights, (f) => f.legs[0]?.departAt ?? '')
-  const transports = newestFirst(trip.transports, (x) => whenKey(transportWhen(x, trip.timezone, trip.days).depart))
+  // voli in alto e gli altri trasporti sotto; in ogni gruppo in ordine di data e ora, il primo in alto
+  const flights = earliestFirst(trip.flights, (f) => f.legs[0]?.departAt ?? '')
+  const transports = earliestFirst(trip.transports, (x) => whenKey(transportWhen(x, trip.timezone, trip.days).depart))
 
   const notBought = trip.transports.filter((x) => !x.bought).length + trip.flights.filter((f) => !f.paid).length
   const count = trip.transports.length + trip.flights.length

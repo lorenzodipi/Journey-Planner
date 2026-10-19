@@ -294,11 +294,11 @@ export function formatWhen(w: When, timeZone: string, separator = ' · '): strin
   return w.time ? `${day}${separator}${w.time}` : day
 }
 
-/** Dal più recente al meno recente (chiave testuale confrontata al contrario); chi non ha la chiave in fondo. */
-export function newestFirst<T>(list: T[], key: (item: T) => string): T[] {
+/** Dal primo all'ultimo in ordine di data e ora (chiave testuale); chi non ha la chiave in fondo. */
+export function earliestFirst<T>(list: T[], key: (item: T) => string): T[] {
   return list
     .map((item) => ({ item, k: key(item) }))
-    .sort((a, b) => (a.k && b.k ? b.k.localeCompare(a.k) : a.k ? -1 : b.k ? 1 : 0))
+    .sort((a, b) => (a.k && b.k ? a.k.localeCompare(b.k) : a.k ? -1 : b.k ? 1 : 0))
     .map(({ item }) => item)
 }
 
