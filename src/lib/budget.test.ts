@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Expense } from '../types'
-import { budgetLines, categoryOverview, expenseBase, expenseOwed, expensesOf, groupByCategory, involvesTraveler, personSummary, shareOf, logisticsLines, settle, shareAmounts, splitEvenly, summarizeExpenses, summarizeLines, toBase, type Line } from './budget'
+import { budgetLines, categoryOverview, paidFromSections, expenseBase, expenseOwed, expensesOf, groupByCategory, involvesTraveler, personSummary, shareOf, logisticsLines, settle, shareAmounts, splitEvenly, summarizeExpenses, summarizeLines, toBase, type Line } from './budget'
 
 // Cifre FITTIZIE: servono solo a verificare i calcoli.
 const T1 = { id: 't1' }
@@ -214,6 +214,23 @@ describe('categorie: previsto e speso', () => {
     }
     const [t] = categoryOverview(trip, fx)
     expect(t).toMatchObject({ id: 't', planned: 40, spent: 15 })
+  })
+
+  it('voli, alloggi e trasporti già pagati contano come speso senza registrarli tra le spese', () => {
+    const trip = {
+      ...base,
+      expenseCategories: [],
+      flights: [{ id: 'f', title: 'Andata', cost: 600, currency: 'EUR', scope: 'per_person' as const, paid: true, legs: [] }],
+      stays: [{ id: 's', name: 'Hotel', city: '', checkIn: '2026-11-22', checkOut: '2026-11-26', totalCost: 800, currency: 'EUR', breakfast: false, dinner: false, kitchen: false, booked: true, paid: false }],
+      budget: [],
+      expenses: [],
+    }
+    const list = categoryOverview(trip, fx)
+    const voli = list.find((c) => c.label === 'Voli')
+    const alloggi = list.find((c) => c.label === 'Alloggi')
+    expect(voli).toMatchObject({ planned: 1200, spent: 1200, paidFromSections: 1200, sections: { count: 1, paid: 1 } }) // 600 a testa x 2
+    expect(alloggi).toMatchObject({ planned: 800, spent: 0, sections: { count: 1, paid: 0 } }) // non ancora pagato
+    expect(paidFromSections(trip, fx).paid).toBe(1200)
   })
 
   it('una spesa in una valuta senza tasso non entra nel totale ma viene segnalata', () => {

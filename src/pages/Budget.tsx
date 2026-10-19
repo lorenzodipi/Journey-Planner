@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
-import { budgetLines, categoryOverview, expenseBase, fxOf, logisticsLines, shareAmounts, summarizeExpenses, summarizeLines, toBase, type CategoryOverview, type Line } from '../lib/budget'
+import { budgetLines, categoryOverview, expenseBase, fxOf, logisticsLines, paidFromSections, shareAmounts, summarizeExpenses, summarizeLines, toBase, type CategoryOverview, type Line } from '../lib/budget'
 import { formatShort } from '../lib/dates'
 import { dateInZone } from '../lib/flights'
 import { formatMoney, round2 } from '../lib/money'
@@ -46,6 +46,9 @@ export function Budget() {
   const lines: Line[] = [...budgetLines(trip.budget), ...logisticsLines(trip)]
   const summary = summarizeLines(lines, trip.travelers, fx)
   const spentAll = summarizeExpenses(trip.expenses, trip.travelers, fx)
+  // speso = spese registrate + voli, alloggi e trasporti già pagati (presi dalle loro sezioni, senza ripeterli come spese)
+  const sectionsPaid = paidFromSections(trip, fx)
+  const spentTotal = round2(spentAll.total + sectionsPaid.paid)
   const categories = categoryOverview(trip, fx)
   const person = new Map(trip.travelers.map((p) => [p.id, p]))
   const itemById = new Map(trip.budget.map((b) => [b.id, b]))
@@ -232,10 +235,17 @@ export function Budget() {
           </div>
         )}
 
-        {c.lines.length > 0 && (
+        {c.lines.some((l) => l.source !== 'budget') && (
+          <div class="mt-2 border-t-2 border-dashed border-line">
+            <p class="px-1 pt-2 text-xs font-extrabold text-muted">Già inseriti in {c.label} · il pagato conta come speso</p>
+            <ul class="divide-y-2 divide-dashed divide-line">{c.lines.filter((l) => l.source !== 'budget').map(lineRow)}</ul>
+          </div>
+        )}
+
+        {c.lines.some((l) => l.source === 'budget') && (
           <div class="mt-2 border-t-2 border-dashed border-line">
             <p class="px-1 pt-2 text-xs font-extrabold text-muted">Costi previsti</p>
-            <ul class="divide-y-2 divide-dashed divide-line">{c.lines.map(lineRow)}</ul>
+            <ul class="divide-y-2 divide-dashed divide-line">{c.lines.filter((l) => l.source === 'budget').map(lineRow)}</ul>
           </div>
         )}
 
@@ -254,7 +264,7 @@ export function Budget() {
 
   const paidBy = new Map(spentAll.balances.map((b) => [b.travelerId, b.paid]))
   const planned = summary.planned
-  const left = round2(planned - spentAll.total)
+  const left = round2(planned - spentTotal)
 
   return (
     <>
@@ -262,7 +272,7 @@ export function Budget() {
       <div class="px-5 pb-28">
         <Receipt>
           <p class="text-[13px] text-paper-muted">Speso finora</p>
-          <p class="font-display text-[50px] font-extrabold leading-[1.05] tracking-[-2px] tabular-nums">{formatMoney(spentAll.total, base)}</p>
+          <p class="font-display text-[50px] font-extrabold leading-[1.05] tracking-[-2px] tabular-nums">{formatMoney(spentTotal, base)}</p>
           <p class="text-[13px] text-paper-muted">
             {planned > 0
               ? `su ${formatMoney(planned, base)} previsti · ${left >= 0 ? `restano ${formatMoney(left, base)}` : `oltre di ${formatMoney(-left, base)}`}`
@@ -280,6 +290,7 @@ export function Budget() {
                   <span class="block text-xs text-paper-muted">
                     {[
                       c.expenses.length > 0 ? `${c.expenses.length} ${c.expenses.length === 1 ? 'spesa' : 'spese'}` : null,
+                      c.sections.count > 0 ? `${c.sections.paid} di ${c.sections.count} pagati` : null,
                       c.planned > 0 ? `costo previsto ${formatMoney(c.planned, base)}` : c.expenses.length > 0 ? 'nessun costo previsto' : 'Ancora vuota · registra una spesa',
                     ]
                       .filter(Boolean)
@@ -336,9 +347,9 @@ export function Budget() {
             </>
           )}
 
-          {(summary.unconverted.length > 0 || spentAll.unconverted.length > 0) && (
+          {(summary.unconverted.length > 0 || spentAll.unconverted.length > 0 || sectionsPaid.unconverted.length > 0) && (
             <p role="alert" class="mt-3 rounded-lg border-2 border-ink px-3 py-2 text-xs font-extrabold">
-              Mancano i tassi per {Array.from(new Set([...summary.unconverted, ...spentAll.unconverted])).join(', ')}: queste voci non sono nei totali.
+              Mancano i tassi per {Array.from(new Set([...summary.unconverted, ...spentAll.unconverted, ...sectionsPaid.unconverted])).join(', ')}: queste voci non sono nei totali.
             </p>
           )}
         </Receipt>

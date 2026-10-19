@@ -149,8 +149,15 @@ export interface CategoryOverview {
   color?: string
   /** previsto: somma delle voci di budget della categoria (nella valuta base) */
   planned: number
-  /** speso davvero: somma delle spese registrate nella categoria. Si calcola, non si scrive a mano. */
+  /**
+   * speso davvero: le spese registrate nella categoria più i costi già pagati di voli, alloggi e trasporti
+   * (che non si registrano due volte come spese). Si calcola, non si scrive a mano.
+   */
   spent: number
+  /** la parte di `spent` che viene da voli, alloggi e trasporti già pagati */
+  paidFromSections: number
+  /** quanti costi arrivano dalle sezioni Voli/Alloggi/Trasporti e quanti sono già pagati */
+  sections: { count: number; paid: number }
   lines: Line[]
   expenses: Expense[]
   /** valute senza tasso: quelle spese non sono nei totali */
@@ -170,7 +177,7 @@ export function categoryOverview(
     const key = catKey(label)
     let c = map.get(key)
     if (!c) {
-      c = { key, id, label: label.trim(), color, planned: 0, spent: 0, lines: [], expenses: [], unconverted: [] }
+      c = { key, id, label: label.trim(), color, planned: 0, spent: 0, paidFromSections: 0, sections: { count: 0, paid: 0 }, lines: [], expenses: [], unconverted: [] }
       map.set(key, c)
     }
     return c
@@ -190,12 +197,27 @@ export function categoryOverview(
       if (b === null) unconverted.add(e.currency)
       else spent += b
     }
-    c.spent = round2(spent)
+    // voli, alloggi e trasporti: se sono segnati come pagati contano come speso, senza ripeterli tra le spese
+    const fromSections = c.lines.filter((l) => l.source !== 'budget')
+    const sections = summarizeLines(fromSections, trip.travelers, fx)
+    sections.unconverted.forEach((u) => unconverted.add(u))
+    c.paidFromSections = sections.paid
+    c.sections = { count: fromSections.length, paid: fromSections.filter((l) => l.shares.length > 0 && l.shares.every((s) => s.paid)).length }
+    c.spent = round2(spent + sections.paid)
     c.unconverted = Array.from(unconverted).sort()
   }
   return Array.from(map.values())
     .filter((c) => c.id !== undefined || c.lines.length > 0 || c.expenses.length > 0)
     .sort((a, b) => (a.key === catKey(OTHER_CATEGORY) ? 1 : b.key === catKey(OTHER_CATEGORY) ? -1 : a.label.localeCompare(b.label, 'it')))
+}
+
+/** Quanto di voli, alloggi e trasporti risulta già pagato (nella valuta base): vale come speso senza registrarlo tra le spese. */
+export function paidFromSections(
+  trip: Pick<Trip, 'flights' | 'stays' | 'transports'> & { travelers: readonly { id: string }[] },
+  fx: FxContext,
+): { paid: number; unconverted: string[] } {
+  const s = summarizeLines(logisticsLines(trip), trip.travelers, fx)
+  return { paid: s.paid, unconverted: s.unconverted }
 }
 
 // ---------- spese ----------
