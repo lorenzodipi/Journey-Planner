@@ -10,7 +10,6 @@ import { Ticket } from '../ui/Ticket'
 import { FilterSheet } from '../ui/FilterSheet'
 import { categoryIcon } from '../lib/categoryIcon'
 import type { MapPin } from '../ui/MapView'
-import { EmptyState } from '../ui/PageHeader'
 import { PlaceSheet, type PlaceSheetState } from '../ui/PlaceSheet'
 import { NO_CATEGORY_COLOR, PALETTE, STATUS_LABEL, STATUS_STYLE, categoryColor, colorForCategory } from '../ui/placeMeta'
 
@@ -101,14 +100,7 @@ export function Mappa() {
 
   return (
     <div class="map-full fixed inset-0 z-0 bg-bg">
-      {withCoords.length === 0 ? (
-        <div class="grid h-full place-items-center px-5">
-          <EmptyState
-            title="Nessun luogo con posizione"
-            text="Aggiungi luoghi dalla scheda Luoghi: cercandoli per nome o incollando un link di Google Maps, compariranno qui."
-          />
-        </div>
-      ) : View ? (
+      {View ? (
         <View pins={pins} center={trip.center} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
       ) : (
         <p class="grid h-full place-items-center px-6 text-center text-sm text-muted" role="status">
@@ -160,6 +152,15 @@ export function Mappa() {
           </button>
         </div>
       </div>
+
+      {withCoords.length === 0 && (
+        <div class="pointer-events-none absolute inset-x-3.5 z-10" style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}>
+          <div class="rounded-2xl border-2 border-line bg-bg px-4 py-3 shadow-[0_6px_16px_rgb(0_0_0/0.35)]">
+            <p class="text-base font-extrabold">Nessun luogo con posizione</p>
+            <p class="mt-0.5 text-sm text-muted">Aggiungi luoghi dalla scheda Luoghi: cercandoli per nome o incollando un link di Google Maps, compariranno qui.</p>
+          </div>
+        </div>
+      )}
 
       {visible.length === 0 && withCoords.length > 0 && (
         <p class="pointer-events-none absolute inset-x-6 top-44 z-10 rounded-2xl border-2 border-line bg-bg px-4 py-3 text-center text-sm text-muted">Nessun luogo con questi filtri.</p>

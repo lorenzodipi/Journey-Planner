@@ -17,6 +17,14 @@ describe('colori delle categorie', () => {
     expect(themeColor('Alloggio')).toBe('#22a373')
   })
 
+  it('Supermercato e Benzinaio hanno colori propri, diversi da tutti gli altri', () => {
+    expect(themeColor('Supermercato')).toBe('#98aa07')
+    expect(themeColor('Benzinaio')).toBe('#b97aaa')
+    const labels = ['Tempio', 'Cibo', 'Caffè', 'Shopping', 'Natura', 'Panorama', 'Quartiere', 'Museo', 'Castello', 'Onsen', 'Alloggio', 'Stazione', 'Vita notturna', 'Divertimento', 'Supermercato', 'Benzinaio']
+    const t = trip(labels)
+    expect(new Set(labels.map((_, i) => colorForCategory(t, `c${i}`))).size).toBe(labels.length)
+  })
+
   it('una categoria sconosciuta resta senza colore', () => {
     expect(colorForCategory(trip(['Tempio']), 'nope')).toBe('#9fb0c8')
   })

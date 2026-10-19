@@ -2,8 +2,10 @@ import {
   faBagShopping,
   faBed,
   faBuildingColumns,
+  faCartShopping,
   faChessRook,
   faCity,
+  faGasPump,
   faHotTubPerson,
   faLocationDot,
   faMasksTheater,
@@ -35,10 +37,15 @@ export type PinIcon =
   | 'transit'
   | 'night'
   | 'fun'
+  | 'grocery'
+  | 'fuel'
   | 'pin'
 
 // L'ordine conta: «parco giochi» deve battere «parco».
 const RULES: [PinIcon, RegExp][] = [
+  // prima di «shopping» («supermercato» contiene «mercat») e di «transit» («stazione di servizio»)
+  ['grocery', /supermerc|alimentar|\bspesa\b|konbini|conbini|minimarket|drogheria|negozio di alimenti/],
+  ['fuel', /benzin|carburant|rifornimento|distributor|stazione di servizio|area di servizio|gas station|\bgpl\b|\bpompa\b/],
   ['fun', /divertiment|parco giochi|attrazion|gioc|arcade|anime|manga|spettacol|intrattenim|esperienz|show|teatro|cinema|karaoke/],
   ['temple', /tempi|templ|santuar|shrine|torii|pagod|chies|cattedral|moschea|monaster|buddh/],
   ['spa', /onsen|term[ae]|\bspa\b|relax|benessere|bagni/],
@@ -85,6 +92,8 @@ export const PIN_ICONS: Record<PinIcon, IconDefinition> = {
   transit: faTrainSubway,
   night: faMoon,
   fun: faMasksTheater,
+  grocery: faCartShopping,
+  fuel: faGasPump,
   pin: faLocationDot,
 }
 
