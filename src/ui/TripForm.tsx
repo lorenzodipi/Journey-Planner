@@ -5,6 +5,7 @@ import {
   PRESETS,
   TRAVELER_COLORS,
   cleanPeople,
+  isValidTimezone,
   validateTrip,
   type Preset,
 } from '../lib/tripForm'
@@ -12,6 +13,7 @@ import type { ThemeName, Trip } from '../types'
 import { FormError, PrimaryButton, TextField } from './Field'
 import { Select } from './Select'
 import { timezoneOptions } from '../lib/timezones'
+import { centerForTimezone } from '../lib/tzCenter'
 
 interface Props {
   /** Se presente il form modifica quel viaggio, altrimenti ne crea uno nuovo. */
@@ -47,6 +49,12 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
     if (v && endDate && endDate < v) setEndDate(v)
   }
   const [busy, setBusy] = useState(false)
+
+  // cambiando il fuso orario, anche la posizione (per alba/tramonto, meteo e mappa) si sposta nella zona giusta
+  function onTimezone(tz: string) {
+    setTimezone(tz)
+    if (isValidTimezone(tz)) setCenter(centerForTimezone(tz))
+  }
 
   function applyPreset(p: Preset) {
     setPresetId(p.id)
@@ -201,7 +209,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
           <Select
             label="Fuso orario della destinazione"
             value={timezone}
-            onChange={setTimezone}
+            onChange={onTimezone}
             creatable
             options={timezoneOptions(timezone)}
           />

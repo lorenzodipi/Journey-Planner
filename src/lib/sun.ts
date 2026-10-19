@@ -46,9 +46,15 @@ export function sunForDay(ymd: string, lat: number, lng: number, timeZone: strin
   const offset = tzOffsetMinutes(approx, timeZone)
   const localNoon = new Date(approx.getTime() - offset * 60_000)
   const t = getTimes(localNoon, lat, lng, 0, offset)
+  const sunrise = t.sunrise ? minutesOfDay(t.sunrise, timeZone) : null
+  const sunset = t.sunset ? minutesOfDay(t.sunset, timeZone) : null
+  // un tramonto prima dell'alba vuol dire che posizione e fuso non combaciano: meglio nessun orario che uno sbagliato
+  if (sunrise !== null && sunset !== null && sunset <= sunrise && !t.alwaysUp && !t.alwaysDown) {
+    return { sunrise: null, sunset: null, alwaysUp: false, alwaysDown: false }
+  }
   return {
-    sunrise: t.sunrise ? minutesOfDay(t.sunrise, timeZone) : null,
-    sunset: t.sunset ? minutesOfDay(t.sunset, timeZone) : null,
+    sunrise,
+    sunset,
     alwaysUp: Boolean(t.alwaysUp),
     alwaysDown: Boolean(t.alwaysDown),
   }

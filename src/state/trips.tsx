@@ -16,6 +16,7 @@ import * as money from '../lib/moneyApi'
 import * as planning from '../lib/planningApi'
 import * as restore from '../lib/restoreApi'
 import { syncOfflineFiles } from '../lib/bookingFiles'
+import { tripCenter } from '../lib/tzCenter'
 import type { BookingInput, ChecklistInput } from '../lib/planningData'
 import type { BudgetInput, ExpenseInput } from '../lib/moneyData'
 import type { FlightInput, StayInput, TransportInput } from '../lib/logistics'
@@ -111,7 +112,7 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
   const flushing = useRef(false)
   // le tappe di ogni giorno sono sempre nell'ordine mostrato (posizione + orario)
   const trips = useMemo(
-    () => applyQueue(serverTrips, queue).map((t) => ({ ...t, days: t.days.map((d) => ({ ...d, items: orderItems(d.items) })) })),
+    () => applyQueue(serverTrips, queue).map((t) => ({ ...t, center: tripCenter(t), days: t.days.map((d) => ({ ...d, items: orderItems(d.items) })) })),
     [serverTrips, queue],
   )
   const [status, setStatus] = useState<TripsStatus>(demo ? 'ready' : 'loading')
