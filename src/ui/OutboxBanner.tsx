@@ -19,6 +19,29 @@ function useOnline(): boolean {
   return online
 }
 
+/**
+ * «Invio di N modifiche…»: compare solo se l'invio dura più di un attimo e sta sopra la pagina senza spostarla.
+ * Come striscia nel flusso della pagina, a ogni tocco (es. una spunta nella checklist) spingeva giù tutto il
+ * contenuto per il tempo dell'invio e poi lo faceva risalire: lo «scatto» che si vedeva.
+ */
+function SendingPill({ count }: { count: number }) {
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    if (count === 0) return setVisible(false)
+    const timer = setTimeout(() => setVisible(true), 1200)
+    return () => clearTimeout(timer)
+  }, [count > 0])
+  if (!visible || count === 0) return null
+  return (
+    <p
+      class="pointer-events-none fixed inset-x-0 z-40 mx-auto w-fit max-w-[90vw] rounded-full border-2 border-line bg-surface px-4 py-1.5 text-center text-xs font-extrabold text-pale shadow-[0_6px_16px_rgb(0_0_0/0.35)]"
+      style={{ top: 'calc(0.5rem + env(safe-area-inset-top))' }}
+    >
+      Invio di {count} {count === 1 ? 'modifica' : 'modifiche'}…
+    </p>
+  )
+}
+
 /** Stato della rete e delle modifiche in attesa: una sola striscia in alto, sempre comprensibile. */
 export function OutboxBanner() {
   const auth = useAuth()
@@ -45,11 +68,9 @@ export function OutboxBanner() {
             ? `Offline · ${pending} ${pending === 1 ? 'modifica partirà' : 'modifiche partiranno'} quando torna la rete`
             : 'Offline · spese, checklist e tappe si salvano sul telefono; le altre modifiche richiedono la rete'}
         </p>
-      ) : pending > 0 ? (
-        <p class={`${bar} bg-accent-soft text-pale`} style={top}>
-          Invio di {pending} {pending === 1 ? 'modifica' : 'modifiche'}…
-        </p>
-      ) : null}
+      ) : (
+        <SendingPill count={pending} />
+      )}
     </div>
   )
 }

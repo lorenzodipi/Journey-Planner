@@ -22,14 +22,14 @@ const sections = [
   {
     href: '/altro/alloggi',
     title: 'Alloggi',
-    color: 'var(--warn)',
+    color: '#ffa23a',
     Icon: BedIcon,
     text: (t: Trip) => (t.stays.length ? `${t.stays.length} ${t.stays.length === 1 ? 'alloggio' : 'alloggi'}` : 'Hotel, check-in e check-out, costi'),
   },
   {
     href: '/altro/trasporti',
     title: 'Trasporti e voli',
-    color: 'var(--warn)',
+    color: '#3fd0e8',
     Icon: TrainCarIcon,
     text: (t: Trip) =>
       t.flights.length + t.transports.length
@@ -39,14 +39,14 @@ const sections = [
   {
     href: '/altro/budget',
     title: 'Budget e spese',
-    color: 'var(--ok)',
+    color: '#2cc48a',
     Icon: BudgetIcon,
     text: (t: Trip) => (t.budget.length + t.expenses.length ? `${t.budget.length} voci · ${t.expenses.length} spese` : 'Previsto, speso e chi deve a chi'),
   },
   {
     href: '/altro/checklist',
     title: 'Checklist e valigia',
-    color: 'var(--accent)',
+    color: '#3d86ff',
     Icon: ChecklistIcon,
     text: (t: Trip) => {
       const done = t.checklist.filter((c) => c.done).length
@@ -56,14 +56,14 @@ const sections = [
   {
     href: '/altro/prenotazioni',
     title: 'Prenotazioni e documenti',
-    color: 'var(--warn)',
+    color: '#b58cff',
     Icon: TicketIcon,
     text: (t: Trip) => (t.bookings.length ? `${t.bookings.length} ${t.bookings.length === 1 ? 'prenotazione' : 'prenotazioni'}` : 'Codici, link e biglietti, anche offline'),
   },
   {
     href: '/altro/impostazioni',
     title: 'Impostazioni',
-    color: 'var(--pale)',
+    color: '#f472b6',
     Icon: SettingsIcon,
     text: () => 'Esporta e ripristina i dati, copia sul telefono, info',
   },

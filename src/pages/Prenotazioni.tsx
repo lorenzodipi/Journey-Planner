@@ -14,7 +14,7 @@ import { BookingForm } from '../ui/BookingForm'
 import { CardDetail, useOpenCard } from '../ui/CardDetail'
 import { BedIcon, ChevronDownIcon, CloudIcon, CopyIcon, FileIcon, PlaneIcon, ShieldIcon, SimIcon, TicketIcon, TrainCarIcon } from '../ui/Icons'
 import { EmptyState, PageHeader } from '../ui/PageHeader'
-import { Disc, Fab, Tag, Ticket } from '../ui/Ticket'
+import { Disc, Fab, Ticket } from '../ui/Ticket'
 import { Sheet } from '../ui/Sheet'
 
 function bookingRows(b: Booking, tz: string, link: string | null, offline: boolean, travelers: readonly Traveler[]) {
@@ -106,17 +106,16 @@ export function Prenotazioni() {
             {trip.bookings.map((b) => {
               const link = b.url ? safeUrl(b.url) : null
               const when = range(b)
-              const ok = Boolean(b.code || b.filePath || link)
               const Icon = ICON[b.type]
               const isOpen = openId === b.id
               const offline = b.filePath ? cached.has(b.filePath) : false
               return (
                 <li>
                   <Ticket
-                    tone={ok ? 'line' : 'warn'}
+                    tone="line"
                     stub={
                       <div class="flex flex-col items-center gap-1">
-                        <Disc color={ok ? 'var(--ok)' : 'var(--warn)'}>
+                        <Disc color="var(--ok)">
                           <Icon size={22} />
                         </Disc>
                         <span class="text-[10px] font-extrabold text-muted">{BOOKING_LABEL[b.type]}</span>
@@ -138,11 +137,7 @@ export function Prenotazioni() {
                         <ChevronDownIcon size={20} class={`shrink-0 text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                       </button>
                       <div class="mt-1.5 flex flex-wrap items-center gap-2">
-                        {b.code ? (
-                          <span class="rounded-md border-2 border-dashed border-line px-1.5 text-sm font-extrabold tracking-[1.5px] text-pale">{b.code}</span>
-                        ) : (
-                          !link && !b.filePath && <Tag tone="warn">Da prenotare</Tag>
-                        )}
+                        {b.code && <span class="rounded-md border-2 border-dashed border-line px-1.5 text-sm font-extrabold tracking-[1.5px] text-pale">{b.code}</span>}
                         {offline && (
                           <span class="inline-flex items-center gap-1 text-xs font-extrabold text-ok">
                             <CloudIcon size={14} />

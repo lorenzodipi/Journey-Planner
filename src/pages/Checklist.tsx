@@ -254,7 +254,7 @@ export function Checklist() {
                           aria-label={`${i.done ? 'Da rifare' : multi ? 'Tutti a posto' : 'Fatto'}: ${i.text}`}
                           disabled={pending.has(i.id)}
                           onClick={() => void toggle(i)}
-                          class="grid size-11 place-items-center disabled:opacity-50"
+                          class="grid size-11 place-items-center"
                         >
                           <span
                             class={`grid size-7 place-items-center rounded-full border-2 ${i.done ? 'border-ok bg-ok text-bg' : partial ? 'border-accent text-pale' : 'border-line'}`}
