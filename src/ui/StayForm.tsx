@@ -22,6 +22,11 @@ export function StayForm({ trip, initial, defaults, onSubmit, onDelete, onDone }
   const [city, setCity] = useState(initial?.city ?? '')
   const [checkIn, setCheckIn] = useState(initial?.checkIn ?? defaults?.checkIn ?? trip.startDate)
   const [checkOut, setCheckOut] = useState(initial?.checkOut ?? defaults?.checkOut ?? defaults?.checkIn ?? trip.startDate)
+  // il check-out non può essere prima del check-in: se il check-in lo supera, il check-out lo segue
+  function onCheckIn(v: string) {
+    setCheckIn(v)
+    if (v && checkOut && checkOut < v) setCheckOut(v)
+  }
   const [checkInInfo, setCheckInInfo] = useState(initial?.checkInInfo ?? '')
   const [checkOutInfo, setCheckOutInfo] = useState(initial?.checkOutInfo ?? '')
   const [address, setAddress] = useState(initial?.address ?? '')
@@ -76,8 +81,8 @@ export function StayForm({ trip, initial, defaults, onSubmit, onDelete, onDone }
       <Select label="Città" value={city} onChange={setCity} creatable placeholder="Scegli o scrivi" options={cities.map((c) => ({ value: c, label: c }))} />
 
       <div class="grid grid-cols-2 gap-3">
-        <TextField label="Check-in" type="date" value={checkIn} onInput={setCheckIn} />
-        <TextField label="Check-out" type="date" value={checkOut} onInput={setCheckOut} />
+        <TextField label="Check-in" type="date" value={checkIn} onInput={onCheckIn} />
+        <TextField label="Check-out" type="date" value={checkOut} onInput={setCheckOut} min={checkIn || undefined} />
       </div>
       <div class="grid grid-cols-2 gap-3">
         <TextField label="Orario check-in" value={checkInInfo} onInput={setCheckInInfo} placeholder="17:00–22:00" />

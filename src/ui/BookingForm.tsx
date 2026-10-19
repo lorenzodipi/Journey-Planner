@@ -23,6 +23,11 @@ export function BookingForm({ trip, initial, onSubmit, onDelete, onDone }: Props
   const [url, setUrl] = useState(initial?.url ?? '')
   const [validFrom, setValidFrom] = useState(initial?.validFrom ? dateInZone(initial.validFrom, tz) : '')
   const [validTo, setValidTo] = useState(initial?.validTo ? dateInZone(initial.validTo, tz) : '')
+  // «Fino al» non può essere prima di «Valido dal»
+  function onValidFrom(v: string) {
+    setValidFrom(v)
+    if (v && validTo && validTo < v) setValidTo(v)
+  }
   const [keepOffline, setKeepOffline] = useState(initial?.keepOffline ?? true)
   const [notes, setNotes] = useState(initial?.notes ?? '')
   const [file, setFile] = useState<File | null>(null)
@@ -76,8 +81,8 @@ export function BookingForm({ trip, initial, onSubmit, onDelete, onDone }: Props
       <TextField label="Codice di conferma" value={code} onInput={setCode} autoComplete="off" maxLength={80} />
       <TextField label="Link (sito di prenotazione, check-in…)" value={url} onInput={setUrl} placeholder="https://…" autoComplete="off" />
       <div class="grid grid-cols-2 gap-3">
-        <TextField label="Valido dal" type="date" value={validFrom} onInput={setValidFrom} />
-        <TextField label="Fino al" type="date" value={validTo} onInput={setValidTo} />
+        <TextField label="Valido dal" type="date" value={validFrom} onInput={onValidFrom} />
+        <TextField label="Fino al" type="date" value={validTo} onInput={setValidTo} min={validFrom || undefined} />
       </div>
 
       <fieldset class="space-y-2 rounded-2xl bg-bg p-3">

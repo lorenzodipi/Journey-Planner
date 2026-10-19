@@ -40,6 +40,12 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
   const [selfName, setSelfName] = useState('')
   const [others, setOthers] = useState<{ email: string; name: string }[]>([{ email: '', name: '' }])
   const [error, setError] = useState<string | null>(null)
+
+  // «Al» non può essere prima di «Dal»: spostando l'inizio oltre la fine, la fine lo segue
+  function onStartDate(v: string) {
+    setStartDate(v)
+    if (v && endDate && endDate < v) setEndDate(v)
+  }
   const [busy, setBusy] = useState(false)
 
   function applyPreset(p: Preset) {
@@ -107,12 +113,12 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
         </fieldset>
       )}
 
-      <TextField label="Nome del viaggio" value={title} onInput={setTitle} placeholder="Giappone 2026" maxLength={80} />
+      <TextField label="Nome del viaggio" value={title} onInput={setTitle} placeholder="Es. Estate 2027" maxLength={80} />
       <TextField label="Destinazione" value={destination} onInput={setDestination} maxLength={80} />
 
       <div class="grid grid-cols-2 gap-3">
-        <TextField label="Dal" type="date" value={startDate} onInput={setStartDate} />
-        <TextField label="Al" type="date" value={endDate} onInput={setEndDate} />
+        <TextField label="Dal" type="date" value={startDate} onInput={onStartDate} />
+        <TextField label="Al" type="date" value={endDate} onInput={setEndDate} min={startDate || undefined} />
       </div>
 
       {!editing && (

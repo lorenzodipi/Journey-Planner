@@ -85,9 +85,23 @@ export function TransportForm({ trip, initial, defaults, onSubmit, onDelete, onD
     })
   }
 
+  // l'arrivo non può essere prima della partenza: se la partenza lo supera, l'arrivo la segue
+  function keepArrivalAfter(date: string, time: string) {
+    if (date && arriveDate && arriveDate < date) {
+      setArriveDate(date)
+      if (time && arriveTime && arriveTime < time) setArriveTime(time)
+    } else if (date && arriveDate === date && time && arriveTime && arriveTime < time) setArriveTime(time)
+  }
+
+  function onDepartDate(v: string) {
+    setDepartDate(v)
+    keepArrivalAfter(v, departTime)
+  }
+
   function onDepartTime(v: string) {
     setDepartTime(v)
     if (!arriveDate && departDate) setArriveDate(departDate) // di solito si arriva lo stesso giorno
+    else keepArrivalAfter(departDate, v)
   }
 
   async function submit(e: Event) {
@@ -148,10 +162,10 @@ export function TransportForm({ trip, initial, defaults, onSubmit, onDelete, onD
       <ChipSelect label="Mezzo" value={mode} options={MODES} onChange={setMode} />
 
       <div class="grid grid-cols-2 gap-3">
-        <TextField label="Partenza" type="date" value={departDate} onInput={setDepartDate} />
+        <TextField label="Partenza" type="date" value={departDate} onInput={onDepartDate} />
         <TextField label="Ora partenza" type="time" value={departTime} onInput={onDepartTime} />
-        <TextField label="Arrivo" type="date" value={arriveDate} onInput={setArriveDate} />
-        <TextField label="Ora arrivo" type="time" value={arriveTime} onInput={setArriveTime} />
+        <TextField label="Arrivo" type="date" value={arriveDate} onInput={setArriveDate} min={departDate || undefined} />
+        <TextField label="Ora arrivo" type="time" value={arriveTime} onInput={setArriveTime} min={arriveDate && arriveDate === departDate ? departTime || undefined : undefined} />
       </div>
       <p class="-mt-2 text-xs text-muted">Orari nel fuso del viaggio ({trip.timezone}). Puoi lasciarli vuoti.</p>
 

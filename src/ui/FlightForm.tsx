@@ -133,10 +133,22 @@ export function FlightForm({ trip, initial, onSubmit, onDelete, onDone }: Props)
               <TextField label="N. volo" value={l.flightNumber} onInput={(v) => patchLeg(l.key, { flightNumber: v.toUpperCase() })} autoComplete="off" />
             </div>
             <div class="grid grid-cols-2 gap-3">
-              <TextField label="Data partenza" type="date" value={l.departDate} onInput={(v) => patchLeg(l.key, { departDate: v })} />
+              <TextField
+                label="Data partenza"
+                type="date"
+                value={l.departDate}
+                onInput={(v) => patchLeg(l.key, { departDate: v, ...(v && l.arriveDate && l.arriveDate < v ? { arriveDate: v } : {}) })}
+              />
               <TextField label="Ora partenza" type="time" value={l.departTime} onInput={(v) => patchLeg(l.key, { departTime: v })} />
-              <TextField label="Data arrivo" type="date" value={l.arriveDate} onInput={(v) => patchLeg(l.key, { arriveDate: v })} />
-              <TextField label="Ora arrivo" type="time" value={l.arriveTime} onInput={(v) => patchLeg(l.key, { arriveTime: v })} />
+              <TextField label="Data arrivo" type="date" value={l.arriveDate} onInput={(v) => patchLeg(l.key, { arriveDate: v })} min={l.departDate || undefined} />
+              <TextField
+                label="Ora arrivo"
+                type="time"
+                value={l.arriveTime}
+                onInput={(v) => patchLeg(l.key, { arriveTime: v })}
+                // con fusi diversi l'ora locale d'arrivo può essere prima di quella di partenza: il limite vale solo con lo stesso fuso
+                min={l.arriveDate && l.arriveDate === l.departDate && l.fromTz === l.toTz ? l.departTime || undefined : undefined}
+              />
             </div>
             <p class="-mt-1 text-xs text-muted">Ogni orario è quello locale dell'aeroporto indicato.</p>
             <div class="grid grid-cols-2 gap-3">

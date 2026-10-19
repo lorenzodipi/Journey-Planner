@@ -29,6 +29,12 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
+  // «Alle» non può essere prima di «Dalle»
+  function onStartTime(v: string) {
+    setStartTime(v)
+    if (v && endTime && endTime < v) setEndTime(v)
+  }
+
   function onPlace(id: string) {
     setPlaceId(id)
     const place = trip.places.find((p) => p.id === id)
@@ -101,8 +107,8 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
       </fieldset>
 
       <div class="grid grid-cols-2 gap-3">
-        <TextField label="Dalle" type="time" value={startTime} onInput={setStartTime} />
-        <TextField label="Alle" type="time" value={endTime} onInput={setEndTime} />
+        <TextField label="Dalle" type="time" value={startTime} onInput={onStartTime} />
+        <TextField label="Alle" type="time" value={endTime} onInput={setEndTime} min={startTime || undefined} />
       </div>
 
       <TextArea label="Note" value={notes} onInput={setNotes} />

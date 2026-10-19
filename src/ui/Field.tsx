@@ -17,6 +17,8 @@ interface TextProps {
   required?: boolean
   maxLength?: number
   inputMode?: 'decimal' | 'numeric' | 'text'
+  /** Per data e ora: il valore più basso scelto (es. «al» non prima di «dal»). */
+  min?: string
 }
 
 export function TextField({ label, value, onInput, type = 'text', list, ...rest }: TextProps) {
