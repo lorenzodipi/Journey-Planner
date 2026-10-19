@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { destinationClock, eventsForDay, formatDiffHours, homeCountry, homeToday, nextItem, tripToday } from './today'
+import { destinationClock, eventsForDay, formatDiffHours, homeCountry, homeTime, nextItem, tripToday } from './today'
 import type { Day, Trip } from '../types'
 
 const items = (list: [string, string?][]): Day['items'] =>
@@ -58,10 +58,10 @@ describe('ora a destinazione', () => {
     expect(c).toEqual({ time: '19:00', diffHours: 8 })
     expect(formatDiffHours(c.diffHours)).toBe('+8 h')
   })
-  it('data e paese di casa', () => {
-    expect(homeToday('Europe/Rome', new Date('2026-10-19T15:00:00Z'))).toEqual({ date: '19 ott', weekday: 'lunedì' })
-    // a Roma è già il giorno dopo quando a Tokyo è tarda sera, ma «oggi a casa» segue il fuso di casa
-    expect(homeToday('Europe/Rome', new Date('2026-10-19T23:30:00Z')).date).toBe('20 ott')
+  it('ora e paese di casa', () => {
+    expect(homeTime('Europe/Rome', new Date('2026-11-21T10:05:00Z'))).toBe('11:05')
+    // mezzanotte resta «00:00», non «24:00»
+    expect(homeTime('Europe/Rome', new Date('2026-11-21T23:00:00Z'))).toBe('00:00')
     expect(homeCountry('it-IT')).toBe('Italia')
     expect(homeCountry('en-GB')).toBe('Regno Unito')
     expect(homeCountry('it')).toBe('A casa')

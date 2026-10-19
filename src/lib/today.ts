@@ -85,10 +85,9 @@ export function destinationClock(timeZone: string, deviceTz: string, now: Date =
   }
 }
 
-/** Il giorno di oggi nel paese di casa (fuso del telefono): «19 ott» e «lunedì». */
-export function homeToday(deviceTz: string, now: Date = new Date()): { date: string; weekday: string } {
-  const fmt = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('it-IT', { timeZone: deviceTz, ...o }).format(now)
-  return { date: fmt({ day: 'numeric', month: 'short' }).replace('.', ''), weekday: fmt({ weekday: 'long' }) }
+/** Che ora è a casa (fuso del telefono), come «HH:MM». */
+export function homeTime(deviceTz: string, now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: deviceTz }).format(now)
 }
 
 /** Nome del paese di casa dalla lingua del telefono («it-IT» → «Italia»); senza regione, «A casa». */

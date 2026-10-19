@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
-import { BOOKING_LABEL } from '../lib/bookingMeta'
+import { BOOKING_BUDGET_CATEGORY, BOOKING_LABEL } from '../lib/bookingMeta'
+import { formatMoney } from '../lib/money'
 import { isFileCached, openBookingFile } from '../lib/bookingFiles'
 import { dateInZone } from '../lib/flights'
 import { formatShort } from '../lib/dates'
@@ -8,7 +9,7 @@ import { safeUrl } from '../lib/planningData'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { ComponentChildren } from 'preact'
-import type { Booking } from '../types'
+import type { Booking, Traveler } from '../types'
 import { BookingForm } from '../ui/BookingForm'
 import { CardDetail, useOpenCard } from '../ui/CardDetail'
 import { BedIcon, ChevronDownIcon, CloudIcon, CopyIcon, FileIcon, PlaneIcon, ShieldIcon, SimIcon, TicketIcon, TrainCarIcon } from '../ui/Icons'
@@ -16,7 +17,7 @@ import { EmptyState, PageHeader } from '../ui/PageHeader'
 import { Disc, Fab, Tag, Ticket } from '../ui/Ticket'
 import { Sheet } from '../ui/Sheet'
 
-function bookingRows(b: Booking, tz: string, link: string | null, offline: boolean) {
+function bookingRows(b: Booking, tz: string, link: string | null, offline: boolean, travelers: readonly Traveler[]) {
   const rows: { label: string; value: ComponentChildren }[] = [{ label: 'Tipo', value: BOOKING_LABEL[b.type] }]
   const when = (iso: string) => {
     const time = formatInZone(iso, tz)
@@ -24,6 +25,13 @@ function bookingRows(b: Booking, tz: string, link: string | null, offline: boole
   }
   if (b.validFrom) rows.push({ label: 'Valido dal', value: when(b.validFrom) })
   if (b.validTo) rows.push({ label: 'Valido fino al', value: when(b.validTo) })
+  if (b.cost != null) {
+    const amount = formatMoney(b.cost, b.currency ?? 'EUR')
+    rows.push({ label: 'Costo', value: b.scope === 'total' ? `${amount} in totale` : `${amount} a persona` })
+    const payers = travelers.filter((t) => b.payerIds?.includes(t.id))
+    if (payers.length > 0 && payers.length < travelers.length) rows.push({ label: 'Pagato da', value: payers.map((t) => t.name).join(', ') })
+    rows.push({ label: 'Nel Budget', value: BOOKING_BUDGET_CATEGORY[b.type] })
+  }
   if (link) rows.push({ label: 'Link', value: <span class="break-all">{new URL(link).host}</span> })
   if (b.filePath) rows.push({ label: 'File', value: offline ? 'Salvato sul telefono' : 'Si scarica quando lo apri' })
   return rows
@@ -153,7 +161,7 @@ export function Prenotazioni() {
                         )}
                       </div>
                       {isOpen && (
-                        <CardDetail rows={bookingRows(b, trip.timezone, link, offline)} note={b.notes} editLabel={`Modifica ${b.title}`} onEdit={() => setSheet({ kind: 'edit', booking: b })} />
+                        <CardDetail rows={bookingRows(b, trip.timezone, link, offline, trip.travelers)} note={b.notes} editLabel={`Modifica ${b.title}`} onEdit={() => setSheet({ kind: 'edit', booking: b })} />
                       )}
                     </div>
                     {b.code ? (

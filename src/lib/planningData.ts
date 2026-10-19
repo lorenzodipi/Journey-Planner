@@ -1,4 +1,4 @@
-import type { Booking, BookingType, ChecklistItem, ChecklistKind } from '../types'
+import type { Booking, BookingType, ChecklistItem, ChecklistKind, Scope } from '../types'
 import { zonedToInstant } from './zoned'
 
 // Checklist e prenotazioni: righe del database <-> tipi dell'app, e colonne da salvare.
@@ -28,6 +28,11 @@ export interface BookingRow {
   file_path: string | null
   keep_offline: boolean
   notes: string | null
+  // dalla migrazione 0010
+  cost?: number | string | null
+  currency?: string | null
+  scope?: Scope | null
+  payer_ids?: string[] | null
 }
 
 export function mapChecklist(rows: ChecklistRow[], tripId: string): ChecklistItem[] {
@@ -61,6 +66,10 @@ export function mapBookings(rows: BookingRow[], tripId: string): Booking[] {
       filePath: r.file_path ?? undefined,
       keepOffline: r.keep_offline,
       notes: r.notes ?? undefined,
+      cost: r.cost == null ? undefined : Number(r.cost),
+      currency: r.currency?.trim() || undefined,
+      scope: r.scope ?? undefined,
+      payerIds: r.payer_ids ?? undefined,
     }))
     .sort((a, b) => (a.validFrom ?? '9999').localeCompare(b.validFrom ?? '9999') || a.title.localeCompare(b.title, 'it'))
 }
@@ -99,6 +108,12 @@ export interface BookingInput {
   validTo: string
   keepOffline: boolean
   notes: string
+  /** costo, o null se non c'è */
+  cost: number | null
+  currency: string
+  scope: Scope
+  /** chi lo ha pagato; vuoto = tutti */
+  payerIds: string[]
   /** nuovo file da caricare (sostituisce quello attuale) */
   file: File | null
   /** togliere il file attuale senza sostituirlo */
@@ -120,7 +135,12 @@ export function safeUrl(raw: string): string | null {
   }
 }
 
-export function bookingColumns(i: BookingInput, timeZone: string) {
+/**
+ * Colonne da salvare. Il costo viaggia solo quando serve (c'è un costo, o c'era e va tolto): così le prenotazioni
+ * senza costo si salvano anche se la migrazione 0010 non è ancora stata eseguita.
+ */
+export function bookingColumns(i: BookingInput, timeZone: string, hadCost = false) {
+  const hasCost = i.cost != null
   return {
     type: i.type,
     title: i.title.trim(),
@@ -130,5 +150,8 @@ export function bookingColumns(i: BookingInput, timeZone: string) {
     valid_to: i.validTo ? zonedToInstant(i.validTo, '23:59', timeZone) : null,
     keep_offline: i.keepOffline,
     notes: orNull(i.notes),
+    ...(hasCost || hadCost
+      ? { cost: i.cost, currency: i.currency.trim().toUpperCase(), scope: i.scope, payer_ids: hasCost ? i.payerIds : [] }
+      : {}),
   }
 }

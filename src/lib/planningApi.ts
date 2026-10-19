@@ -47,13 +47,17 @@ export async function addChecklistTemplate(tripId: string, existing: ChecklistIt
 
 // ---------- prenotazioni ----------
 
+const MIGRATION_0010 =
+  "Manca la migrazione 0010 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0010_booking_cost.sql). Senza, il costo di un documento non si può salvare."
+const missingCostColumns = (error: { message?: string } | null) => /payer_ids|'cost'|'scope'|'currency'|\bcost\b/.test(error?.message ?? '')
+
 export async function createBooking(tripId: string, input: BookingInput, timeZone: string): Promise<void> {
   const db = client()
   const filePath = input.file ? await uploadBookingFile(tripId, input.file) : null
   const { error } = await db.from('bookings').insert({ trip_id: tripId, file_path: filePath, ...bookingColumns(input, timeZone) })
   if (error) {
     if (filePath) await removeBookingFile(filePath).catch(() => undefined) // niente file orfani
-    throw error
+    throw input.cost !== null && missingCostColumns(error) ? new Error(MIGRATION_0010) : error
   }
   if (filePath && input.keepOffline) await cacheBookingFile(filePath).catch(() => undefined)
 }
@@ -66,10 +70,10 @@ export async function updateBooking(booking: Booking, tripId: string, input: Boo
     uploaded = await uploadBookingFile(tripId, input.file)
     filePath = uploaded
   } else if (input.removeFile) filePath = null
-  const { error } = await db.from('bookings').update({ file_path: filePath, ...bookingColumns(input, timeZone) }).eq('id', booking.id)
+  const { error } = await db.from('bookings').update({ file_path: filePath, ...bookingColumns(input, timeZone, booking.cost != null) }).eq('id', booking.id)
   if (error) {
     if (uploaded) await removeBookingFile(uploaded).catch(() => undefined)
-    throw error
+    throw (input.cost !== null || booking.cost != null) && missingCostColumns(error) ? new Error(MIGRATION_0010) : error
   }
   // il vecchio file si toglie solo dopo che la modifica è stata salvata
   if (booking.filePath && booking.filePath !== filePath) await removeBookingFile(booking.filePath).catch(() => undefined)

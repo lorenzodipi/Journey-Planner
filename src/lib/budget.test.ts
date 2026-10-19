@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Expense } from '../types'
-import { budgetLines, categoryOverview, paidFromSections, expenseBase, expenseOwed, expensesOf, groupByCategory, involvesTraveler, personSummary, shareOf, logisticsLines, settle, shareAmounts, splitEvenly, summarizeExpenses, summarizeLines, toBase, type Line } from './budget'
+import { budgetLines, categoryOverview, paidByTraveler, paidFromSections, personBudget, expenseBase, expenseOwed, expensesOf, groupByCategory, involvesTraveler, personSummary, shareOf, logisticsLines, settle, shareAmounts, splitEvenly, summarizeExpenses, summarizeLines, toBase, type Line } from './budget'
 
 // Cifre FITTIZIE: servono solo a verificare i calcoli.
 const T1 = { id: 't1' }
@@ -238,5 +238,55 @@ describe('categorie: previsto e speso', () => {
     const [c] = categoryOverview(trip, fx)
     expect(c.spent).toBe(10)
     expect(c.unconverted).toEqual(['USD'])
+  })
+})
+
+describe('documenti con costo, chi ha pagato e budget personale', () => {
+  const base = { flights: [], stays: [], transports: [], budget: [], expenseCategories: [], travelers }
+  const exp = (id: string, category: string, amount: number, currency: string, paidBy: string): Expense => ({
+    id, label: id, category, amount, currency, paidBy, spentAt: '2026-11-22T03:00:00Z', shares: [],
+  })
+  const polizza = { id: 'b1', type: 'insurance' as const, title: 'Polizza viaggio', keepOffline: false, cost: 40, currency: 'EUR', scope: 'per_person' as const, payerIds: ['t1', 't2'] }
+
+  it('il costo di un documento entra nel budget come già pagato, nella categoria del tipo', () => {
+    const trip = { ...base, expenses: [], bookings: [polizza] }
+    const [ass] = categoryOverview(trip, fx)
+    expect(ass).toMatchObject({ label: 'Assicurazione', planned: 80, spent: 80, paidFromSections: 80, sections: { count: 1, paid: 1 } })
+    expect(logisticsLines(trip)[0]).toMatchObject({ source: 'booking', key: 'booking:b1' })
+  })
+
+  it('totale diviso tra chi ha pagato; senza indicazioni pagano tutti; un documento senza costo non conta', () => {
+    const solo = { ...base, expenses: [], bookings: [{ ...polizza, scope: 'total' as const, cost: 90, payerIds: ['t1'] }] }
+    expect(paidByTraveler(solo, fx).get('t1')).toBe(90)
+    expect(paidByTraveler(solo, fx).get('t2')).toBe(0)
+    const tutti = { ...base, expenses: [], bookings: [{ ...polizza, scope: 'total' as const, cost: 90, payerIds: [] }] }
+    expect(paidByTraveler(tutti, fx).get('t2')).toBe(45)
+    expect(logisticsLines({ ...base, bookings: [{ ...polizza, cost: undefined }] })).toEqual([])
+  })
+
+  it('«ha pagato» somma le spese anticipate e tutti i costi già pagati (voli, alloggi, trasporti, documenti)', () => {
+    const trip = {
+      ...base,
+      expenses: [exp('cena', 'Cibo', 30, 'EUR', 't1')],
+      flights: [{ id: 'f', title: 'Andata', cost: 600, currency: 'EUR', scope: 'per_person' as const, paid: true, legs: [] }],
+      transports: [{ id: 'tr', from: 'A', to: 'B', mode: 'train' as const, cost: 20, currency: 'EUR', scope: 'total' as const, bought: false }],
+      bookings: [polizza],
+    }
+    const paid = paidByTraveler(trip, fx)
+    expect(paid.get('t1')).toBe(30 + 600 + 40) // spesa + volo + polizza (il trasporto non è acquistato)
+    expect(paid.get('t2')).toBe(600 + 40)
+  })
+
+  it('budget personale: solo la quota e le spese di chi ha fatto l’accesso', () => {
+    const trip = {
+      ...base,
+      budget: [{ id: 'b', label: 'Cibo', category: 'Cibo', amount: 100, currency: 'EUR', scope: 'total' as const, shares: [{ id: 's1', travelerId: 't1', paid: false }, { id: 's2', travelerId: 't2', paid: false }] }],
+      expenses: [exp('cena', 'Cibo', 30, 'EUR', 't2')],
+      bookings: [polizza],
+    }
+    const me = personBudget(trip, 't1', fx)
+    expect(me.planned).toBe(50 + 40) // metà del budget + la sua polizza
+    expect(me.spent).toBe(15 + 40) // metà della cena (pagata da t2) + la sua polizza
+    expect(personBudget(trip, 'sconosciuto', fx)).toMatchObject({ planned: 0, spent: 0 })
   })
 })

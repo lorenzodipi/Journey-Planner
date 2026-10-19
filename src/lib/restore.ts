@@ -85,6 +85,18 @@ const coords = (lat: unknown, lng: unknown): { lat: number; lng: number } | null
 const STATUS = ['idea', 'planned', 'done', 'skipped'] as const satisfies readonly PlaceStatus[]
 const KINDS = ['visit', 'meal', 'transport', 'free', 'note', 'flight'] as const satisfies readonly ItemKind[]
 const MODES = ['train', 'metro', 'bus', 'taxi', 'walk', 'car', 'plane', 'ferry', 'other'] as const satisfies readonly TransportMode[]
+/** Costo di una prenotazione dal file: solo se c'è un importo; i pagatori sono quelli che esistono ancora. */
+function bookingCost(b: Obj, travelerIds: Set<string>, baseCurrency: string): Pick<Booking, 'cost' | 'currency' | 'scope' | 'payerIds'> {
+  const cost = money(b.cost)
+  if (cost === undefined) return {}
+  return {
+    cost,
+    currency: currency(b.currency, baseCurrency),
+    scope: oneOf(b.scope, SCOPES, 'per_person'),
+    payerIds: Array.isArray(b.payerIds) ? Array.from(new Set(b.payerIds.filter((id): id is string => typeof id === 'string' && travelerIds.has(id)))) : [],
+  }
+}
+
 const SCOPES = ['per_person', 'total'] as const satisfies readonly Scope[]
 const CHECK_KINDS = ['todo', 'packing', 'docs'] as const satisfies readonly ChecklistKind[]
 const BOOKING_TYPES = ['flight', 'hotel', 'train', 'ticket', 'insurance', 'esim', 'other'] as const satisfies readonly BookingType[]
@@ -422,6 +434,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
         validTo: instant(b.validTo),
         keepOffline: false,
         notes: optStr(b.notes),
+        ...bookingCost(b, travelerIds, baseCurrency),
       }
     })
   skip('prenotazioni', rawBookings.length - bookings.length)
@@ -735,6 +748,7 @@ export function buildSteps(trip: Trip, tripId: string, newId: () => string): Res
     position: c.position,
   }))
 
+  const anyBookingCost = trip.bookings.some((b) => b.cost != null)
   const bookings = trip.bookings.map((b) => ({
     id: newId(),
     trip_id: tripId,
@@ -747,6 +761,9 @@ export function buildSteps(trip: Trip, tripId: string, newId: () => string): Res
     file_path: null,
     keep_offline: false,
     notes: nul(b.notes),
+    ...(anyBookingCost
+      ? { cost: nul(b.cost), currency: b.currency ?? trip.baseCurrency, scope: b.scope ?? 'per_person', payer_ids: (b.payerIds ?? []).map((id) => to(id)).filter((id): id is string => !!id) }
+      : {}),
   }))
 
   const steps: RestoreStep[] = [

@@ -1,9 +1,10 @@
-import { useState } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
-import { budgetLines, categoryOverview, expenseBase, fxOf, logisticsLines, paidFromSections, shareAmounts, summarizeExpenses, summarizeLines, toBase, type CategoryOverview, type Line } from '../lib/budget'
+import { budgetLines, categoryOverview, expenseBase, fxOf, logisticsLines, paidByTraveler, paidFromSections, shareAmounts, summarizeExpenses, summarizeLines, toBase, type CategoryOverview, type Line } from '../lib/budget'
 import { formatShort } from '../lib/dates'
 import { dateInZone } from '../lib/flights'
 import { formatMoney, round2 } from '../lib/money'
+import { takeScrollTarget } from '../state/scrollTarget'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { BudgetItem, Expense } from '../types'
@@ -31,7 +32,7 @@ type SheetState =
   | { kind: 'category'; key: string }
   | null
 
-const SOURCE_HREF = { flight: '/altro/trasporti', stay: '/altro/alloggi', transport: '/altro/trasporti' } as const
+const SOURCE_HREF = { flight: '/altro/trasporti', stay: '/altro/alloggi', transport: '/altro/trasporti', booking: '/altro/prenotazioni' } as const
 
 export function Budget() {
   const trip = useTrip()
@@ -39,6 +40,14 @@ export function Budget() {
   const [del, delDialog] = useDeleter()
   const [sheet, setSheet] = useState<SheetState>(null)
   const close = () => setSheet(null)
+
+  // arrivando dalla card del cambio nella Home, la pagina scorre fino al calcolatore
+  useEffect(() => {
+    const id = takeScrollTarget()
+    if (!id) return
+    const frame = requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start', behavior: 'instant' }))
+    return () => cancelAnimationFrame(frame)
+  }, [])
   const fx = fxOf(trip)
   const base = trip.baseCurrency
   const hasLocal = !!trip.localCurrency && trip.localCurrency !== base
@@ -102,7 +111,7 @@ export function Budget() {
                           </div>
                         ) : (
                           <div class="pr-3">
-                          <Link href={SOURCE_HREF[l.source as 'flight' | 'stay' | 'transport']} class="flex min-h-11 items-center gap-3">
+                          <Link href={SOURCE_HREF[l.source as keyof typeof SOURCE_HREF]} class="flex min-h-11 items-center gap-3">
                             {body}
                           </Link>
                           </div>
@@ -262,7 +271,9 @@ export function Budget() {
     )
   }
 
-  const paidBy = new Map(spentAll.balances.map((b) => [b.travelerId, b.paid]))
+  // chi ha pagato cosa: le spese anticipate più la quota già pagata di voli, alloggi, trasporti e documenti
+  const paidBy = paidByTraveler(trip, fx)
+  const anyPaid = Array.from(paidBy.values()).some((v) => v > 0)
   const planned = summary.planned
   const left = round2(planned - spentTotal)
 
@@ -336,7 +347,7 @@ export function Budget() {
             </>
           )}
 
-          {trip.travelers.length > 1 && trip.expenses.length > 0 && (
+          {trip.travelers.length > 1 && anyPaid && (
             <>
               <div class={`${DASH} mb-2.5 mt-2`} />
               <div class="space-y-1.5">
@@ -355,7 +366,7 @@ export function Budget() {
         </Receipt>
 
         {hasLocal && (
-          <div class="mt-[18px]">
+          <div id="cambio" class="mt-[18px] scroll-mt-24">
             <FxCard trip={trip} onEdit={() => setSheet({ kind: 'fx' })} />
           </div>
         )}

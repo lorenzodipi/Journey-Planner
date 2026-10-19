@@ -1,4 +1,5 @@
-import type { BudgetItem, Expense, Scope, Trip, Traveler } from '../types'
+import type { Booking, BudgetItem, Expense, Scope, Trip, Traveler } from '../types'
+import { BOOKING_BUDGET_CATEGORY } from './bookingMeta'
 import { round2 } from './money'
 
 // Calcoli di budget e spese. Tutto è derivato dai dati: nessun totale si digita a mano.
@@ -44,7 +45,7 @@ export interface Line {
   scope: Scope
   /** Chi paga e se ha già pagato. Vuoto = tutti i viaggiatori, nessuno ha pagato. */
   shares: { travelerId: string; paid: boolean }[]
-  source: 'budget' | 'flight' | 'stay' | 'transport'
+  source: 'budget' | 'flight' | 'stay' | 'transport' | 'booking'
 }
 
 export function budgetLines(items: BudgetItem[]): Line[] {
@@ -60,8 +61,8 @@ export function budgetLines(items: BudgetItem[]): Line[] {
   }))
 }
 
-/** Costi già inseriti in voli, alloggi e trasporti, come voci di budget (sola lettura). */
-export function logisticsLines<T extends { id: string }>(trip: Pick<Trip, 'flights' | 'stays' | 'transports'> & { travelers: readonly T[] }): Line[] {
+/** Costi già inseriti in voli, alloggi, trasporti e documenti (prenotazioni), come voci di budget (sola lettura). */
+export function logisticsLines<T extends { id: string }>(trip: Pick<Trip, 'flights' | 'stays' | 'transports'> & { bookings?: readonly Booking[]; travelers: readonly T[] }): Line[] {
   const everyone = (paid: boolean) => trip.travelers.map((t) => ({ travelerId: t.id, paid }))
   const lines: Line[] = []
   for (const f of trip.flights)
@@ -73,6 +74,22 @@ export function logisticsLines<T extends { id: string }>(trip: Pick<Trip, 'fligh
   for (const t of trip.transports)
     if (t.cost != null)
       lines.push({ key: `transport:${t.id}`, label: `${t.from} → ${t.to}`, category: 'Trasporti', amount: t.cost, currency: t.currency, scope: t.scope, shares: everyone(t.bought), source: 'transport' })
+  for (const b of trip.bookings ?? []) {
+    if (b.cost == null) continue
+    // il costo di un documento è già stato pagato: da chi è indicato (senza indicazioni, da tutti)
+    const payers = trip.travelers.filter((t) => b.payerIds?.includes(t.id))
+    const who = payers.length > 0 ? payers : trip.travelers
+    lines.push({
+      key: `booking:${b.id}`,
+      label: b.title,
+      category: BOOKING_BUDGET_CATEGORY[b.type],
+      amount: b.cost,
+      currency: b.currency ?? 'EUR',
+      scope: b.scope ?? 'per_person',
+      shares: who.map((t) => ({ travelerId: t.id, paid: true })),
+      source: 'booking',
+    })
+  }
   return lines
 }
 
@@ -169,7 +186,7 @@ export interface CategoryOverview {
  * Le categorie create dall'utente compaiono anche se ancora vuote; "Altro" solo se ha qualcosa dentro.
  */
 export function categoryOverview(
-  trip: Pick<Trip, 'expenseCategories' | 'budget' | 'expenses' | 'flights' | 'stays' | 'transports'> & { travelers: readonly { id: string }[] },
+  trip: Pick<Trip, 'expenseCategories' | 'budget' | 'expenses' | 'flights' | 'stays' | 'transports'> & { bookings?: readonly Booking[]; travelers: readonly { id: string }[] },
   fx: FxContext,
 ): CategoryOverview[] {
   const map = new Map<string, CategoryOverview>()
@@ -213,11 +230,49 @@ export function categoryOverview(
 
 /** Quanto di voli, alloggi e trasporti risulta già pagato (nella valuta base): vale come speso senza registrarlo tra le spese. */
 export function paidFromSections(
-  trip: Pick<Trip, 'flights' | 'stays' | 'transports'> & { travelers: readonly { id: string }[] },
+  trip: Pick<Trip, 'flights' | 'stays' | 'transports'> & { bookings?: readonly Booking[]; travelers: readonly { id: string }[] },
   fx: FxContext,
 ): { paid: number; unconverted: string[] } {
   const s = summarizeLines(logisticsLines(trip), trip.travelers, fx)
   return { paid: s.paid, unconverted: s.unconverted }
+}
+
+/**
+ * Quanto ha pagato ciascuno, considerando tutto ciò che conta come speso: le spese che ha anticipato più la sua quota
+ * di voli, alloggi, trasporti e documenti già pagati.
+ */
+export function paidByTraveler(
+  trip: Pick<Trip, 'expenses' | 'flights' | 'stays' | 'transports'> & { bookings?: readonly Booking[]; travelers: readonly Pick<Traveler, 'id'>[] },
+  fx: FxContext,
+): Map<string, number> {
+  const fromExpenses = summarizeExpenses(trip.expenses, trip.travelers, fx).balances
+  const fromSections = summarizeLines(logisticsLines(trip), trip.travelers, fx).perTraveler
+  return new Map(trip.travelers.map((t) => [t.id, round2((fromExpenses.find((b) => b.travelerId === t.id)?.paid ?? 0) + (fromSections.find((p) => p.travelerId === t.id)?.paid ?? 0))]))
+}
+
+export interface PersonBudget {
+  /** il suo previsto: la sua quota di tutte le voci di budget e dei costi inseriti nelle sezioni */
+  planned: number
+  /** quanto ha speso lui: la sua parte delle spese più la sua quota già pagata di voli, alloggi, trasporti e documenti */
+  spent: number
+  unconverted: string[]
+}
+
+/** Previsto e speso di una sola persona (nella valuta base). */
+export function personBudget(
+  trip: Pick<Trip, 'budget' | 'expenses' | 'flights' | 'stays' | 'transports'> & { bookings?: readonly Booking[]; travelers: readonly Pick<Traveler, 'id'>[] },
+  travelerId: string,
+  fx: FxContext,
+): PersonBudget {
+  const sectionLines = logisticsLines(trip)
+  const planned = summarizeLines([...budgetLines(trip.budget), ...sectionLines], trip.travelers, fx)
+  const sections = summarizeLines(sectionLines, trip.travelers, fx)
+  const expenses = summarizeExpenses(trip.expenses, trip.travelers, fx)
+  return {
+    planned: planned.perTraveler.find((p) => p.travelerId === travelerId)?.planned ?? 0,
+    spent: round2((expenses.spentBy.find((s) => s.travelerId === travelerId)?.amount ?? 0) + (sections.perTraveler.find((p) => p.travelerId === travelerId)?.paid ?? 0)),
+    unconverted: Array.from(new Set([...planned.unconverted, ...expenses.unconverted])).sort(),
+  }
 }
 
 // ---------- spese ----------
@@ -232,7 +287,7 @@ export function expenseBase(e: Pick<Expense, 'amount' | 'currency' | 'fxRate'>, 
 /** Quota di ciascun viaggiatore nella valuta base, in proporzione ai pesi (senza quote: parti uguali tra tutti). */
 export function expenseOwed(
   e: Pick<Expense, 'amount' | 'currency' | 'fxRate' | 'shares'>,
-  travelers: Pick<Traveler, 'id'>[],
+  travelers: readonly Pick<Traveler, 'id'>[],
   fx: FxContext,
 ): { travelerId: string; amount: number }[] | null {
   const total = expenseBase(e, fx)
@@ -292,7 +347,7 @@ export function settle(balances: Pick<Balance, 'travelerId' | 'net'>[]): Transfe
   return out
 }
 
-export function summarizeExpenses(expenses: Expense[], travelers: Pick<Traveler, 'id'>[], fx: FxContext): ExpenseSummary {
+export function summarizeExpenses(expenses: Expense[], travelers: readonly Pick<Traveler, 'id'>[], fx: FxContext): ExpenseSummary {
   const spent = new Map<string, number>(travelers.map((t) => [t.id, 0]))
   const paid = new Map<string, number>(travelers.map((t) => [t.id, 0]))
   const owedForBalance = new Map<string, number>(travelers.map((t) => [t.id, 0]))
@@ -342,7 +397,7 @@ export function expensesOf(expenses: Expense[], travelerId: 'all' | string): Exp
 /** Quota di una spesa a carico di una persona (nella valuta base), o null se manca il cambio. */
 export function shareOf(
   e: Pick<Expense, 'amount' | 'currency' | 'fxRate' | 'shares'>,
-  travelers: Pick<Traveler, 'id'>[],
+  travelers: readonly Pick<Traveler, 'id'>[],
   travelerId: string,
   fx: FxContext,
 ): number | null {

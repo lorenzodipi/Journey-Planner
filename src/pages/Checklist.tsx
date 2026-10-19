@@ -267,7 +267,7 @@ export function Checklist() {
                   >
                     <div class="min-w-0 flex-1">
                       <button type="button" onClick={() => (selecting ? toggleSel(i.id) : setEdit(i))} class="block w-full text-left">
-                        <span class={`block text-base leading-tight ${i.done ? 'font-semibold text-muted line-through' : 'font-extrabold'}`}>
+                        <span class={`block text-base leading-tight font-extrabold ${i.done ? 'text-muted line-through' : ''}`}>
                           {multi && (
                             <span class={`mr-1.5 inline-block rounded-xl px-2 align-middle text-sm font-extrabold tabular-nums no-underline ${i.done ? 'bg-line text-muted' : 'bg-accent-soft text-pale'}`}>
                               {have}/{i.quantity}

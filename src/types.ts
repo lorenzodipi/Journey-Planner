@@ -204,6 +204,12 @@ export interface Booking {
   filePath?: string // nel bucket privato "bookings"
   keepOffline: boolean
   notes?: string
+  /** Costo (es. di un'assicurazione): conta nel Budget come già pagato da `payerIds`. */
+  cost?: number
+  currency?: string
+  scope?: Scope
+  /** Chi lo ha pagato; vuoto = tutti i viaggiatori. */
+  payerIds?: string[]
 }
 
 export interface Trip {

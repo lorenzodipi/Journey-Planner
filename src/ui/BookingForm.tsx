@@ -1,11 +1,14 @@
 import { useState } from 'preact/hooks'
 import { useConfirm } from './ConfirmDialog'
-import { BOOKING_LABEL, BOOKING_TYPES } from '../lib/bookingMeta'
+import { BOOKING_BUDGET_CATEGORY, BOOKING_LABEL, BOOKING_TYPES } from '../lib/bookingMeta'
 import { checkFile } from '../lib/bookingFiles'
+import { shareAmounts } from '../lib/budget'
 import { dateInZone } from '../lib/flights'
+import { amountToText, formatMoney, parseAmount, tripCurrencies } from '../lib/money'
 import { safeUrl, type BookingInput } from '../lib/planningData'
 import type { Booking, Trip } from '../types'
-import { CheckField, ChipSelect, FormError, PrimaryButton, SecondaryButton, TextArea, TextField } from './Field'
+import { CheckField, ChipSelect, CostFields, FormError, PrimaryButton, SecondaryButton, TextArea, TextField } from './Field'
+import { TravelerChips } from './TravelerChips'
 
 interface Props {
   trip: Trip
@@ -30,6 +33,12 @@ export function BookingForm({ trip, initial, onSubmit, onDelete, onDone }: Props
   }
   const [keepOffline, setKeepOffline] = useState(initial?.keepOffline ?? true)
   const [notes, setNotes] = useState(initial?.notes ?? '')
+  const [cost, setCost] = useState(amountToText(initial?.cost))
+  const [currency, setCurrency] = useState(initial?.currency ?? trip.baseCurrency)
+  const [scope, setScope] = useState<'per_person' | 'total'>(initial?.scope ?? 'per_person')
+  const everyone = trip.travelers.map((p) => p.id)
+  // chi ha pagato: senza una scelta salvata (vecchie prenotazioni, nuove) sono tutti
+  const [payers, setPayers] = useState<string[]>(initial?.payerIds?.length ? initial.payerIds.filter((id) => everyone.includes(id)) : everyone)
   const [file, setFile] = useState<File | null>(null)
   const [removeFile, setRemoveFile] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -54,9 +63,13 @@ export function BookingForm({ trip, initial, onSubmit, onDelete, onDone }: Props
     if (!title.trim()) return setError('Scrivi il nome della prenotazione (es. Shinkansen Tokyo–Kyoto).')
     if (url.trim() && !safeUrl(url)) return setError('Il link non è valido: deve iniziare con http o https.')
     if (validFrom && validTo && validTo < validFrom) return setError('La data di fine è prima di quella di inizio.')
+    const amount = parseAmount(cost)
+    if (cost.trim() && amount === null) return setError('Il costo non è un numero valido.')
+    if (!/^[A-Za-z]{3}$/.test(currency.trim())) return setError('La valuta è un codice di 3 lettere (es. EUR).')
+    if (amount !== null && everyone.length > 0 && payers.length === 0) return setError('Scegli chi ha pagato il costo.')
     setBusy(true)
     setError(null)
-    const message = await onSubmit({ type, title, code, url, validFrom, validTo, keepOffline, notes, file, removeFile })
+    const message = await onSubmit({ type, title, code, url, validFrom, validTo, keepOffline, notes, cost: amount, currency, scope, payerIds: amount !== null ? payers : [], file, removeFile })
     setBusy(false)
     if (message) setError(message)
     else onDone()
@@ -84,6 +97,30 @@ export function BookingForm({ trip, initial, onSubmit, onDelete, onDone }: Props
         <TextField label="Valido dal" type="date" value={validFrom} onInput={onValidFrom} optional />
         <TextField label="Fino al" type="date" value={validTo} onInput={setValidTo} min={validFrom || undefined} optional />
       </div>
+
+      <CostFields
+        amountLabel="Costo (facoltativo)"
+        amount={cost}
+        currency={currency}
+        currencies={tripCurrencies(trip, initial?.currency)}
+        scope={scope}
+        onAmount={setCost}
+        onCurrency={setCurrency}
+        onScope={setScope}
+      />
+      {parseAmount(cost) !== null && everyone.length > 0 && (
+        <TravelerChips
+          label="Chi lo ha pagato"
+          travelers={trip.travelers}
+          selected={payers}
+          onChange={setPayers}
+          hint={
+            payers.length > 0
+              ? `${scope === 'per_person' ? `Ognuno ha pagato ${formatMoney(shareAmounts({ amount: parseAmount(cost) as number, scope }, payers.length)[0], currency.toUpperCase())}` : `Diviso in parti uguali: ${formatMoney(shareAmounts({ amount: parseAmount(cost) as number, scope }, payers.length)[0], currency.toUpperCase())} a testa`}. Finisce nel Budget, in «${BOOKING_BUDGET_CATEGORY[type]}».`
+              : undefined
+          }
+        />
+      )}
 
       <fieldset class="space-y-2 rounded-2xl bg-bg p-3">
         <legend class="sr-only">File</legend>

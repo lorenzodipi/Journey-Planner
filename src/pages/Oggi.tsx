@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
-import { summarizeExpenses, fxOf } from '../lib/budget'
+import { budgetLines, fxOf, logisticsLines, paidFromSections, personBudget, summarizeExpenses, summarizeLines } from '../lib/budget'
+import { useAuth } from '../lib/auth'
 import { progress } from '../lib/checklist'
 import { daysBetween, formatShort } from '../lib/dates'
 import { localPerBase, formatRateNumber } from '../lib/fx'
-import { currencySymbol, formatMoney } from '../lib/money'
+import { currencySymbol, formatMoney, round2 } from '../lib/money'
 import { minutesOfDay, sunForDay } from '../lib/sun'
-import { destinationClock, eventsForDay, formatDiffHours, homeCountry, homeToday, nextItem, tripToday } from '../lib/today'
+import { destinationClock, eventsForDay, formatDiffHours, homeCountry, homeTime, nextItem, tripToday } from '../lib/today'
 import { useForecast } from '../state/forecast'
+import { setScrollTarget } from '../state/scrollTarget'
 import { useTrip } from '../state/trip'
-import { BedIcon, BudgetIcon, ChecklistIcon, ChevronRightIcon, ClockIcon, EarthIcon, PlaneIcon, SwapIcon } from '../ui/Icons'
+import { BedIcon, BudgetIcon, ChecklistIcon, ChevronRightIcon, ClockIcon, PlaneIcon, SwapIcon } from '../ui/Icons'
 import { ItemRow } from '../ui/ItemRow'
 import { LightCard } from '../ui/LightBar'
 import { Card } from '../ui/PageHeader'
@@ -45,8 +47,23 @@ function Shortcut({ href, icon, color, title, line, lineTone }: { href: string; 
   )
 }
 
+/** Pillola con l'ora di un posto: icona, ora grande e, su due righe, il nome del posto e lo scarto orario. */
+function ClockPill({ time, place, diff }: { time: string; place: string; diff: string }) {
+  return (
+    <div class="flex min-h-[52px] min-w-0 items-center gap-2 rounded-full border-2 border-line bg-surface px-3.5">
+      <ClockIcon size={16} class="shrink-0 text-pale" />
+      <span class="font-display shrink-0 whitespace-nowrap text-xl font-extrabold leading-none tabular-nums text-pale">{time}</span>
+      <span class="min-w-0 text-xs leading-tight text-muted">
+        <span class="block truncate">{place}</span>
+        <span class="block truncate">{diff}</span>
+      </span>
+    </div>
+  )
+}
+
 export function Oggi() {
   const trip = useTrip()
+  const auth = useAuth()
   const now = useNow()
   const forecast = useForecast(trip)
   const today = tripToday(trip, now) // oggi nel fuso della destinazione
@@ -63,7 +80,7 @@ export function Oggi() {
   const events = focus ? eventsForDay(trip, focus.date) : []
   const deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone
   const clock = destinationClock(trip.timezone, deviceTz, now)
-  const home = homeToday(deviceTz, now)
+  const homeClock = homeTime(deviceTz, now)
   const homeName = homeCountry(navigator.language)
   const sun = focus ? sunForDay(focus.date, trip.center.lat, trip.center.lng, trip.timezone) : null
 
@@ -79,8 +96,11 @@ export function Oggi() {
   const check = progress(trip.checklist)
   const unbooked = trip.stays.filter((s) => !s.booked).length
   const fx = fxOf(trip)
-  const spent = summarizeExpenses(trip.expenses, trip.travelers, fx).total
-  const planned = trip.budget.reduce((n, b) => n + (b.currency === trip.baseCurrency ? b.amount : 0), 0)
+  // il budget della Home è quello di chi ha fatto l'accesso (la sua parte); senza un viaggiatore collegato, quello di tutti
+  const me = trip.travelers.find((p) => p.userId && p.userId === auth.session?.user.id)
+  const mine = me ? personBudget(trip, me.id, fx) : null
+  const spent = mine ? mine.spent : round2(summarizeExpenses(trip.expenses, trip.travelers, fx).total + paidFromSections(trip, fx).paid)
+  const planned = mine ? mine.planned : summarizeLines([...budgetLines(trip.budget), ...logisticsLines(trip)], trip.travelers, fx).planned
   const hasFx = !!trip.fxRate && !!trip.localCurrency && trip.localCurrency !== trip.baseCurrency
 
   return (
@@ -92,24 +112,10 @@ export function Oggi() {
         </span>
       </div>
 
-      {/* orario a destinazione e data a casa */}
-      <div class="mb-3.5 flex items-center justify-between gap-2.5">
-        <div class="flex min-h-[52px] min-w-0 flex-1 items-center gap-2 rounded-full border-2 border-line bg-surface px-3.5">
-          <ClockIcon size={16} class="shrink-0 text-pale" />
-          <span class="font-display shrink-0 whitespace-nowrap text-xl font-extrabold leading-none tabular-nums text-pale">{clock.time}</span>
-          <span class="min-w-0 text-xs leading-tight text-muted">
-            <span class="block truncate">{trip.destination || 'Destinazione'}</span>
-            <span class="block truncate">{clock.diffHours === 0 ? 'stesso fuso' : formatDiffHours(clock.diffHours)}</span>
-          </span>
-        </div>
-        <div class="flex min-h-[52px] shrink-0 items-center justify-end gap-2 rounded-full border-2 border-line bg-surface px-3.5">
-          <span class="text-right text-xs leading-tight text-muted">
-            <span class="block whitespace-nowrap">{homeName}</span>
-            <span class="block whitespace-nowrap">{home.weekday}</span>
-          </span>
-          <span class="font-display whitespace-nowrap text-xl font-extrabold leading-none text-pale">{home.date}</span>
-          <EarthIcon size={16} class="shrink-0 text-pale" />
-        </div>
+      {/* l'ora nel paese del viaggio (sinistra) e a casa (destra), una pillola per metà pagina */}
+      <div class="mb-3.5 grid grid-cols-2 gap-2.5">
+        <ClockPill time={clock.time} place={trip.destination || 'Destinazione'} diff={clock.diffHours === 0 ? 'stesso fuso' : formatDiffHours(clock.diffHours)} />
+        <ClockPill time={homeClock} place={homeName} diff={clock.diffHours === 0 ? 'stesso fuso' : formatDiffHours(-clock.diffHours)} />
       </div>
 
       {/* carta d'imbarco: conto alla rovescia (o giorno del viaggio) e prossimo volo */}
@@ -232,11 +238,11 @@ export function Oggi() {
             href="/altro/budget"
             icon={<BudgetIcon size={22} />}
             color="var(--ok)"
-            title="Budget"
+            title={mine ? 'Il tuo budget' : 'Budget'}
             line={planned > 0 ? `${formatMoney(spent, trip.baseCurrency)} su ${formatMoney(planned, trip.baseCurrency)}` : `${formatMoney(spent, trip.baseCurrency)} spesi`}
           />
           {hasFx && (
-            <Link href="/altro/budget" class="block">
+            <Link href="/altro/budget" class="block" onClick={() => setScrollTarget('cambio')}>
               <Ticket stub={<Disc color="var(--pale)"><SwapIcon size={22} /></Disc>} stubWidth={76}>
                 <span class="min-w-0 flex-1">
                   <span class="block text-[13px] text-muted">Cambio</span>
