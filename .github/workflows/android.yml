@@ -1,10 +1,12 @@
 name: App Android (APK)
 
 # Costruisce l'APK firmato e lo pubblica nella release "android-latest".
-# Si lancia a mano: Actions > "App Android (APK)" > Run workflow.
+# Parte da solo a ogni commit sul branch main; si può anche lanciare a mano: Actions > "App Android (APK)" > Run workflow.
 # Prima volta: servono i 4 Secrets del keystore (vedi docs/APP_NATIVA.md).
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:

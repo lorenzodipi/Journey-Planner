@@ -47,7 +47,7 @@ Le **Variables** `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` sono le stesse g
 
 ### 3. Costruisci e installa
 
-1. Actions > **App Android (APK)** > *Run workflow* (4–8 minuti).
+1. Parte da sola a ogni commit su `main`; per rilanciarla a mano: Actions > **App Android (APK)** > *Run workflow* (4–8 minuti).
 2. Dal telefono apri la pagina Releases del repo > **android-latest** > scarica `JourneyPlanner.apk`.
 3. Android chiede di consentire "Installa app sconosciute" per il browser: consenti, poi installa.
 4. Gli aggiornamenti si installano **sopra** quella già presente (stessa firma, numero di versione che sale a ogni build).
@@ -61,7 +61,7 @@ https://developer.android.com/developer-verification
 
 ## iOS (SideStore)
 
-1. Actions > **App iOS (IPA per SideStore)** > *Run workflow* (10–15 minuti, gira su macOS).
+1. Parte da sola a ogni commit su `main`; per rilanciarla a mano: Actions > **App iOS (IPA per SideStore)** > *Run workflow* (10–15 minuti, gira su macOS).
 2. Dall'iPhone apri Releases > **ios-latest** e scarica `JourneyPlanner.ipa` (Safari lo salva in File).
 3. In SideStore: **+** in alto a sinistra > scegli `JourneyPlanner.ipa`. SideStore lo firma con il tuo Apple ID.
 4. Aggiornare: scarichi il nuovo IPA e lo reinstalli dallo stesso modo (stesso identificativo = i dati restano).
