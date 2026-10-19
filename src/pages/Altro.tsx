@@ -70,6 +70,7 @@ const sections = [
 ]
 
 type SheetState =
+  | { kind: 'pick-trip' }
   | { kind: 'new-trip' }
   | { kind: 'edit-trip' }
   | { kind: 'delete-trip' }
@@ -83,13 +84,16 @@ export function Altro() {
   const [del, delDialog] = useDeleter()
   const [sheet, setSheet] = useState<SheetState>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [tripFilter, setTripFilter] = useState('')
   const trip = t.active
   if (!trip) return null
   const close = () => setSheet(null)
   const isOwner = trip.myRole === undefined || trip.myRole === 'owner'
 
   const title =
-    sheet?.kind === 'new-trip'
+    sheet?.kind === 'pick-trip'
+      ? 'Scegli il viaggio'
+      : sheet?.kind === 'new-trip'
       ? 'Nuovo viaggio'
       : sheet?.kind === 'edit-trip'
         ? 'Modifica viaggio'
@@ -116,20 +120,20 @@ export function Altro() {
               {formatShort(trip.startDate)} – {formatShort(trip.endDate)} · {trip.days.length} giorni
             </p>
             {t.trips.length > 1 && (
-              <ul class="mt-3 space-y-1" aria-label="Cambia viaggio">
-                {t.trips.map((other) => (
-                  <li>
-                    <button
-                      type="button"
-                      aria-pressed={other.id === trip.id}
-                      onClick={() => t.setActive(other.id)}
-                      class={`min-h-11 w-full rounded-xl px-4 text-left text-sm font-extrabold ${other.id === trip.id ? 'bg-accent-soft text-pale' : 'text-muted'}`}
-                    >
-                      {other.title}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <button
+                type="button"
+                onClick={() => {
+                  setTripFilter('')
+                  setSheet({ kind: 'pick-trip' })
+                }}
+                class="mt-3 flex min-h-11 w-full items-center justify-between rounded-xl bg-accent-soft px-4 text-sm font-extrabold text-pale"
+              >
+                <span>Cambia viaggio</span>
+                <span class="flex items-center gap-1 text-muted">
+                  {t.trips.length} viaggi
+                  <ChevronRightIcon size={16} />
+                </span>
+              </button>
             )}
           </div>
           <BoardingNotches />
@@ -234,6 +238,55 @@ export function Altro() {
 
       {delDialog}
       <Sheet open={sheet !== null} title={title} onClose={close}>
+        {sheet?.kind === 'pick-trip' && (
+          <div class="space-y-3">
+            {t.trips.length > 6 && (
+              <input
+                type="search"
+                value={tripFilter}
+                onInput={(e) => setTripFilter(e.currentTarget.value)}
+                placeholder="Cerca un viaggio"
+                aria-label="Cerca un viaggio"
+                class="min-h-12 w-full rounded-[14px] border-2 border-line bg-bg px-4"
+              />
+            )}
+            {(() => {
+              const q = tripFilter.trim().toLowerCase()
+              const list = t.trips.filter((x) => !q || `${x.title} ${x.destination}`.toLowerCase().includes(q))
+              if (list.length === 0) return <p class="py-4 text-center text-sm text-muted">Nessun viaggio con questo nome.</p>
+              return (
+                <ul class="space-y-2" aria-label="Viaggi">
+                  {list.map((other) => {
+                    const current = other.id === trip.id
+                    return (
+                      <li>
+                        <button
+                          type="button"
+                          aria-current={current}
+                          onClick={() => {
+                            t.setActive(other.id)
+                            close()
+                          }}
+                          class={`flex min-h-14 w-full items-center gap-3 rounded-2xl border-2 px-4 py-2 text-left ${current ? 'border-accent bg-accent-soft' : 'border-line'}`}
+                        >
+                          <span class="min-w-0 flex-1">
+                            <span class={`block truncate text-base font-extrabold ${current ? 'text-pale' : ''}`}>{other.title}</span>
+                            <span class="block truncate text-xs text-muted">
+                              {other.destination && `${other.destination} · `}
+                              {formatShort(other.startDate)} – {formatShort(other.endDate)}
+                            </span>
+                          </span>
+                          {current && <span class="shrink-0 text-xs font-extrabold text-pale">Attivo</span>}
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )
+            })()}
+          </div>
+        )}
+
         {sheet?.kind === 'new-trip' && <TripForm onSubmit={t.createTrip} onDone={close} />}
 
         {sheet?.kind === 'edit-trip' && (
