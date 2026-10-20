@@ -25,6 +25,14 @@ describe('colori delle categorie', () => {
     expect(new Set(labels.map((_, i) => colorForCategory(t, `c${i}`))).size).toBe(labels.length)
   })
 
+  it('Treno e Aeroporto hanno ciascuno il suo colore, diverso da tutti gli altri', () => {
+    expect(themeColor('Treno')).toBe('#c0c8d6')
+    expect(themeColor('Aeroporto')).toBe('#6cc3ff')
+    const labels = ['Tempio', 'Cibo', 'Caffè', 'Shopping', 'Natura', 'Panorama', 'Quartiere', 'Museo', 'Castello', 'Onsen', 'Alloggio', 'Treno', 'Aeroporto', 'Autobus', 'Vita notturna', 'Divertimento', 'Supermercato', 'Benzinaio']
+    const t = trip(labels)
+    expect(new Set(labels.map((_, i) => colorForCategory(t, `c${i}`))).size).toBe(labels.length)
+  })
+
   it('una categoria sconosciuta resta senza colore', () => {
     expect(colorForCategory(trip(['Tempio']), 'nope')).toBe('#9fb0c8')
   })

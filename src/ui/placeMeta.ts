@@ -17,7 +17,7 @@ export const STATUS_STYLE: Record<PlaceStatus, string> = {
 
 export const STATUSES: PlaceStatus[] = ['idea', 'planned', 'done', 'skipped']
 
-export const SUGGESTED_CATEGORIES = ['Tempio', 'Cibo', 'Natura', 'Shopping', 'Quartiere', 'Museo', 'Panorama', 'Cultura', 'Supermercato', 'Benzinaio']
+export const SUGGESTED_CATEGORIES = ['Tempio', 'Cibo', 'Natura', 'Shopping', 'Quartiere', 'Museo', 'Panorama', 'Cultura', 'Supermercato', 'Benzinaio', 'Treno']
 
 /** Tavolozza Eki Notte: blu, arancio, verde e poi i colori di contorno. */
 export const PALETTE = ['#3d86ff', '#ffa23a', '#2cc48a', '#7fb0ff', '#ff6b6b', '#b58cff', '#f7b733', '#4fd1c5']
@@ -35,7 +35,9 @@ const ICON_COLOR: Record<PinIcon, string> = {
   castle: '#d6c7a1',
   spa: '#9de6d2',
   stay: '#22a373',
-  transit: '#c0c8d6',
+  train: '#c0c8d6',
+  airport: '#6cc3ff',
+  transit: '#a0a8f0',
   night: '#5a5fd6',
   fun: '#ff5fa8',
   grocery: '#98aa07',

@@ -10,8 +10,10 @@ import {
   faLocationDot,
   faMasksTheater,
   faMoon,
+  faBus,
   faMountainSun,
   faMugHot,
+  faPlane,
   faToriiGate,
   faTrainSubway,
   faTree,
@@ -34,6 +36,8 @@ export type PinIcon =
   | 'castle'
   | 'spa'
   | 'stay'
+  | 'train'
+  | 'airport'
   | 'transit'
   | 'night'
   | 'fun'
@@ -57,7 +61,10 @@ const RULES: [PinIcon, RegExp][] = [
   ['food', /cibo|ristorant|ramen|sushi|trattor|izakaya|pranzo|cena|street food|cucina|mangiare|food|udon|soba|tempura|yakitori|osteria|pizz/],
   ['shopping', /shopping|negozi|acquist|mercat|market|souvenir|outlet|centro commerciale|boutique/],
   ['stay', /alloggi|hotel|ryokan|hostel|dormire|\bbnb\b|pernott|\bcasa\b|\bcase\b|appartament|airbnb|ostell|homestay/],
-  ['transit', /stazion|trasport|trenit?|treno|aeropor|metro|autobus|porto\b|traghett/],
+  // «aeroporto» prima di «porto» (traghetti) e le stazioni dei treni prima dei trasporti generici
+  ['airport', /aeropor|airport|\bvol[oi]\b|scalo/],
+  ['train', /stazion|trenit?|treno|treni|ferrovi|shinkansen|binario|metro\b|metropolitana|\bjr\b/],
+  ['transit', /trasport|autobus|\bbus\b|pullman|taxi|porto\b|traghett|terminal/],
   ['night', /nott|nightlife|vita notturna|locali|discoteca|club\b|pub\b/],
   ['district', /quartier|citta|zona|strada|centro|distretto|via\b|borgo|villaggio/],
 ]
@@ -89,7 +96,9 @@ export const PIN_ICONS: Record<PinIcon, IconDefinition> = {
   castle: faChessRook,
   spa: faHotTubPerson,
   stay: faBed,
-  transit: faTrainSubway,
+  train: faTrainSubway,
+  airport: faPlane,
+  transit: faBus,
   night: faMoon,
   fun: faMasksTheater,
   grocery: faCartShopping,
