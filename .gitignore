@@ -12,6 +12,8 @@ dev-dist/
 private/
 *.xlsx
 *.csv
+*.kmz
+*.kml
 
 # editor / sistema
 .DS_Store
