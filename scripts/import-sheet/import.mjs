@@ -13,6 +13,7 @@ import { dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { createClient } from '@supabase/supabase-js'
 import { readSheet } from 'read-excel-file/node'
+import { describeTrip, loadTrips, pickTrip } from '../lib/find-trip.mjs'
 import { createGeocoder } from './geocode.mjs'
 import { nightsCities, parseBudget, parsePlaces, parseStays, parseTransports } from './parse.mjs'
 
@@ -20,6 +21,8 @@ const { values: args } = parseArgs({
   options: {
     file: { type: 'string', default: 'private/viaggio.xlsx' },
     trip: { type: 'string' },
+    email: { type: 'string' },
+    'trip-id': { type: 'string' },
     config: { type: 'string', default: 'private/import-config.json' },
     cache: { type: 'string', default: 'private/geocode-cache.json' },
     report: { type: 'string', default: 'private/import-report.txt' },
@@ -30,7 +33,7 @@ const { values: args } = parseArgs({
 })
 
 if (args.help) {
-  console.log('Uso: npm run import:sheet -- --file private/viaggio.xlsx --trip "Titolo del viaggio" [--dry-run] [--skip-geocode]')
+  console.log('Uso: npm run import:sheet -- --file private/viaggio.xlsx --email tuo@indirizzo --trip "Titolo del viaggio" [--trip-id ID] [--dry-run] [--skip-geocode]')
   process.exit(0)
 }
 
@@ -91,20 +94,12 @@ async function main() {
   const url = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) throw new Error('Mancano VITE_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY in .env.local (la chiave di servizio non va mai nel repo).')
-  if (!args.trip) throw new Error('Indica il viaggio con --trip "Titolo" (anche solo una parte del titolo).')
   const db = createClient(url, key, { auth: { persistSession: false } })
 
-  const found = await db.from('trips').select('id,title').is('deleted_at', null).ilike('title', `%${args.trip}%`)
-  if (found.error) throw new Error(describe(found.error))
-  if (found.data.length !== 1) {
-    throw new Error(
-      found.data.length === 0
-        ? `Nessun viaggio con «${args.trip}» nel titolo: crealo prima dall'app.`
-        : `Più viaggi corrispondono a «${args.trip}»: ${found.data.map((t) => `«${t.title}»`).join(', ')}. Scrivi il titolo per intero.`,
-    )
-  }
-  const trip = found.data[0]
-  say(`\nViaggio: «${trip.title}»`)
+  // la chiave di servizio vede i viaggi di tutti gli account: si sceglie con l'email (o l'id), non solo col titolo
+  const email = args.email ?? process.env.IMPORT_EMAIL
+  const trip = pickTrip(await loadTrips(db), { title: args.trip, tripId: args['trip-id'], email, needIdentity: true })
+  say(`\nViaggio: ${describeTrip(trip)}`)
   const ok = (res) => {
     if (res.error) throw new Error(describe(res.error))
     return res.data

@@ -16,7 +16,7 @@ Si lancia dal tuo PC, una volta (o più volte: non duplica nulla).
 
 ```
 npm run import:sheet -- --file private/viaggio.xlsx --dry-run
-npm run import:sheet -- --file private/viaggio.xlsx --trip "Giappone"
+npm run import:sheet -- --file private/viaggio.xlsx --email tuo@indirizzo --trip "Giappone"
 ```
 
 - `--dry-run` legge e conta, non scrive nulla e non cerca le coordinate.
@@ -26,6 +26,13 @@ npm run import:sheet -- --file private/viaggio.xlsx --trip "Giappone"
 Le coordinate vengono cercate con Nominatim (OpenStreetMap), 1 richiesta al secondo: per 140 luoghi servono 3–5 minuti.
 I risultati restano in `private/geocode-cache.json`, quindi un secondo lancio è immediato.
 Quelli non trovati sono elencati a fine corsa e in `private/import-report.txt`: nell'app si sistemano spostando il pin.
+
+## Quale viaggio (importante)
+
+La chiave di servizio vede i viaggi di **tutti** gli account e il titolo non è univoco, quindi lo script vuole
+l'indirizzo email con cui accedi all'app (`--email`, oppure `IMPORT_EMAIL=...` in `.env.local`): considera solo i
+viaggi di quell'account. Se ne restano più d'uno li elenca con titolo, date, id e account, e si sceglie con
+`--trip-id`. Senza `--email` né `--trip-id` non scrive nulla.
 
 ## Cosa importa
 

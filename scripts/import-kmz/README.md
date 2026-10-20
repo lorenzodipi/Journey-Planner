@@ -13,8 +13,8 @@ Porta nell'app i luoghi della tua mappa di Google My Maps **con il link al punto
 ## Uso
 
 ```
-npm run import:kmz -- --file private/mappa.kmz --trip "Giappone" --dry-run
-npm run import:kmz -- --file private/mappa.kmz --trip "Giappone"
+npm run import:kmz -- --file private/mappa.kmz --email tuo@indirizzo --trip "Giappone" --dry-run
+npm run import:kmz -- --file private/mappa.kmz --email tuo@indirizzo --trip "Giappone"
 ```
 
 - `--dry-run`: legge il database e mostra cosa farebbe, senza scrivere nulla.
@@ -22,6 +22,13 @@ npm run import:kmz -- --file private/mappa.kmz --trip "Giappone"
 - `--force-links`: sostituisce anche i link già salvati (di default si riempiono solo quelli vuoti).
 - `--no-new`: aggiorna solo i luoghi già presenti, non aggiunge quelli mancanti.
 - `--radius 150`: raggio in metri per abbinare per vicinanza.
+
+## Quale viaggio (importante)
+
+La chiave di servizio vede i viaggi di **tutti** gli account e il titolo non è univoco, quindi lo script vuole
+l'indirizzo email con cui accedi all'app (`--email`, oppure `IMPORT_EMAIL=...` in `.env.local`): considera solo i
+viaggi di quell'account. Se ne restano più d'uno li elenca con titolo, date, id e account, e si sceglie con
+`--trip-id`. Senza `--email` né `--trip-id` non scrive nulla.
 
 ## Cosa fa
 

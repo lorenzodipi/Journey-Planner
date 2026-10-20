@@ -12,6 +12,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { createClient } from '@supabase/supabase-js'
+import { describeTrip, loadTrips, pickTrip } from '../lib/find-trip.mjs'
 import { kmlFromBytes, parseKml } from './kml.mjs'
 import { matchPlaces, meters, nearestCity } from './match.mjs'
 
@@ -19,6 +20,9 @@ const { values: args } = parseArgs({
   options: {
     file: { type: 'string', default: 'private/mappa.kmz' },
     trip: { type: 'string' },
+    email: { type: 'string' },
+    'trip-id': { type: 'string' },
+    list: { type: 'boolean', default: false },
     report: { type: 'string', default: 'private/import-kmz-report.txt' },
     'dry-run': { type: 'boolean', default: false },
     'keep-coords': { type: 'boolean', default: false },
@@ -30,7 +34,7 @@ const { values: args } = parseArgs({
 })
 if (args.help) {
   console.log(
-    'Uso: npm run import:kmz -- --file private/mappa.kmz --trip "Titolo" [--dry-run] [--keep-coords] [--force-links] [--no-new] [--radius 150]',
+    'Uso: npm run import:kmz -- --file private/mappa.kmz --email tuo@indirizzo --trip "Titolo" [--trip-id ID] [--list] [--dry-run] [--keep-coords] [--force-links] [--no-new] [--radius 150]',
   )
   process.exit(0)
 }
@@ -62,26 +66,22 @@ async function main() {
 
   const url = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key || !args.trip) {
+  const identified = args.trip || args['trip-id'] || args.email || process.env.IMPORT_EMAIL
+  if (!url || !key || !identified) {
     if (args['dry-run']) {
       say('\nProva a vuoto senza database (mancano --trip o la chiave): ecco i primi punti letti.')
       for (const p of points.slice(0, 5)) say(`  - ${p.name} [${p.type || p.folder || 'senza livello'}] ${p.lat ?? 'senza coordinate'}\n    ${p.url}`)
       return
     }
-    if (!args.trip) throw new Error('Indica il viaggio con --trip "Titolo" (anche solo una parte del titolo).')
+    if (!identified) throw new Error('Indica l\'account con --email tuo@indirizzo (e il viaggio con --trip "Titolo").')
     throw new Error('Mancano VITE_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY in .env.local.')
   }
   const db = createClient(url, key, { auth: { persistSession: false } })
-  const found = ok(await db.from('trips').select('id,title').is('deleted_at', null).ilike('title', `%${args.trip}%`))
-  if (found.length !== 1) {
-    throw new Error(
-      found.length === 0
-        ? `Nessun viaggio con «${args.trip}» nel titolo.`
-        : `Più viaggi corrispondono a «${args.trip}»: ${found.map((t) => `«${t.title}»`).join(', ')}. Scrivi il titolo per intero.`,
-    )
-  }
-  const trip = found[0]
-  say(`\nViaggio: «${trip.title}»${args['dry-run'] ? '  (prova a vuoto: non scrivo nulla)' : ''}`)
+  // la chiave di servizio vede i viaggi di tutti gli account: si sceglie con l'email (o l'id), non solo col titolo
+  const email = args.email ?? process.env.IMPORT_EMAIL
+  const rows = await loadTrips(db)
+  const trip = pickTrip(rows, { title: args.trip, tripId: args['trip-id'], email, needIdentity: !args['dry-run'] })
+  say(`\nViaggio: ${describeTrip(trip)}${args['dry-run'] ? '\n(prova a vuoto: non scrivo nulla)' : ''}`)
 
   const places = ok(await db.from('places').select('id,name,name_local,city,lat,lng,maps_url,category_id').eq('trip_id', trip.id).is('deleted_at', null))
   const { matched, fresh } = matchPlaces(points, places, { radius: Number(args.radius) || 150 })
