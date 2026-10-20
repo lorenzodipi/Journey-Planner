@@ -674,6 +674,15 @@ export async function importPlaces(
   return result
 }
 
+/** Imposta la posizione di più luoghi insieme (una richiesta ogni 100): usata quando le coordinate si cercano dopo l'import. */
+export async function setPlacePositions(
+  tripId: string,
+  updates: { id: string; name: string; lat: number; lng: number }[],
+  current: { id: string; name: string; mapsUrl?: string; lat: number | null; lng: number | null }[],
+): Promise<void> {
+  await importPlaces(tripId, { updates: updates.map((u) => ({ id: u.id, name: u.name, patch: { lat: u.lat, lng: u.lng } })), fresh: [] }, [], current)
+}
+
 /** Annulla un import: toglie i luoghi aggiunti e rimette link e posizione di prima. */
 export async function undoImport(result: ImportResult): Promise<void> {
   const db = client()

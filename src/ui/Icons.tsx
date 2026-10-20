@@ -114,3 +114,15 @@ export const PencilIcon = wrap(faPencil)
 export const SunriseIcon = wrap(faArrowUp)
 export const SunsetIcon = wrap(faArrowDown)
 export const FilterIcon = wrap(faSliders)
+
+/** Pallino sbarrato: il luogo non ha una posizione e non compare sulla mappa. */
+export function NoPinIcon({ size = 24, class: cls }: IconProps) {
+  const [w, h, , , path] = faLocationDot.icon
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${w} ${h}`} fill="currentColor" class={cls} aria-hidden="true">
+      <path d={path as string} />
+      <path d="M40 40 L344 472" stroke="var(--color-bg, #0b1b33)" stroke-width="88" stroke-linecap="round" fill="none" />
+      <path d="M40 40 L344 472" stroke="currentColor" stroke-width="40" stroke-linecap="round" fill="none" />
+    </svg>
+  )
+}

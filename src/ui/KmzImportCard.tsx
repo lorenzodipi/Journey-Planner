@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'preact/hooks'
 import { readKmzFile, type KmzContent } from '../lib/kmz'
 import { planImport } from '../lib/kmzPlan'
+import { startPositionJob } from '../state/positionJob'
 import { showToast } from '../state/toast'
 import { useTrips } from '../state/trips'
 import { FormError, PrimaryButton, SecondaryButton } from './Field'
@@ -70,6 +71,12 @@ export function KmzImportCard() {
     const parts = [plan.updates.length > 0 && `${plural(plan.updates.length, 'luogo aggiornato', 'luoghi aggiornati')}`, plan.fresh.length > 0 && `${plural(plan.fresh.length, 'aggiunto', 'aggiunti')}`].filter(Boolean)
     showToast(parts.join(' · ') || 'Nulla da importare', { label: 'Annulla', run: () => void undo().then((m) => showToast(m ?? 'Import annullato')) })
     reset()
+    // i luoghi senza coordinate (il file di Google non le contiene) vengono cercati subito, così compaiono sulla mappa
+    // (una breve attesa: i luoghi appena importati devono essere già arrivati nello stato dell'app)
+    if (plan.fresh.some((p) => p.lat == null) || plan.withoutCoords > 0) {
+      const host = { getTrip: t.getTrip, setPlacePositions: t.setPlacePositions }
+      setTimeout(() => void startPositionJob(host, trip.id), 500)
+    }
   }
 
   const nothing = plan && plan.updates.length === 0 && plan.fresh.length === 0
@@ -133,8 +140,8 @@ export function KmzImportCard() {
           )}
           {plan.withoutCoords > 0 && (
             <p class="text-xs leading-snug text-muted">
-              Il file non contiene le coordinate: il link è una ricerca su Google per nome e indirizzo, che apre la scheda del luogo. I pin non vengono spostati
-              {plan.fresh.length > 0 && ' e i luoghi nuovi restano senza pin'}.
+              Il file non contiene le coordinate: il link è una ricerca su Google per nome e indirizzo. Dopo l'import l'app cerca da sola la posizione dei luoghi
+              senza pallino (qualche minuto, con l'avanzamento qui sotto); i pin che hai già non vengono spostati.
             </p>
           )}
           {plan.far.length > 0 && (

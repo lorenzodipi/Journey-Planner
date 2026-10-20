@@ -62,6 +62,10 @@ interface TripsValue {
   /** Più luoghi insieme: una sola richiesta e un solo aggiornamento. */
   setPlacesDeleted: (ids: string[], deleted: boolean) => Result
   importPlaces: (tripId: string, plan: ImportPlan) => Promise<{ error: string | null; undo: () => Result }>
+  /** Il viaggio com'è adesso (non quello dell'ultimo disegno): serve ai lavori lunghi in background. */
+  getTrip: (id: string) => Trip | undefined
+  /** Imposta la posizione di luoghi che non ne hanno (salta quelli che nel frattempo l'hanno ricevuta). */
+  setPlacePositions: (tripId: string, updates: { id: string; name: string; lat: number; lng: number }[]) => Result
   createItem: (tripId: string, dayId: string, input: ItemInput) => Result
   updateItem: (id: string, input: ItemInput) => Result
   moveItem: (dayId: string, itemId: string, step: -1 | 1) => Result
@@ -138,6 +142,7 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
   const [serverTrips, setTrips] = useState<Trip[]>(demo ? [demoTrip] : [])
   const [queue, setQueueState] = useState<Entry[]>(() => (demo ? [] : loadQueue()))
   const queueRef = useRef<Entry[]>(queue)
+  const tripsRef = useRef<Trip[]>([])
   const flushing = useRef(false)
   // le tappe di ogni giorno sono sempre nell'ordine mostrato (posizione + orario)
   const trips = useMemo(
@@ -214,6 +219,7 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demo, signedIn, refresh])
 
+  tripsRef.current = trips
   const active = useMemo(() => trips.find((t) => t.id === activeId) ?? trips[0] ?? null, [trips, activeId])
 
   // Modifiche di altre persone (es. Gaia) in tempo reale: Supabase avvisa quando cambia una riga del viaggio aperto
@@ -402,6 +408,13 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     setPlaceStatus: (id, status) => queued('Stato del luogo', [{ k: 'update', table: 'places', id, patch: { status } }], { t: 'place.status', id, status }),
     setPlaceDeleted: (id, deleted) => run(() => api.setPlaceDeleted(id, deleted), ['places']),
     setPlacesDeleted: (ids, deleted) => (ids.length === 0 ? Promise.resolve(null) : run(() => api.setPlacesDeleted(ids, deleted), ['places'])),
+    getTrip: (id) => tripsRef.current.find((t) => t.id === id),
+    setPlacePositions: (tripId, updates) => {
+      const current = tripsRef.current.find((t) => t.id === tripId)?.places ?? []
+      // solo luoghi che esistono ancora e non hanno già una posizione (qualcuno può averla impostata a mano nel frattempo)
+      const todo = updates.filter((u) => current.some((p) => p.id === u.id && p.lat == null && p.lng == null))
+      return todo.length === 0 ? Promise.resolve(null) : run(() => api.setPlacePositions(tripId, todo, current), ['places'])
+    },
     importPlaces: async (tripId, plan) => {
       const trip = trips.find((t) => t.id === tripId)
       const box: { done?: api.ImportResult } = {}

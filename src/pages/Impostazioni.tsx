@@ -8,6 +8,7 @@ import { SecondaryButton } from '../ui/Field'
 import { ChevronRightIcon, SwapIcon } from '../ui/Icons'
 import { Card, PageHeader } from '../ui/PageHeader'
 import { Disc, Ticket } from '../ui/Ticket'
+import { FindPositions } from '../ui/FindPositions'
 import { KmzImportCard } from '../ui/KmzImportCard'
 import { RestoreCard } from '../ui/RestoreCard'
 
@@ -61,6 +62,7 @@ export function Impostazioni() {
         </Card>
 
         <KmzImportCard />
+        <FindPositions />
 
         <RestoreCard />
 

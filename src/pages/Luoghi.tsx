@@ -10,9 +10,10 @@ import { useDeleter } from '../ui/useDeleter'
 import { useHideNav } from '../ui/useHideNav'
 import { FilterBar } from '../ui/FilterBar'
 import { FilterSheet } from '../ui/FilterSheet'
+import { FindPositions } from '../ui/FindPositions'
 import { EmptyState, PageHeader } from '../ui/PageHeader'
 import { PlaceDisc, CategoryTag } from '../ui/PlaceDisc'
-import { MinusIcon, SearchIcon, TickIcon, TrashIcon } from '../ui/Icons'
+import { MinusIcon, NoPinIcon, SearchIcon, TickIcon, TrashIcon } from '../ui/Icons'
 import { Fab, Ticket } from '../ui/Ticket'
 import { PlaceSheet, type PlaceSheetState } from '../ui/PlaceSheet'
 import { STATUS_LABEL, STATUS_STYLE, categoryColor } from '../ui/placeMeta'
@@ -110,6 +111,7 @@ export function Luoghi() {
 
       {trip.places.length > 0 && (
         <div class="space-y-3 px-5 pb-3.5">
+          {!selecting && <FindPositions />}
           <label class="relative block">
             <SearchIcon size={20} class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
             <input
@@ -222,8 +224,16 @@ export function Luoghi() {
                         {p.category && <CategoryTag label={p.category} color={color} />}
                         <span class="text-[13px] text-muted">
                           {[p.city, dayOf(p.id)].filter(Boolean).join(' · ')}
-                          {p.lat == null ? ' · senza posizione' : ''}
                         </span>
+                        {(p.lat == null || p.lng == null) && (
+                          <span
+                            class="inline-flex items-center gap-1 rounded-md border-2 border-warn px-1.5 text-xs font-extrabold leading-snug text-warn"
+                            title="Senza posizione: non compare sulla mappa"
+                          >
+                            <NoPinIcon size={12} />
+                            Non sulla mappa
+                          </span>
+                        )}
                         {p.status !== 'idea' && (
                           <span class={`rounded-md border-2 px-1.5 text-xs font-extrabold leading-snug ${STATUS_STYLE[p.status]}`}>{STATUS_LABEL[p.status]}</span>
                         )}
