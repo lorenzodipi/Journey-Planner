@@ -27,6 +27,8 @@ interface Props {
   tone?: 'bg' | 'surface'
   /** Solo lettura: il valore si vede ma non si cambia (non apre il pannello, senza freccia). */
   readOnly?: boolean
+  /** Riga in fondo all'elenco che fa altro (es. «+ Altra valuta…»): chiude il pannello e lancia l'azione. */
+  extra?: { label: string; onPick: () => void }
 }
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
@@ -35,7 +37,7 @@ const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCa
  * Selettore a pannello (al posto della <select> del sistema): righe grandi da toccare con il pollice,
  * la voce scelta è spuntata, con ricerca quando l'elenco è lungo.
  */
-export function Select({ label, value, options, onChange, placeholder = 'Scegli…', searchable, creatable, createLabel, tone = 'bg', readOnly }: Props) {
+export function Select({ label, value, options, onChange, placeholder = 'Scegli…', searchable, creatable, createLabel, tone = 'bg', readOnly, extra }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const selected = options.find((o) => o.value === value)
@@ -144,6 +146,20 @@ export function Select({ label, value, options, onChange, placeholder = 'Scegli�
             )
           })}
           {filtered.length === 0 && !canCreate && <li class="px-3 py-4 text-sm text-muted">Nessun risultato.</li>}
+          {extra && (
+            <li class="mt-1.5 border-t-2 border-line pt-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  close()
+                  extra.onPick()
+                }}
+                class="flex min-h-12 w-full items-center gap-3 rounded-2xl px-3 text-left font-extrabold text-accent"
+              >
+                {extra.label}
+              </button>
+            </li>
+          )}
         </ul>
       </Sheet>
     </div>

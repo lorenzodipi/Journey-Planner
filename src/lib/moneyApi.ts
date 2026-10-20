@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { BudgetItem, Category } from '../types'
 import { client } from './db'
 import { budgetColumns, type BudgetInput } from './moneyData'
+import { cleanRates } from './money'
 
 // Scritture e letture per budget, spese e tasso di cambio.
 
@@ -127,6 +128,21 @@ export async function setTripFxRate(tripId: string, rate: number | null): Promis
   if (error) {
     if (/fx_rate/i.test(error.message)) {
       throw new Error('Manca la migrazione 0002 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0002_trip_fx.sql).')
+    }
+    throw error
+  }
+}
+
+/**
+ * Salva i cambi del viaggio: quello della valuta locale e quelli delle valute extra (richiede la migrazione 0012
+ * solo se ci sono valute extra). Le valute tolte non compaiono in `extra`.
+ */
+export async function setTripFxRates(tripId: string, rate: number | null, extra: Record<string, number>): Promise<void> {
+  const clean = cleanRates(extra)
+  const { error } = await client().from('trips').update({ fx_rate: rate, fx_rates: clean }).eq('id', tripId)
+  if (error) {
+    if (/fx_rates/i.test(error.message)) {
+      throw new Error("Manca la migrazione 0012 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0012_trip_fx_rates.sql).")
     }
     throw error
   }

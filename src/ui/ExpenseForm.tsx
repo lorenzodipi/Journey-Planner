@@ -1,7 +1,7 @@
-import { useState } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import { useConfirm } from './ConfirmDialog'
 import { dateInZone } from '../lib/flights'
-import { amountToText, formatMoney, parseAmount, parseRate, tripCurrencies } from '../lib/money'
+import { amountToText, formatMoney, parseAmount, parseRate, rateFor, tripCurrencies } from '../lib/money'
 import type { ExpenseInput } from '../lib/moneyData'
 import type { Expense, Trip } from '../types'
 import { CategorySelect } from './CategorySelect'
@@ -34,7 +34,7 @@ export function ExpenseForm({ trip, initial, defaults, onSubmit, onDelete, onDon
   const [amount, setAmount] = useState(amountToText(initial?.amount))
   const [currency, setCurrency] = useState(startCurrency)
   const [rate, setRate] = useState(
-    initial?.fxRate ? String(initial.fxRate).replace('.', ',') : startCurrency === trip.localCurrency && trip.fxRate ? String(trip.fxRate).replace('.', ',') : '',
+    initial?.fxRate ? String(initial.fxRate).replace('.', ',') : startCurrency !== trip.baseCurrency && rateFor(trip, startCurrency) ? String(rateFor(trip, startCurrency)).replace('.', ',') : '',
   )
   const [rateTouched, setRateTouched] = useState(!!initial?.fxRate)
   const [paidBy, setPaidBy] = useState<string>(initial?.paidBy ?? everyone[0] ?? '')
@@ -53,10 +53,19 @@ export function ExpenseForm({ trip, initial, defaults, onSubmit, onDelete, onDon
   function onCurrency(v: string) {
     setCurrency(v)
     const next = v.trim().toUpperCase()
-    // il tasso precompilato vale solo per la valuta locale: cambiando valuta lo tolgo (o lo rimetto)
+    // il tasso precompilato è quello del viaggio per quella valuta: cambiando valuta lo cambio (o lo tolgo)
     if (rateTouched) return
-    setRate(next === trip.localCurrency && trip.fxRate ? String(trip.fxRate).replace('.', ',') : '')
+    const known = next !== trip.baseCurrency ? rateFor(trip, next) : undefined
+    setRate(known ? String(known).replace('.', ',') : '')
   }
+
+  // una valuta appena aggiunta al viaggio porta il suo cambio: lo compilo quando arriva (se non l'hai scritto tu)
+  useEffect(() => {
+    if (rateTouched || cur === trip.baseCurrency) return
+    const known = rateFor(trip, cur)
+    if (known) setRate(String(known).replace('.', ','))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trip.fxRate, trip.fxRates, cur])
 
   async function submit(e: Event) {
     e.preventDefault()

@@ -90,13 +90,41 @@ export function sumByCurrency(items: { amount: number; currency: string }[]): { 
   )
 }
 
+type RateTrip = { baseCurrency: string; localCurrency?: string; fxRate?: number; fxRates?: Record<string, number> }
+
+/** Valute extra del viaggio (oltre a base e locale), in ordine alfabetico. */
+export function extraCurrencies(trip: Pick<RateTrip, 'fxRates'>): string[] {
+  return Object.keys(trip.fxRates ?? {}).sort()
+}
+
+/** Cambio del viaggio per una valuta (unità di valuta base per 1 unità), se c'è: 1 per la base. */
+export function rateFor(trip: RateTrip, currency: string): number | undefined {
+  const code = currency.trim().toUpperCase()
+  if (code === trip.baseCurrency) return 1
+  if (code === trip.localCurrency) return trip.fxRate && trip.fxRate > 0 ? trip.fxRate : undefined
+  const r = trip.fxRates?.[code]
+  return r && r > 0 ? r : undefined
+}
+
+/** Ripulisce un oggetto di cambi (da database o file): codici di 3 lettere maiuscole, tassi positivi e sensati. */
+export function cleanRates(raw: unknown): Record<string, number> {
+  const out: Record<string, number> = {}
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    const code = k.trim().toUpperCase()
+    const n = typeof v === 'number' ? v : Number(v)
+    if (/^[A-Z]{3}$/.test(code) && Number.isFinite(n) && n > 0 && n < 1e7) out[code] = n
+  }
+  return out
+}
+
 /**
- * Valute che si possono scegliere in un viaggio: la base e quella locale (se c'è e se è diversa).
+ * Valute che si possono scegliere in un viaggio: la base, quella locale (se c'è e se è diversa) e le extra.
  * `current` è la valuta già salvata su una voce da modificare: resta nell'elenco anche se il viaggio non la prevede più.
  */
-export function tripCurrencies(trip: { baseCurrency: string; localCurrency?: string }, current?: string): string[] {
+export function tripCurrencies(trip: { baseCurrency: string; localCurrency?: string; fxRates?: Record<string, number> }, current?: string): string[] {
   const out: string[] = []
-  for (const c of [trip.baseCurrency, trip.localCurrency, current]) {
+  for (const c of [trip.baseCurrency, trip.localCurrency, ...extraCurrencies(trip), current]) {
     const code = c?.trim().toUpperCase()
     if (code && !out.includes(code)) out.push(code)
   }

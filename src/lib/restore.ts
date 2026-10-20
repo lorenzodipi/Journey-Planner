@@ -21,6 +21,7 @@ import type {
   Trip,
 } from '../types'
 import { EXPORT_FORMAT, EXPORT_VERSION } from './exportData'
+import { cleanRates } from './money'
 import { DEFAULT_CENTER } from './tripForm'
 import { enumerateDates } from './tripDays'
 
@@ -464,6 +465,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
     checklist,
     bookings,
     fxRate: fx !== undefined && fx > 0 && fx < 1e7 ? fx : undefined,
+    fxRates: Object.keys(cleanRates(raw.fxRates)).length > 0 ? cleanRates(raw.fxRates) : undefined,
   }
 }
 
@@ -532,6 +534,8 @@ export function tripRow(trip: Trip, title: string) {
     center_lat: trip.center.lat,
     center_lng: trip.center.lng,
     fx_rate: trip.fxRate ?? null,
+    // solo se ci sono: senza la migrazione 0012 la colonna non esiste e l'inserimento fallirebbe
+    ...(trip.fxRates && Object.keys(trip.fxRates).length > 0 ? { fx_rates: trip.fxRates } : {}),
   }
 }
 

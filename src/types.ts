@@ -241,4 +241,6 @@ export interface Trip {
   bookings: Booking[]
   /** Unità di valuta base per 1 unità della valuta locale (es. 0,0056 EUR per 1 JPY). */
   fxRate?: number
+  /** Cambi delle valute extra del viaggio: unità di valuta base per 1 unità di ciascuna (es. { KRW: 0.00065 }). */
+  fxRates?: Record<string, number>
 }

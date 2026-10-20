@@ -37,6 +37,8 @@ await db.query(`insert into expenses (trip_id,label,category,amount,currency) va
 await db.query(`insert into budget_items (trip_id,label,category,amount,currency) values ($1,'Cene','CIBO',100,'EUR')`, [legacyTrip])
 
 await runMigration('0008_expense_categories.sql')
+await runMigration('0012_trip_fx_rates.sql')
+await runMigration('0012_trip_fx_rates.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -199,6 +201,9 @@ await asUser(A)
 await throws('tasso di cambio zero o negativo rifiutato', () => db.query(`update trips set fx_rate = 0 where id=$1`, [s2]))
 await db.query(`update trips set fx_rate = 0.00562 where id=$1`, [s2])
 check('A imposta il tasso di cambio del viaggio', Number((await db.query(`select fx_rate from trips where id=$1`, [s2])).rows[0].fx_rate) === 0.00562)
+await throws('i cambi delle valute extra devono essere un oggetto', () => db.query(`update trips set fx_rates = '[1,2]' where id=$1`, [s2]))
+await db.query(`update trips set fx_rates = '{"KRW":0.00065,"THB":0.026}' where id=$1`, [s2])
+check('A imposta i cambi delle valute extra', Number((await db.query(`select fx_rates->>'KRW' as k from trips where id=$1`, [s2])).rows[0].k) === 0.00065)
 const trv = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'Lorenzo',$2) returning id`, [s2, A])).rows[0].id
 const trvOther = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'Estraneo',$2) returning id`, [other, A])).rows[0].id
 const bi = (await db.query(`insert into budget_items (trip_id,label,amount,currency,scope) values ($1,'Treno',30,'EUR','per_person') returning id`, [s2])).rows[0].id

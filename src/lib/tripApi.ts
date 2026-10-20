@@ -10,6 +10,7 @@ import { mapBudget, mapExpenses } from './moneyData'
 import type { BudgetItemRow, BudgetShareRow, ExpenseRow, ExpenseShareRow } from './moneyData'
 import { mapFlights, mapStays, mapTransports } from './logistics'
 import type { FlightLegRow, FlightRow, StayRow, TransportRow } from './logistics'
+import { cleanRates } from './money'
 import type { Op } from './outbox'
 import { DEFAULT_CENTER } from './tripForm'
 import { enumerateDates, planDays } from './tripDays'
@@ -135,6 +136,7 @@ interface TripRow {
   base_currency: string
   local_currency: string | null
   fx_rate?: number | string | null
+  fx_rates?: Record<string, number | string> | null
   center_lat: number | null
   center_lng: number | null
   trip_travelers: TravelerRow[]
@@ -241,6 +243,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     checklist: mapChecklist(extras.checklist, row.id),
     bookings: mapBookings(extras.bookings, row.id),
     fxRate: row.fx_rate == null ? undefined : Number(row.fx_rate),
+    fxRates: Object.keys(cleanRates(row.fx_rates)).length > 0 ? cleanRates(row.fx_rates) : undefined,
   }
 }
 

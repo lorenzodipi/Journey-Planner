@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks'
 import { dayOffset, formatDateInZone, formatDuration, formatInZone, layover, legDuration, totalTravelTime } from '../lib/flights'
 import { formatWhen, earliestFirst, transportWhen, whenKey } from '../lib/logistics'
-import { convert, formatMoney } from '../lib/money'
+import { convert, formatMoney, rateFor } from '../lib/money'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { ComponentChildren } from 'preact'
@@ -17,14 +17,15 @@ import { Sheet } from '../ui/Sheet'
 import { MODE_LABEL, TransportForm } from '../ui/TransportForm'
 import { useDeleter } from '../ui/useDeleter'
 
-function transportRows(x: Transport, tz: string, days: { id: string; date: string }[], trip: { baseCurrency: string; localCurrency?: string; fxRate?: number }) {
+function transportRows(x: Transport, tz: string, days: { id: string; date: string }[], trip: { baseCurrency: string; localCurrency?: string; fxRate?: number; fxRates?: Record<string, number> }) {
   const rows: { label: string; value: ComponentChildren }[] = [{ label: 'Mezzo', value: MODE_LABEL[x.mode] }]
   const { depart, arrive } = transportWhen(x, tz, days)
   if (depart) rows.push({ label: 'Partenza', value: formatWhen(depart, tz) })
   if (arrive) rows.push({ label: 'Arrivo', value: formatWhen(arrive, tz) })
   if (x.refCode) rows.push({ label: 'Codice', value: <span class="tracking-[1.5px]">{x.refCode}</span> })
   if (x.cost != null) {
-    const approx = x.currency === trip.localCurrency && trip.fxRate && trip.baseCurrency !== x.currency ? convert(x.cost, trip.fxRate) : null
+    const rate = trip.baseCurrency !== x.currency ? rateFor(trip, x.currency) : undefined
+    const approx = rate ? convert(x.cost, rate) : null
     rows.push({
       label: x.scope === 'per_person' ? 'Costo a persona' : 'Costo totale',
       value: (

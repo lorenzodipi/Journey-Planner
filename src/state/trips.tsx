@@ -94,6 +94,8 @@ interface TripsValue {
   updateExpense: (tripId: string, expense: Expense, input: ExpenseInput) => Result
   setExpenseDeleted: (id: string, deleted: boolean) => Result
   setFxRate: (tripId: string, rate: number | null) => Result
+  /** Cambio della valuta locale e delle valute extra del viaggio, insieme. */
+  setFxRates: (tripId: string, rate: number | null, extra: Record<string, number>) => Result
   createChecklistItem: (tripId: string, input: ChecklistInput) => Result
   updateChecklistItem: (id: string, input: ChecklistInput) => Result
   setChecklistDone: (id: string, done: boolean) => Result
@@ -488,6 +490,7 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     setExpenseDeleted: (id, deleted) =>
       queued('Spesa', [{ k: 'update', table: 'expenses', id, patch: deletedPatch(deleted) }], { t: 'expense.deleted', id, deleted }),
     setFxRate: (tripId, rate) => run(() => money.setTripFxRate(tripId, rate), ['trips']),
+    setFxRates: (tripId, rate, extra) => run(() => money.setTripFxRates(tripId, rate, extra), ['trips']),
     createChecklistItem: (tripId, input) => {
       const items = trips.find((x) => x.id === tripId)?.checklist.filter((c: ChecklistItem) => c.kind === input.kind) ?? []
       const position = Math.max(0, ...items.map((c) => c.position)) + 1000

@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks'
 import { expenseBase, expensesOf, fxOf, personSummary, shareOf, summarizeExpenses } from '../lib/budget'
 import { dateInZone } from '../lib/flights'
 import { formatShort } from '../lib/dates'
-import { formatMoney } from '../lib/money'
+import { extraCurrencies, formatMoney } from '../lib/money'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { Expense, Traveler } from '../types'
@@ -190,6 +190,7 @@ export function Spese() {
                       <span class="shrink-0 text-right">
                         <span class="block text-[17px] font-extrabold tabular-nums">{formatMoney(e.amount, e.currency)}</span>
                         {e.currency !== base && inBase !== null && <span class="block text-xs text-muted">≈ {formatMoney(inBase, base)}</span>}
+                        {e.currency !== base && inBase === null && extraCurrencies(trip).length > 0 && <span class="block text-xs font-extrabold text-warn">manca il cambio</span>}
                       </span>
                     </button>
                     <TrashButton

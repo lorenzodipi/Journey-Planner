@@ -141,6 +141,7 @@ describe('parseExport: file', () => {
     expect(back.stays[0].dinner).toBe(true)
     expect(back.transports[0]).toMatchObject({ fromLat: 35.68, toLng: 135.76, dayId: 'd3' })
     expect(back.fxRate).toBe(0.0056)
+    expect(back.fxRates).toBeUndefined() // senza valute extra nel file, nessun cambio in più
   })
 
   it('rifiuta file non validi con un messaggio chiaro', () => {
@@ -210,6 +211,11 @@ describe('parseExport: pulizia dei dati', () => {
     expect(r.trip).toMatchObject({ timezone: 'UTC', theme: 'default', baseCurrency: 'EUR', localCurrency: undefined, fxRate: undefined })
     expect(r.trip.center.lat).toBeCloseTo(41.9, 0)
     expect(r.warnings.join('\n')).toMatch(/Fuso orario/)
+  })
+
+  it('i cambi delle valute extra si leggono dal file e si ripuliscono', () => {
+    const r = run({ fxRates: { krw: 0.00065, USD: -1, bad1: 3 } })
+    expect(r.trip.fxRates).toEqual({ KRW: 0.00065 })
   })
 
   it('gli allegati PDF non vengono ripristinati e se ne avvisa', () => {

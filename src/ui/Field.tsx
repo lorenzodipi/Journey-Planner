@@ -1,5 +1,8 @@
 import type { ComponentChildren } from 'preact'
-import { currencyName } from '../lib/money'
+import { useState } from 'preact/hooks'
+import { currencyName, extraCurrencies } from '../lib/money'
+import { useTrips } from '../state/trips'
+import { AddCurrencySheet } from './AddCurrency'
 import { DatePicker } from './DatePicker'
 import { TickIcon } from './Icons'
 import { Select } from './Select'
@@ -198,8 +201,14 @@ export function CostFields({
   amountLabel?: string
   withScope?: boolean
 }) {
+  // «Altra valuta…» compare solo nei viaggi che hanno già almeno una valuta extra: gli altri restano come sempre
+  // (la prima valuta extra si aggiunge da Budget → Cambio → Modifica).
+  const trip = useTrips().active
+  const [adding, setAdding] = useState(false)
+  const canAdd = !!trip && extraCurrencies(trip).length > 0
   return (
     <div class="space-y-3">
+      {canAdd && trip && <AddCurrencySheet open={adding} trip={trip} onClose={() => setAdding(false)} onAdded={onCurrency} />}
       <div class="grid grid-cols-[1fr_7.5rem] gap-3">
         <TextField label={amountLabel} value={amount} onInput={onAmount} inputMode="decimal" placeholder="0,00" />
         <Select
@@ -208,6 +217,7 @@ export function CostFields({
           onChange={onCurrency}
           readOnly={currencies.length <= 1}
           options={currencies.map((c) => ({ value: c, label: c, hint: currencyName(c) }))}
+          extra={canAdd ? { label: '+ Altra valuta…', onPick: () => setAdding(true) } : undefined}
         />
       </div>
       {withScope && (

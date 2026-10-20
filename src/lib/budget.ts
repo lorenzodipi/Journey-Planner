@@ -11,16 +11,20 @@ export interface FxContext {
   local?: string
   /** unità di valuta base per 1 unità della valuta locale */
   rate?: number
+  /** cambi delle altre valute del viaggio (unità di valuta base per 1 unità) */
+  extra?: Record<string, number>
 }
 
-export function fxOf(trip: Pick<Trip, 'baseCurrency' | 'localCurrency' | 'fxRate'>): FxContext {
-  return { base: trip.baseCurrency, local: trip.localCurrency, rate: trip.fxRate }
+export function fxOf(trip: Pick<Trip, 'baseCurrency' | 'localCurrency' | 'fxRate'> & { fxRates?: Record<string, number> }): FxContext {
+  return { base: trip.baseCurrency, local: trip.localCurrency, rate: trip.fxRate, extra: trip.fxRates }
 }
 
 /** Importo nella valuta base, oppure `null` se manca il tasso per convertirlo. */
 export function toBase(amount: number, currency: string, fx: FxContext): number | null {
   if (currency === fx.base) return round2(amount)
   if (fx.local && currency === fx.local && fx.rate) return round2(amount * fx.rate)
+  const extra = fx.extra?.[currency]
+  if (extra && extra > 0) return round2(amount * extra)
   return null
 }
 
@@ -282,6 +286,23 @@ export function expenseBase(e: Pick<Expense, 'amount' | 'currency' | 'fxRate'>, 
   if (e.currency === fx.base) return round2(e.amount)
   if (e.fxRate) return round2(e.amount * e.fxRate)
   return toBase(e.amount, e.currency, fx)
+}
+
+/** Spese raggruppate per valuta: importo nella valuta della spesa e controvalore nella base (`null` se manca un cambio). */
+export function expensesByCurrency(
+  expenses: Pick<Expense, 'amount' | 'currency' | 'fxRate'>[],
+  fx: FxContext,
+): { currency: string; amount: number; base: number | null }[] {
+  const map = new Map<string, { amount: number; base: number | null }>()
+  for (const e of expenses) {
+    const cur = map.get(e.currency) ?? { amount: 0, base: 0 }
+    const b = expenseBase(e, fx)
+    map.set(e.currency, { amount: cur.amount + e.amount, base: cur.base === null || b === null ? null : cur.base + b })
+  }
+  const rank = (c: string) => (c === fx.base ? 0 : c === fx.local ? 1 : 2)
+  return Array.from(map, ([currency, v]) => ({ currency, amount: round2(v.amount), base: v.base === null ? null : round2(v.base) })).sort(
+    (a, b) => rank(a.currency) - rank(b.currency) || a.currency.localeCompare(b.currency),
+  )
 }
 
 /** Quota di ciascun viaggiatore nella valuta base, in proporzione ai pesi (senza quote: parti uguali tra tutti). */

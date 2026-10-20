@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import { formatDay, formatShort } from '../lib/dates'
-import { convert, formatMoney } from '../lib/money'
+import { convert, formatMoney, rateFor } from '../lib/money'
 import { nightsOf, overlappingStays, uncoveredNights } from '../lib/stays'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
@@ -24,7 +24,8 @@ function stayRows(s: Stay, trip: Trip) {
   ]
   if (s.address) rows.push({ label: 'Indirizzo', value: s.address })
   if (s.totalCost != null) {
-    const approx = s.currency === trip.localCurrency && trip.fxRate && trip.baseCurrency !== s.currency ? convert(s.totalCost, trip.fxRate) : null
+    const rate = trip.baseCurrency !== s.currency ? rateFor(trip, s.currency) : undefined
+    const approx = rate ? convert(s.totalCost, rate) : null
     rows.push({
       label: 'Costo totale',
       value: (

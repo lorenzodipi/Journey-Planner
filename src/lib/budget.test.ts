@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Expense } from '../types'
-import { budgetLines, categoryOverview, paidByTraveler, paidFromSections, personBudget, expenseBase, expenseOwed, expensesOf, groupByCategory, involvesTraveler, personSummary, shareOf, logisticsLines, settle, shareAmounts, splitEvenly, summarizeExpenses, summarizeLines, toBase, type Line } from './budget'
+import { budgetLines, categoryOverview, paidByTraveler, paidFromSections, personBudget, expenseBase, expenseOwed, expensesOf, groupByCategory, involvesTraveler, personSummary, shareOf, logisticsLines, settle, shareAmounts, splitEvenly, summarizeExpenses, summarizeLines, toBase, expensesByCurrency, type Line } from './budget'
 
 // Cifre FITTIZIE: servono solo a verificare i calcoli.
 const T1 = { id: 't1' }
@@ -288,5 +288,25 @@ describe('documenti con costo, chi ha pagato e budget personale', () => {
     expect(me.planned).toBe(50 + 40) // metà del budget + la sua polizza
     expect(me.spent).toBe(15 + 40) // metà della cena (pagata da t2) + la sua polizza
     expect(personBudget(trip, 'sconosciuto', fx)).toMatchObject({ planned: 0, spent: 0 })
+  })
+})
+
+describe('più valute', () => {
+  const fx = { base: 'EUR', local: 'JPY', rate: 0.0056, extra: { KRW: 0.00065 } }
+  it('toBase converte anche le valute extra; senza cambio resta null', () => {
+    expect(toBase(18000, 'KRW', fx)).toBe(11.7)
+    expect(toBase(1000, 'JPY', fx)).toBe(5.6)
+    expect(toBase(100, 'THB', fx)).toBeNull()
+    expect(toBase(18000, 'KRW', { base: 'EUR', local: 'JPY', rate: 0.0056 })).toBeNull() // senza extra: come prima
+  })
+  it('expensesByCurrency somma per valuta (base, locale, poi le altre) e segnala le valute senza cambio', () => {
+    const e = (amount: number, currency: string, fxRate?: number) => ({ amount, currency, fxRate })
+    const r = expensesByCurrency([e(35, 'EUR'), e(2400, 'JPY'), e(1000, 'JPY'), e(18000, 'KRW'), e(350, 'THB'), e(100, 'THB', 0.026)], fx)
+    expect(r).toEqual([
+      { currency: 'EUR', amount: 35, base: 35 },
+      { currency: 'JPY', amount: 3400, base: 19.04 },
+      { currency: 'KRW', amount: 18000, base: 11.7 },
+      { currency: 'THB', amount: 450, base: null }, // una delle due spese non ha il cambio
+    ])
   })
 })

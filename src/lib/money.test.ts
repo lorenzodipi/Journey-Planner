@@ -114,3 +114,26 @@ describe('valute scegliibili nel viaggio', () => {
     expect(tripCurrencies({ baseCurrency: 'EUR', localCurrency: 'JPY' }, 'JPY')).toEqual(['EUR', 'JPY'])
   })
 })
+
+import { cleanRates, extraCurrencies, rateFor } from './money'
+
+describe('valute extra del viaggio', () => {
+  const trip = { baseCurrency: 'EUR', localCurrency: 'JPY', fxRate: 0.0056, fxRates: { KRW: 0.00065, THB: 0.026 } }
+  it('le extra si scelgono dopo base e locale, in ordine alfabetico', () => {
+    expect(extraCurrencies(trip)).toEqual(['KRW', 'THB'])
+    expect(tripCurrencies(trip)).toEqual(['EUR', 'JPY', 'KRW', 'THB'])
+    expect(tripCurrencies({ baseCurrency: 'EUR', localCurrency: 'JPY' })).toEqual(['EUR', 'JPY']) // senza extra: come prima
+  })
+  it('rateFor: base = 1, locale, extra, sconosciuta = nessun cambio', () => {
+    expect(rateFor(trip, 'EUR')).toBe(1)
+    expect(rateFor(trip, 'jpy')).toBe(0.0056)
+    expect(rateFor(trip, 'KRW')).toBe(0.00065)
+    expect(rateFor(trip, 'USD')).toBeUndefined()
+    expect(rateFor({ baseCurrency: 'EUR', localCurrency: 'JPY' }, 'JPY')).toBeUndefined()
+  })
+  it('cleanRates scarta codici e tassi non validi', () => {
+    expect(cleanRates({ krw: 0.00065, THB: '0.026', EU: 1, USD: -2, XXX: 'abc', JPY: 1e9 })).toEqual({ KRW: 0.00065, THB: 0.026 })
+    expect(cleanRates(null)).toEqual({})
+    expect(cleanRates([1, 2])).toEqual({})
+  })
+})

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
-import { budgetLines, categoryOverview, expenseBase, fxOf, logisticsLines, paidByTraveler, paidFromSections, shareAmounts, summarizeExpenses, summarizeLines, toBase, type CategoryOverview, type Line } from '../lib/budget'
+import { budgetLines, categoryOverview, expenseBase, expensesByCurrency, fxOf, logisticsLines, paidByTraveler, paidFromSections, shareAmounts, summarizeExpenses, summarizeLines, toBase, type CategoryOverview, type Line } from '../lib/budget'
 import { formatShort } from '../lib/dates'
 import { dateInZone } from '../lib/flights'
-import { formatMoney, round2 } from '../lib/money'
+import { extraCurrencies, formatMoney, round2 } from '../lib/money'
 import { takeScrollTarget } from '../state/scrollTarget'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
@@ -15,7 +15,7 @@ import { TrashButton } from '../ui/ConfirmDialog'
 import { FxCard } from '../ui/FxCard'
 import { FxForm } from '../ui/FxForm'
 import { BudgetIcon, ChevronRightIcon, TrashIcon } from '../ui/Icons'
-import { PageHeader } from '../ui/PageHeader'
+import { Card, PageHeader } from '../ui/PageHeader'
 import { DASH, Leader, Receipt } from '../ui/Receipt'
 import { Disc, Ticket } from '../ui/Ticket'
 import { Sheet } from '../ui/Sheet'
@@ -371,6 +371,27 @@ export function Budget() {
           </div>
         )}
 
+        {/* solo nei viaggi con valute extra: quanto si è speso in ciascuna valuta e a quanto corrisponde */}
+        {extraCurrencies(trip).length > 0 && trip.expenses.length > 0 && (
+          <Card class="mt-3.5">
+            <h2 class="font-display text-lg font-extrabold">Spese per valuta</h2>
+            <ul class="mt-1">
+              {expensesByCurrency(trip.expenses, fx).map((r, i) => (
+                <li key={r.currency} class={`flex min-h-12 items-center justify-between gap-3 ${i > 0 ? 'border-t-2 border-dashed border-line' : ''}`}>
+                  <span class="min-w-0">
+                    <span class="block font-extrabold tabular-nums">{formatMoney(r.amount, r.currency)}</span>
+                    {r.currency !== base && (
+                      <span class={`block text-xs ${r.base === null ? 'font-extrabold text-warn' : 'text-muted'}`}>
+                        {r.base === null ? `manca il cambio per ${r.currency}` : `≈ ${formatMoney(r.base, base)}`}
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
+
         <Link href="/altro/spese" class="mt-3.5 block">
           <Ticket stub={<Disc color="var(--accent)"><BudgetIcon size={22} /></Disc>} stubWidth={76}>
             <span class="min-w-0 flex-1">
@@ -447,7 +468,12 @@ export function Budget() {
             onDone={close}
           />
         )}
-        {sheet?.kind === 'fx' && <FxForm trip={trip} onSubmit={(r) => t.setFxRate(trip.id, r)} onDone={close} />}
+        {sheet?.kind === 'fx' && <FxForm
+            trip={trip}
+            // senza valute extra (ora e prima) si salva come sempre: la colonna delle extra serve solo a chi le usa
+            onSubmit={(r, extra) => (Object.keys(extra).length === 0 && !trip.fxRates ? t.setFxRate(trip.id, r) : t.setFxRates(trip.id, r, extra))}
+            onDone={close}
+          />}
       </Sheet>
     </>
   )
