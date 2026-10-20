@@ -12,6 +12,7 @@ import { EmptyState } from '../ui/PageHeader'
 import { Avatar, Fab, Ticket } from '../ui/Ticket'
 import { Sheet } from '../ui/Sheet'
 import { useDeleter } from '../ui/useDeleter'
+import { useHideNav } from '../ui/useHideNav'
 
 export function Checklist() {
   const trip = useTrip()
@@ -29,6 +30,7 @@ export function Checklist() {
   const [edit, setEdit] = useState<ChecklistItem | null>(null)
   const [selecting, setSelecting] = useState(false)
   const [sel, setSel] = useState<Set<string>>(new Set())
+  useHideNav(selecting)
 
   const many = trip.travelers.length > 1
   const items = visibleItems(trip.checklist, kind, who)

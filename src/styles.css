@@ -233,3 +233,8 @@ fieldset {
 .maplibregl-ctrl-attrib a {
   color: inherit;
 }
+
+/* barra di navigazione nascosta (selezione multipla): vedi useHideNav */
+:root[data-hide-nav] nav[aria-label='Navigazione principale'] {
+  display: none;
+}

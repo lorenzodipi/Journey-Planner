@@ -8,6 +8,7 @@ import { usePlaceView } from '../state/placeView'
 import { useTrip, useTrips } from '../state/trip'
 import { TrashButton } from '../ui/ConfirmDialog'
 import { useDeleter } from '../ui/useDeleter'
+import { useHideNav } from '../ui/useHideNav'
 import { FilterBar } from '../ui/FilterBar'
 import { FilterSheet } from '../ui/FilterSheet'
 import { EmptyState, PageHeader } from '../ui/PageHeader'
@@ -28,6 +29,7 @@ export function Luoghi() {
   const [sheet, setSheet] = useState<PlaceSheetState>(null)
   const [selecting, setSelecting] = useState(false)
   const [sel, setSel] = useState<Set<string>>(new Set())
+  useHideNav(selecting)
 
   const visible = filterPlaces(trip.places, filters, text)
   const dayIndexOf = (placeId: string) => {
