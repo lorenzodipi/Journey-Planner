@@ -1,10 +1,9 @@
 import { deflateRawSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
-import { googleLinks, kmlFromBytes, mapsUrlFor, parseKml, plainText } from './kml.mjs'
-import { matchPlaces, nearestCity, normName } from './match.mjs'
+import { googleLinks, kmlFromBytes, mapsUrlFor, parseKml, plainText } from './kmz'
 
 /** Zip minimo (un solo file, compresso) per provare la lettura del .kmz. */
-function zip(name, text, method = 8) {
+function zip(name: string, text: string, method = 8): Uint8Array {
   const raw = Buffer.from(text, 'utf8')
   const data = method === 8 ? deflateRawSync(raw) : raw
   const nm = Buffer.from(name)
@@ -27,7 +26,7 @@ function zip(name, text, method = 8) {
   eocd.writeUInt16LE(1, 10)
   eocd.writeUInt32LE(46 + nm.length, 12)
   eocd.writeUInt32LE(30 + nm.length + data.length, 16)
-  return Buffer.concat([local, nm, data, central, nm, eocd])
+  return new Uint8Array(Buffer.concat([local, nm, data, central, nm, eocd]))
 }
 
 const KML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -45,14 +44,14 @@ const KML = `<?xml version="1.0" encoding="UTF-8"?>
 </Folder></Document></kml>`
 
 describe('lettura del kmz', () => {
-  it('apre lo zip (compresso o no) e legge il kml', () => {
-    expect(kmlFromBytes(zip('doc.kml', KML))).toBe(KML)
-    expect(kmlFromBytes(zip('doc.kml', KML, 0))).toBe(KML)
-    expect(kmlFromBytes(Buffer.from(KML))).toBe(KML) // anche un .kml semplice
+  it('apre lo zip (compresso o no) e legge il kml', async () => {
+    expect(await kmlFromBytes(zip('doc.kml', KML))).toBe(KML)
+    expect(await kmlFromBytes(zip('doc.kml', KML, 0))).toBe(KML)
+    expect(await kmlFromBytes(new Uint8Array(Buffer.from(KML)))).toBe(KML) // anche un .kml semplice
   })
 
-  it('rifiuta uno zip senza kml', () => {
-    expect(() => kmlFromBytes(zip('foto.jpg', 'x'))).toThrow(/kml/i)
+  it('rifiuta uno zip senza kml', async () => {
+    await expect(kmlFromBytes(zip('foto.jpg', 'x'))).rejects.toThrow(/kml/i)
   })
 
   it('estrae nome, livello, coordinate (lng,lat) e ignora linee e aree', () => {
@@ -102,56 +101,13 @@ describe('mappa creata da un foglio (senza coordinate)', () => {
     expect(points[1]).toMatchObject({ note: '', type: '' })
   })
 
-  it('si abbina per nome anche senza coordinate', () => {
-    const { points } = parseKml(SHEET_KML)
-    const { matched, fresh } = matchPlaces(points, [{ id: '1', name: 'Tempio Todai-ji', name_local: null, city: 'Nara', lat: 34.7, lng: 135.8 }])
-    expect(matched.map((m) => m.place.id)).toEqual(['1'])
-    expect(fresh.map((p) => p.name)).toEqual(['Vuoto'])
-    expect(nearestCity(fresh[0], [])).toBeNull()
-  })
-})
-
-describe('abbinamento ai luoghi esistenti', () => {
-  const place = (id, name, lat, lng, extra = {}) => ({ id, name, name_local: null, city: null, lat, lng, ...extra })
-  const pts = (...l) => l.map(([name, lat, lng]) => ({ name, lat, lng }))
-
-  it('normalizza i nomi', () => {
-    expect(normName('The Tokyo-Tower!')).toBe('tokyo tower')
-    expect(normName('Café  Ōmori')).toBe('cafe omori')
-  })
-
-  it('abbina per nome identico, simile o nome locale', () => {
-    const places = [place('1', 'Senso-ji', 0, 0), place('2', 'Ichiran', 0, 0), place('3', 'Tempio', 0, 0, { name_local: '浅草寺' })]
-    const { matched, fresh } = matchPlaces(pts(['senso ji', 1, 1], ['Ichiran Shibuya', 1, 1], ['浅草寺', 1, 1], ['Nuovo posto', 1, 1]), places)
-    expect(matched.map((m) => [m.point.name, m.place.id])).toEqual([
-      ['senso ji', '1'],
-      ['浅草寺', '3'],
-      ['Ichiran Shibuya', '2'],
-    ])
-    expect(fresh.map((p) => p.name)).toEqual(['Nuovo posto'])
-  })
-
-  it('un luogo esistente si usa una volta sola e il nome identico ha la precedenza', () => {
-    const places = [place('1', 'Ichiran', 0, 0)]
-    const { matched, fresh } = matchPlaces(pts(['Ichiran Ueno', 1, 1], ['Ichiran', 1, 1]), places)
-    expect(matched.map((m) => [m.point.name, m.how])).toEqual([['Ichiran', 'nome']])
-    expect(fresh.map((p) => p.name)).toEqual(['Ichiran Ueno'])
-  })
-
-  it('abbina per vicinanza solo se la prima parola del nome coincide', () => {
-    const places = [place('1', 'Sushi Dai', 35.6, 139.7)]
-    const near = matchPlaces(pts(['Sushi Daiwa', 35.6005, 139.7]), places)
-    expect(near.matched).toHaveLength(1)
-    const far = matchPlaces(pts(['Sushi Daiwa', 35.7, 139.7]), places)
-    expect(far.fresh).toHaveLength(1)
-    const other = matchPlaces(pts(['Museo', 35.6005, 139.7]), places)
-    expect(other.fresh).toHaveLength(1)
-  })
-
-  it('dà ai luoghi nuovi la città del vicino più prossimo', () => {
-    const places = [place('1', 'A', 35.0, 139.0, { city: 'Tokyo' }), place('2', 'B', 34.7, 135.5, { city: 'Osaka' })]
-    expect(nearestCity({ lat: 35.01, lng: 139.01 }, places)).toBe('Tokyo')
-    expect(nearestCity({ lat: 34.69, lng: 135.51 }, places)).toBe('Osaka')
-    expect(nearestCity({ lat: 43, lng: 141 }, places)).toBeNull()
+  it('raddrizza le righe con le colonne sfalsate', () => {
+    const row = (name: string, type: string, city: string, addr: string, note: string) =>
+      `<Placemark><name>${name}</name><ExtendedData><Data name="Tipologia"><value>${type}</value></Data><Data name="Città"><value>${city}</value></Data><Data name="Indirizzo"><value>${addr}</value></Data><Data name="Note"><value>${note}</value></Data></ExtendedData></Placemark>`
+    const kml = `<kml><Document>${['A', 'B', 'C'].map((n) => row(n, 'Ristorante', 'Osaka', '1 Via', '')).join('')}${row('Storto', ' Tennoji', 'Ristorante', 'Osaka', '2-3-19 Ebisu, Osaka')}</Document></kml>`
+    const storto = parseKml(kml).points[3]
+    expect(storto).toMatchObject({ type: 'Ristorante', city: 'Osaka', note: '' })
+    expect(storto.address).toBe('Storto 2-3-19 Ebisu, Osaka')
+    expect(storto.url).toContain('query=Storto%202-3-19%20Ebisu%2C%20Osaka')
   })
 })

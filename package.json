@@ -16,7 +16,6 @@
     "test:watch": "vitest",
     "test:sql": "node supabase/tests/rls.test.mjs",
     "import:sheet": "node --env-file-if-exists=.env.local scripts/import-sheet/import.mjs",
-    "import:kmz": "node --env-file-if-exists=.env.local scripts/import-kmz/import.mjs",
     "build:native": "tsc --noEmit && vite build --mode native --outDir dist-native --emptyOutDir",
     "assets:native": "capacitor-assets generate --iconBackgroundColor \"#20407b\" --splashBackgroundColor \"#0b1b33\""
   },

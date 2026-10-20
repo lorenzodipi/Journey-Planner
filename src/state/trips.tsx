@@ -17,6 +17,7 @@ import * as planning from '../lib/planningApi'
 import * as restore from '../lib/restoreApi'
 import { syncOfflineFiles } from '../lib/bookingFiles'
 import { tripCenter } from '../lib/tzCenter'
+import type { ImportPlan } from '../lib/kmzPlan'
 import type { BookingInput, ChecklistInput } from '../lib/planningData'
 import type { BudgetInput, ExpenseInput } from '../lib/moneyData'
 import type { FlightInput, StayInput, TransportInput } from '../lib/logistics'
@@ -56,6 +57,7 @@ interface TripsValue {
   updatePlace: (id: string, tripId: string, input: PlaceInput) => Result
   setPlaceStatus: (id: string, status: PlaceStatus) => Result
   setPlaceDeleted: (id: string, deleted: boolean) => Result
+  importPlaces: (tripId: string, plan: ImportPlan) => Promise<{ error: string | null; undo: () => Result }>
   createItem: (tripId: string, dayId: string, input: ItemInput) => Result
   updateItem: (id: string, input: ItemInput) => Result
   moveItem: (dayId: string, itemId: string, step: -1 | 1) => Result
@@ -332,6 +334,14 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
       ),
     setPlaceStatus: (id, status) => queued('Stato del luogo', [{ k: 'update', table: 'places', id, patch: { status } }], { t: 'place.status', id, status }),
     setPlaceDeleted: (id, deleted) => run(() => api.setPlaceDeleted(id, deleted)),
+    importPlaces: async (tripId, plan) => {
+      const trip = trips.find((t) => t.id === tripId)
+      const box: { done?: api.ImportResult } = {}
+      const error = await run(async () => {
+        box.done = await api.importPlaces(tripId, plan, trip?.categories ?? [], trip?.places ?? [])
+      })
+      return { error, undo: () => run(async () => (box.done ? api.undoImport(box.done) : undefined)) }
+    },
     createItem: (tripId, dayId, input) => {
       const day = trips.find((t) => t.id === tripId)?.days.find((d) => d.id === dayId)
       const position = positionForNew(

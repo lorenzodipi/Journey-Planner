@@ -8,6 +8,7 @@ import { SecondaryButton } from '../ui/Field'
 import { ChevronRightIcon, SwapIcon } from '../ui/Icons'
 import { Card, PageHeader } from '../ui/PageHeader'
 import { Disc, Ticket } from '../ui/Ticket'
+import { KmzImportCard } from '../ui/KmzImportCard'
 import { RestoreCard } from '../ui/RestoreCard'
 
 const time = (ms: number) =>
@@ -45,7 +46,7 @@ export function Impostazioni() {
 
   return (
     <>
-      <PageHeader title="Impostazioni" subtitle="Dati, telefono e info" back={{ href: '/altro', label: 'Altro' }} />
+      <PageHeader title="Impostazioni" subtitle="Dati, import, telefono e info" back={{ href: '/altro', label: 'Altro' }} />
       <div class="space-y-3.5 px-5 pb-28">
         <Card>
           <h2 class="font-display text-lg font-extrabold">Esporta i dati</h2>
@@ -58,6 +59,8 @@ export function Impostazioni() {
             {t.trips.length > 1 && <SecondaryButton onClick={() => exportTrips(t.trips)}>Esporta tutti i viaggi</SecondaryButton>}
           </div>
         </Card>
+
+        <KmzImportCard />
 
         <RestoreCard />
 

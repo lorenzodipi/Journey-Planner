@@ -269,7 +269,7 @@ export function Luoghi() {
             type="button"
             disabled={chosen.length === 0}
             onClick={() => void deleteChosen()}
-            class="inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-full bg-danger text-base font-extrabold text-bg shadow-[0_8px_20px_rgb(0_0_0/0.45)] disabled:cursor-not-allowed disabled:bg-line disabled:text-muted disabled:shadow-none"
+            class="inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-full border-2 border-transparent bg-danger text-base font-extrabold text-bg shadow-[0_8px_20px_rgb(0_0_0/0.45)] disabled:cursor-not-allowed disabled:border-danger disabled:bg-[#47303f] disabled:text-[#c49aa5] disabled:shadow-none"
           >
             <TrashIcon size={22} />
             {chosen.length === 0 ? 'Elimina' : chosen.length === 1 ? 'Elimina 1 luogo' : `Elimina ${chosen.length} luoghi`}

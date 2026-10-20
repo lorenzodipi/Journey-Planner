@@ -505,6 +505,85 @@ export async function updatePlace(id: string, tripId: string, input: PlaceInput,
   }
 }
 
+// ---------- import da Google Maps (.kmz) ----------
+
+export interface ImportResult {
+  /** Luoghi aggiunti. */
+  created: string[]
+  /** Valori di prima dei luoghi modificati, per annullare. */
+  previous: { id: string; maps_url: string | null; lat: number | null; lng: number | null }[]
+}
+
+const IMPORT_CHUNK = 10
+
+/**
+ * Applica un piano di import: crea le categorie mancanti, aggiunge i luoghi nuovi e aggiorna link/posizione
+ * di quelli esistenti. Si può rilanciare senza duplicare (l'abbinamento è per nome).
+ */
+export async function importPlaces(
+  tripId: string,
+  plan: { updates: { id: string; patch: { mapsUrl?: string; lat?: number; lng?: number } }[]; fresh: PlaceInput[] },
+  known: Category[],
+  current: { id: string; mapsUrl?: string; lat: number | null; lng: number | null }[],
+): Promise<ImportResult> {
+  const db = client()
+  const result: ImportResult = { created: [], previous: [] }
+
+  // categorie: una sola richiesta per etichetta, poi si riusa l'id
+  const labels = [...new Set(plan.fresh.map((i) => i.category.trim()).filter(Boolean))]
+  const categoryId = new Map<string, string | null>()
+  const have = [...known]
+  for (const label of labels) {
+    const id = await resolveCategory(tripId, label, have)
+    categoryId.set(label.toLowerCase(), id)
+    if (id && !have.some((c) => c.id === id)) have.push({ id, label })
+  }
+
+  const rows = plan.fresh.map((i) => ({
+    trip_id: tripId,
+    ...placeColumns(i, categoryId.get(i.category.trim().toLowerCase()) ?? null),
+    source: 'import:kmz',
+  }))
+  for (let i = 0; i < rows.length; i += 50) {
+    const { data, error } = await db.from('places').insert(rows.slice(i, i + 50)).select('id')
+    if (error) throw error
+    result.created.push(...(data as { id: string }[]).map((r) => r.id))
+  }
+
+  for (let i = 0; i < plan.updates.length; i += IMPORT_CHUNK) {
+    await Promise.all(
+      plan.updates.slice(i, i + IMPORT_CHUNK).map(async (u) => {
+        const before = current.find((p) => p.id === u.id)
+        const patch: Record<string, unknown> = {}
+        if (u.patch.mapsUrl !== undefined) patch.maps_url = u.patch.mapsUrl
+        if (u.patch.lat !== undefined) patch.lat = u.patch.lat
+        if (u.patch.lng !== undefined) patch.lng = u.patch.lng
+        const { error } = await db.from('places').update(patch).eq('id', u.id).eq('trip_id', tripId)
+        if (error) throw error
+        result.previous.push({ id: u.id, maps_url: before?.mapsUrl ?? null, lat: before?.lat ?? null, lng: before?.lng ?? null })
+      }),
+    )
+  }
+  return result
+}
+
+/** Annulla un import: toglie i luoghi aggiunti e rimette link e posizione di prima. */
+export async function undoImport(result: ImportResult): Promise<void> {
+  const db = client()
+  if (result.created.length > 0) {
+    const { error } = await db.from('places').update({ deleted_at: new Date().toISOString() }).in('id', result.created)
+    if (error) throw error
+  }
+  for (let i = 0; i < result.previous.length; i += IMPORT_CHUNK) {
+    await Promise.all(
+      result.previous.slice(i, i + IMPORT_CHUNK).map(async (p) => {
+        const { error } = await db.from('places').update({ maps_url: p.maps_url, lat: p.lat, lng: p.lng }).eq('id', p.id)
+        if (error) throw error
+      }),
+    )
+  }
+}
+
 export async function setPlaceStatus(id: string, status: PlaceStatus): Promise<void> {
   const { error } = await client().from('places').update({ status }).eq('id', id)
   if (error) throw error
