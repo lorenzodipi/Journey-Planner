@@ -17,6 +17,15 @@ const ctx = { dayIndex: (id: string) => days[id], categoryOrder: ['Tempio', 'Cib
 const names = (g: { places: Place[] }[]) => g.flatMap((x) => x.places.map((y) => y.name))
 
 describe('viewPlaces', () => {
+  it('per posizione: prima quelli sulla mappa, poi quelli senza pallino; un gruppo vuoto non compare', () => {
+    const located = [{ ...places[0], lat: 35.7, lng: 139.8 }, places[1], { ...places[2], lat: 35.0, lng: 135.7 }]
+    const g = viewPlaces(located, { groupBy: 'map', sortBy: 'name' }, ctx)
+    expect(g.map((x) => x.title)).toEqual(['Sulla mappa', 'Non sulla mappa'])
+    expect(g[0].places.map((x) => x.name)).toEqual(['Fushimi Inari', 'Senso-ji'])
+    expect(g[1].places.map((x) => x.name)).toEqual(['Tsukiji'])
+    expect(viewPlaces(places, { groupBy: 'map', sortBy: 'name' }, ctx).map((x) => x.title)).toEqual(['Non sulla mappa'])
+  })
+
   it('di base: un solo gruppo, per nome', () => {
     const g = viewPlaces(places, DEFAULT_VIEW, ctx)
     expect(g).toHaveLength(1)
@@ -55,7 +64,7 @@ describe('viewPlaces', () => {
   })
 
   it('non perde né duplica luoghi', () => {
-    for (const groupBy of ['none', 'city', 'category', 'status', 'day'] as const)
+    for (const groupBy of ['none', 'city', 'category', 'status', 'day', 'map'] as const)
       expect(names(viewPlaces(places, { groupBy, sortBy: 'status' }, ctx)).sort()).toEqual(places.map((x) => x.name).sort())
   })
 })

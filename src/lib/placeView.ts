@@ -3,7 +3,7 @@ import type { Place, PlaceStatus } from '../types'
 // Come si mostra l'elenco dei luoghi: raggruppato per qualcosa e ordinato in un certo modo.
 // Non toglie luoghi (quello lo fanno i filtri): cambia solo l'ordine e le intestazioni.
 
-export type GroupBy = 'none' | 'city' | 'category' | 'status' | 'day'
+export type GroupBy = 'none' | 'city' | 'category' | 'status' | 'day' | 'map'
 export type SortBy = 'name' | 'day' | 'status' | 'cost'
 
 export interface PlaceView {
@@ -19,6 +19,7 @@ export const GROUP_LABEL: Record<GroupBy, string> = {
   category: 'Categoria',
   status: 'Stato',
   day: 'Giorno',
+  map: 'Posizione',
 }
 
 export const SORT_LABEL: Record<SortBy, string> = {
@@ -75,6 +76,8 @@ export function viewPlaces(
         return p.category || ''
       case 'status':
         return p.status
+      case 'map':
+        return p.lat != null && p.lng != null ? 'on' : 'off'
       default: {
         const d = ctx.dayIndex(p.id)
         return d === undefined ? '' : String(d)
@@ -89,6 +92,8 @@ export function viewPlaces(
         return key || 'Senza categoria'
       case 'status':
         return STATUS_TITLE[key as PlaceStatus]
+      case 'map':
+        return key === 'on' ? 'Sulla mappa' : 'Non sulla mappa'
       default:
         return key === '' ? 'Da assegnare' : `Giorno ${Number(key) + 1}`
     }
@@ -110,6 +115,8 @@ export function viewPlaces(
       }
       case 'status':
         return STATUS_ORDER.indexOf(k as PlaceStatus)
+      case 'map':
+        return k === 'on' ? 0 : 1
       case 'day':
         return k === '' ? Number.MAX_SAFE_INTEGER : Number(k)
       default:
