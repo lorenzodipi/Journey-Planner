@@ -69,3 +69,9 @@ export function canSwap(a: Timed, b: Timed): boolean {
 export function renumber<T extends { id: string }>(items: T[]): { id: string; position: number }[] {
   return items.map((it, i) => ({ id: it.id, position: (i + 1) * 1000 }))
 }
+
+/** Tra le posizioni da assegnare, solo quelle diverse da quelle già salvate: spostare una tappa non riscrive tutto il giorno. */
+export function changedPositions(before: { id: string; position?: number }[], next: { id: string; position: number }[]): { id: string; position: number }[] {
+  const saved = new Map(before.map((b) => [b.id, b.position]))
+  return next.filter((n) => saved.get(n.id) !== n.position)
+}

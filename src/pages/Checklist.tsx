@@ -65,15 +65,6 @@ export function Checklist() {
     })
   }
 
-  async function setAllDeleted(list: ChecklistItem[], deleted: boolean): Promise<string | null> {
-    let failure: string | null = null
-    for (const i of list) {
-      const message = await t.setChecklistDeleted(i.id, deleted)
-      if (message) failure = message
-    }
-    return failure
-  }
-
   async function deleteChosen() {
     const list = chosen
     if (list.length === 0) return
@@ -81,8 +72,8 @@ export function Checklist() {
       title: list.length === 1 ? `Eliminare «${list[0].text}»?` : `Eliminare ${list.length} voci?`,
       done: list.length === 1 ? 'Voce eliminata' : `${list.length} voci eliminate`,
       confirmLabel: list.length === 1 ? 'Elimina' : `Elimina ${list.length} voci`,
-      run: () => setAllDeleted(list, true),
-      undo: () => setAllDeleted(list, false),
+      run: () => t.setChecklistManyDeleted(list.map((i) => i.id), true), // una sola richiesta per tutte
+      undo: () => t.setChecklistManyDeleted(list.map((i) => i.id), false),
     })
     if (ok) stopSelecting()
   }

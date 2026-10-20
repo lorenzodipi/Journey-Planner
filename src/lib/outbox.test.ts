@@ -122,6 +122,17 @@ describe('coda offline: vista locale', () => {
     expect(shown[0].checklist).toHaveLength(0)
   })
 
+  it('checklist: eliminare più voci insieme è una sola modifica in coda', () => {
+    const mk = (text: string, pos: number) => checklistEntry(trip.id, { text, kind: 'docs', travelerId: null, dueDate: '' }, pos)
+    const made = [mk('A', 1000), mk('B', 2000), mk('C', 3000)]
+    let shown = applyQueue([trip], made.map((m, n) => entry(String(n), m.ops, m.local)))
+    const ids = shown[0].checklist.map((c) => c.id)
+    expect(ids).toHaveLength(3)
+    const bulk: Op = { k: 'updateMany', table: 'checklist_items', ids: ids.slice(0, 2), patch: { deleted_at: 'x' } }
+    shown = applyQueue(shown, [entry('9', [bulk], { t: 'checklist.deletedMany', ids: ids.slice(0, 2), deleted: true })])
+    expect(shown[0].checklist.map((c) => c.id)).toEqual([ids[2]])
+  })
+
   it('le voci rifiutate non si vedono', () => {
     const e = expenseEntry(trip, input)
     const rejected: Entry = { ...entry('1', e.ops, e.local), error: 'no' }

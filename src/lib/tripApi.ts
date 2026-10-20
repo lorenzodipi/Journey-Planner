@@ -508,13 +508,14 @@ export async function updatePlace(id: string, tripId: string, input: PlaceInput,
 // ---------- import da Google Maps (.kmz) ----------
 
 export interface ImportResult {
+  tripId: string
   /** Luoghi aggiunti. */
   created: string[]
   /** Valori di prima dei luoghi modificati, per annullare. */
-  previous: { id: string; maps_url: string | null; lat: number | null; lng: number | null }[]
+  previous: { id: string; name: string; maps_url: string | null; lat: number | null; lng: number | null }[]
 }
 
-const IMPORT_CHUNK = 10
+const UPSERT_CHUNK = 100
 
 /**
  * Applica un piano di import: crea le categorie mancanti, aggiunge i luoghi nuovi e aggiorna link/posizione
@@ -522,12 +523,12 @@ const IMPORT_CHUNK = 10
  */
 export async function importPlaces(
   tripId: string,
-  plan: { updates: { id: string; patch: { mapsUrl?: string; lat?: number; lng?: number } }[]; fresh: PlaceInput[] },
+  plan: { updates: { id: string; name: string; patch: { mapsUrl?: string; lat?: number; lng?: number } }[]; fresh: PlaceInput[] },
   known: Category[],
-  current: { id: string; mapsUrl?: string; lat: number | null; lng: number | null }[],
+  current: { id: string; name: string; mapsUrl?: string; lat: number | null; lng: number | null }[],
 ): Promise<ImportResult> {
   const db = client()
-  const result: ImportResult = { created: [], previous: [] }
+  const result: ImportResult = { tripId, created: [], previous: [] }
 
   // categorie: una sola richiesta per etichetta, poi si riusa l'id
   const labels = [...new Set(plan.fresh.map((i) => i.category.trim()).filter(Boolean))]
@@ -550,19 +551,27 @@ export async function importPlaces(
     result.created.push(...(data as { id: string }[]).map((r) => r.id))
   }
 
-  for (let i = 0; i < plan.updates.length; i += IMPORT_CHUNK) {
-    await Promise.all(
-      plan.updates.slice(i, i + IMPORT_CHUNK).map(async (u) => {
-        const before = current.find((p) => p.id === u.id)
-        const patch: Record<string, unknown> = {}
-        if (u.patch.mapsUrl !== undefined) patch.maps_url = u.patch.mapsUrl
-        if (u.patch.lat !== undefined) patch.lat = u.patch.lat
-        if (u.patch.lng !== undefined) patch.lng = u.patch.lng
-        const { error } = await db.from('places').update(patch).eq('id', u.id).eq('trip_id', tripId)
-        if (error) throw error
-        result.previous.push({ id: u.id, maps_url: before?.mapsUrl ?? null, lat: before?.lat ?? null, lng: before?.lng ?? null })
-      }),
-    )
+  // link e posizione dei luoghi esistenti: una richiesta ogni 100 luoghi (upsert su id, che aggiorna solo le colonne indicate)
+  for (let i = 0; i < plan.updates.length; i += UPSERT_CHUNK) {
+    const chunk = plan.updates.slice(i, i + UPSERT_CHUNK)
+    // tutte e tre le colonne in ogni riga (con il valore attuale se non cambia): una colonna mancante verrebbe azzerata
+    const rows = chunk.map((u) => {
+      const now = current.find((p) => p.id === u.id)
+      return {
+        id: u.id,
+        trip_id: tripId,
+        name: u.name,
+        maps_url: u.patch.mapsUrl ?? now?.mapsUrl ?? null,
+        lat: u.patch.lat ?? now?.lat ?? null,
+        lng: u.patch.lng ?? now?.lng ?? null,
+      }
+    })
+    const { error } = await db.from('places').upsert(rows, { onConflict: 'id' })
+    if (error) throw error
+    for (const u of chunk) {
+      const before = current.find((p) => p.id === u.id)
+      result.previous.push({ id: u.id, name: before?.name ?? u.name, maps_url: before?.mapsUrl ?? null, lat: before?.lat ?? null, lng: before?.lng ?? null })
+    }
   }
   return result
 }
@@ -574,13 +583,10 @@ export async function undoImport(result: ImportResult): Promise<void> {
     const { error } = await db.from('places').update({ deleted_at: new Date().toISOString() }).in('id', result.created)
     if (error) throw error
   }
-  for (let i = 0; i < result.previous.length; i += IMPORT_CHUNK) {
-    await Promise.all(
-      result.previous.slice(i, i + IMPORT_CHUNK).map(async (p) => {
-        const { error } = await db.from('places').update({ maps_url: p.maps_url, lat: p.lat, lng: p.lng }).eq('id', p.id)
-        if (error) throw error
-      }),
-    )
+  for (let i = 0; i < result.previous.length; i += UPSERT_CHUNK) {
+    const rows = result.previous.slice(i, i + UPSERT_CHUNK).map((p) => ({ id: p.id, trip_id: result.tripId, name: p.name, maps_url: p.maps_url, lat: p.lat, lng: p.lng }))
+    const { error } = await db.from('places').upsert(rows, { onConflict: 'id' })
+    if (error) throw error
   }
 }
 
@@ -595,6 +601,15 @@ export async function setPlaceDeleted(id: string, deleted: boolean): Promise<voi
     .update({ deleted_at: deleted ? new Date().toISOString() : null })
     .eq('id', id)
   if (error) throw error
+}
+
+/** Elimina (o ripristina) più luoghi con UNA richiesta, non una per luogo. */
+export async function setPlacesDeleted(ids: string[], deleted: boolean): Promise<void> {
+  const at = deleted ? new Date().toISOString() : null
+  for (let i = 0; i < ids.length; i += 200) {
+    const { error } = await client().from('places').update({ deleted_at: at }).in('id', ids.slice(i, i + 200))
+    if (error) throw error
+  }
 }
 
 // ---------- tappe del giorno ----------

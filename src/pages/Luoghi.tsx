@@ -1,5 +1,4 @@
 import { useState } from 'preact/hooks'
-import type { Place } from '../types'
 import { isJapanTrip } from '../lib/tripLocale'
 import { countActive, filterPlaces } from '../lib/placeFilter'
 import { GROUP_LABEL, SORT_LABEL, DEFAULT_VIEW, isDefaultView, viewPlaces } from '../lib/placeView'
@@ -59,14 +58,6 @@ export function Luoghi() {
       return next
     })
   }
-  async function setAllDeleted(list: Place[], deleted: boolean): Promise<string | null> {
-    let failure: string | null = null
-    for (const p of list) {
-      const message = await t.setPlaceDeleted(p.id, deleted)
-      if (message) failure = message
-    }
-    return failure
-  }
   async function deleteChosen() {
     const list = chosen
     if (list.length === 0) return
@@ -76,8 +67,8 @@ export function Luoghi() {
       text: used > 0 ? `Restano in ${used} ${used === 1 ? 'tappa' : 'tappe'} dei giorni, ma senza più il luogo collegato. Puoi annullare subito dopo.` : 'Puoi annullare subito dopo.',
       done: list.length === 1 ? 'Luogo eliminato' : `${list.length} luoghi eliminati`,
       confirmLabel: list.length === 1 ? 'Elimina' : `Elimina ${list.length} luoghi`,
-      run: () => setAllDeleted(list, true),
-      undo: () => setAllDeleted(list, false),
+      run: () => t.setPlacesDeleted(list.map((p) => p.id), true), // una sola richiesta per tutti
+      undo: () => t.setPlacesDeleted(list.map((p) => p.id), false),
     })
     if (ok) stopSelecting()
   }

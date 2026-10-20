@@ -38,6 +38,11 @@ function apply(trips: Trip[], l: Local): Trip[] {
       }))
     case 'checklist.deleted':
       return l.deleted ? patchTrip(trips, null, (t) => ({ ...t, checklist: t.checklist.filter((c) => c.id !== l.id) })) : trips
+    case 'checklist.deletedMany': {
+      if (!l.deleted) return trips
+      const gone = new Set(l.ids)
+      return patchTrip(trips, null, (t) => ({ ...t, checklist: t.checklist.filter((c) => !gone.has(c.id)) }))
+    }
     case 'item.done':
       return patchTrip(trips, null, (t) => ({
         ...t,

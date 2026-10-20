@@ -8,6 +8,8 @@ import type { Category, ChecklistItem, Expense, PlaceStatus } from '../types'
 export type Op =
   | { k: 'upsert'; table: string; row: Record<string, unknown> }
   | { k: 'update'; table: string; id: string; patch: Record<string, unknown> }
+  /** Stessa modifica su più righe, in una sola richiesta (es. eliminare 100 voci selezionate). */
+  | { k: 'updateMany'; table: string; ids: string[]; patch: Record<string, unknown> }
   | { k: 'expenseShares'; tripId: string; expenseId: string; travelerIds: string[] }
 
 /** Come la modifica appare nell'app prima dell'invio. */
@@ -19,6 +21,7 @@ export type Local =
   | { t: 'checklist.done'; id: string; done: boolean }
   | { t: 'checklist.count'; id: string; count: number; done: boolean }
   | { t: 'checklist.deleted'; id: string; deleted: boolean }
+  | { t: 'checklist.deletedMany'; ids: string[]; deleted: boolean }
   | { t: 'item.done'; id: string; done: boolean }
   | { t: 'place.status'; id: string; status: PlaceStatus }
 

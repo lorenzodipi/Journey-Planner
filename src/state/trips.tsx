@@ -9,7 +9,7 @@ import { execOp } from '../lib/outboxExec'
 import { countChange } from '../lib/checklist'
 import { applyQueue, checklistEntry, deletedPatch, expenseEntry } from '../lib/outboxLocal'
 import { showToast } from './toast'
-import { canSwap, orderItems, positionForNew, renumber } from '../lib/itemOrder'
+import { canSwap, changedPositions, orderItems, positionForNew, renumber } from '../lib/itemOrder'
 import * as api from '../lib/tripApi'
 import * as logistics from '../lib/logisticsApi'
 import * as money from '../lib/moneyApi'
@@ -57,6 +57,8 @@ interface TripsValue {
   updatePlace: (id: string, tripId: string, input: PlaceInput) => Result
   setPlaceStatus: (id: string, status: PlaceStatus) => Result
   setPlaceDeleted: (id: string, deleted: boolean) => Result
+  /** Più luoghi insieme: una sola richiesta e un solo aggiornamento. */
+  setPlacesDeleted: (ids: string[], deleted: boolean) => Result
   importPlaces: (tripId: string, plan: ImportPlan) => Promise<{ error: string | null; undo: () => Result }>
   createItem: (tripId: string, dayId: string, input: ItemInput) => Result
   updateItem: (id: string, input: ItemInput) => Result
@@ -92,6 +94,8 @@ interface TripsValue {
   /** Imposta quanti pezzi di una voce con quantità sono già a posto. */
   setChecklistCount: (id: string, count: number) => Result
   setChecklistDeleted: (id: string, deleted: boolean) => Result
+  /** Più voci insieme: una sola richiesta. */
+  setChecklistManyDeleted: (ids: string[], deleted: boolean) => Result
   addChecklistTemplate: (tripId: string) => Result
   createBooking: (tripId: string, input: BookingInput) => Result
   updateBooking: (tripId: string, booking: Booking, input: BookingInput) => Result
@@ -334,6 +338,7 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
       ),
     setPlaceStatus: (id, status) => queued('Stato del luogo', [{ k: 'update', table: 'places', id, patch: { status } }], { t: 'place.status', id, status }),
     setPlaceDeleted: (id, deleted) => run(() => api.setPlaceDeleted(id, deleted)),
+    setPlacesDeleted: (ids, deleted) => (ids.length === 0 ? Promise.resolve(null) : run(() => api.setPlacesDeleted(ids, deleted))),
     importPlaces: async (tripId, plan) => {
       const trip = trips.find((t) => t.id === tripId)
       const box: { done?: api.ImportResult } = {}
@@ -361,7 +366,9 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
       const next = items.slice()
       ;[next[index], next[to]] = [next[to], next[index]]
       // si rinumera tutto il giorno: le posizioni salvate tornano uguali all'ordine che si vede
-      return run(() => api.setItemPositions(renumber(next)))
+      // ma si scrivono solo le posizioni che cambiano davvero (di solito due)
+      const changed = changedPositions(items, renumber(next))
+      return changed.length === 0 ? null : run(() => api.setItemPositions(changed))
     },
     setItemDone: (id, done) => queued('Tappa fatta', [{ k: 'update', table: 'day_items', id, patch: { done } }], { t: 'item.done', id, done }),
     setItemDeleted: (id, deleted) => run(() => api.setItemDeleted(id, deleted)),
@@ -428,6 +435,10 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     },
     setChecklistDeleted: (id, deleted) =>
       queued('Checklist', [{ k: 'update', table: 'checklist_items', id, patch: deletedPatch(deleted) }], { t: 'checklist.deleted', id, deleted }),
+    setChecklistManyDeleted: (ids, deleted) =>
+      ids.length === 0
+        ? Promise.resolve(null)
+        : queued('Checklist', [{ k: 'updateMany', table: 'checklist_items', ids, patch: deletedPatch(deleted) }], { t: 'checklist.deletedMany', ids, deleted }),
     addChecklistTemplate: (tripId) => run(() => planning.addChecklistTemplate(tripId, trips.find((x) => x.id === tripId)?.checklist ?? [])),
     createBooking: (tripId, input) => run(() => planning.createBooking(tripId, input, trips.find((x) => x.id === tripId)?.timezone ?? 'UTC')),
     updateBooking: (tripId, booking, input) =>

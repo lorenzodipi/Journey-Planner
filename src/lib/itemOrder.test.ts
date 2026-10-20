@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canSwap, orderItems, positionForNew, positionForStep, renumber } from './itemOrder'
+import { canSwap, changedPositions, orderItems, positionForNew, positionForStep, renumber } from './itemOrder'
 
 const list = [
   { position: 1000, time: '09:00' },
@@ -71,5 +71,26 @@ describe('canSwap / renumber', () => {
   })
   it('renumber assegna 1000, 2000…', () => {
     expect(renumber([{ id: 'a' }, { id: 'b' }])).toEqual([{ id: 'a', position: 1000 }, { id: 'b', position: 2000 }])
+  })
+})
+
+describe('changedPositions', () => {
+  it('scambiando due tappe si riscrivono solo quelle due', () => {
+    const before = [
+      { id: 'a', position: 1000 },
+      { id: 'b', position: 2000 },
+      { id: 'c', position: 3000 },
+      { id: 'd', position: 4000 },
+    ]
+    const next = renumber([before[0], before[2], before[1], before[3]])
+    expect(changedPositions(before, next)).toEqual([
+      { id: 'c', position: 2000 },
+      { id: 'b', position: 3000 },
+    ])
+  })
+
+  it('se le posizioni salvate erano disordinate le sistema tutte', () => {
+    const before = [{ id: 'a' }, { id: 'b', position: 5 }]
+    expect(changedPositions(before, renumber(before))).toHaveLength(2)
   })
 })
