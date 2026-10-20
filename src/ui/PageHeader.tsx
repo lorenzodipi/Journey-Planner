@@ -10,7 +10,7 @@ interface Props {
   /** Etichetta giapponese a destra del titolo (solo schede principali). */
   jp?: string
   /** Testo piccolo a destra del titolo (es. «19 in tutto»). */
-  aside?: string
+  aside?: ComponentChildren
   children?: ComponentChildren
 }
 
