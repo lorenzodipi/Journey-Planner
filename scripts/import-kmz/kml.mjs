@@ -111,16 +111,22 @@ const fix = (n) => Number(n.toFixed(6))
 /**
  * Link che apre il luogo su Google Maps. Il KMZ non contiene il Place ID, quindi:
  *  1. se nella descrizione c'è già un link di Google Maps, si usa quello;
- *  2. altrimenti una ricerca per nome centrata sulle coordinate di Google: apre la scheda del luogo.
+ *  2. altrimenti una ricerca per nome centrata sulle coordinate di Google: apre la scheda del luogo;
+ *  3. senza coordinate, una ricerca per "nome + indirizzo" (il campo <address> di My Maps).
  */
-export function mapsUrlFor(name, lat, lng, links = []) {
+export function mapsUrlFor(name, lat, lng, links = [], address = '') {
   const own = links.find((u) => /[?&]cid=|\/maps\/place\/|[?&]q=place_id:|query_place_id=|goo\.gl|g\.co\/kgs/i.test(u)) ?? links[0]
   if (own) return own
+  // Nessuna coordinata (My Maps creata da un foglio): Google risolve "nome + indirizzo" da solo, come nella mappa.
+  if (lat == null || lng == null) {
+    const text = (address || name).replace(/\s+/g, ' ').trim()
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(text)}`
+  }
   return `https://www.google.com/maps/search/${encodeURIComponent(name).replace(/%20/g, '+')}/@${fix(lat)},${fix(lng)},17z`
 }
 
 /**
- * @returns {{ points: Array<{name:string, folder:string, lat:number, lng:number, note:string, links:string[], url:string}>, skipped: number, folders: string[] }}
+ * @returns {{ points: Array<{name:string, folder:string, type:string, city:string, lat:number|null, lng:number|null, address:string, note:string, links:string[], url:string}>, skipped: number, folders: string[] }}
  */
 export function parseKml(xml) {
   const root = parseXml(xml)
@@ -136,16 +142,39 @@ export function parseKml(xml) {
       } else if (c.tag === 'Document') walk(c, folder)
       else if (c.tag === 'Placemark') {
         const name = childText(c, 'name')
-        const coords = descendants(c, 'Point').flatMap((p) => descendants(p, 'coordinates'))[0]?.text.trim()
-        const [lng, lat] = coords ? coords.split(/[,\s]+/).map(Number) : []
-        if (!name || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-          skipped++ // linee, aree o punti senza nome
+        if (!name) {
+          skipped++
           continue
         }
+        const hasShape = descendants(c, 'LineString').length + descendants(c, 'Polygon').length > 0
+        const coords = descendants(c, 'Point').flatMap((p) => descendants(p, 'coordinates'))[0]?.text.trim()
+        const [lng, lat] = coords ? coords.split(/[,\s]+/).map(Number) : []
+        const hasCoords = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180
+        if (!hasCoords && hasShape) {
+          skipped++ // linee e aree
+          continue
+        }
+        // campi della mappa (colonne del foglio da cui è stata creata): Tipologia, Città, Indirizzo, Note
+        const data = {}
+        for (const d of descendants(c, 'Data')) data[(d.attrs.match(/name="([^"]*)"/)?.[1] ?? '').toLowerCase()] = childText(d, 'value')
         const rawDesc = child(c, 'description')?.text ?? ''
         const links = googleLinks(rawDesc)
-        const note = plainText(rawDesc.replace(URL_RE, (u) => (GOOGLE_RE.test(decodeEntities(u)) ? '' : u)))
-        points.push({ name, folder, lat, lng, note, links, url: mapsUrlFor(name, lat, lng, links) })
+        const note =
+          data.note !== undefined
+            ? data.note
+            : plainText(rawDesc.replace(URL_RE, (u) => (GOOGLE_RE.test(decodeEntities(u)) ? '' : u)))
+        const address = childText(c, 'address') || [name, data.indirizzo].filter(Boolean).join(' ')
+        const point = {
+          name,
+          folder,
+          type: data.tipologia?.trim() ?? '',
+          city: (data['città'] ?? data.citta ?? '').trim(),
+          lat: hasCoords ? lat : null,
+          lng: hasCoords ? lng : null,
+          note,
+          links,
+        }
+        points.push({ ...point, address, url: mapsUrlFor(name, point.lat, point.lng, links, address) })
       }
     }
   }

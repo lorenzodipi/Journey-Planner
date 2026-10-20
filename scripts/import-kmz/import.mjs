@@ -54,16 +54,18 @@ async function main() {
   if (!existsSync(args.file)) throw new Error(`Non trovo il file ${args.file}. Esporta la mappa da Google My Maps in .kmz e mettila in private/.`)
   const { points, skipped, folders } = parseKml(kmlFromBytes(readFileSync(args.file)))
   const withLink = points.filter((p) => p.links.length > 0).length
+  const withCoords = points.filter((p) => p.lat != null).length
   say(`Letti dal file: ${points.length} luoghi${skipped ? ` (ignorati ${skipped} elementi che non sono punti: linee o aree)` : ''}.`)
   say(`Livelli della mappa: ${folders.length ? folders.join(', ') : '(nessuno)'}`)
-  say(`Con un link di Google già scritto nella descrizione: ${withLink}`)
+  say(`Con coordinate: ${withCoords} · con un link di Google già scritto nella descrizione: ${withLink}`)
+  if (withCoords === 0) say('Nel file non ci sono coordinate (mappa creata da un foglio): il link sarà una ricerca su Google per «nome + indirizzo».')
 
   const url = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key || !args.trip) {
     if (args['dry-run']) {
       say('\nProva a vuoto senza database (mancano --trip o la chiave): ecco i primi punti letti.')
-      for (const p of points.slice(0, 5)) say(`  - ${p.name} [${p.folder || 'senza livello'}] ${p.lat}, ${p.lng}\n    ${p.url}`)
+      for (const p of points.slice(0, 5)) say(`  - ${p.name} [${p.type || p.folder || 'senza livello'}] ${p.lat ?? 'senza coordinate'}\n    ${p.url}`)
       return
     }
     if (!args.trip) throw new Error('Indica il viaggio con --trip "Titolo" (anche solo una parte del titolo).')
@@ -93,7 +95,7 @@ async function main() {
     if (!place.maps_url || args['force-links']) {
       if (place.maps_url !== point.url) patch.maps_url = point.url
     }
-    if (!args['keep-coords'] && (place.lat == null || place.lng == null || meters(point, place) > 20)) {
+    if (!args['keep-coords'] && point.lat != null && (place.lat == null || place.lng == null || meters(point, place) > 20)) {
       patch.lat = point.lat
       patch.lng = point.lng
     }
@@ -103,7 +105,7 @@ async function main() {
     if (!args['dry-run']) ok(await db.from('places').update(patch).eq('id', place.id))
   }
   say(`Link di Google aggiunti: ${linked} · pin spostati sulle coordinate di Google: ${moved}`)
-  const far = matched.filter(({ point, place }) => place.lat != null && meters(point, place) > 2000)
+  const far = matched.filter(({ point, place }) => point.lat != null && place.lat != null && meters(point, place) > 2000)
   if (far.length > 0) {
     say('\nAbbinati ma distanti più di 2 km (controlla che sia lo stesso posto):')
     for (const { point, place } of far) say(`  - ${place.name} (${Math.round(meters(point, place) / 1000)} km) ~ «${point.name}»`)
@@ -115,7 +117,8 @@ async function main() {
   } else {
     const cats = ok(await db.from('categories').select('id,label').eq('trip_id', trip.id).is('deleted_at', null))
     const catId = new Map(cats.map((c) => [c.label.toLowerCase(), c.id]))
-    const missing = [...new Set(fresh.map((p) => p.folder).filter(Boolean))].filter((l) => !catId.has(l.toLowerCase()))
+    const labelOf = (p) => p.type || p.folder
+    const missing = [...new Set(fresh.map(labelOf).filter(Boolean))].filter((l) => !catId.has(l.toLowerCase()))
     if (missing.length > 0) {
       if (!args['dry-run']) {
         const created = ok(
@@ -123,13 +126,14 @@ async function main() {
         )
         for (const c of created) catId.set(c.label.toLowerCase(), c.id)
       }
-      say(`Categorie ${args['dry-run'] ? 'da creare' : 'create'} (dai livelli della mappa): ${missing.join(', ')}`)
+      say(`Categorie ${args['dry-run'] ? 'da creare' : 'create'} (dalla tipologia o dal livello della mappa): ${missing.join(', ')}`)
     }
     const rows = fresh.map((p) => ({
       trip_id: trip.id,
-      category_id: p.folder ? (catId.get(p.folder.toLowerCase()) ?? null) : null,
+      category_id: labelOf(p) ? (catId.get(labelOf(p).toLowerCase()) ?? null) : null,
       name: p.name,
-      city: nearestCity(p, places),
+      city: p.city || nearestCity(p, places),
+      address: p.address && p.address !== p.name ? p.address.replace(p.name, '').trim() || null : null,
       lat: p.lat,
       lng: p.lng,
       maps_url: p.url,

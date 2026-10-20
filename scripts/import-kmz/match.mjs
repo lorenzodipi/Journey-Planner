@@ -58,7 +58,7 @@ export function matchPlaces(points, places, { radius = 150 } = {}) {
   }
   for (const pt of rest) {
     const n = normName(pt.name)
-    const close = (x) => x.p.lat != null && x.p.lng != null && meters(pt, x.p) <= radius
+    const close = (x) => pt.lat != null && x.p.lat != null && x.p.lng != null && meters(pt, x.p) <= radius
     if (claim(pt, (x) => x.names.some((m) => sameName(m, n)), 'nome simile')) continue
     if (claim(pt, (x) => close(x) && x.names.some((m) => m.split(' ')[0] === n.split(' ')[0]), 'vicino')) continue
     fresh.push(pt)
@@ -71,7 +71,7 @@ export function nearestCity(point, places, maxKm = 30) {
   let best = null
   let bestD = maxKm * 1000
   for (const p of places) {
-    if (!p.city || p.lat == null || p.lng == null) continue
+    if (point.lat == null || !p.city || p.lat == null || p.lng == null) continue
     const d = meters(point, p)
     if (d < bestD) {
       bestD = d

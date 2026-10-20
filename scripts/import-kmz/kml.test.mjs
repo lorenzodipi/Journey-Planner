@@ -85,6 +85,32 @@ describe('lettura del kmz', () => {
   })
 })
 
+describe('mappa creata da un foglio (senza coordinate)', () => {
+  const SHEET_KML = `<kml><Document><Folder><name>Nara</name>
+    <Placemark><name>Tempio Todai-ji</name><address>Tempio Todai-ji 406 Zoshicho, Nara</address>
+      <description><![CDATA[Tipologia: Tempio<br>Città: Nara<br>Indirizzo: 406 Zoshicho, Nara<br>Note: Aprire presto]]></description>
+      <ExtendedData><Data name="Tipologia"><value>Tempio</value></Data><Data name="Città"><value>Nara</value></Data>
+        <Data name="Indirizzo"><value>406 Zoshicho, Nara</value></Data><Data name="Note"><value>Aprire presto</value></Data></ExtendedData></Placemark>
+    <Placemark><name>Vuoto</name><address>Vuoto</address><ExtendedData><Data name="Note"><value/></Data></ExtendedData></Placemark>
+  </Folder></Document></kml>`
+
+  it('legge tipologia, città e note dai campi e usa l\'indirizzo per il link', () => {
+    const { points } = parseKml(SHEET_KML)
+    expect(points).toHaveLength(2)
+    expect(points[0]).toMatchObject({ name: 'Tempio Todai-ji', type: 'Tempio', city: 'Nara', lat: null, lng: null, note: 'Aprire presto', folder: 'Nara' })
+    expect(points[0].url).toBe('https://www.google.com/maps/search/?api=1&query=Tempio%20Todai-ji%20406%20Zoshicho%2C%20Nara')
+    expect(points[1]).toMatchObject({ note: '', type: '' })
+  })
+
+  it('si abbina per nome anche senza coordinate', () => {
+    const { points } = parseKml(SHEET_KML)
+    const { matched, fresh } = matchPlaces(points, [{ id: '1', name: 'Tempio Todai-ji', name_local: null, city: 'Nara', lat: 34.7, lng: 135.8 }])
+    expect(matched.map((m) => m.place.id)).toEqual(['1'])
+    expect(fresh.map((p) => p.name)).toEqual(['Vuoto'])
+    expect(nearestCity(fresh[0], [])).toBeNull()
+  })
+})
+
 describe('abbinamento ai luoghi esistenti', () => {
   const place = (id, name, lat, lng, extra = {}) => ({ id, name, name_local: null, city: null, lat, lng, ...extra })
   const pts = (...l) => l.map(([name, lat, lng]) => ({ name, lat, lng }))

@@ -31,6 +31,13 @@ npm run import:kmz -- --file private/mappa.kmz --trip "Giappone"
   (creata se manca), le note della descrizione e la città del luogo già presente più vicino (entro 30 km).
 - Rilanciabile: non duplica nulla. L'elenco finale mostra anche gli abbinamenti sospetti (oltre 2 km).
 
+## Mappe create da un foglio
+
+Se la mappa è stata creata importando un foglio Google, il KMZ **non contiene coordinate né link**: solo nome,
+indirizzo, tipologia, città e note (Google le calcola al momento, ma non le esporta). In quel caso il link è
+`https://www.google.com/maps/search/?api=1&query=<nome + indirizzo>`: la stessa ricerca che fa la mappa, che apre
+la scheda del luogo. I pin non si toccano. Tipologia e città servono per i luoghi nuovi.
+
 ## Come è fatto il link
 
 Il file KMZ non contiene l'identificativo del locale su Google, quindi:
