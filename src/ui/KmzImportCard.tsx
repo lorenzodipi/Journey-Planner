@@ -84,7 +84,8 @@ export function KmzImportCard() {
       <input
         ref={input}
         type="file"
-        accept=".kmz,.kml,application/vnd.google-earth.kmz,application/vnd.google-earth.kml+xml"
+        // niente `accept`: iOS non conosce il tipo .kmz e metterebbe in grigio il file, che non si potrebbe scegliere.
+        // Il contenuto si controlla dopo la scelta (se non è una mappa Google compare un errore chiaro).
         class="sr-only"
         tabIndex={-1}
         onChange={(e) => void onFile(e)}
