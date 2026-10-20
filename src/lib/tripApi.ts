@@ -10,6 +10,7 @@ import { mapBudget, mapExpenses } from './moneyData'
 import type { BudgetItemRow, BudgetShareRow, ExpenseRow, ExpenseShareRow } from './moneyData'
 import { mapFlights, mapStays, mapTransports } from './logistics'
 import type { FlightLegRow, FlightRow, StayRow, TransportRow } from './logistics'
+import type { Op } from './outbox'
 import { DEFAULT_CENTER } from './tripForm'
 import { enumerateDates, planDays } from './tripDays'
 
@@ -243,45 +244,126 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
   }
 }
 
-export async function fetchTrips(): Promise<Trip[]> {
-  const db = client()
-  // Richieste separate e in parallelo: più semplici e robuste degli "embed" annidati.
-  const [trips, places, categories, expenseCategories, items, [stays, transports, flights, legs], [budgetItems, budgetShares, expenses, expenseShares], [checklist, bookings]] = await Promise.all([
-    db
-      .from('trips')
-      .select('*, trip_travelers(*), days(*)')
-      .is('deleted_at', null)
-      .order('start_date', { ascending: true, nullsFirst: false }),
-    db.from('places').select('*').is('deleted_at', null),
-    db.from('categories').select('*').is('deleted_at', null),
-    // prima della migrazione 0008 la tabella non esiste: l'app funziona lo stesso, senza categorie di spesa
-    db.from('expense_categories').select('*').is('deleted_at', null).then((r) => (r.error && /expense_categories|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: [], error: null } : r)),
-    db.from('day_items').select('*').is('deleted_at', null),
-    queryLogistics(db),
-    queryMoney(db),
-    queryPlanning(db),
-  ])
-  for (const r of [trips, places, categories, expenseCategories, items, stays, transports, flights, legs, budgetItems, budgetShares, expenses, expenseShares, checklist, bookings]) if (r.error) throw r.error
-  const extras: Extras = {
-    places: places.data as PlaceRow[],
-    categories: categories.data as CategoryRow[],
-    expenseCategories: expenseCategories.data as CategoryRow[],
-    items: items.data as ItemRow[],
-    stays: stays.data as StayRow[],
-    transports: transports.data as TransportRow[],
-    flights: flights.data as FlightRow[],
-    legs: legs.data as FlightLegRow[],
-    budgetItems: budgetItems.data as BudgetItemRow[],
-    budgetShares: budgetShares.data as BudgetShareRow[],
-    expenses: expenses.data as ExpenseRow[],
-    expenseShares: expenseShares.data as ExpenseShareRow[],
-    checklist: checklist.data as ChecklistRow[],
-    bookings: bookings.data as BookingRow[],
+/**
+ * Gruppi di dati che si possono ricaricare da soli. Dopo una modifica si ricarica solo il gruppo toccato
+ * (es. dopo aver salvato un luogo solo i luoghi) invece di tutte le 15 tabelle.
+ */
+export type Scope = 'trips' | 'places' | 'categories' | 'expenseCategories' | 'items' | 'logistics' | 'money' | 'planning'
+
+/** Il gruppo di una tabella; `null` se non si sa (allora si ricarica tutto, per sicurezza). */
+export function scopeOfTable(table: string): Scope | null {
+  switch (table) {
+    case 'trips':
+    case 'days':
+      return 'trips'
+    case 'places':
+      return 'places'
+    case 'categories':
+      return 'categories'
+    case 'expense_categories':
+      return 'expenseCategories'
+    case 'day_items':
+      return 'items'
+    case 'stays':
+    case 'transports':
+    case 'flights':
+    case 'flight_legs':
+      return 'logistics'
+    case 'budget_items':
+    case 'budget_item_shares':
+    case 'expenses':
+    case 'expense_shares':
+      return 'money'
+    case 'checklist_items':
+    case 'bookings':
+      return 'planning'
+    default:
+      return null
   }
-  const rows = trips.data as TripRow[]
+}
+
+/** Quali gruppi di dati toccano delle scritture in coda; `undefined` (= ricarica tutto) se una non è riconosciuta. */
+export function scopeOfOps(ops: readonly Op[]): Scope[] | undefined {
+  const set = new Set<Scope>()
+  for (const op of ops) {
+    const scope = op.k === 'expenseShares' ? 'money' : scopeOfTable(op.table)
+    if (!scope) return undefined
+    set.add(scope)
+  }
+  return set.size > 0 ? [...set] : undefined
+}
+
+/** Ultime righe scaricate, per ricaricare solo una parte e riusare il resto. */
+let raw: { trips: TripRow[]; extras: Extras; people: Map<string, PersonRow[]> } | null = null
+
+/** Da chiamare all'uscita dall'account: niente dati di un altro utente nella copia in memoria. */
+export function forgetFetched(): void {
+  raw = null
+}
+
+/**
+ * Scarica i viaggi. Senza `only` (o se non c'è ancora una copia) ricarica tutto; con `only` ricarica
+ * solo quei gruppi e riusa le righe già scaricate per gli altri.
+ */
+export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
+  const db = client()
+  const prev = only && raw ? raw : null
+  const want = (s: Scope) => !prev || !!only?.includes(s)
+  const keep = <T,>(fresh: { data: unknown } | null | undefined, old: T): T => (fresh ? (fresh.data as T) : old)
+  // Richieste separate e in parallelo: più semplici e robuste degli "embed" annidati.
+  const [trips, places, categories, expenseCategories, items, logisticsR, moneyR, planningR] = await Promise.all([
+    want('trips')
+      ? db
+          .from('trips')
+          .select('*, trip_travelers(*), days(*)')
+          .is('deleted_at', null)
+          .order('start_date', { ascending: true, nullsFirst: false })
+      : null,
+    want('places') ? db.from('places').select('*').is('deleted_at', null) : null,
+    want('categories') ? db.from('categories').select('*').is('deleted_at', null) : null,
+    // prima della migrazione 0008 la tabella non esiste: l'app funziona lo stesso, senza categorie di spesa
+    want('expenseCategories')
+      ? db.from('expense_categories').select('*').is('deleted_at', null).then((r) => (r.error && /expense_categories|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: [], error: null } : r))
+      : null,
+    want('items') ? db.from('day_items').select('*').is('deleted_at', null) : null,
+    want('logistics') ? queryLogistics(db) : null,
+    want('money') ? queryMoney(db) : null,
+    want('planning') ? queryPlanning(db) : null,
+  ])
+  const results = [trips, places, categories, expenseCategories, items, ...(logisticsR ?? []), ...(moneyR ?? []), ...(planningR ?? [])]
+  for (const r of results) if (r?.error) throw r.error
+  const [stays, transports, flights, legs] = logisticsR ?? []
+  const [budgetItems, budgetShares, expenses, expenseShares] = moneyR ?? []
+  const [checklist, bookings] = planningR ?? []
+  const old = prev?.extras
+  const extras: Extras = {
+    places: keep(places, old?.places as PlaceRow[]),
+    categories: keep(categories, old?.categories as CategoryRow[]),
+    expenseCategories: keep(expenseCategories, old?.expenseCategories as CategoryRow[]),
+    items: keep(items, old?.items as ItemRow[]),
+    stays: keep(stays, old?.stays as StayRow[]),
+    transports: keep(transports, old?.transports as TransportRow[]),
+    flights: keep(flights, old?.flights as FlightRow[]),
+    legs: keep(legs, old?.legs as FlightLegRow[]),
+    budgetItems: keep(budgetItems, old?.budgetItems as BudgetItemRow[]),
+    budgetShares: keep(budgetShares, old?.budgetShares as BudgetShareRow[]),
+    expenses: keep(expenses, old?.expenses as ExpenseRow[]),
+    expenseShares: keep(expenseShares, old?.expenseShares as ExpenseShareRow[]),
+    checklist: keep(checklist, old?.checklist as ChecklistRow[]),
+    bookings: keep(bookings, old?.bookings as BookingRow[]),
+  }
+  const rows = keep(trips, prev?.trips as TripRow[])
   const myId = (await db.auth.getSession()).data.session?.user.id
-  const people = await Promise.all(rows.map((r) => loadPeople(r.id)))
-  return rows.map((row, i) => mapTrip(row, extras, people[i], myId))
+  // chi ha accesso: una richiesta per viaggio, solo per i viaggi che non conosco ancora
+  const people = new Map<string, PersonRow[]>()
+  await Promise.all(
+    rows.map(async (r) => {
+      const known = prev?.people.get(r.id)
+      people.set(r.id, known ?? (await loadPeople(r.id)))
+    }),
+  )
+  raw = { trips: rows, extras, people }
+  return rows.map((row) => mapTrip(row, extras, people.get(row.id) ?? [], myId))
 }
 
 /** Chi ha accesso al viaggio, con email e ruolo. Se la funzione non c'è ancora (migrazione 0006) l'app funziona lo stesso. */
@@ -530,11 +612,27 @@ export async function importPlaces(
   const db = client()
   const result: ImportResult = { tripId, created: [], previous: [] }
 
-  // categorie: una sola richiesta per etichetta, poi si riusa l'id
+  // categorie: quelle nuove si creano tutte insieme (una richiesta); se qualcosa non va (es. una categoria
+  // nascosta con lo stesso nome) si ripiega sul metodo uno per uno, che sa recuperarla
   const labels = [...new Set(plan.fresh.map((i) => i.category.trim()).filter(Boolean))]
   const categoryId = new Map<string, string | null>()
   const have = [...known]
+  for (const c of known) categoryId.set(c.label.toLowerCase(), c.id)
+  const missing = labels.filter((l) => !categoryId.has(l.toLowerCase()))
+  if (missing.length > 0) {
+    const created = await db
+      .from('categories')
+      .insert(missing.map((label, i) => ({ trip_id: tripId, label, position: (known.length + i + 1) * 1000 })))
+      .select('id,label')
+    if (!created.error) {
+      for (const c of created.data as { id: string; label: string }[]) {
+        categoryId.set(c.label.toLowerCase(), c.id)
+        have.push({ id: c.id, label: c.label })
+      }
+    }
+  }
   for (const label of labels) {
+    if (categoryId.has(label.toLowerCase())) continue
     const id = await resolveCategory(tripId, label, have)
     categoryId.set(label.toLowerCase(), id)
     if (id && !have.some((c) => c.id === id)) have.push({ id, label })

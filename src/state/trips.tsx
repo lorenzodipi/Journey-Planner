@@ -127,18 +127,18 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
   const [activeId, setActiveId] = useState<string | null>(demo ? demoTrip.id : loadActiveId())
   const hasData = useRef(false)
 
-  /** Ricarica dal server. `true` se ci è riuscita. */
-  const load = useCallback(async (): Promise<boolean> => {
+  /** Ricarica dal server (tutto, o solo i gruppi indicati). `true` se ci è riuscita. */
+  const load = useCallback(async (only?: api.Scope[]): Promise<boolean> => {
     if (demo) return false
     try {
-      const fresh = await api.fetchTrips()
+      const fresh = await api.fetchTrips(only)
       hasData.current = true
       setTrips(fresh)
       setStale(false)
       setError(null)
       setStatus('ready')
       saveSnapshot(fresh)
-      void syncOfflineFiles(fresh) // biglietti marcati "offline" sul telefono
+      if (!only || only.includes('planning')) void syncOfflineFiles(fresh) // biglietti marcati "offline" sul telefono
       return true
     } catch (e) {
       // Offline o errore: se ho una copia locale la mostro, altrimenti segnalo l'errore.
@@ -166,6 +166,7 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
         queueRef.current = []
         setQueueState([])
         hasData.current = false
+        api.forgetFetched()
         setTrips([])
         setActiveId(null)
         setStatus('loading')
@@ -226,7 +227,10 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
         )
         if (res.failed.length) showToast(`${res.failed.length === 1 ? 'Una modifica è stata rifiutata' : `${res.failed.length} modifiche sono state rifiutate`} dal server: controlla l'avviso in alto.`)
       }
-      if (queueRef.current.some((e) => e.sent) && (await load())) commit(queueRef.current.filter((e) => !e.sent))
+      // si ricarica una volta sola, a coda svuotata, e solo i gruppi di dati toccati dalle modifiche inviate
+      const more = !stopped && queueRef.current.some((e) => !e.error && !e.sent)
+      const sentNow = queueRef.current.filter((e) => e.sent)
+      if (!more && sentNow.length > 0 && (await load(api.scopeOfOps(sentNow.flatMap((e) => e.ops))))) commit(queueRef.current.filter((e) => !e.sent))
     } finally {
       flushing.current = false
     }
@@ -266,7 +270,7 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
 
   /** Esegue una scrittura, poi ricarica i dati. */
   const run = useCallback(
-    async (job: () => Promise<unknown>): Result => {
+    async (job: () => Promise<unknown>, scope?: api.Scope[]): Result => {
       if (demo) return DEMO_MESSAGE
       try {
         // tetto di attesa anche prima della richiesta di rete (es. blocco della sessione)
@@ -283,10 +287,10 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
         console.error('[journey] operazione fallita', e)
         return api.describeError(e)
       }
-      await refresh()
+      await load(scope) // solo i dati toccati dalla modifica (tutto se non indicato)
       return null
     },
-    [demo, refresh],
+    [demo, load],
   )
 
   const value: TripsValue = {
@@ -319,13 +323,13 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
       await refresh()
       return null
     },
-    updateDay: (id, patch) => run(() => api.updateDay(id, patch)),
+    updateDay: (id, patch) => run(() => api.updateDay(id, patch), ['trips']),
     addTraveler: (tripId, input) => run(() => api.addTraveler(tripId, input)),
     linkTraveler: (id, email) => run(() => api.linkTraveler(id, email)),
     updateTraveler: (id, input) => run(() => api.updateTraveler(id, input)),
     removeTraveler: (id) => run(() => api.removeTraveler(id)),
     createPlace: (tripId, input) =>
-      run(() => api.createPlace(tripId, input, trips.find((t) => t.id === tripId)?.categories ?? [])),
+      run(() => api.createPlace(tripId, input, trips.find((t) => t.id === tripId)?.categories ?? []), ['places', 'categories']),
     updatePlace: (id, tripId, input) =>
       run(() =>
         api.updatePlace(
@@ -335,17 +339,18 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
           trips.find((t) => t.id === tripId)?.categories ?? [],
           trips.find((t) => t.id === tripId)?.places.find((p) => p.id === id)?.name,
         ),
+        ['places', 'categories', 'items'], // rinominare un luogo può aggiornare anche il titolo delle sue tappe
       ),
     setPlaceStatus: (id, status) => queued('Stato del luogo', [{ k: 'update', table: 'places', id, patch: { status } }], { t: 'place.status', id, status }),
-    setPlaceDeleted: (id, deleted) => run(() => api.setPlaceDeleted(id, deleted)),
-    setPlacesDeleted: (ids, deleted) => (ids.length === 0 ? Promise.resolve(null) : run(() => api.setPlacesDeleted(ids, deleted))),
+    setPlaceDeleted: (id, deleted) => run(() => api.setPlaceDeleted(id, deleted), ['places']),
+    setPlacesDeleted: (ids, deleted) => (ids.length === 0 ? Promise.resolve(null) : run(() => api.setPlacesDeleted(ids, deleted), ['places'])),
     importPlaces: async (tripId, plan) => {
       const trip = trips.find((t) => t.id === tripId)
       const box: { done?: api.ImportResult } = {}
       const error = await run(async () => {
         box.done = await api.importPlaces(tripId, plan, trip?.categories ?? [], trip?.places ?? [])
-      })
-      return { error, undo: () => run(async () => (box.done ? api.undoImport(box.done) : undefined)) }
+      }, ['places', 'categories'])
+      return { error, undo: () => run(async () => (box.done ? api.undoImport(box.done) : undefined), ['places']) }
     },
     createItem: (tripId, dayId, input) => {
       const day = trips.find((t) => t.id === tripId)?.days.find((d) => d.id === dayId)
@@ -353,9 +358,9 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
         (day?.items ?? []).map((i) => ({ position: i.position ?? 0, time: i.time })),
         input.startTime || undefined,
       )
-      return run(() => api.createItem(tripId, dayId, input, position))
+      return run(() => api.createItem(tripId, dayId, input, position), ['items'])
     },
-    updateItem: (id, input) => run(() => api.updateItem(id, input)),
+    updateItem: (id, input) => run(() => api.updateItem(id, input), ['items']),
     moveItem: async (dayId, itemId, step) => {
       const day = trips.flatMap((t) => t.days).find((d) => d.id === dayId)
       const items = day?.items ?? []
@@ -368,35 +373,35 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
       // si rinumera tutto il giorno: le posizioni salvate tornano uguali all'ordine che si vede
       // ma si scrivono solo le posizioni che cambiano davvero (di solito due)
       const changed = changedPositions(items, renumber(next))
-      return changed.length === 0 ? null : run(() => api.setItemPositions(changed))
+      return changed.length === 0 ? null : run(() => api.setItemPositions(changed), ['items'])
     },
     setItemDone: (id, done) => queued('Tappa fatta', [{ k: 'update', table: 'day_items', id, patch: { done } }], { t: 'item.done', id, done }),
-    setItemDeleted: (id, deleted) => run(() => api.setItemDeleted(id, deleted)),
-    createStay: (tripId, input) => run(() => logistics.createStay(tripId, input)),
-    updateStay: (id, input) => run(() => logistics.updateStay(id, input)),
-    setStayFlag: (id, flag, value) => run(() => logistics.setStayFlag(id, flag, value)),
-    setStayDeleted: (id, deleted) => run(() => logistics.setStayDeleted(id, deleted)),
+    setItemDeleted: (id, deleted) => run(() => api.setItemDeleted(id, deleted), ['items']),
+    createStay: (tripId, input) => run(() => logistics.createStay(tripId, input), ['logistics']),
+    updateStay: (id, input) => run(() => logistics.updateStay(id, input), ['logistics']),
+    setStayFlag: (id, flag, value) => run(() => logistics.setStayFlag(id, flag, value), ['logistics']),
+    setStayDeleted: (id, deleted) => run(() => logistics.setStayDeleted(id, deleted), ['logistics']),
     createTransport: (tripId, input) => {
       const trip = trips.find((x) => x.id === tripId)
-      return run(() => logistics.createTransport(tripId, input, trip?.timezone ?? 'UTC', trip?.days ?? []))
+      return run(() => logistics.createTransport(tripId, input, trip?.timezone ?? 'UTC', trip?.days ?? []), ['logistics'])
     },
     updateTransport: (tripId, id, input) => {
       const trip = trips.find((x) => x.id === tripId)
-      return run(() => logistics.updateTransport(id, input, trip?.timezone ?? 'UTC', trip?.days ?? []))
+      return run(() => logistics.updateTransport(id, input, trip?.timezone ?? 'UTC', trip?.days ?? []), ['logistics'])
     },
-    setTransportBought: (id, bought) => run(() => logistics.setTransportBought(id, bought)),
-    setTransportDeleted: (id, deleted) => run(() => logistics.setTransportDeleted(id, deleted)),
-    createFlight: (tripId, input) => run(() => logistics.createFlight(tripId, input)),
-    updateFlight: (tripId, flight, input) => run(() => logistics.updateFlight(flight, tripId, input)),
-    setFlightPaid: (id, paid) => run(() => logistics.setFlightPaid(id, paid)),
-    setFlightDeleted: (id, deleted) => run(() => logistics.setFlightDeleted(id, deleted)),
-    createBudgetItem: (tripId, input) => run(() => money.createBudgetItem(tripId, input, trips.find((x) => x.id === tripId)?.expenseCategories ?? [])),
-    updateBudgetItem: (tripId, item, input) => run(() => money.updateBudgetItem(item, tripId, input, trips.find((x) => x.id === tripId)?.expenseCategories ?? [])),
-    createExpenseCategory: (tripId, label) => run(() => money.createExpenseCategory(tripId, label, trips.find((x) => x.id === tripId)?.expenseCategories ?? [])),
-    renameExpenseCategory: (tripId, id, label) => run(() => money.renameExpenseCategory(id, label, trips.find((x) => x.id === tripId)?.expenseCategories ?? [])),
-    setExpenseCategoryDeleted: (id, deleted) => run(() => money.setExpenseCategoryDeleted(id, deleted)),
-    setBudgetSharePaid: (shareId, paid) => run(() => money.setBudgetSharePaid(shareId, paid)),
-    setBudgetItemDeleted: (id, deleted) => run(() => money.setBudgetItemDeleted(id, deleted)),
+    setTransportBought: (id, bought) => run(() => logistics.setTransportBought(id, bought), ['logistics']),
+    setTransportDeleted: (id, deleted) => run(() => logistics.setTransportDeleted(id, deleted), ['logistics']),
+    createFlight: (tripId, input) => run(() => logistics.createFlight(tripId, input), ['logistics']),
+    updateFlight: (tripId, flight, input) => run(() => logistics.updateFlight(flight, tripId, input), ['logistics']),
+    setFlightPaid: (id, paid) => run(() => logistics.setFlightPaid(id, paid), ['logistics']),
+    setFlightDeleted: (id, deleted) => run(() => logistics.setFlightDeleted(id, deleted), ['logistics']),
+    createBudgetItem: (tripId, input) => run(() => money.createBudgetItem(tripId, input, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['money', 'expenseCategories']),
+    updateBudgetItem: (tripId, item, input) => run(() => money.updateBudgetItem(item, tripId, input, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['money', 'expenseCategories']),
+    createExpenseCategory: (tripId, label) => run(() => money.createExpenseCategory(tripId, label, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['money', 'expenseCategories']),
+    renameExpenseCategory: (tripId, id, label) => run(() => money.renameExpenseCategory(id, label, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['money', 'expenseCategories']),
+    setExpenseCategoryDeleted: (id, deleted) => run(() => money.setExpenseCategoryDeleted(id, deleted), ['money', 'expenseCategories']),
+    setBudgetSharePaid: (shareId, paid) => run(() => money.setBudgetSharePaid(shareId, paid), ['money']),
+    setBudgetItemDeleted: (id, deleted) => run(() => money.setBudgetItemDeleted(id, deleted), ['money']),
     createExpense: (tripId, input) => {
       const trip = trips.find((x) => x.id === tripId)
       if (!trip) return Promise.resolve('Viaggio non trovato.')
@@ -411,7 +416,7 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     },
     setExpenseDeleted: (id, deleted) =>
       queued('Spesa', [{ k: 'update', table: 'expenses', id, patch: deletedPatch(deleted) }], { t: 'expense.deleted', id, deleted }),
-    setFxRate: (tripId, rate) => run(() => money.setTripFxRate(tripId, rate)),
+    setFxRate: (tripId, rate) => run(() => money.setTripFxRate(tripId, rate), ['trips']),
     createChecklistItem: (tripId, input) => {
       const items = trips.find((x) => x.id === tripId)?.checklist.filter((c: ChecklistItem) => c.kind === input.kind) ?? []
       const position = Math.max(0, ...items.map((c) => c.position)) + 1000
@@ -439,11 +444,11 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
       ids.length === 0
         ? Promise.resolve(null)
         : queued('Checklist', [{ k: 'updateMany', table: 'checklist_items', ids, patch: deletedPatch(deleted) }], { t: 'checklist.deletedMany', ids, deleted }),
-    addChecklistTemplate: (tripId) => run(() => planning.addChecklistTemplate(tripId, trips.find((x) => x.id === tripId)?.checklist ?? [])),
-    createBooking: (tripId, input) => run(() => planning.createBooking(tripId, input, trips.find((x) => x.id === tripId)?.timezone ?? 'UTC')),
+    addChecklistTemplate: (tripId) => run(() => planning.addChecklistTemplate(tripId, trips.find((x) => x.id === tripId)?.checklist ?? []), ['planning']),
+    createBooking: (tripId, input) => run(() => planning.createBooking(tripId, input, trips.find((x) => x.id === tripId)?.timezone ?? 'UTC'), ['planning']),
     updateBooking: (tripId, booking, input) =>
-      run(() => planning.updateBooking(booking, tripId, input, trips.find((x) => x.id === tripId)?.timezone ?? 'UTC')),
-    setBookingDeleted: (id, deleted) => run(() => planning.setBookingDeleted(id, deleted)),
+      run(() => planning.updateBooking(booking, tripId, input, trips.find((x) => x.id === tripId)?.timezone ?? 'UTC'), ['planning']),
+    setBookingDeleted: (id, deleted) => run(() => planning.setBookingDeleted(id, deleted), ['planning']),
   }
   if (demo) {
     value.createTrip = () => demoResult
