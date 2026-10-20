@@ -16,6 +16,7 @@ import * as money from '../lib/moneyApi'
 import * as planning from '../lib/planningApi'
 import * as restore from '../lib/restoreApi'
 import { syncOfflineFiles } from '../lib/bookingFiles'
+import { supabase } from '../lib/supabase'
 import { tripCenter } from '../lib/tzCenter'
 import type { ImportPlan } from '../lib/kmzPlan'
 import type { BookingInput, ChecklistInput } from '../lib/planningData'
@@ -42,7 +43,8 @@ interface TripsValue {
   failed: Entry[]
   dismissFailed: (id: string) => void
   setActive: (id: string) => void
-  refresh: () => Promise<void>
+  /** Ricarica tutto dal server. `true` se ci è riuscita. */
+  refresh: () => Promise<boolean>
   createTrip: (input: TripInput, people: TripPeople) => Result
   updateTrip: (id: string, input: TripInput) => Result
   deleteTrip: (id: string) => Result
@@ -102,6 +104,27 @@ interface TripsValue {
   setBookingDeleted: (id: string, deleted: boolean) => Result
 }
 
+/** Tabelle del viaggio di cui si ascoltano le modifiche degli altri (devono avere `trip_id`, tranne `trips`). */
+const WATCHED_TABLES = [
+  'trips',
+  'days',
+  'trip_travelers',
+  'places',
+  'categories',
+  'expense_categories',
+  'day_items',
+  'stays',
+  'transports',
+  'flights',
+  'flight_legs',
+  'budget_items',
+  'budget_item_shares',
+  'expenses',
+  'expense_shares',
+  'checklist_items',
+  'bookings',
+] as const
+
 const DEMO_MESSAGE = 'Anteprima demo: collega Supabase per salvare le modifiche.'
 const demoResult: Result = Promise.resolve(DEMO_MESSAGE)
 
@@ -152,9 +175,7 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
     }
   }, [demo])
 
-  const refresh = useCallback(async () => {
-    await load()
-  }, [load])
+  const refresh = useCallback(() => load(), [load])
 
   useEffect(() => {
     if (demo) return
@@ -194,6 +215,43 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
   }, [demo, signedIn, refresh])
 
   const active = useMemo(() => trips.find((t) => t.id === activeId) ?? trips[0] ?? null, [trips, activeId])
+
+  // Modifiche di altre persone (es. Gaia) in tempo reale: Supabase avvisa quando cambia una riga del viaggio aperto
+  // e si ricarica solo il gruppo di dati toccato (le raffiche, come un import, diventano un solo ricaricamento).
+  // Serve la migrazione 0011 (abilita il tempo reale sulle tabelle); senza, tutto funziona come prima.
+  const watchedId = active?.id
+  useEffect(() => {
+    if (demo || !signedIn || !supabase || !watchedId) return
+    const db = supabase
+    const pending = new Set<api.Scope | 'all'>()
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let first = true
+    const flushChanges = () => {
+      const scopes = [...pending]
+      pending.clear()
+      void load(scopes.includes('all') ? undefined : (scopes as api.Scope[]))
+    }
+    const onChange = (table: string) => {
+      const scope = table === 'trip_travelers' ? 'all' : api.scopeOfTable(table) ?? 'all' // chi ha accesso cambia: si ricarica tutto
+      pending.add(scope)
+      clearTimeout(timer)
+      timer = setTimeout(flushChanges, 600)
+    }
+    let channel = db.channel(`trip-${watchedId}`)
+    for (const table of WATCHED_TABLES) {
+      channel = channel.on('postgres_changes', { event: '*', schema: 'public', table, filter: table === 'trips' ? `id=eq.${watchedId}` : `trip_id=eq.${watchedId}` }, () => onChange(table))
+    }
+    channel.subscribe((state) => {
+      if (state !== 'SUBSCRIBED') return
+      // ricollegato dopo una pausa (app in secondo piano, rete persa): potrebbe essersi perso qualcosa
+      if (first) first = false
+      else void load()
+    })
+    return () => {
+      clearTimeout(timer)
+      void db.removeChannel(channel)
+    }
+  }, [demo, signedIn, watchedId, load])
 
   const setActive = useCallback((id: string) => {
     setActiveId(id)

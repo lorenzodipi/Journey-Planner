@@ -19,6 +19,7 @@ import { Trasporti } from './pages/Trasporti'
 import { PrimoViaggio } from './pages/PrimoViaggio'
 import { Spese } from './pages/Spese'
 import { BottomNav } from './ui/BottomNav'
+import { PullToRefresh } from './ui/PullToRefresh'
 import { OutboxBanner } from './ui/OutboxBanner'
 import { ToastHost } from './ui/ToastHost'
 import { EmptyState } from './ui/PageHeader'
@@ -117,6 +118,7 @@ export function App() {
         </Switch>
       </div>
       <BottomNav />
+      <PullToRefresh />
       <ToastHost />
     </Router>
   )
