@@ -21,6 +21,7 @@ import type {
   Trip,
 } from '../types'
 import { EXPORT_FORMAT, EXPORT_VERSION } from './exportData'
+import { countryByCode } from './countries'
 import { cleanRates } from './money'
 import { DEFAULT_CENTER } from './tripForm'
 import { enumerateDates } from './tripDays'
@@ -138,6 +139,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
   const center = coords(isObj(raw.center) ? raw.center.lat : undefined, isObj(raw.center) ? raw.center.lng : undefined) ?? DEFAULT_CENTER
   const fx = num(raw.fxRate)
   const limit = num(raw.budgetLimit)
+  const origin = typeof raw.originCountry === 'string' ? countryByCode(raw.originCountry) : undefined
 
   // viaggiatori
   const travelers: Traveler[] = list(raw.travelers)
@@ -468,6 +470,8 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
     fxRate: fx !== undefined && fx > 0 && fx < 1e7 ? fx : undefined,
     fxRates: Object.keys(cleanRates(raw.fxRates)).length > 0 ? cleanRates(raw.fxRates) : undefined,
     budgetLimit: limit !== undefined && limit > 0 && limit < 1e11 ? limit : undefined,
+    originCountry: origin?.code,
+    originTimezone: origin && typeof raw.originTimezone === 'string' && validZone(raw.originTimezone) ? raw.originTimezone : undefined,
   }
 }
 
@@ -540,6 +544,8 @@ export function tripRow(trip: Trip, title: string) {
     ...(trip.fxRates && Object.keys(trip.fxRates).length > 0 ? { fx_rates: trip.fxRates } : {}),
     // idem per la migrazione 0013
     ...(trip.budgetLimit ? { budget_limit: trip.budgetLimit } : {}),
+    // idem per la migrazione 0014
+    ...(trip.originCountry ? { origin_country: trip.originCountry, origin_timezone: trip.originTimezone ?? null } : {}),
   }
 }
 

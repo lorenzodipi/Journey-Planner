@@ -41,6 +41,8 @@ await runMigration('0012_trip_fx_rates.sql')
 await runMigration('0012_trip_fx_rates.sql') // si può rilanciare
 await runMigration('0013_trip_budget_limit.sql')
 await runMigration('0013_trip_budget_limit.sql') // si può rilanciare
+await runMigration('0014_trip_origin.sql')
+await runMigration('0014_trip_origin.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -211,6 +213,10 @@ await db.query(`update trips set budget_limit = 3000 where id=$1`, [s2])
 check('A imposta il budget massimo', Number((await db.query(`select budget_limit from trips where id=$1`, [s2])).rows[0].budget_limit) === 3000)
 await db.query(`update trips set budget_limit = null where id=$1`, [s2])
 check('il budget massimo si può togliere', (await db.query(`select budget_limit from trips where id=$1`, [s2])).rows[0].budget_limit === null)
+await throws('il paese di origine è un codice di due lettere maiuscole', () => db.query(`update trips set origin_country = 'italia' where id=$1`, [s2]))
+await db.query(`update trips set origin_country = 'IT', origin_timezone = 'Europe/Rome' where id=$1`, [s2])
+check('A imposta il paese di origine', (await db.query(`select origin_country as c from trips where id=$1`, [s2])).rows[0].c === 'IT')
+await db.query(`update trips set origin_country = null, origin_timezone = null where id=$1`, [s2])
 const trv = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'Lorenzo',$2) returning id`, [s2, A])).rows[0].id
 const trvOther = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'Estraneo',$2) returning id`, [other, A])).rows[0].id
 const bi = (await db.query(`insert into budget_items (trip_id,label,amount,currency,scope) values ($1,'Treno',30,'EUR','per_person') returning id`, [s2])).rows[0].id

@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks'
 import { useConfirm } from './ConfirmDialog'
 import { isIata, timezoneForAirport } from '../lib/airports'
+import { defaultDepartureTz } from '../lib/origin'
 import { legDuration } from '../lib/flights'
 import { amountToText, parseAmount, tripCurrencies } from '../lib/money'
 import { legToForm, type FlightInput, type LegInput } from '../lib/logistics'
@@ -27,9 +28,9 @@ interface LegDraft extends LegInput {
 }
 
 let keyCounter = 0
-const emptyLeg = (date: string): LegDraft => ({
+const emptyLeg = (date: string, fromTz = ''): LegDraft => ({
   key: ++keyCounter, flightNumber: '', from: '', to: '', departDate: date, departTime: '', arriveDate: date, arriveTime: '',
-  fromTz: '', toTz: '', cabin: '', seats: '', notes: '', fromTzAuto: true, toTzAuto: true,
+  fromTz, toTz: '', cabin: '', seats: '', notes: '', fromTzAuto: true, toTzAuto: true,
 })
 
 export function FlightForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
@@ -44,7 +45,7 @@ export function FlightForm({ trip, initial, onSubmit, onDelete, onDone }: Props)
   const [legs, setLegs] = useState<LegDraft[]>(
     initial && initial.legs.length > 0
       ? initial.legs.map((l) => ({ ...legToForm(l), key: ++keyCounter, fromTzAuto: false, toTzAuto: false }))
-      : [emptyLeg(trip.startDate)],
+      : [emptyLeg(trip.startDate, defaultDepartureTz(trip))], // il fuso di partenza si propone dal paese di casa; un aeroporto riconosciuto lo corregge
   )
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)

@@ -245,4 +245,7 @@ export interface Trip {
   fxRates?: Record<string, number>
   /** Budget massimo del viaggio, nella valuta base (facoltativo). */
   budgetLimit?: number
+  /** Paese di casa (codice ISO, es. «IT») e suo fuso: per l'ora di casa e il fuso di partenza di voli e trasporti. */
+  originCountry?: string
+  originTimezone?: string
 }

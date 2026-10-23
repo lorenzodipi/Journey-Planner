@@ -225,6 +225,13 @@ describe('parseExport: pulizia dei dati', () => {
     expect(run({}).trip.budgetLimit).toBeUndefined()
   })
 
+  it('il paese di origine si legge solo se è un paese vero, col suo fuso', () => {
+    expect(run({ originCountry: 'IT', originTimezone: 'Europe/Rome' }).trip).toMatchObject({ originCountry: 'IT', originTimezone: 'Europe/Rome' })
+    expect(run({ originCountry: 'ZZ', originTimezone: 'Europe/Rome' }).trip).toMatchObject({ originCountry: undefined, originTimezone: undefined })
+    expect(run({ originCountry: 'US', originTimezone: 'Marte/Olympus' }).trip).toMatchObject({ originCountry: 'US', originTimezone: undefined })
+    expect(run({}).trip.originCountry).toBeUndefined()
+  })
+
   it('gli allegati PDF non vengono ripristinati e se ne avvisa', () => {
     const r = run({})
     expect(r.trip.bookings[0].filePath).toBeUndefined()

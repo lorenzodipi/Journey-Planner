@@ -54,6 +54,9 @@ export interface TripInput {
   center: { lat: number; lng: number }
   /** Budget massimo nella valuta base: `undefined` = non toccare la colonna, `null` = toglierlo. */
   budgetLimit?: number | null
+  /** Paese e fuso di casa: `undefined` = non toccare le colonne, `null` = toglierli. */
+  originCountry?: string | null
+  originTimezone?: string | null
 }
 
 
@@ -140,6 +143,8 @@ interface TripRow {
   fx_rate?: number | string | null
   fx_rates?: Record<string, number | string> | null
   budget_limit?: number | string | null
+  origin_country?: string | null
+  origin_timezone?: string | null
   center_lat: number | null
   center_lng: number | null
   trip_travelers: TravelerRow[]
@@ -248,6 +253,8 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     fxRate: row.fx_rate == null ? undefined : Number(row.fx_rate),
     fxRates: Object.keys(cleanRates(row.fx_rates)).length > 0 ? cleanRates(row.fx_rates) : undefined,
     budgetLimit: row.budget_limit != null && Number(row.budget_limit) > 0 ? Number(row.budget_limit) : undefined,
+    originCountry: row.origin_country?.trim() || undefined,
+    originTimezone: row.origin_timezone?.trim() || undefined,
   }
 }
 
@@ -397,6 +404,8 @@ function tripColumns(input: TripInput) {
     center_lng: input.center.lng,
     // solo se serve: senza la migrazione 0013 la colonna non esiste e la richiesta fallirebbe
     ...(input.budgetLimit !== undefined ? { budget_limit: input.budgetLimit } : {}),
+    // idem per la migrazione 0014
+    ...(input.originCountry !== undefined ? { origin_country: input.originCountry, origin_timezone: input.originTimezone ?? null } : {}),
   }
 }
 

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'preact/hooks'
 import { useAuth } from '../lib/auth'
-import { COUNTRIES, countryByName, themeForCountry } from '../lib/countries'
+import { COUNTRIES, countryByCode, countryByName, themeForCountry, zonesOf } from '../lib/countries'
 import { parseAmount } from '../lib/money'
 import type { TripInput, TripPeople } from '../lib/tripApi'
 import {
@@ -41,6 +41,8 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
   const [baseCurrency, setBaseCurrency] = useState(trip?.baseCurrency ?? 'EUR')
   const [localCurrency, setLocalCurrency] = useState(trip?.localCurrency ?? first.localCurrency)
   const [center, setCenter] = useState(trip?.center ?? first.center)
+  const [originCountry, setOriginCountry] = useState(trip?.originCountry ?? '')
+  const [originTz, setOriginTz] = useState(trip?.originTimezone ?? '')
   const [budget, setBudget] = useState(trip?.budgetLimit ? String(trip.budgetLimit).replace('.', ',') : '')
   const auth = useAuth()
   const ownEmail = auth.session?.user.email ?? undefined
@@ -79,6 +81,14 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
     return current && !countryByName(current) ? [{ value: current, label: current, hint: 'Come scritto finora' }, ...list] : list
   }, [destination])
 
+  // paese di casa: facoltativo; per i paesi con più fusi si sceglie anche il fuso (di base il principale)
+  const originOptions = useMemo(() => [{ value: '', label: 'Nessuno' }, ...COUNTRIES.map((c) => ({ value: c.code, label: c.name }))], [])
+  const originZones = originCountry ? zonesOf(originCountry) : []
+  function onOrigin(code: string) {
+    setOriginCountry(code)
+    setOriginTz(code ? (countryByCode(code)?.timezone ?? '') : '')
+  }
+
   function applyPreset(p: Preset) {
     setPresetId(p.id)
     setDestination(p.destination)
@@ -108,6 +118,8 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
       localCurrency,
       center,
       ...(budgetLimit !== undefined ? { budgetLimit } : {}),
+      // vuoto = nessuna origine (e, in modifica, toglie quella che c'era)
+      ...(originCountry ? { originCountry, originTimezone: originTz || countryByCode(originCountry)?.timezone || null } : trip?.originCountry ? { originCountry: null, originTimezone: null } : {}),
     }
     const problem = validateTrip(input)
     if (problem) return setError(problem)
@@ -159,6 +171,11 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
         <TextField label="Dal" type="date" value={startDate} onInput={onStartDate} />
         <TextField label="Al" type="date" value={endDate} onInput={setEndDate} min={startDate || undefined} />
       </div>
+
+      <Select label="Paese di origine (facoltativo)" value={originCountry} onChange={onOrigin} options={originOptions} placeholder="Nessuno" searchable />
+      {originZones.length > 1 && (
+        <Select label="Fuso di casa" value={originTz} onChange={setOriginTz} options={originZones.map((z) => ({ value: z, label: z }))} />
+      )}
 
       <TextField
         label={`Budget massimo, in ${baseCurrency.trim().toUpperCase() || 'EUR'} (facoltativo)`}

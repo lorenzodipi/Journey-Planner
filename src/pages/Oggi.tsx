@@ -8,6 +8,7 @@ import { localPerBase, formatRateNumber } from '../lib/fx'
 import { currencySymbol, formatMoney, round2 } from '../lib/money'
 import { minutesOfDay, sunForDay } from '../lib/sun'
 import { destinationClock, eventsForDay, formatDiffHours, homeCountry, homeTime, nextItem, tripToday } from '../lib/today'
+import { originOf } from '../lib/origin'
 import { useForecast } from '../state/forecast'
 import { setScrollTarget } from '../state/scrollTarget'
 import { useTrip } from '../state/trip'
@@ -79,9 +80,12 @@ export function Oggi() {
   const next = focus && isToday ? nextItem(focus, nowMin) : null
   const events = focus ? eventsForDay(trip, focus.date) : []
   const deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const clock = destinationClock(trip.timezone, deviceTz, now)
-  const homeClock = homeTime(deviceTz, now)
-  const homeName = homeCountry(navigator.language)
+  // casa: il paese di origine del viaggio se c'è, altrimenti il fuso e la lingua del telefono
+  const origin = originOf(trip)
+  const homeTz = origin?.timezone ?? deviceTz
+  const clock = destinationClock(trip.timezone, homeTz, now)
+  const homeClock = homeTime(homeTz, now)
+  const homeName = origin?.name ?? homeCountry(navigator.language)
   const sun = focus ? sunForDay(focus.date, trip.center.lat, trip.center.lng, trip.timezone) : null
 
   // prossimo volo: la prima tratta che parte da adesso in poi (altrimenti la prima del viaggio)
