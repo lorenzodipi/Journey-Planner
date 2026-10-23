@@ -1,6 +1,6 @@
 import type { DayItem, ItemKind } from '../types'
 import { TrashButton } from './ConfirmDialog'
-import { TickIcon } from './Icons'
+import { PinIcon, TickIcon } from './Icons'
 import { Ticket } from './Ticket'
 
 export const KIND_LABEL: Record<ItemKind, string> = {
@@ -22,6 +22,8 @@ interface Props {
   hint?: string
   /** Il luogo collegato (nome e città), se serve a capire dove si va. */
   place?: string
+  /** Link per aprire il luogo della tappa in Maps (solo se ha un luogo collegato). Non compare mentre si riordina. */
+  mapsHref?: string
   /** Tocco sulla riga: apre la modifica. Senza, la riga è di sola lettura. */
   onOpen?: () => void
   onToggleDone?: () => void
@@ -31,7 +33,7 @@ interface Props {
   reorder?: { onUp?: () => void; onDown?: () => void }
 }
 
-export function ItemRow({ item, n, onMap, hint, place, onOpen, onToggleDone, onDelete, reorder }: Props) {
+export function ItemRow({ item, n, onMap, hint, place, mapsHref, onOpen, onToggleDone, onDelete, reorder }: Props) {
   const range = item.time && item.endTime ? `${item.time}–${item.endTime}` : ''
   const sub = [KIND_LABEL[item.kind], item.endTime && range, item.note, place].filter(Boolean).join(' · ')
   const stub = item.time ? (
@@ -62,13 +64,27 @@ export function ItemRow({ item, n, onMap, hint, place, onOpen, onToggleDone, onD
         </div>
       )}
       <Ticket stub={stub} tone={item.done ? 'ok' : 'line'}>
-        {onOpen ? (
-          <button type="button" onClick={onOpen} aria-label={`Modifica ${item.title}`} class="flex min-h-11 min-w-0 flex-1 items-center text-left">
-            {body}
-          </button>
-        ) : (
-          <div class="flex min-h-11 min-w-0 flex-1 items-center">{body}</div>
-        )}
+        <div class="min-w-0 flex-1">
+          {onOpen ? (
+            <button type="button" onClick={onOpen} aria-label={`Modifica ${item.title}`} class="flex min-h-11 w-full min-w-0 items-center text-left">
+              {body}
+            </button>
+          ) : (
+            <div class="flex min-h-11 min-w-0 items-center">{body}</div>
+          )}
+          {mapsHref && !reorder && (
+            <a
+              href={mapsHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Apri «${item.title}» in Maps`}
+              class="-mt-1 inline-flex min-h-11 items-center gap-1.5 pr-3 text-sm font-extrabold text-pale"
+            >
+              <PinIcon size={14} />
+              Apri in Maps
+            </a>
+          )}
+        </div>
 
         {reorder ? (
           <span class="flex shrink-0">

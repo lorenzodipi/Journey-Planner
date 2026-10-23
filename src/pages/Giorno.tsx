@@ -7,6 +7,7 @@ import { daysBetween, formatDayLong, formatShort } from '../lib/dates'
 import { describeLeg } from '../lib/dayRoute'
 import { dayBookings, dayChecklist, dayExpenses, dayMovements, dayStays } from '../lib/dayView'
 import { formatMoney, round2 } from '../lib/money'
+import { itemMapsHref } from '../lib/itemMaps'
 import { mapsLinkFor } from '../lib/mapsUrl'
 import { minutesOfDay, sunForDay } from '../lib/sun'
 import { minutesToHHMM, stopsSummary } from '../lib/stopsSummary'
@@ -230,6 +231,7 @@ export function Giorno({ params }: { params: { id: string } }) {
                     onMap={stopByItem.has(item.id)}
                     hint={hintFor(item)}
                     place={placeLine(item)}
+                    mapsHref={itemMapsHref(item, trip.places)}
                     onOpen={reordering ? undefined : () => setSheet({ kind: 'edit-item', day, item })}
                     onToggleDone={reordering ? undefined : () => void actions.toggleDone(item)}
                     onDelete={() => actions.remove(item)}
