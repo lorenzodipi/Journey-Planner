@@ -202,7 +202,7 @@ export function CostFields({
   withScope?: boolean
 }) {
   // «Altra valuta…» compare solo nei viaggi che hanno già almeno una valuta extra: gli altri restano come sempre
-  // (la prima valuta extra si aggiunge da Budget → Cambio → Modifica).
+  // (la prima valuta extra si aggiunge da Spese → Cambio → Modifica).
   const trip = useTrips().active
   const [adding, setAdding] = useState(false)
   const canAdd = !!trip && extraCurrencies(trip).length > 0

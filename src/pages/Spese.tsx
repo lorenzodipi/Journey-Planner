@@ -73,7 +73,7 @@ export function Spese() {
 
   return (
     <>
-      <PageHeader title="Spese" back={{ href: '/altro/budget', label: 'Budget' }} />
+      <PageHeader title="Dettaglio spese" back={{ href: '/altro/budget', label: 'Spese' }} />
       <div class="px-5" style={{ paddingBottom: '8rem' }}>
         {trip.travelers.length > 1 && (
           <div role="tablist" aria-label="Spese per persona" class="mb-3.5 flex gap-0.5 rounded-[14px] border-2 border-line bg-surface p-[3px]">

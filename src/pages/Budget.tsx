@@ -279,7 +279,7 @@ export function Budget() {
 
   return (
     <>
-      <PageHeader title="Budget" back={{ href: '/altro', label: 'Altro' }} />
+      <PageHeader title="Spese" back={{ href: '/altro', label: 'Altro' }} />
       <div class="px-5 pb-28">
         <Receipt>
           <p class="text-[13px] text-paper-muted">Speso finora</p>
@@ -395,7 +395,7 @@ export function Budget() {
         <Link href="/altro/spese" class="mt-3.5 block">
           <Ticket stub={<Disc color="var(--accent)"><BudgetIcon size={22} /></Disc>} stubWidth={76}>
             <span class="min-w-0 flex-1">
-              <span class="block text-[17px] font-extrabold leading-tight">Spese del viaggio</span>
+              <span class="block text-[17px] font-extrabold leading-tight">Dettaglio spese</span>
               <span class="block text-[13px] text-muted">
                 {trip.expenses.length ? `${trip.expenses.length} ${trip.expenses.length === 1 ? 'spesa registrata' : 'spese registrate'} · chi deve a chi` : 'Registra cosa spendi, anche in yen'}
               </span>

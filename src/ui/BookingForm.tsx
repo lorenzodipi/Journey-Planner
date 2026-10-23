@@ -116,7 +116,7 @@ export function BookingForm({ trip, initial, onSubmit, onDelete, onDone }: Props
           onChange={setPayers}
           hint={
             payers.length > 0
-              ? `${scope === 'per_person' ? `Ognuno ha pagato ${formatMoney(shareAmounts({ amount: parseAmount(cost) as number, scope }, payers.length)[0], currency.toUpperCase())}` : `Diviso in parti uguali: ${formatMoney(shareAmounts({ amount: parseAmount(cost) as number, scope }, payers.length)[0], currency.toUpperCase())} a testa`}. Finisce nel Budget, in «${BOOKING_BUDGET_CATEGORY[type]}».`
+              ? `${scope === 'per_person' ? `Ognuno ha pagato ${formatMoney(shareAmounts({ amount: parseAmount(cost) as number, scope }, payers.length)[0], currency.toUpperCase())}` : `Diviso in parti uguali: ${formatMoney(shareAmounts({ amount: parseAmount(cost) as number, scope }, payers.length)[0], currency.toUpperCase())} a testa`}. Finisce nelle Spese, in «${BOOKING_BUDGET_CATEGORY[type]}».`
               : undefined
           }
         />

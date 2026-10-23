@@ -38,7 +38,7 @@ const sections = [
   },
   {
     href: '/altro/budget',
-    title: 'Budget e spese',
+    title: 'Spese',
     color: '#2cc48a',
     Icon: BudgetIcon,
     text: (t: Trip) => (t.budget.length + t.expenses.length ? `${t.budget.length} voci · ${t.expenses.length} spese` : 'Previsto, speso e chi deve a chi'),

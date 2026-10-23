@@ -238,7 +238,7 @@ export function Oggi() {
             href="/altro/budget"
             icon={<BudgetIcon size={22} />}
             color="var(--ok)"
-            title={mine ? 'Il tuo budget' : 'Budget'}
+            title={mine ? 'Le tue spese' : 'Spese'}
             line={planned > 0 ? `${formatMoney(spent, trip.baseCurrency)} su ${formatMoney(planned, trip.baseCurrency)}` : `${formatMoney(spent, trip.baseCurrency)} spesi`}
           />
           {hasFx && (

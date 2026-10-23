@@ -8,7 +8,7 @@ import { Card } from './PageHeader'
 
 interface Props {
   trip: Trip
-  /** Apre la modifica del cambio. Senza, mostra un link alla pagina Budget. */
+  /** Apre la modifica del cambio. Senza, mostra un link alla pagina Spese. */
   onEdit?: () => void
 }
 

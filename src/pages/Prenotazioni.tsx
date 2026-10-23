@@ -30,7 +30,7 @@ function bookingRows(b: Booking, tz: string, link: string | null, offline: boole
     rows.push({ label: 'Costo', value: b.scope === 'total' ? `${amount} in totale` : `${amount} a persona` })
     const payers = travelers.filter((t) => b.payerIds?.includes(t.id))
     if (payers.length > 0 && payers.length < travelers.length) rows.push({ label: 'Pagato da', value: payers.map((t) => t.name).join(', ') })
-    rows.push({ label: 'Nel Budget', value: BOOKING_BUDGET_CATEGORY[b.type] })
+    rows.push({ label: 'Nelle spese', value: BOOKING_BUDGET_CATEGORY[b.type] })
   }
   if (link) rows.push({ label: 'Link', value: <span class="break-all">{new URL(link).host}</span> })
   if (b.filePath) rows.push({ label: 'File', value: offline ? 'Salvato sul telefono' : 'Si scarica quando lo apri' })

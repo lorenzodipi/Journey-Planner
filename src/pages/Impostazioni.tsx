@@ -70,7 +70,7 @@ export function Impostazioni() {
           <Ticket stub={<Disc color="var(--pale)"><SwapIcon size={22} /></Disc>} stubWidth={64}>
             <span class="min-w-0 flex-1">
               <span class="block text-base font-extrabold">Tasso di cambio</span>
-              <span class="block text-[13px] text-muted">Si cambia dalla pagina Budget, con il convertitore</span>
+              <span class="block text-[13px] text-muted">Si cambia dalla pagina Spese, con il convertitore</span>
             </span>
             <ChevronRightIcon size={20} class="mr-2 shrink-0 text-muted" />
           </Ticket>
