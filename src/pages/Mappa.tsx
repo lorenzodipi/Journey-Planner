@@ -17,6 +17,9 @@ import type { MapPin } from '../ui/MapView'
 import { PlaceSheet, type PlaceSheetState } from '../ui/PlaceSheet'
 import { NO_CATEGORY_COLOR, PALETTE, categoryColor, colorForCategory } from '../ui/placeMeta'
 
+/** Spezzone della card del luogo (foto o icona): 76 px + 70%. */
+const STUB_WIDTH = 129
+
 type Mode = 'category' | 'day'
 const UNPLANNED = '#9fb0c8'
 
@@ -175,7 +178,7 @@ export function Mappa() {
         <div class="absolute inset-x-3.5 z-10" style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}>
           <Ticket
             tone="accent"
-            stubWidth={76}
+            stubWidth={STUB_WIDTH}
             stubFill
             stub={<PlacePhotoStub key={selected.id} place={selected} color={selectedColor} langs={isJapanTrip(trip) ? ['ja'] : []} />}
           >

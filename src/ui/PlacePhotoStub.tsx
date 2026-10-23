@@ -18,7 +18,7 @@ export function PlacePhotoStub({ place, color, langs }: { place: Place; color: s
   }, [url])
   return (
     <>
-      <PlaceDisc category={place.category} color={color} />
+      <PlaceDisc category={place.category} color={color} size={60} />
       {url && !broken && (
         <img
           src={url}
