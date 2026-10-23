@@ -5,11 +5,12 @@ import { doneCount } from '../lib/checklist'
 import { shiftDirection } from '../lib/dragOrder'
 import { canSwap } from '../lib/itemOrder'
 import { daysBetween, formatDayLong, formatShort } from '../lib/dates'
-import { describeLeg } from '../lib/dayRoute'
+import { describeLeg, formatDistance } from '../lib/dayRoute'
 import { dayBookings, dayChecklist, dayExpenses, dayMovements, dayStays } from '../lib/dayView'
 import { formatMoney, round2 } from '../lib/money'
 import { itemMapsHref } from '../lib/itemMaps'
-import { mapsLinkFor } from '../lib/mapsUrl'
+import { mapsLinkFor, parseMapsUrl } from '../lib/mapsUrl'
+import { planRoute } from '../lib/routeOrder'
 import { minutesOfDay, sunForDay } from '../lib/sun'
 import { minutesToHHMM, stopsSummary } from '../lib/stopsSummary'
 import { tripToday } from '../lib/today'
@@ -32,7 +33,7 @@ import { useDeleter } from '../ui/useDeleter'
 import { useDragReorder } from '../ui/useDragReorder'
 import { useItemActions } from '../ui/useItemActions'
 import { MODE_LABEL } from '../ui/TransportForm'
-import { ArrowDownIcon, CloseIcon, TickIcon } from '../ui/Icons'
+import { ArrowDownIcon, CloseIcon, RouteIcon, TickIcon } from '../ui/Icons'
 import { Tag } from '../ui/Ticket'
 import { WeatherCard } from '../ui/WeatherCard'
 
@@ -154,6 +155,34 @@ export function Giorno({ params }: { params: { id: string } }) {
     // se la sezione era chiusa si aspetta che finisca di aprirsi, poi si scorre
     if (wasOpen) show()
     else timers.current.push(window.setTimeout(show, 240))
+  }
+  // «Ottimizza percorso»: le tappe senza orario sul tragitto più breve, dopo quelle con orario
+  const homeStay = dayStays(trip.stays, day.date).night
+  const homePoint = homeStay?.mapsUrl ? parseMapsUrl(homeStay.mapsUrl) : null
+  const routePlan = planRoute(
+    day.items.map((i) => ({ id: i.id, position: i.position, time: i.time, lat: stopByItem.get(i.id)?.lat, lng: stopByItem.get(i.id)?.lng })),
+    homePoint,
+  )
+  const optimizeRoute = async () => {
+    if (!routePlan) return
+    if (routePlan.changed.length === 0) {
+      showToast('Il percorso è già il più corto')
+      return
+    }
+    const old = new Map(day.items.map((i) => [i.id, i.position ?? 0]))
+    const previous = routePlan.changed.map((c) => ({ id: c.id, position: old.get(c.id) ?? 0 }))
+    const error = await t.setItemPositions(routePlan.changed)
+    if (error) {
+      showToast(error)
+      return
+    }
+    const shorter = routePlan.afterM < routePlan.beforeM - 50
+    showToast(
+      shorter
+        ? `Percorso accorciato da ${formatDistance(routePlan.beforeM)} a ${formatDistance(routePlan.afterM)}`
+        : 'Tappe senza orario messe dopo quelle con orario',
+      { label: 'Annulla', run: () => void t.setItemPositions(previous).then((m) => m && showToast(m)) },
+    )
   }
   const onPin = (id: string) => (id === selectedStop ? goToStop(id) : setSelectedStop(id))
   const selected = route.stops.find((x) => x.id === selectedStop)
@@ -312,9 +341,28 @@ export function Giorno({ params }: { params: { id: string } }) {
               + Aggiungi tappa
             </button>
             {day.items.length > 1 && (
-              <button type="button" aria-pressed={reordering} onClick={() => setReordering(!reordering)} class="mx-auto mt-1 block min-h-11 px-3 text-sm font-extrabold text-muted">
-                {reordering ? 'Fine' : 'Riordina le tappe'}
-              </button>
+              <div class="mt-1 flex flex-wrap items-center justify-center gap-x-2">
+                <button type="button" aria-pressed={reordering} onClick={() => setReordering(!reordering)} class="min-h-11 px-3 text-sm font-extrabold text-muted">
+                  {reordering ? 'Fine' : 'Riordina le tappe'}
+                </button>
+                {!reordering && (
+                  <button
+                    type="button"
+                    aria-disabled={!routePlan}
+                    aria-describedby={routePlan ? undefined : 'ottimizza-spiega'}
+                    onClick={() => routePlan && void optimizeRoute()}
+                    class={`inline-flex min-h-11 items-center gap-1.5 px-3 text-sm font-extrabold ${routePlan ? 'text-pale' : 'text-muted opacity-60'}`}
+                  >
+                    <RouteIcon size={14} />
+                    Ottimizza percorso
+                  </button>
+                )}
+                {!reordering && !routePlan && (
+                  <p id="ottimizza-spiega" class="basis-full text-center text-xs text-muted">
+                    Servono almeno due tappe senza orario e con una posizione sulla mappa.
+                  </p>
+                )}
+              </div>
             )}
         </CollapsibleSection>
 
