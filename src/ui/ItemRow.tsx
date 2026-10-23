@@ -78,7 +78,7 @@ export function ItemRow({ item, n, onMap, hint, place, duration, mapsHref, onOpe
           <span class="text-xs text-muted">{hint}</span>
         </div>
       )}
-      <Ticket stub={stub} tone={highlight ? 'accent' : item.done ? 'ok' : 'line'} class={highlight ? 'jp-flash' : ''}>
+      <Ticket stub={stub} tone={highlight ? 'accent' : item.done ? 'ok' : 'line'} flash={highlight}>
         <div class="min-w-0 flex-1">
           {onOpen ? (
             <button type="button" onClick={onOpen} aria-label={`Modifica ${item.title}`} class="flex min-h-11 w-full min-w-0 items-center text-left">

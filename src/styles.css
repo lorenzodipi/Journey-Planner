@@ -171,6 +171,26 @@ fieldset {
   padding: 4px;
 }
 
+/* biglietto (Ticket): due semicerchi tolti con una maschera, così le tacche sono aperture vere.
+   Il livello del bordo toglie un cerchio da 6px, quello del fondo uno da 8px: in mezzo resta l'anello del bordo. */
+.jp-ticket-edge,
+.jp-ticket-fill {
+  --r: 6px;
+  --y0: 0px;
+  --y1: 100%;
+  -webkit-mask-image: radial-gradient(circle var(--r) at var(--tx) var(--y0), transparent calc(var(--r) - 0.5px), #000 var(--r)),
+    radial-gradient(circle var(--r) at var(--tx) var(--y1), transparent calc(var(--r) - 0.5px), #000 var(--r));
+  -webkit-mask-composite: source-in;
+  mask-image: radial-gradient(circle var(--r) at var(--tx) var(--y0), transparent calc(var(--r) - 0.5px), #000 var(--r)),
+    radial-gradient(circle var(--r) at var(--tx) var(--y1), transparent calc(var(--r) - 0.5px), #000 var(--r));
+  mask-composite: intersect;
+}
+.jp-ticket-fill {
+  --r: 8px;
+  --y0: -2px;
+  --y1: calc(100% + 2px);
+}
+
 /* scorrimento orizzontale senza barra (filtri a chip) */
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }

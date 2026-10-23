@@ -2,38 +2,40 @@ import { PlusIcon } from './Icons'
 import type { ComponentChildren } from 'preact'
 
 /**
- * Biglietto: spezzone a sinistra, strappo tratteggiato e due tacche (cerchi tagliati a metà).
- * Solo CSS: bordo 2px, `clip-path` sulle tacche. `tone` colora il bordo (es. arancio = da fare).
+ * Biglietto: spezzone a sinistra, strappo tratteggiato e due tacche. Le tacche sono vere aperture:
+ * bordo e fondo stanno su due livelli dietro al contenuto, ciascuno con una `mask` che toglie due semicerchi
+ * (in alto e in basso, sullo strappo), quindi si vede quello che c'è dietro il biglietto, mappa compresa.
+ * `tone` colora il bordo (es. arancio = da fare). `flash` fa lampeggiare il fondo (tappa trovata dalla mappa).
  */
 export function Ticket({
   stub,
   children,
   stubWidth = 84,
   tone = 'line',
+  flash = false,
   class: cls = '',
 }: {
   stub: ComponentChildren
   children: ComponentChildren
   stubWidth?: number
   tone?: 'line' | 'warn' | 'ok' | 'accent'
+  flash?: boolean
   class?: string
 }) {
   const border = { line: 'var(--line)', warn: 'var(--warn)', ok: 'var(--ok)', accent: 'var(--accent)' }[tone]
-  const notch = (pos: 'top' | 'bottom') => (
-    <i
-      aria-hidden="true"
-      class="pointer-events-none absolute box-border size-4 rounded-full"
-      style={{
-        left: `${stubWidth - 9}px`,
-        [pos]: '-10px',
-        background: 'var(--bg)',
-        border: `2px solid ${border}`,
-        clipPath: pos === 'top' ? 'inset(50% 0 0 0)' : 'inset(0 0 50% 0)',
-      }}
-    />
-  )
   return (
-    <div class={`relative flex rounded-[14px] bg-surface ${cls}`} style={{ border: `2px solid ${border}` }}>
+    // il bordo trasparente da 2px tiene il contenuto alla stessa distanza di sempre dal bordo disegnato
+    <div class={`relative isolate flex rounded-[14px] ${cls}`} style={{ border: '2px solid transparent' }}>
+      <i
+        aria-hidden="true"
+        class="jp-ticket-edge pointer-events-none absolute -inset-0.5 -z-10 rounded-[14px]"
+        style={{ background: border, '--tx': `${stubWidth + 1}px` }}
+      />
+      <i
+        aria-hidden="true"
+        class={`jp-ticket-fill pointer-events-none absolute -z-10 rounded-xl bg-surface ${flash ? 'jp-flash' : ''}`}
+        style={{ inset: 0, '--tx': `${stubWidth - 1}px` }}
+      />
       <div
         class="box-border grid shrink-0 place-items-center border-r-2 border-dashed border-line px-1 py-2.5 text-center"
         style={{ width: `${stubWidth}px` }}
@@ -41,8 +43,6 @@ export function Ticket({
         {stub}
       </div>
       <div class="flex min-w-0 flex-1 items-center py-3 pl-3.5 pr-1.5">{children}</div>
-      {notch('top')}
-      {notch('bottom')}
     </div>
   )
 }
