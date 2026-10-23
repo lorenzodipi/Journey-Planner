@@ -1,5 +1,6 @@
-import { useState } from 'preact/hooks'
+import { useMemo, useState } from 'preact/hooks'
 import { useAuth } from '../lib/auth'
+import { COUNTRIES, countryByName, themeForCountry } from '../lib/countries'
 import { parseAmount } from '../lib/money'
 import type { TripInput, TripPeople } from '../lib/tripApi'
 import {
@@ -12,6 +13,7 @@ import {
 } from '../lib/tripForm'
 import type { ThemeName, Trip } from '../types'
 import { FormError, PrimaryButton, TextField } from './Field'
+import { ChevronDownIcon } from './Icons'
 import { Select } from './Select'
 import { timezoneOptions } from '../lib/timezones'
 import { centerForTimezone } from '../lib/tzCenter'
@@ -57,6 +59,24 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
     setTimezone(tz)
     if (isValidTimezone(tz)) setCenter(centerForTimezone(tz))
   }
+
+  // scegliendo il paese si propongono fuso, valuta locale, centro mappa e tema: restano tutti modificabili
+  function onCountry(name: string) {
+    setDestination(name)
+    setPresetId(PRESETS.find((p) => p.destination === name)?.id ?? '')
+    const c = countryByName(name)
+    if (!c) return
+    setTimezone(c.timezone)
+    setLocalCurrency(c.currency === baseCurrency.trim().toUpperCase() ? '' : c.currency)
+    setCenter(c.center)
+    setTheme(themeForCountry(c.code))
+  }
+  // un viaggio già esistente con una destinazione scritta a mano resta selezionabile
+  const countryOptions = useMemo(() => {
+    const list = COUNTRIES.map((c) => ({ value: c.name, label: c.name }))
+    const current = destination.trim()
+    return current && !countryByName(current) ? [{ value: current, label: current, hint: 'Come scritto finora' }, ...list] : list
+  }, [destination])
 
   function applyPreset(p: Preset) {
     setPresetId(p.id)
@@ -132,7 +152,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
       )}
 
       <TextField label="Nome del viaggio" value={title} onInput={setTitle} placeholder="Es. Estate 2027" maxLength={80} />
-      <TextField label="Destinazione" value={destination} onInput={setDestination} maxLength={80} />
+      <Select label="Destinazione" value={destination} onChange={onCountry} options={countryOptions} placeholder="Scegli il paese" searchable />
 
       <div class="grid grid-cols-2 gap-3">
         <TextField label="Dal" type="date" value={startDate} onInput={onStartDate} />
@@ -220,9 +240,12 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
         </fieldset>
       )}
 
-      <details class="rounded-2xl border-2 border-line px-4 py-1">
-        <summary class="min-h-11 cursor-pointer list-none py-3 text-sm font-extrabold">
+      <details class="group rounded-2xl border-2 border-line px-4 py-1">
+        <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 py-1 text-sm font-extrabold [&::-webkit-details-marker]:hidden">
           Fuso e valute
+          <span class="grid size-11 shrink-0 place-items-center text-pale transition-transform duration-200 group-open:rotate-180">
+            <ChevronDownIcon size={18} />
+          </span>
         </summary>
         <div class="space-y-4 pb-4">
           <Select
