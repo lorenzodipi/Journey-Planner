@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
 import { expenseBase, fxOf } from '../lib/budget'
+import { doneCount } from '../lib/checklist'
 import { canSwap } from '../lib/itemOrder'
 import { daysBetween, formatDayLong, formatShort } from '../lib/dates'
 import { describeLeg } from '../lib/dayRoute'
@@ -21,6 +22,7 @@ import { ItemRow } from '../ui/ItemRow'
 import { LightCard } from '../ui/LightBar'
 import { MovementIcon } from '../ui/MovementIcon'
 import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
+import { QuantityStepper } from '../ui/QuantityStepper'
 import { useDeleter } from '../ui/useDeleter'
 import { useItemActions } from '../ui/useItemActions'
 import { MODE_LABEL } from '../ui/TransportForm'
@@ -427,17 +429,17 @@ export function Giorno({ params }: { params: { id: string } }) {
                     <button type="button" onClick={() => setSheet({ kind: 'edit-checklist', item: c })} class={`min-h-12 min-w-0 flex-1 py-2 text-left text-sm ${c.done ? 'text-muted line-through' : ''}`}>
                       {c.text}
                     </button>
-                    <TrashButton
-                      label={`Elimina ${c.text}`}
-                      onClick={() =>
-                        void del({
-                          title: `Eliminare «${c.text}»?`,
-                          done: 'Voce eliminata',
-                          run: () => t.setChecklistDeleted(c.id, true),
-                          undo: () => t.setChecklistDeleted(c.id, false),
-                        })
-                      }
-                    />
+                    {(c.quantity ?? 1) > 1 && (
+                      <QuantityStepper
+                        label={c.text}
+                        have={doneCount(c)}
+                        total={c.quantity as number}
+                        onChange={async (n) => {
+                          const message = await t.setChecklistCount(c.id, n)
+                          if (message) showToast(message)
+                        }}
+                      />
+                    )}
                   </li>
                 ))}
               </ul>

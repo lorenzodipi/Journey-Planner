@@ -6,9 +6,9 @@ import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { ChecklistItem, ChecklistKind } from '../types'
 import { ChecklistItemForm } from '../ui/ChecklistItemForm'
-import { TrashButton } from '../ui/ConfirmDialog'
 import { MinusIcon, PlusIcon, TickIcon, TrashIcon } from '../ui/Icons'
 import { EmptyState } from '../ui/PageHeader'
+import { QuantityStepper } from '../ui/QuantityStepper'
 import { Avatar, Fab, Ticket } from '../ui/Ticket'
 import { Sheet } from '../ui/Sheet'
 import { useDeleter } from '../ui/useDeleter'
@@ -133,15 +133,16 @@ export function Checklist() {
       <header class="px-5 pb-1" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
         {selecting ? (
           <>
-            <div class="flex min-h-11 items-center justify-between">
-              <button type="button" onClick={stopSelecting} class="inline-flex min-h-11 items-center gap-2 text-[15px] font-extrabold text-pale">
-                <span aria-hidden="true">‹</span>
+            {/* «Annulla» sta a destra, dove prima c'era «Seleziona»: a sinistra sembrava un comando per tornare indietro di pagina */}
+            <div class="min-h-11" aria-hidden="true" />
+            <div class="flex items-center justify-between gap-3">
+              <h1 class="font-display text-[28px] font-extrabold leading-tight" aria-live="polite">
+                {chosen.length === 0 ? 'Tocca le voci' : chosen.length === 1 ? '1 selezionata' : `${chosen.length} selezionate`}
+              </h1>
+              <button type="button" onClick={stopSelecting} class="min-h-11 text-sm font-extrabold text-pale">
                 Annulla
               </button>
             </div>
-            <h1 class="font-display text-[28px] font-extrabold leading-tight" aria-live="polite">
-              {chosen.length === 0 ? 'Tocca le voci' : chosen.length === 1 ? '1 selezionata' : `${chosen.length} selezionate`}
-            </h1>
             <p class="mt-0.5 text-sm text-muted">in {KIND_LABEL[kind]} · tocca le voci per sceglierle</p>
           </>
         ) : (
@@ -273,7 +274,7 @@ export function Checklist() {
                     <div class="min-w-0 flex-1">
                       <button type="button" onClick={() => (selecting ? toggleSel(i.id) : setEdit(i))} class="block w-full text-left">
                         <span class={`block text-base leading-tight font-extrabold ${i.done ? 'text-muted line-through' : ''}`}>
-                          {multi && (
+                          {multi && selecting && (
                             <span class={`mr-1.5 inline-block rounded-xl px-2 align-middle text-sm font-extrabold tabular-nums no-underline ${i.done ? 'bg-line text-muted' : 'bg-accent-soft text-pale'}`}>
                               {have}/{i.quantity}
                             </span>
@@ -299,43 +300,13 @@ export function Checklist() {
                           )}
                           {(owner || trip.travelers.length > 1) && <span class="text-xs text-muted">{owner ? owner.name : 'Tutti'}</span>}
                         </span>
-                        {multi && !selecting && (
-                          <div class="ml-auto flex gap-1.5" role="group" aria-label={`Pezzi a posto: ${i.text}`}>
-                            <button
-                              type="button"
-                              aria-label="Un pezzo in meno"
-                              disabled={pending.has(i.id) || have <= 0}
-                              onClick={() => void setCount(i, have - 1)}
-                              class="grid size-[34px] place-items-center rounded-full border-2 border-line text-muted disabled:text-line"
-                            >
-                              <MinusIcon size={16} />
-                            </button>
-                            <button
-                              type="button"
-                              aria-label="Un pezzo in più"
-                              disabled={pending.has(i.id) || have >= (i.quantity as number)}
-                              onClick={() => void setCount(i, have + 1)}
-                              class="grid size-[34px] place-items-center rounded-full bg-accent-soft text-pale disabled:text-line"
-                            >
-                              <PlusIcon size={16} />
-                            </button>
-                          </div>
-                        )}
                       </div>
+                      {multi && !selecting && (
+                        <div class="mt-2 flex justify-end pr-1.5">
+                          <QuantityStepper label={i.text} have={have} total={i.quantity as number} disabled={pending.has(i.id)} onChange={(n) => void setCount(i, n)} />
+                        </div>
+                      )}
                     </div>
-                    {!selecting && (
-                      <TrashButton
-                        label={`Elimina ${i.text}`}
-                        onClick={() =>
-                          void del({
-                            title: `Eliminare «${i.text}»?`,
-                            done: 'Voce eliminata',
-                            run: () => t.setChecklistDeleted(i.id, true),
-                            undo: () => t.setChecklistDeleted(i.id, false),
-                          })
-                        }
-                      />
-                    )}
                   </Ticket>
                 </li>
               )

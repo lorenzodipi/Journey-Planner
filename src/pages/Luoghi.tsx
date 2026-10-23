@@ -84,15 +84,15 @@ export function Luoghi() {
     <>
       {selecting ? (
         <header class="px-5 pb-3" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
-          <div class="flex min-h-11 items-center justify-between">
-            <button type="button" onClick={stopSelecting} class="inline-flex min-h-11 items-center gap-2 text-[15px] font-extrabold text-pale">
-              <span aria-hidden="true">‹</span>
+          {/* «Annulla» a destra, nello stesso punto di «Seleziona» */}
+          <div class="flex items-center justify-between gap-3">
+            <h1 class="font-display text-[28px] font-extrabold leading-tight" aria-live="polite">
+              {chosen.length === 0 ? 'Tocca i luoghi' : chosen.length === 1 ? '1 selezionato' : `${chosen.length} selezionati`}
+            </h1>
+            <button type="button" onClick={stopSelecting} class="min-h-11 text-sm font-extrabold text-pale">
               Annulla
             </button>
           </div>
-          <h1 class="font-display text-[28px] font-extrabold leading-tight" aria-live="polite">
-            {chosen.length === 0 ? 'Tocca i luoghi' : chosen.length === 1 ? '1 selezionato' : `${chosen.length} selezionati`}
-          </h1>
           <p class="mt-0.5 text-sm text-muted">tocca i luoghi per sceglierli</p>
         </header>
       ) : (
