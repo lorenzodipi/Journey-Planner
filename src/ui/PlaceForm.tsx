@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
+import { formatDuration, parseDuration } from '../lib/duration'
+import { DurationField } from './DurationField'
 import { searchPlaces, type GeoResult } from '../lib/geocode'
 import { parseMapsUrl } from '../lib/mapsUrl'
 import type { PlaceInput } from '../lib/tripApi'
@@ -33,6 +35,7 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
   const [address, setAddress] = useState(initial?.address ?? '')
   const [mapsUrl, setMapsUrl] = useState(initial?.mapsUrl ?? '')
   const [openingHours, setOpeningHours] = useState(initial?.openingHours ?? '')
+  const [visit, setVisit] = useState(initial?.visitMinutes ? formatDuration(initial.visitMinutes) : '')
   const [lat, setLat] = useState(initial?.lat != null ? String(initial.lat) : '')
   const [lng, setLng] = useState(initial?.lng != null ? String(initial.lng) : '')
 
@@ -106,6 +109,9 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
     if ((latN === null) !== (lngN === null)) return setError('Inserisci sia latitudine che longitudine, oppure nessuna delle due.')
     if (latN !== null && (Math.abs(latN) > 90 || Math.abs(lngN as number) > 180)) return setError('Le coordinate sono fuori intervallo.')
 
+    const visitN = parseDuration(visit)
+    if (Number.isNaN(visitN)) return setError('La durata non è chiara: scrivi per esempio 45 min o 1 h 30.')
+
     setBusy(true)
     setError(null)
     const message = await onSubmit({
@@ -118,6 +124,8 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
       address,
       mapsUrl,
       openingHours,
+      // senza durata e senza averne mai avuta non si tocca la colonna (esiste solo dopo la migrazione 0015)
+      visitMinutes: visitN === null && !initial?.visitMinutes ? undefined : visitN,
       lat: latN,
       lng: lngN,
     })
@@ -211,6 +219,8 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
           ))}
         </div>
       </fieldset>
+
+      <DurationField label="Quanto ci si ferma" value={visit} onInput={setVisit} />
 
       <TextArea label="Note" value={notes} onInput={setNotes} placeholder="Consigli, orari migliori, cosa ordinare…" />
 

@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks'
 import { formatDay } from '../lib/dates'
+import { formatDuration } from '../lib/duration'
 import { mapsLinkFor } from '../lib/mapsUrl'
 import { showToast } from '../state/toast'
 import { useTrips } from '../state/trip'
@@ -124,6 +125,7 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
       </div>
 
       {place.note && <p class="whitespace-pre-line text-sm">{place.note}</p>}
+      {place.visitMinutes && <p class="text-sm text-muted">Ci si ferma circa {formatDuration(place.visitMinutes)}</p>}
       {place.openingHours && <p class="text-sm text-muted">Orari: {place.openingHours}</p>}
       {place.address && <p class="text-xs text-muted">{place.address}</p>}
 

@@ -43,6 +43,8 @@ await runMigration('0013_trip_budget_limit.sql')
 await runMigration('0013_trip_budget_limit.sql') // si può rilanciare
 await runMigration('0014_trip_origin.sql')
 await runMigration('0014_trip_origin.sql') // si può rilanciare
+await runMigration('0015_visit_duration.sql')
+await runMigration('0015_visit_duration.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -188,6 +190,13 @@ const it = (await db.query(
   `insert into day_items (trip_id,day_id,place_id,kind,title,start_time,position) values ($1,$2,$3,'visit','Senso-ji','09:30',1000) returning id`, [s2, dd, pl])).rows[0].id
 await db.query(`update day_items set position=1500 where id=$1`, [it])
 check('tappa riordinata (position frazionaria)', (await db.query(`select position from day_items where id=$1`, [it])).rows[0].position === 1500)
+await throws('il tempo di permanenza del luogo deve essere maggiore di zero', () => db.query(`update places set visit_minutes = 0 where id=$1`, [pl]))
+await throws('la durata della tappa deve essere maggiore di zero', () => db.query(`update day_items set duration_minutes = -5 where id=$1`, [it]))
+await db.query(`update places set visit_minutes = 90 where id=$1`, [pl])
+await db.query(`update day_items set duration_minutes = 30 where id=$1`, [it])
+check('permanenza del luogo e durata della tappa si salvano', (await db.query(`select p.visit_minutes v, i.duration_minutes d from places p, day_items i where p.id=$1 and i.id=$2`, [pl, it])).rows[0].v === 90)
+await db.query(`update day_items set duration_minutes = null where id=$1`, [it])
+check('la durata della tappa si toglie (torna a seguire il luogo)', (await db.query(`select duration_minutes d from day_items where id=$1`, [it])).rows[0].d === null)
 await db.query(`update day_items set deleted_at=now() where id=$1`, [it])
 await db.query(`update day_items set deleted_at=null where id=$1`, [it])
 check('tappa eliminata e ripristinata (annulla)', (await db.query(`select 1 from day_items where id=$1 and deleted_at is null`, [it])).rows.length === 1)

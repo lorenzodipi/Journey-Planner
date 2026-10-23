@@ -99,6 +99,7 @@ interface PlaceRow {
   currency: string | null
   status: PlaceStatus
   notes: string | null
+  visit_minutes?: number | null
 }
 interface ItemRow {
   id: string
@@ -112,6 +113,7 @@ interface ItemRow {
   notes: string | null
   done: boolean
   position: number
+  duration_minutes?: number | null
 }
 interface Extras {
   places: PlaceRow[]
@@ -188,6 +190,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
       openingHours: p.opening_hours ?? undefined,
       estCost: p.est_cost == null ? undefined : Number(p.est_cost),
       currency: p.currency?.trim() || undefined,
+      visitMinutes: p.visit_minutes ?? undefined,
       lat: p.lat,
       lng: p.lng,
     }))
@@ -204,6 +207,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
       kind: it.kind,
       placeId: it.place_id ?? undefined,
       note: it.notes ?? undefined,
+      durationMinutes: it.duration_minutes ?? undefined,
       done: it.done,
       position: it.position,
     })
@@ -536,6 +540,8 @@ export interface PlaceInput {
   address: string
   mapsUrl: string
   openingHours: string
+  /** Quanto fermarsi, in minuti. `undefined` = non toccare la colonna, `null` = nessuna durata. */
+  visitMinutes?: number | null
   lat: number | null
   lng: number | null
 }
@@ -562,6 +568,10 @@ async function resolveCategory(tripId: string, label: string, known: Category[])
   return id
 }
 
+const MIGRATION_0015 =
+  "Manca la migrazione 0015 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0015_visit_duration.sql). Senza, il tempo di permanenza non si può salvare."
+const needs0015 = (error: { message: string }) => (/visit_minutes|duration_minutes/i.test(error.message) ? new Error(MIGRATION_0015) : error)
+
 function placeColumns(input: PlaceInput, categoryId: string | null) {
   return {
     category_id: categoryId,
@@ -575,6 +585,8 @@ function placeColumns(input: PlaceInput, categoryId: string | null) {
     opening_hours: input.openingHours.trim() || null,
     status: input.status,
     notes: input.notes.trim() || null,
+    // solo se serve: senza la migrazione 0015 la colonna non esiste e la richiesta fallirebbe
+    ...(input.visitMinutes !== undefined ? { visit_minutes: input.visitMinutes } : {}),
   }
 }
 
@@ -585,7 +597,7 @@ export async function createPlace(tripId: string, input: PlaceInput, known: Cate
     .insert({ trip_id: tripId, ...placeColumns(input, categoryId) })
     .select('id')
     .single()
-  if (error) throw error
+  if (error) throw needs0015(error)
   return (data as { id: string }).id
 }
 
@@ -597,7 +609,7 @@ export async function updatePlace(id: string, tripId: string, input: PlaceInput,
   const categoryId = await resolveCategory(tripId, input.category, known)
   const db = client()
   const { error } = await db.from('places').update(placeColumns(input, categoryId)).eq('id', id)
-  if (error) throw error
+  if (error) throw needs0015(error)
   const newName = input.name.trim()
   if (oldName && newName && oldName !== newName) {
     const renamed = await db.from('day_items').update({ title: newName }).eq('place_id', id).eq('title', oldName)
@@ -746,6 +758,8 @@ export interface ItemInput {
   endTime: string
   notes: string
   placeId: string | null
+  /** Durata propria. `undefined` = non toccare, `null` = come il luogo collegato. */
+  durationMinutes?: number | null
 }
 
 const timeOrNull = (t: string) => (/^\d{2}:\d{2}$/.test(t) ? t : null)
@@ -758,6 +772,7 @@ function itemColumns(input: ItemInput) {
     end_time: timeOrNull(input.endTime),
     notes: input.notes.trim() || null,
     place_id: input.placeId,
+    ...(input.durationMinutes !== undefined ? { duration_minutes: input.durationMinutes } : {}),
   }
 }
 
@@ -765,12 +780,12 @@ export async function createItem(tripId: string, dayId: string, input: ItemInput
   const { error } = await client()
     .from('day_items')
     .insert({ trip_id: tripId, day_id: dayId, position, ...itemColumns(input) })
-  if (error) throw error
+  if (error) throw needs0015(error)
 }
 
 export async function updateItem(id: string, input: ItemInput): Promise<void> {
   const { error } = await client().from('day_items').update(itemColumns(input)).eq('id', id)
-  if (error) throw error
+  if (error) throw needs0015(error)
 }
 
 export async function setItemPositions(list: { id: string; position: number }[]): Promise<void> {

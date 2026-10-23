@@ -10,6 +10,10 @@ describe('stopsSummary', () => {
     expect(stopsSummary(items, '10:15')).toBe('3 tappe · 1 fatta · prossima 12:30')
   })
   it('oggi: nessuna prossima dopo le ultime', () => expect(stopsSummary([{ time: '09:00' }], '20:00')).toBe('1 tappa'))
+  it('con il tempo di permanenza totale', () => {
+    expect(stopsSummary([{}, {}], null, 330)).toBe('2 tappe · ≈ 5 h 30 di visite')
+    expect(stopsSummary([{}], null, 0)).toBe('1 tappa')
+  })
   it('tutte fatte', () => expect(stopsSummary([{ done: true }, { done: true }], '10:00')).toBe('2 tappe · tutte fatte'))
 })
 

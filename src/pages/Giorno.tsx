@@ -12,6 +12,7 @@ import { dayBookings, dayChecklist, dayExpenses, dayMovements, dayStays } from '
 import { formatMoney, round2 } from '../lib/money'
 import { itemMapsHref } from '../lib/itemMaps'
 import { mapsLinkFor, parseMapsUrl } from '../lib/mapsUrl'
+import { itemDuration, totalDuration } from '../lib/duration'
 import { planRoute } from '../lib/routeOrder'
 import { minutesOfDay, sunForDay } from '../lib/sun'
 import { minutesToHHMM, stopsSummary } from '../lib/stopsSummary'
@@ -508,7 +509,7 @@ export function Giorno({ params }: { params: { id: string } }) {
         <CollapsibleSection
           id="tappe-del-giorno"
           title="Tappe del giorno"
-          summary={stopsSummary(day.items, day.date === today ? minutesToHHMM(minutesOfDay(new Date(), trip.timezone)) : null)}
+          summary={stopsSummary(day.items, day.date === today ? minutesToHHMM(minutesOfDay(new Date(), trip.timezone)) : null, totalDuration(day.items, trip.places))}
           open={stopsOpen || reordering}
           locked={day.items.length === 0}
           onToggle={() => {
@@ -534,6 +535,7 @@ export function Giorno({ params }: { params: { id: string } }) {
                     onMap={stopByItem.has(item.id)}
                     hint={hintFor(item)}
                     place={placeLine(item)}
+                    duration={itemDuration(item, item.placeId ? trip.places.find((p) => p.id === item.placeId) : undefined)}
                     mapsHref={itemMapsHref(item, trip.places)}
                     onOpen={reordering ? undefined : () => setSheet({ kind: 'edit-item', day, item })}
                     onToggleDone={reordering ? undefined : () => void actions.toggleDone(item)}

@@ -38,6 +38,8 @@ export interface Place {
   mapsUrl?: string
   openingHours?: string
   estCost?: number
+  /** Quanto fermarsi, in minuti (facoltativo). */
+  visitMinutes?: number
   currency?: string
   lat: number | null
   lng: number | null
@@ -51,6 +53,8 @@ export interface DayItem {
   kind: ItemKind
   placeId?: string
   note?: string
+  /** Durata propria della tappa, in minuti. Assente = come il luogo collegato. */
+  durationMinutes?: number
   done?: boolean
   position?: number
 }

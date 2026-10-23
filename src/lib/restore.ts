@@ -22,6 +22,7 @@ import type {
 } from '../types'
 import { EXPORT_FORMAT, EXPORT_VERSION } from './exportData'
 import { countryByCode } from './countries'
+import { MAX_DURATION_MIN } from './duration'
 import { cleanRates } from './money'
 import { DEFAULT_CENTER } from './tripForm'
 import { enumerateDates } from './tripDays'
@@ -50,6 +51,11 @@ const list = (v: unknown): Obj[] => (Array.isArray(v) ? v.filter(isObj) : [])
 const str = (v: unknown, fallback = ''): string => (typeof v === 'string' ? v : fallback)
 const optStr = (v: unknown): string | undefined => (typeof v === 'string' && v.trim() !== '' ? v : undefined)
 const num = (v: unknown): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? v : undefined)
+/** Minuti interi da 1 a 24 ore; altro = nessuna durata. */
+const minutes = (v: unknown): number | undefined => {
+  const n = num(v)
+  return n !== undefined && Number.isInteger(n) && n >= 1 && n <= MAX_DURATION_MIN ? n : undefined
+}
 const bool = (v: unknown, fallback = false): boolean => (typeof v === 'boolean' ? v : fallback)
 const oneOf = <T extends string>(v: unknown, allowed: readonly T[], fallback: T): T => (allowed.includes(v as T) ? (v as T) : fallback)
 
@@ -192,6 +198,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
         openingHours: optStr(p.openingHours),
         estCost: est,
         currency: est === undefined ? undefined : currency(p.currency, localCurrency ?? baseCurrency),
+        visitMinutes: minutes(p.visitMinutes),
         lat: pos?.lat ?? null,
         lng: pos?.lng ?? null,
       }
@@ -222,6 +229,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
           kind: oneOf(it.kind, KINDS, 'visit'),
           placeId: placeId && placeIds.has(placeId) ? placeId : undefined,
           note: optStr(it.note),
+          durationMinutes: minutes(it.durationMinutes),
           done: bool(it.done),
           position: num(it.position) ?? (i + 1) * 1000,
         }
@@ -613,6 +621,8 @@ export function buildSteps(trip: Trip, tripId: string, newId: () => string): Res
     currency: nul(p.currency),
     status: p.status,
     notes: nul(p.note),
+    // le colonne della migrazione 0015 solo se servono: senza la migrazione non esistono
+    ...(p.visitMinutes !== undefined ? { visit_minutes: p.visitMinutes } : {}),
   }))
 
   const items = trip.days.flatMap((d) =>
@@ -628,6 +638,7 @@ export function buildSteps(trip: Trip, tripId: string, newId: () => string): Res
       notes: nul(it.note),
       done: it.done ?? false,
       position: it.position ?? 1000,
+      ...(it.durationMinutes !== undefined ? { duration_minutes: it.durationMinutes } : {}),
     })),
   )
 

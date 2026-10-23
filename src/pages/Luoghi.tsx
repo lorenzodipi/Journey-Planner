@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks'
+import { formatDuration } from '../lib/duration'
 import { isJapanTrip } from '../lib/tripLocale'
 import { countActive, filterPlaces } from '../lib/placeFilter'
 import { GROUP_LABEL, SORT_LABEL, DEFAULT_VIEW, isDefaultView, viewPlaces } from '../lib/placeView'
@@ -13,7 +14,7 @@ import { FilterSheet } from '../ui/FilterSheet'
 import { FindPositions } from '../ui/FindPositions'
 import { EmptyState, PageHeader } from '../ui/PageHeader'
 import { PlaceDisc, CategoryTag } from '../ui/PlaceDisc'
-import { MinusIcon, NoPinIcon, SearchIcon, TickIcon, TrashIcon } from '../ui/Icons'
+import { ClockIcon, MinusIcon, NoPinIcon, SearchIcon, TickIcon, TrashIcon } from '../ui/Icons'
 import { Fab, Ticket } from '../ui/Ticket'
 import { PlaceSheet, type PlaceSheetState } from '../ui/PlaceSheet'
 import { STATUS_LABEL, STATUS_STYLE, categoryColor } from '../ui/placeMeta'
@@ -225,6 +226,12 @@ export function Luoghi() {
                         <span class="text-[13px] text-muted">
                           {[p.city, dayOf(p.id)].filter(Boolean).join(' · ')}
                         </span>
+                        {p.visitMinutes && (
+                          <span class="inline-flex items-center gap-1 text-[13px] font-bold text-muted">
+                            <ClockIcon size={13} />
+                            {formatDuration(p.visitMinutes)}
+                          </span>
+                        )}
                         {(p.lat == null || p.lng == null) && (
                           <span
                             class="inline-flex items-center gap-1 rounded-md border-2 border-warn px-1.5 text-xs font-extrabold leading-snug text-warn"

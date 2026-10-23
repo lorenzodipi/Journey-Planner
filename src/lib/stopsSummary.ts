@@ -1,7 +1,8 @@
 import type { DayItem } from '../types'
+import { formatDuration } from './duration'
 
 /** Riga di riepilogo di «Tappe del giorno» da mostrare anche a sezione chiusa. */
-export function stopsSummary(items: Pick<DayItem, 'time' | 'done'>[], nowHHMM?: string | null): string {
+export function stopsSummary(items: Pick<DayItem, 'time' | 'done'>[], nowHHMM?: string | null, visitMinutes = 0): string {
   if (items.length === 0) return 'Giornata ancora libera'
   const parts = [`${items.length} ${items.length === 1 ? 'tappa' : 'tappe'}`]
   const done = items.filter((i) => i.done).length
@@ -14,6 +15,7 @@ export function stopsSummary(items: Pick<DayItem, 'time' | 'done'>[], nowHHMM?: 
       if (next) parts.push(`prossima ${next}`)
     }
   }
+  if (visitMinutes > 0) parts.push(`≈ ${formatDuration(visitMinutes)} di visite`)
   return parts.join(' · ')
 }
 

@@ -2,6 +2,8 @@ import { useState } from 'preact/hooks'
 import { useConfirm } from './ConfirmDialog'
 import type { ItemInput } from '../lib/tripApi'
 import type { DayItem, ItemKind, Trip } from '../types'
+import { formatDuration, parseDuration } from '../lib/duration'
+import { DurationField } from './DurationField'
 import { FormError, PrimaryButton, SecondaryButton, TextArea, TextField } from './Field'
 import { KIND_LABEL } from './ItemRow'
 import { Select } from './Select'
@@ -26,6 +28,8 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
   const [endTime, setEndTime] = useState(initial?.endTime ?? '')
   const [notes, setNotes] = useState(initial?.note ?? '')
   const [placeId, setPlaceId] = useState(initial?.placeId ?? '')
+  // vuoto = la tappa segue la durata del luogo; un valore = durata propria
+  const [duration, setDuration] = useState(initial?.durationMinutes ? formatDuration(initial.durationMinutes) : '')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -45,9 +49,13 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
     e.preventDefault()
     if (!title.trim()) return setError('Scrivi cosa fai in questa tappa.')
     if (startTime && endTime && endTime < startTime) return setError("L'ora di fine è prima dell'inizio.")
+    const minutes = parseDuration(duration)
+    if (Number.isNaN(minutes)) return setError('La durata non è chiara: scrivi per esempio 45 min o 1 h 30.')
     setBusy(true)
     setError(null)
-    const message = await onSubmit({ title, kind, startTime, endTime, notes, placeId: placeId || null })
+    // senza durata e senza averne mai avuta non si tocca la colonna (esiste solo dopo la migrazione 0015)
+    const durationMinutes = minutes === null && !initial?.durationMinutes ? undefined : minutes
+    const message = await onSubmit({ title, kind, startTime, endTime, notes, placeId: placeId || null, durationMinutes })
     setBusy(false)
     if (message) setError(message)
     else onDone()
@@ -110,6 +118,8 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
         <TextField label="Dalle" type="time" value={startTime} onInput={onStartTime} />
         <TextField label="Alle" type="time" value={endTime} onInput={setEndTime} min={startTime || undefined} />
       </div>
+
+      <DurationField label="Quanto ti fermi" value={duration} onInput={setDuration} inherited={trip.places.find((p) => p.id === placeId)?.visitMinutes} />
 
       <TextArea label="Note" value={notes} onInput={setNotes} />
       <FormError message={error} />

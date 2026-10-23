@@ -1,4 +1,5 @@
 import type { DayItem, ItemKind } from '../types'
+import { formatDuration } from '../lib/duration'
 import { TrashButton } from './ConfirmDialog'
 import { ArrowDownIcon, ArrowUpIcon, GripIcon, PinIcon, TickIcon } from './Icons'
 import { Ticket } from './Ticket'
@@ -22,6 +23,8 @@ interface Props {
   hint?: string
   /** Il luogo collegato (nome e città), se serve a capire dove si va. */
   place?: string
+  /** Tempo di permanenza in minuti (proprio o del luogo). */
+  duration?: number
   /** Link per aprire il luogo della tappa in Maps (solo se ha un luogo collegato). Non compare mentre si riordina. */
   mapsHref?: string
   /** Tocco sulla riga: apre la modifica. Senza, la riga è di sola lettura. */
@@ -41,9 +44,9 @@ interface Props {
   highlight?: boolean
 }
 
-export function ItemRow({ item, n, onMap, hint, place, mapsHref, onOpen, onToggleDone, onDelete, reorder, dragStyle, dragging, highlight }: Props) {
+export function ItemRow({ item, n, onMap, hint, place, duration, mapsHref, onOpen, onToggleDone, onDelete, reorder, dragStyle, dragging, highlight }: Props) {
   const range = item.time && item.endTime ? `${item.time}–${item.endTime}` : ''
-  const sub = [KIND_LABEL[item.kind], item.endTime && range, item.note, place].filter(Boolean).join(' · ')
+  const sub = [KIND_LABEL[item.kind], item.endTime && range, duration ? `sosta ${formatDuration(duration)}` : '', item.note, place].filter(Boolean).join(' · ')
   const stub = item.time ? (
     <span class={`text-[22px] font-extrabold leading-none tabular-nums ${item.done ? 'text-muted' : 'text-pale'}`}>{item.time}</span>
   ) : n != null ? (
