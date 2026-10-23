@@ -42,7 +42,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
   const auth = useAuth()
   const ownEmail = auth.session?.user.email ?? undefined
   const [selfName, setSelfName] = useState('')
-  const [others, setOthers] = useState<{ email: string; name: string }[]>([{ email: '', name: '' }])
+  const [others, setOthers] = useState<{ email: string; name: string }[]>([])
   const [error, setError] = useState<string | null>(null)
 
   // «Al» non può essere prima di «Dal»: spostando l'inizio oltre la fine, la fine lo segue
