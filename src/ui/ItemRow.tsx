@@ -37,9 +37,11 @@ interface Props {
   /** Stile della riga mentre si trascina (spostamento) e se è proprio questa a essere trascinata. */
   dragStyle?: { transform: string; transition: string }
   dragging?: boolean
+  /** La tappa trovata toccando la mappa: per un attimo ha il fondo colorato. */
+  highlight?: boolean
 }
 
-export function ItemRow({ item, n, onMap, hint, place, mapsHref, onOpen, onToggleDone, onDelete, reorder, dragStyle, dragging }: Props) {
+export function ItemRow({ item, n, onMap, hint, place, mapsHref, onOpen, onToggleDone, onDelete, reorder, dragStyle, dragging, highlight }: Props) {
   const range = item.time && item.endTime ? `${item.time}–${item.endTime}` : ''
   const sub = [KIND_LABEL[item.kind], item.endTime && range, item.note, place].filter(Boolean).join(' · ')
   const stub = item.time ? (
@@ -63,8 +65,9 @@ export function ItemRow({ item, n, onMap, hint, place, mapsHref, onOpen, onToggl
 
   return (
     <li
+      id={`tappa-${item.id}`}
       style={dragStyle}
-      class={dragging ? 'relative z-20 [filter:drop-shadow(0_10px_16px_rgb(0_0_0/0.35))]' : undefined}
+      class={`scroll-mt-24 scroll-mb-28 ${dragging ? 'relative z-20 [filter:drop-shadow(0_10px_16px_rgb(0_0_0/0.35))]' : ''}`}
     >
       {hint && (
         <div class="ml-9 flex h-[30px] items-center gap-2.5" aria-hidden="true">
@@ -72,7 +75,7 @@ export function ItemRow({ item, n, onMap, hint, place, mapsHref, onOpen, onToggl
           <span class="text-xs text-muted">{hint}</span>
         </div>
       )}
-      <Ticket stub={stub} tone={item.done ? 'ok' : 'line'}>
+      <Ticket stub={stub} tone={highlight ? 'accent' : item.done ? 'ok' : 'line'} class={highlight ? 'jp-flash' : ''}>
         <div class="min-w-0 flex-1">
           {onOpen ? (
             <button type="button" onClick={onOpen} aria-label={`Modifica ${item.title}`} class="flex min-h-11 w-full min-w-0 items-center text-left">

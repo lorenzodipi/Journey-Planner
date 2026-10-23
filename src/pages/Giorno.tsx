@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
 import { expenseBase, fxOf } from '../lib/budget'
 import { doneCount } from '../lib/checklist'
@@ -32,7 +32,7 @@ import { useDeleter } from '../ui/useDeleter'
 import { useDragReorder } from '../ui/useDragReorder'
 import { useItemActions } from '../ui/useItemActions'
 import { MODE_LABEL } from '../ui/TransportForm'
-import { TickIcon } from '../ui/Icons'
+import { ArrowDownIcon, CloseIcon, TickIcon } from '../ui/Icons'
 import { Tag } from '../ui/Ticket'
 import { WeatherCard } from '../ui/WeatherCard'
 
@@ -99,6 +99,11 @@ export function Giorno({ params }: { params: { id: string } }) {
   const index = trip.days.findIndex((d) => d.id === params.id)
   const day = trip.days[index]
   const route = useDayRoute(trip, day ?? { id: '', date: '', city: '', items: [] })
+  // tocco su un pin della mappa: prima si seleziona, poi «Vai alla tappa» porta alla sua card
+  const [selectedStop, setSelectedStop] = useState<string | null>(null)
+  const [highlightId, setHighlightId] = useState<string | null>(null)
+  const timers = useRef<number[]>([])
+  useEffect(() => () => timers.current.forEach((x) => window.clearTimeout(x)), [])
   const { listRef, drag, start } = useDragReorder((from, to) => {
     const item = day?.items[from]
     return day && item ? actions.moveTo(day.id, item, to) : undefined
@@ -133,6 +138,25 @@ export function Giorno({ params }: { params: { id: string } }) {
   const relative = rel === 0 ? 'Oggi' : rel === 1 ? 'Domani' : rel === -1 ? 'Ieri' : null
   const subtitle = [`Giorno ${index + 1} di ${trip.days.length}`, day.city, day.title, relative].filter(Boolean).join(' · ')
 
+
+  const goToStop = (id: string) => {
+    const wasOpen = stopsOpen || reordering
+    setStopsOpen(true)
+    setSelectedStop(null)
+    const show = () => {
+      const el = document.getElementById(`tappa-${id}`)
+      if (!el) return
+      const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      el.scrollIntoView({ block: 'center', behavior: calm ? 'auto' : 'smooth' })
+      setHighlightId(id)
+      timers.current.push(window.setTimeout(() => setHighlightId((cur) => (cur === id ? null : cur)), 1500))
+    }
+    // se la sezione era chiusa si aspetta che finisca di aprirsi, poi si scorre
+    if (wasOpen) show()
+    else timers.current.push(window.setTimeout(show, 240))
+  }
+  const onPin = (id: string) => (id === selectedStop ? goToStop(id) : setSelectedStop(id))
+  const selected = route.stops.find((x) => x.id === selectedStop)
 
   // "arrivo da…" per le tappe con posizione: il tempo dalla tappa numerata precedente
   const hintFor = (item: DayItem): string | undefined => {
@@ -199,7 +223,20 @@ export function Giorno({ params }: { params: { id: string } }) {
         )}
 
         <section class="rise overflow-hidden rounded-2xl border-2 border-line bg-surface">
-          <DayMapPanel route={route} center={trip.center} />
+          <DayMapPanel route={route} center={trip.center} selectedId={selected?.id} onSelect={onPin} />
+          {selected && (
+            <div class="flex items-center gap-1 border-t-2 border-dashed border-line pl-4 pr-1" role="status">
+              <span class="grid size-7 shrink-0 place-items-center rounded-full bg-accent text-sm font-extrabold text-white">{selected.n}</span>
+              <span class="min-w-0 flex-1 truncate py-2 pl-2 font-extrabold">{selected.name}</span>
+              <button type="button" onClick={() => goToStop(selected.id)} class="inline-flex min-h-11 shrink-0 items-center gap-1.5 px-2.5 text-sm font-extrabold text-pale">
+                Vai alla tappa
+                <ArrowDownIcon size={14} />
+              </button>
+              <button type="button" onClick={() => setSelectedStop(null)} aria-label="Deseleziona la tappa" class="grid size-11 shrink-0 place-items-center text-muted">
+                <CloseIcon size={16} />
+              </button>
+            </div>
+          )}
           {route.stops.length > 0 && (
             <div class="flex justify-between border-t-2 border-dashed border-line px-4 py-2.5 text-sm">
               <span class="font-extrabold">{route.legs.length > 0 && route.legs.every((l) => l.kind === 'walk') ? 'Percorso a piedi' : 'Percorso del giorno'}</span>
@@ -244,6 +281,7 @@ export function Giorno({ params }: { params: { id: string } }) {
                     onToggleDone={reordering ? undefined : () => void actions.toggleDone(item)}
                     onDelete={() => actions.remove(item)}
                     dragging={drag?.from === i}
+                    highlight={highlightId === item.id}
                     dragStyle={
                       drag
                         ? drag.from === i

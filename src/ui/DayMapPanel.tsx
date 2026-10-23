@@ -7,7 +7,17 @@ import { MODE_LABEL } from './TransportForm'
 type DayMapComponent = typeof import('./MapView').DayMapView
 
 /** Mappa di un giorno: pin numerati, linee tra le tappe e partenze/arrivi dei mezzi. L'elenco delle tappe sta nella pagina del giorno. */
-export function DayMapPanel({ route, center }: { route: DayRoute; center: Trip['center'] }) {
+export function DayMapPanel({
+  route,
+  center,
+  selectedId,
+  onSelect,
+}: {
+  route: DayRoute
+  center: Trip['center']
+  selectedId?: string | null
+  onSelect?: (stopId: string) => void
+}) {
   const [View, setView] = useState<DayMapComponent | null>(null)
   const [loadError, setLoadError] = useState(false)
 
@@ -36,7 +46,7 @@ export function DayMapPanel({ route, center }: { route: DayRoute; center: Trip['
     <div>
       <div class="h-[170px] overflow-hidden bg-bg">
         {View ? (
-          <View stops={stops} lines={lines} ends={ends} center={stops[0] ?? transports[0]?.from ?? center} />
+          <View stops={stops} lines={lines} ends={ends} center={stops[0] ?? transports[0]?.from ?? center} selectedId={selectedId} onSelect={onSelect} />
         ) : (
           <p class="grid h-full place-items-center px-6 text-center text-sm text-muted" role="status">
             {loadError ? 'Non riesco a caricare la mappa: serve la connessione la prima volta.' : 'Carico la mappa…'}

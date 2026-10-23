@@ -44,6 +44,7 @@ import {
   faTrashCan,
   faUtensils,
   faWallet,
+  faXmark,
   type IconDefinition,
 } from '@fortawesome/free-solid-svg-icons'
 
@@ -112,6 +113,7 @@ export const BagIcon = wrap(faBagShopping)
 export const TrainCarIcon = wrap(faTrain)
 export const PinOutIcon = wrap(faMapLocationDot)
 export const PencilIcon = wrap(faPencil)
+export const CloseIcon = wrap(faXmark)
 export const ArrowUpIcon = wrap(faArrowUp)
 export const ArrowDownIcon = wrap(faArrowDown)
 export const GripIcon = wrap(faGripVertical)

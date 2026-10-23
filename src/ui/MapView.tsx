@@ -13,6 +13,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { useEffect, useRef } from 'preact/hooks'
 import { pinIconSvg, type PinIcon } from '../lib/categoryIcon'
+import { isTap, type TapDown } from '../lib/mapTap'
 
 // Questo file (e MapLibre) viene caricato solo quando serve una mappa: l'avvio dell'app resta leggero.
 setWorkerUrl(workerUrl)
@@ -385,15 +386,48 @@ function applyLines(m: MLMap, lines: DayMapLine[]) {
   }
 }
 
-function numberElement(stop: DayMapStop): HTMLElement {
-  const el = document.createElement('div')
-  el.className = 'jp-num'
-  el.style.background = STOP_COLOR
-  el.textContent = String(stop.n)
-  el.title = `${stop.n}. ${stop.name}`
-  el.setAttribute('role', 'img')
-  el.setAttribute('aria-label', `Tappa ${stop.n}: ${stop.name}`)
-  return el
+interface PinHandlers {
+  /** istante dell'ultimo movimento della mappa */
+  lastMove: { current: number | null }
+  /** quanti puntatori sono appoggiati alla mappa adesso */
+  pointers: { current: number }
+  onTap: (stop: DayMapStop) => void
+}
+
+/** Pin numerato: il cerchio è 28 px, l'area da toccare 44 px. Vale come tocco solo se rispetta `isTap`. */
+function numberElement(stop: DayMapStop, h: PinHandlers): HTMLElement {
+  const hit = document.createElement('div')
+  hit.className = 'jp-hit'
+  hit.dataset.stopId = stop.id
+  hit.tabIndex = 0
+  hit.title = `${stop.n}. ${stop.name}`
+  hit.setAttribute('role', 'button')
+  hit.setAttribute('aria-label', `Tappa ${stop.n}: ${stop.name}`)
+  const dot = document.createElement('div')
+  dot.className = 'jp-num'
+  dot.style.background = STOP_COLOR
+  dot.textContent = String(stop.n)
+  hit.appendChild(dot)
+
+  let down: TapDown | null = null
+  hit.addEventListener('pointerdown', (e) => {
+    down = { x: e.clientX, y: e.clientY, t: performance.now(), pointers: h.pointers.current }
+  })
+  hit.addEventListener('pointerup', (e) => {
+    const d = down
+    down = null
+    if (d && isTap(d, { x: e.clientX, y: e.clientY, t: performance.now() }, h.lastMove.current)) h.onTap(stop)
+  })
+  hit.addEventListener('pointercancel', () => {
+    down = null
+  })
+  hit.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      h.onTap(stop)
+    }
+  })
+  return hit
 }
 
 function endElement(end: DayMapEnd): HTMLElement {
@@ -410,10 +444,14 @@ interface DayMapProps {
   lines: DayMapLine[]
   ends: DayMapEnd[]
   center: { lat: number; lng: number }
+  /** Tappa selezionata (ingrandita sulla mappa). */
+  selectedId?: string | null
+  /** Tocco su un pin (già filtrato: non scatta se si sta trascinando o zoomando la mappa). */
+  onSelect?: (stopId: string) => void
 }
 
 /** Mappa di una giornata: pin numerati nell'ordine delle tappe, linee tra le tappe e partenze/arrivi dei mezzi. */
-export function DayMapView({ stops, lines, ends, center }: DayMapProps) {
+export function DayMapView({ stops, lines, ends, center, selectedId, onSelect }: DayMapProps) {
   const el = useRef<HTMLDivElement>(null)
   const map = useRef<MLMap | null>(null)
   const markers = useRef<Marker[]>([])
@@ -422,6 +460,20 @@ export function DayMapView({ stops, lines, ends, center }: DayMapProps) {
   const pointsRef = useRef({ stops, ends })
   pointsRef.current = { stops, ends }
   const fitted = useRef('')
+  const lastMove = useRef<number | null>(null)
+  const pointers = useRef(0)
+  const selectRef = useRef(onSelect)
+  selectRef.current = onSelect
+  const selectedRef = useRef(selectedId)
+  selectedRef.current = selectedId
+  const handlers = useRef<PinHandlers>({ lastMove, pointers, onTap: (stop) => selectRef.current?.(stop.id) })
+
+  function markSelected() {
+    for (const mk of markers.current) {
+      const el = mk.getElement()
+      if (el.dataset.stopId) el.dataset.selected = String(el.dataset.stopId === selectedRef.current)
+    }
+  }
 
   function drawPoints() {
     const m = map.current
@@ -430,8 +482,9 @@ export function DayMapView({ stops, lines, ends, center }: DayMapProps) {
     markers.current = []
     const { stops: s, ends: e } = pointsRef.current
     for (const end of e) markers.current.push(new Marker({ element: endElement(end), anchor: 'center' }).setLngLat([end.lng, end.lat]).addTo(m))
-    for (const stop of s) markers.current.push(new Marker({ element: numberElement(stop), anchor: 'center' }).setLngLat([stop.lng, stop.lat]).addTo(m))
+    for (const stop of s) markers.current.push(new Marker({ element: numberElement(stop, handlers.current), anchor: 'center' }).setLngLat([stop.lng, stop.lat]).addTo(m))
     // inquadra tutto solo quando cambia l'insieme dei punti (non quando arrivano i percorsi)
+    markSelected()
     const key = [...s.map((x) => x.id), ...e.map((x) => x.id)].join(',')
     const all = [...s, ...e]
     if (key !== fitted.current && all.length > 0) {
@@ -449,6 +502,20 @@ export function DayMapView({ stops, lines, ends, center }: DayMapProps) {
     if (!el.current) return
     const m = newMap(el.current, center, 12, true, true)
     map.current = m
+    // il tocco su un pin vale solo se la mappa è ferma e il dito è uno solo
+    m.on('move', () => {
+      lastMove.current = performance.now()
+    })
+    const box = el.current
+    const addPointer = () => {
+      pointers.current++
+    }
+    const dropPointer = () => {
+      pointers.current = Math.max(0, pointers.current - 1)
+    }
+    box.addEventListener('pointerdown', addPointer, true)
+    box.addEventListener('pointerup', dropPointer, true)
+    box.addEventListener('pointercancel', dropPointer, true)
     // cambiando stile (chiaro/scuro/dettagli) le linee vanno ridisegnate
     const redraw = () => applyLines(m, linesRef.current)
     m.on('style.load', redraw)
@@ -458,6 +525,9 @@ export function DayMapView({ stops, lines, ends, center }: DayMapProps) {
     })
     drawPoints()
     return () => {
+      box.removeEventListener('pointerdown', addPointer, true)
+      box.removeEventListener('pointerup', dropPointer, true)
+      box.removeEventListener('pointercancel', dropPointer, true)
       for (const mk of markers.current) mk.remove()
       markers.current = []
       m.remove()
@@ -475,6 +545,8 @@ export function DayMapView({ stops, lines, ends, center }: DayMapProps) {
   useEffect(() => {
     if (map.current) applyLines(map.current, lines)
   }, [lines])
+
+  useEffect(markSelected, [selectedId])
 
   return <div ref={el} class="h-full w-full" role="application" aria-label="Mappa della giornata" />
 }
