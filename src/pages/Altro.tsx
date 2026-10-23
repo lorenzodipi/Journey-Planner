@@ -6,7 +6,7 @@ import { TRAVELER_COLORS } from '../lib/tripForm'
 import { useTrips } from '../state/trip'
 import type { Traveler, Trip } from '../types'
 import { SecondaryButton } from '../ui/Field'
-import { BedIcon, BudgetIcon, ChecklistIcon, ChevronRightIcon, SettingsIcon, TicketIcon, TrainCarIcon } from '../ui/Icons'
+import { BedIcon, BudgetIcon, ChecklistIcon, ChevronRightIcon, PlusIcon, SettingsIcon, SwapIcon, TicketIcon, TrainCarIcon } from '../ui/Icons'
 import { PageHeader } from '../ui/PageHeader'
 import { isJapanTrip } from '../lib/tripLocale'
 import { BoardingNotches, Disc, Jp, Stripe } from '../ui/Ticket'
@@ -62,10 +62,10 @@ const sections = [
   },
   {
     href: '/altro/impostazioni',
-    title: 'Impostazioni',
+    title: 'Impostazioni del viaggio',
     color: '#f472b6',
     Icon: SettingsIcon,
-    text: () => 'Esporta e ripristina i dati, copia sul telefono, info',
+    text: () => 'Esporta il viaggio, importa luoghi, tasso di cambio',
   },
 ]
 
@@ -107,6 +107,37 @@ export function Altro() {
     <>
       <PageHeader title="Altro" jp={isJapanTrip(trip) ? '設定' : undefined} />
       <div class="px-5">
+        {/* generale: valgono per tutti i viaggi, non per quello attivo */}
+        <section class="rise rounded-2xl border-2 border-line bg-surface px-4" aria-label="Viaggi">
+          {t.trips.length > 1 && (
+            <button
+              type="button"
+              onClick={() => {
+                setTripFilter('')
+                setSheet({ kind: 'pick-trip' })
+              }}
+              class="flex min-h-14 w-full items-center gap-3 text-left"
+            >
+              <SwapIcon size={18} class="shrink-0 text-pale" />
+              <span class="flex-1 text-base font-extrabold">Cambia viaggio</span>
+              <span class="flex items-center gap-1 text-sm text-muted">
+                {t.trips.length} viaggi
+                <ChevronRightIcon size={16} />
+              </span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setSheet({ kind: 'new-trip' })}
+            class={`flex min-h-14 w-full items-center gap-3 text-left ${t.trips.length > 1 ? 'border-t-2 border-dashed border-line' : ''}`}
+          >
+            <PlusIcon size={18} class="shrink-0 text-pale" />
+            <span class="flex-1 text-base font-extrabold">Nuovo viaggio</span>
+            <ChevronRightIcon size={16} class="text-muted" />
+          </button>
+        </section>
+
+        <h2 class="mb-2 mt-6 px-1 text-[13px] font-extrabold text-muted">Questo viaggio</h2>
         <section class="rise relative rounded-[20px] border-2 border-line bg-surface">
           <Stripe />
           <div class="px-[18px] pb-3.5 pt-3">
@@ -119,32 +150,11 @@ export function Altro() {
               {trip.destination && `${trip.destination} · `}
               {formatShort(trip.startDate)} – {formatShort(trip.endDate)} · {trip.days.length} giorni
             </p>
-            {t.trips.length > 1 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setTripFilter('')
-                  setSheet({ kind: 'pick-trip' })
-                }}
-                class="mt-3 flex min-h-11 w-full items-center justify-between rounded-xl bg-accent-soft px-4 text-sm font-extrabold text-pale"
-              >
-                <span>Cambia viaggio</span>
-                <span class="flex items-center gap-1 text-muted">
-                  {t.trips.length} viaggi
-                  <ChevronRightIcon size={16} />
-                </span>
-              </button>
-            )}
           </div>
           <BoardingNotches />
-          <div class="grid grid-cols-2 border-t-2 border-dashed border-line">
-            <button type="button" onClick={() => setSheet({ kind: 'edit-trip' })} class="min-h-[52px] text-[15px] font-extrabold text-pale">
-              Modifica
-            </button>
-            <button type="button" onClick={() => setSheet({ kind: 'new-trip' })} class="min-h-[52px] border-l-2 border-dashed border-line text-[15px] font-extrabold text-pale">
-              Nuovo viaggio
-            </button>
-          </div>
+          <button type="button" onClick={() => setSheet({ kind: 'edit-trip' })} class="block min-h-[52px] w-full border-t-2 border-dashed border-line text-[15px] font-extrabold text-pale">
+            Modifica
+          </button>
         </section>
 
         <section class="mt-4 rounded-2xl border-2 border-line bg-surface px-4 py-1.5">
@@ -220,19 +230,23 @@ export function Altro() {
           })}
         </ul>
 
-        <section class="mt-[18px] flex items-center gap-3 rounded-2xl border-2 border-line bg-surface px-4 py-3">
-          {auth.status === 'demo' && <p class="text-sm text-muted">Anteprima con dati fittizi: Supabase non è ancora collegato.</p>}
+        <h2 class="mb-2 mt-6 px-1 text-[13px] font-extrabold text-muted">Account</h2>
+        <section class="flex items-center gap-2 rounded-2xl border-2 border-line bg-surface py-2 pl-4 pr-2">
+          {auth.status === 'demo' && <p class="min-w-0 flex-1 py-1 text-sm text-muted">Anteprima con dati fittizi: Supabase non è ancora collegato.</p>}
           {auth.status === 'signed-in' && (
             <>
               <div class="min-w-0 flex-1">
                 <p class="text-[13px] text-muted">Accesso come</p>
                 <p class="truncate text-sm font-extrabold">{auth.session?.user.email}</p>
               </div>
-              <button type="button" onClick={() => void auth.signOut()} class="min-h-11 rounded-full border-2 border-line px-4 text-sm font-extrabold">
+              <button type="button" onClick={() => void auth.signOut()} class="min-h-11 shrink-0 rounded-full border-2 border-line px-4 text-sm font-extrabold">
                 Esci
               </button>
             </>
           )}
+          <Link href="/altro/account" aria-label="Impostazioni account" class="grid size-11 shrink-0 place-items-center rounded-full text-pale">
+            <SettingsIcon size={22} />
+          </Link>
         </section>
       </div>
 

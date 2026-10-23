@@ -10,6 +10,7 @@ import { Checklist } from './pages/Checklist'
 import { Prenotazioni } from './pages/Prenotazioni'
 import { Giorni } from './pages/Giorni'
 import { Giorno } from './pages/Giorno'
+import { Account } from './pages/Account'
 import { Impostazioni } from './pages/Impostazioni'
 import { Login } from './pages/Login'
 import { Luoghi } from './pages/Luoghi'
@@ -110,6 +111,7 @@ export function App() {
           <Route path="/altro/checklist" component={Checklist} />
           <Route path="/altro/prenotazioni" component={Prenotazioni} />
           <Route path="/altro/impostazioni" component={Impostazioni} />
+          <Route path="/altro/account" component={Account} />
           <Route>
             <div class="px-4 pt-10">
               <EmptyState title="Pagina non trovata" text="Torna alla scheda Oggi dalla barra in basso." />

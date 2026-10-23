@@ -49,7 +49,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 
 // Icone di Font Awesome Free (https://fontawesome.com, licenza CC BY 4.0: l'attribuzione è nel pacchetto
-// e nella pagina Impostazioni). Qui le rinominiamo con i nomi usati nell'app.
+// e nella pagina Impostazioni account). Qui le rinominiamo con i nomi usati nell'app.
 
 interface IconProps {
   size?: number
