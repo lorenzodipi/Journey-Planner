@@ -269,7 +269,7 @@ fieldset {
 }
 /* mappa a tutto schermo: i comandi stanno sotto la ricerca e i filtri */
 .map-full .maplibregl-ctrl-top-right {
-  top: 9.75rem;
+  top: calc(7.5rem + env(safe-area-inset-top));
 }
 .maplibregl-ctrl-group button {
   width: 40px;

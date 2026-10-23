@@ -109,7 +109,7 @@ export function Mappa() {
       )}
 
       {/* ricerca e categorie sopra la mappa */}
-      <div class="pointer-events-none absolute inset-x-3.5 z-10 space-y-2.5" style={{ top: 'calc(3.25rem + env(safe-area-inset-top))' }}>
+      <div class="pointer-events-none absolute inset-x-3.5 z-10 space-y-2.5" style={{ top: 'calc(1rem + env(safe-area-inset-top))' }}>
         <label class="pointer-events-auto relative block">
           <SearchIcon size={20} class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
           <input
@@ -163,7 +163,9 @@ export function Mappa() {
       )}
 
       {visible.length === 0 && withCoords.length > 0 && (
-        <p class="pointer-events-none absolute inset-x-6 top-44 z-10 rounded-2xl border-2 border-line bg-bg px-4 py-3 text-center text-sm text-muted">Nessun luogo con questi filtri.</p>
+        <p class="pointer-events-none absolute inset-x-6 z-10 rounded-2xl border-2 border-line bg-bg px-4 py-3 text-center text-sm text-muted" style={{ top: 'calc(8.75rem + env(safe-area-inset-top))' }}>
+          Nessun luogo con questi filtri.
+        </p>
       )}
 
       {selected && (
