@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks'
 import { formatDay } from '../lib/dates'
 import { formatDuration } from '../lib/duration'
+import { cachedPhoto } from '../lib/placePhoto'
 import { mapsLinkFor } from '../lib/mapsUrl'
 import { showToast } from '../state/toast'
 import { useTrips } from '../state/trip'
@@ -78,6 +79,8 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
   }
 
   const [confirm, confirmDialog] = useConfirm()
+  // la foto mostrata nella card della Mappa (se c'è): il credito va dato nei dettagli
+  const photo = cachedPhoto(place)
   const plannedDays = trip.days.filter((d) => d.items.some((i) => i.placeId === place.id))
 
   async function remove() {
@@ -128,6 +131,15 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
       {place.visitMinutes && <p class="text-sm text-muted">Ci si ferma circa {formatDuration(place.visitMinutes)}</p>}
       {place.openingHours && <p class="text-sm text-muted">Orari: {place.openingHours}</p>}
       {place.address && <p class="text-xs text-muted">{place.address}</p>}
+      {photo && (
+        <p class="text-xs text-muted">
+          Foto:{' '}
+          <a href={photo.page} target="_blank" rel="noopener noreferrer" class="underline">
+            Wikimedia Commons
+          </a>{' '}
+          (da «{photo.title}»)
+        </p>
+      )}
 
       <a
         href={mapsLinkFor(place)}

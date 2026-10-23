@@ -1,17 +1,21 @@
 import { useEffect, useMemo, useState } from 'preact/hooks'
 import { mapsLinkFor } from '../lib/mapsUrl'
 import { filterPlaces } from '../lib/placeFilter'
-import { formatShort, parseYmd } from '../lib/dates'
+import { formatShort } from '../lib/dates'
+import { placeDayLine } from '../lib/placeDays'
+import { isJapanTrip } from '../lib/tripLocale'
 import { usePlaceFilters } from '../state/placeFilters'
 import { useTrip } from '../state/trip'
-import { FilterIcon, SearchIcon } from '../ui/Icons'
-import { CategoryTag, PlaceDisc } from '../ui/PlaceDisc'
+import { CalendarIcon, FilterIcon, PinIcon, SearchIcon } from '../ui/Icons'
+import { CategoryTag } from '../ui/PlaceDisc'
+import { PlacePhotoStub } from '../ui/PlacePhotoStub'
+import { StatusPill } from '../ui/StatusPill'
 import { Ticket } from '../ui/Ticket'
 import { FilterSheet } from '../ui/FilterSheet'
 import { categoryIcon } from '../lib/categoryIcon'
 import type { MapPin } from '../ui/MapView'
 import { PlaceSheet, type PlaceSheetState } from '../ui/PlaceSheet'
-import { NO_CATEGORY_COLOR, PALETTE, STATUS_LABEL, STATUS_STYLE, categoryColor, colorForCategory } from '../ui/placeMeta'
+import { NO_CATEGORY_COLOR, PALETTE, categoryColor, colorForCategory } from '../ui/placeMeta'
 
 type Mode = 'category' | 'day'
 const UNPLANNED = '#9fb0c8'
@@ -91,8 +95,7 @@ export function Mappa() {
           ...(visible.some((p) => !dayOf.has(p.id)) ? [{ label: 'Non ancora in un giorno', color: UNPLANNED }] : []),
         ]
 
-  const assignedDay = selected ? dayOf.get(selected.id) : undefined
-  const assignedDate = assignedDay !== undefined ? parseYmd(trip.days[assignedDay].date) : null
+  const dayLine = selected ? placeDayLine(selected.id, trip.days) : null
   const selectedColor = selected ? categoryColor(trip, selected) : NO_CATEGORY_COLOR
   // pulsanti rapidi per categoria: una alla volta, "Tutti" le toglie
   const cats = trip.categories.filter((c) => withCoords.some((p) => p.categoryId === c.id))
@@ -173,33 +176,36 @@ export function Mappa() {
           <Ticket
             tone="accent"
             stubWidth={76}
-            stub={
-              assignedDate ? (
-                <span>
-                  <span class="font-display block text-[28px] font-extrabold leading-none tabular-nums text-pale">{assignedDate.getDate()}</span>
-                  <span class="block text-[13px] text-muted">{assignedDate.toLocaleDateString('it-IT', { month: 'short' }).replace('.', '')}</span>
-                </span>
-              ) : (
-                <PlaceDisc category={selected.category} color={selectedColor} />
-              )
-            }
+            stubFill
+            stub={<PlacePhotoStub key={selected.id} place={selected} color={selectedColor} langs={isJapanTrip(trip) ? ['ja'] : []} />}
           >
             <div class="min-w-0 flex-1 pr-2">
-              <p class="truncate text-xl font-extrabold leading-tight">{selected.name}</p>
-              <p class="mt-1 flex flex-wrap items-center gap-2">
-                {selected.category && <CategoryTag label={selected.category} color={selectedColor} />}
-                <span class="text-[13px] text-muted">{selected.city}</span>
-                {selected.status !== 'idea' && (
-                  <span class={`rounded-md border-2 px-1.5 text-xs font-extrabold leading-snug ${STATUS_STYLE[selected.status]}`}>{STATUS_LABEL[selected.status]}</span>
-                )}
-              </p>
+              <p class="line-clamp-2 text-xl font-extrabold leading-tight">{selected.name}</p>
+              {selected.city && (
+                <p class="mt-1 flex items-center gap-1.5 text-[13px] text-muted">
+                  <PinIcon size={12} class="shrink-0" />
+                  <span class="min-w-0">{selected.city}</span>
+                </p>
+              )}
+              {(selected.category || selected.status !== 'idea') && (
+                <p class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  {selected.category && <CategoryTag label={selected.category} color={selectedColor} />}
+                  <StatusPill status={selected.status} />
+                </p>
+              )}
+              {dayLine && (
+                <p class="mt-1.5 flex items-center gap-1.5 text-[13px] text-muted">
+                  <CalendarIcon size={12} class="shrink-0" />
+                  <span class="min-w-0">{dayLine}</span>
+                </p>
+              )}
               <div class="mt-2.5 flex gap-2">
                 <button
                   type="button"
                   onClick={() => setSheet({ kind: 'detail', placeId: selected.id })}
                   class="min-h-11 flex-1 rounded-xl bg-accent px-3 text-sm font-extrabold text-accent-ink"
                 >
-                  {assignedDate ? 'Dettagli' : 'Aggiungi a un giorno'}
+                  {dayLine ? 'Dettagli' : 'Aggiungi a un giorno'}
                 </button>
                 <a
                   href={mapsLinkFor(selected)}

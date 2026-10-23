@@ -49,6 +49,16 @@ export default defineConfig(({ mode }) => {
         cleanupOutdatedCaches: true,
         // le tessere di mappa già viste restano disponibili offline (nessun download in blocco)
         runtimeCaching: [
+          // le foto dei luoghi già viste (miniature Wikimedia) restano disponibili offline
+          {
+            urlPattern: /^https:\/\/upload\.wikimedia\.org\/.*/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'place-photos',
+              expiration: { maxEntries: 150, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           {
             urlPattern: /^https:\/\/tiles\.openfreemap\.org\/.*/,
             handler: 'StaleWhileRevalidate',

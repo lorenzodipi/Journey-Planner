@@ -13,6 +13,7 @@ export function Ticket({
   stubWidth = 84,
   tone = 'line',
   flash = false,
+  stubFill = false,
   class: cls = '',
 }: {
   stub: ComponentChildren
@@ -20,6 +21,8 @@ export function Ticket({
   stubWidth?: number
   tone?: 'line' | 'warn' | 'ok' | 'accent'
   flash?: boolean
+  /** Lo spezzone senza margini, a tutta altezza (foto): angoli a sinistra arrotondati e tacche ritagliate. */
+  stubFill?: boolean
   class?: string
 }) {
   const border = { line: 'var(--line)', warn: 'var(--warn)', ok: 'var(--ok)', accent: 'var(--accent)' }[tone]
@@ -37,8 +40,10 @@ export function Ticket({
         style={{ inset: 0, '--tx': `${stubWidth - 1}px` }}
       />
       <div
-        class="box-border grid shrink-0 place-items-center border-r-2 border-dashed border-line px-1 py-2.5 text-center"
-        style={{ width: `${stubWidth}px` }}
+        class={`box-border grid shrink-0 place-items-center border-r-2 border-dashed border-line text-center ${
+          stubFill ? 'jp-ticket-fill relative overflow-hidden rounded-l-xl' : 'px-1 py-2.5'
+        }`}
+        style={stubFill ? { width: `${stubWidth}px`, '--tx': `${stubWidth - 1}px` } : { width: `${stubWidth}px` }}
       >
         {stub}
       </div>
