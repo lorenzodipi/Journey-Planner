@@ -243,4 +243,6 @@ export interface Trip {
   fxRate?: number
   /** Cambi delle valute extra del viaggio: unità di valuta base per 1 unità di ciascuna (es. { KRW: 0.00065 }). */
   fxRates?: Record<string, number>
+  /** Budget massimo del viaggio, nella valuta base (facoltativo). */
+  budgetLimit?: number
 }

@@ -218,6 +218,13 @@ describe('parseExport: pulizia dei dati', () => {
     expect(r.trip.fxRates).toEqual({ KRW: 0.00065 })
   })
 
+  it('il budget massimo si legge solo se è un importo positivo', () => {
+    expect(run({ budgetLimit: 3000 }).trip.budgetLimit).toBe(3000)
+    expect(run({ budgetLimit: -5 }).trip.budgetLimit).toBeUndefined()
+    expect(run({ budgetLimit: 0 }).trip.budgetLimit).toBeUndefined()
+    expect(run({}).trip.budgetLimit).toBeUndefined()
+  })
+
   it('gli allegati PDF non vengono ripristinati e se ne avvisa', () => {
     const r = run({})
     expect(r.trip.bookings[0].filePath).toBeUndefined()

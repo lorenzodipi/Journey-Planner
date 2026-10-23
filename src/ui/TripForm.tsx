@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks'
 import { useAuth } from '../lib/auth'
+import { parseAmount } from '../lib/money'
 import type { TripInput, TripPeople } from '../lib/tripApi'
 import {
   PRESETS,
@@ -37,6 +38,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
   const [baseCurrency, setBaseCurrency] = useState(trip?.baseCurrency ?? 'EUR')
   const [localCurrency, setLocalCurrency] = useState(trip?.localCurrency ?? first.localCurrency)
   const [center, setCenter] = useState(trip?.center ?? first.center)
+  const [budget, setBudget] = useState(trip?.budgetLimit ? String(trip.budgetLimit).replace('.', ',') : '')
   const auth = useAuth()
   const ownEmail = auth.session?.user.email ?? undefined
   const [selfName, setSelfName] = useState('')
@@ -67,6 +69,13 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
 
   async function submit(e: Event) {
     e.preventDefault()
+    // budget massimo: facoltativo; vuoto = nessun tetto (e, in modifica, toglie quello che c'era)
+    let budgetLimit: number | null | undefined
+    if (budget.trim()) {
+      const n = parseAmount(budget)
+      if (n === null || n <= 0 || n >= 1e11) return setError('Il budget massimo è un importo maggiore di zero (esempio: 3000).')
+      budgetLimit = n
+    } else if (trip?.budgetLimit) budgetLimit = null
     const input: TripInput = {
       title,
       destination,
@@ -77,6 +86,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
       baseCurrency,
       localCurrency,
       center,
+      ...(budgetLimit !== undefined ? { budgetLimit } : {}),
     }
     const problem = validateTrip(input)
     if (problem) return setError(problem)
@@ -128,6 +138,15 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
         <TextField label="Dal" type="date" value={startDate} onInput={onStartDate} />
         <TextField label="Al" type="date" value={endDate} onInput={setEndDate} min={startDate || undefined} />
       </div>
+
+      <TextField
+        label={`Budget massimo, in ${baseCurrency.trim().toUpperCase() || 'EUR'} (facoltativo)`}
+        value={budget}
+        onInput={setBudget}
+        inputMode="decimal"
+        placeholder="Es. 3.000"
+        maxLength={12}
+      />
 
       {!editing && (
         <fieldset class="space-y-3">

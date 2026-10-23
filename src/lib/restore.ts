@@ -137,6 +137,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
   const localCurrency = typeof localRaw === 'string' && /^[A-Za-z]{3}$/.test(localRaw.trim()) ? localRaw.trim().toUpperCase() : undefined
   const center = coords(isObj(raw.center) ? raw.center.lat : undefined, isObj(raw.center) ? raw.center.lng : undefined) ?? DEFAULT_CENTER
   const fx = num(raw.fxRate)
+  const limit = num(raw.budgetLimit)
 
   // viaggiatori
   const travelers: Traveler[] = list(raw.travelers)
@@ -466,6 +467,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
     bookings,
     fxRate: fx !== undefined && fx > 0 && fx < 1e7 ? fx : undefined,
     fxRates: Object.keys(cleanRates(raw.fxRates)).length > 0 ? cleanRates(raw.fxRates) : undefined,
+    budgetLimit: limit !== undefined && limit > 0 && limit < 1e11 ? limit : undefined,
   }
 }
 
@@ -536,6 +538,8 @@ export function tripRow(trip: Trip, title: string) {
     fx_rate: trip.fxRate ?? null,
     // solo se ci sono: senza la migrazione 0012 la colonna non esiste e l'inserimento fallirebbe
     ...(trip.fxRates && Object.keys(trip.fxRates).length > 0 ? { fx_rates: trip.fxRates } : {}),
+    // idem per la migrazione 0013
+    ...(trip.budgetLimit ? { budget_limit: trip.budgetLimit } : {}),
   }
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
-import { budgetLines, categoryOverview, expenseBase, expensesByCurrency, fxOf, logisticsLines, paidByTraveler, paidFromSections, shareAmounts, summarizeExpenses, summarizeLines, toBase, type CategoryOverview, type Line } from '../lib/budget'
+import { budgetLines, budgetStatus, categoryOverview, expenseBase, expensesByCurrency, fxOf, logisticsLines, paidByTraveler, paidFromSections, shareAmounts, summarizeExpenses, summarizeLines, toBase, type CategoryOverview, type Line } from '../lib/budget'
 import { formatShort } from '../lib/dates'
 import { dateInZone } from '../lib/flights'
 import { extraCurrencies, formatMoney, round2 } from '../lib/money'
@@ -9,6 +9,7 @@ import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { BudgetItem, Expense } from '../types'
 import { BudgetItemForm } from '../ui/BudgetItemForm'
+import { BudgetLimitBar } from '../ui/BudgetLimitBar'
 import { CategoryForm } from '../ui/CategoryForm'
 import { ExpenseForm } from '../ui/ExpenseForm'
 import { TrashButton } from '../ui/ConfirmDialog'
@@ -276,6 +277,7 @@ export function Budget() {
   const anyPaid = Array.from(paidBy.values()).some((v) => v > 0)
   const planned = summary.planned
   const left = round2(planned - spentTotal)
+  const limitStatus = budgetStatus(trip.budgetLimit, spentTotal, planned)
 
   return (
     <>
@@ -289,6 +291,7 @@ export function Budget() {
               ? `su ${formatMoney(planned, base)} previsti · ${left >= 0 ? `restano ${formatMoney(left, base)}` : `oltre di ${formatMoney(-left, base)}`}`
               : `${trip.expenses.length} ${trip.expenses.length === 1 ? 'spesa' : 'spese'}`}
           </p>
+          {limitStatus && trip.budgetLimit && <BudgetLimitBar status={limitStatus} spent={spentTotal} limit={trip.budgetLimit} currency={base} />}
 
           <div class={`${DASH} mb-1.5 mt-3.5`} />
           {categories.length === 0 ? (

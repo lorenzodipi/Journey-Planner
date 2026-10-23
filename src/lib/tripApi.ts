@@ -52,6 +52,8 @@ export interface TripInput {
   baseCurrency: string
   localCurrency: string
   center: { lat: number; lng: number }
+  /** Budget massimo nella valuta base: `undefined` = non toccare la colonna, `null` = toglierlo. */
+  budgetLimit?: number | null
 }
 
 
@@ -137,6 +139,7 @@ interface TripRow {
   local_currency: string | null
   fx_rate?: number | string | null
   fx_rates?: Record<string, number | string> | null
+  budget_limit?: number | string | null
   center_lat: number | null
   center_lng: number | null
   trip_travelers: TravelerRow[]
@@ -244,6 +247,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     bookings: mapBookings(extras.bookings, row.id),
     fxRate: row.fx_rate == null ? undefined : Number(row.fx_rate),
     fxRates: Object.keys(cleanRates(row.fx_rates)).length > 0 ? cleanRates(row.fx_rates) : undefined,
+    budgetLimit: row.budget_limit != null && Number(row.budget_limit) > 0 ? Number(row.budget_limit) : undefined,
   }
 }
 
@@ -391,6 +395,8 @@ function tripColumns(input: TripInput) {
     local_currency: input.localCurrency.trim().toUpperCase() || null,
     center_lat: input.center.lat,
     center_lng: input.center.lng,
+    // solo se serve: senza la migrazione 0013 la colonna non esiste e la richiesta fallirebbe
+    ...(input.budgetLimit !== undefined ? { budget_limit: input.budgetLimit } : {}),
   }
 }
 

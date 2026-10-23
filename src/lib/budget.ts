@@ -1,6 +1,6 @@
 import type { Booking, BudgetItem, Expense, Scope, Trip, Traveler } from '../types'
 import { BOOKING_BUDGET_CATEGORY } from './bookingMeta'
-import { round2 } from './money'
+import { formatMoney, round2 } from './money'
 
 // Calcoli di budget e spese. Tutto è derivato dai dati: nessun totale si digita a mano.
 // Le valute: la valuta base del viaggio (es. EUR), la valuta locale (es. JPY) con un tasso
@@ -449,4 +449,48 @@ export function personSummary(summary: ExpenseSummary, travelerId: string): Pers
     gives: summary.transfers.filter((t) => t.from === travelerId),
     receives: summary.transfers.filter((t) => t.to === travelerId),
   }
+}
+
+
+// ---------- budget massimo ----------
+
+export type BudgetState = 'ok' | 'warn' | 'over'
+
+export interface BudgetStatus {
+  state: BudgetState
+  /** speso / tetto (può superare 1) */
+  ratio: number
+  /** quanto è piena la barra dello speso, 0–100 */
+  spentPct: number
+  /** dove cade il previsto sulla barra, 0–100 */
+  plannedPct: number
+  /** tetto − speso (negativo se superato) */
+  left: number
+  /** di quanto si è oltre il tetto, 0 se non lo si è */
+  over: number
+}
+
+/**
+ * Speso e previsto a confronto con il budget massimo del viaggio (tutti nella valuta base).
+ * Sotto l'80 % del tetto tutto bene, tra l'80 e il 100 % attenzione, oltre il tetto superato.
+ * `null` se il viaggio non ha un tetto.
+ */
+export function budgetStatus(limit: number | null | undefined, spent: number, planned: number): BudgetStatus | null {
+  if (!limit || !(limit > 0)) return null
+  const ratio = spent / limit
+  const left = round2(limit - spent)
+  return {
+    state: ratio > 1 ? 'over' : ratio >= 0.8 ? 'warn' : 'ok',
+    ratio,
+    spentPct: Math.max(0, Math.min(100, ratio * 100)),
+    plannedPct: Math.max(0, Math.min(100, (planned / limit) * 100)),
+    left,
+    over: left < 0 ? -left : 0,
+  }
+}
+
+/** «Speso 1.200 € di 3.000 € · restano 1.800 €» oppure, oltre il tetto, «… · +120 € sopra il budget». */
+export function budgetLine(status: BudgetStatus, spent: number, limit: number, currency: string): string {
+  const head = `Speso ${formatMoney(spent, currency)} di ${formatMoney(limit, currency)}`
+  return status.over > 0 ? `${head} · +${formatMoney(status.over, currency)} sopra il budget` : `${head} · restano ${formatMoney(status.left, currency)}`
 }

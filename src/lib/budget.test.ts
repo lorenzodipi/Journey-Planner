@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Expense } from '../types'
-import { budgetLines, categoryOverview, paidByTraveler, paidFromSections, personBudget, expenseBase, expenseOwed, expensesOf, groupByCategory, involvesTraveler, personSummary, shareOf, logisticsLines, settle, shareAmounts, splitEvenly, summarizeExpenses, summarizeLines, toBase, expensesByCurrency, type Line } from './budget'
+import { budgetLines, categoryOverview, paidByTraveler, paidFromSections, personBudget, expenseBase, expenseOwed, expensesOf, groupByCategory, involvesTraveler, personSummary, shareOf, logisticsLines, settle, shareAmounts, splitEvenly, summarizeExpenses, summarizeLines, toBase, budgetStatus, budgetLine, expensesByCurrency, type Line } from './budget'
 
 // Cifre FITTIZIE: servono solo a verificare i calcoli.
 const T1 = { id: 't1' }
@@ -308,5 +308,45 @@ describe('più valute', () => {
       { currency: 'KRW', amount: 18000, base: 11.7 },
       { currency: 'THB', amount: 450, base: null }, // una delle due spese non ha il cambio
     ])
+  })
+})
+
+describe('budgetStatus', () => {
+  it('senza tetto non c\'è nulla da mostrare', () => {
+    expect(budgetStatus(undefined, 100, 200)).toBeNull()
+    expect(budgetStatus(null, 100, 200)).toBeNull()
+    expect(budgetStatus(0, 100, 200)).toBeNull()
+  })
+  it('sotto l\'80 % è normale', () => {
+    const s = budgetStatus(3000, 1200, 2000)!
+    expect(s.state).toBe('ok')
+    expect(s.spentPct).toBe(40)
+    expect(s.plannedPct).toBeCloseTo(66.67, 1)
+    expect(s.left).toBe(1800)
+    expect(s.over).toBe(0)
+  })
+  it('tra l\'80 e il 100 % è attenzione, anche esattamente al tetto', () => {
+    expect(budgetStatus(1000, 800, 0)!.state).toBe('warn')
+    expect(budgetStatus(1000, 1000, 0)!.state).toBe('warn')
+    expect(budgetStatus(1000, 799.99, 0)!.state).toBe('ok')
+  })
+  it('oltre il tetto: superato, con di quanto', () => {
+    const s = budgetStatus(1000, 1120, 900)!
+    expect(s.state).toBe('over')
+    expect(s.over).toBe(120)
+    expect(s.left).toBe(-120)
+    expect(s.spentPct).toBe(100)
+  })
+  it('il previsto oltre il tetto resta sulla barra', () => expect(budgetStatus(1000, 100, 5000)!.plannedPct).toBe(100))
+})
+
+describe('budgetLine', () => {
+  const norm = (t: string) => t.replace(/\u00a0/g, ' ')
+  it('dentro il tetto: quanto resta', () => {
+    const t = norm(budgetLine(budgetStatus(3000, 1200, 0)!, 1200, 3000, 'EUR'))
+    expect(t).toMatch(/^Speso 1\.?200,00 € di 3\.?000,00 € · restano 1\.?800,00 €$/)
+  })
+  it('oltre il tetto: di quanto', () => {
+    expect(norm(budgetLine(budgetStatus(1000, 1120, 0)!, 1120, 1000, 'EUR'))).toContain('sopra il budget')
   })
 })

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
-import { budgetLines, fxOf, logisticsLines, paidFromSections, personBudget, summarizeExpenses, summarizeLines } from '../lib/budget'
+import { budgetLine, budgetLines, budgetStatus, fxOf, logisticsLines, paidFromSections, personBudget, summarizeExpenses, summarizeLines } from '../lib/budget'
 import { useAuth } from '../lib/auth'
 import { progress } from '../lib/checklist'
 import { daysBetween, formatShort } from '../lib/dates'
@@ -33,13 +33,13 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 const longDateIn = (iso: string, timeZone: string) => new Intl.DateTimeFormat('it-IT', { weekday: 'long', day: 'numeric', month: 'long', timeZone }).format(new Date(iso))
 
 /** Scorciatoia a forma di biglietto: cerchio con icona a sinistra, titolo e riga di stato, freccia. */
-function Shortcut({ href, icon, color, title, line, lineTone }: { href: string; icon: preact.ComponentChildren; color: string; title: string; line: string; lineTone?: 'warn' }) {
+function Shortcut({ href, icon, color, title, line, lineTone }: { href: string; icon: preact.ComponentChildren; color: string; title: string; line: string; lineTone?: 'warn' | 'danger' }) {
   return (
     <Link href={href} class="block">
       <Ticket stub={<Disc color={color}>{icon}</Disc>} stubWidth={76}>
         <span class="min-w-0 flex-1">
           <span class="block text-[17px] font-extrabold leading-tight">{title}</span>
-          <span class={`block text-[13px] ${lineTone === 'warn' ? 'font-extrabold text-warn' : 'text-muted'}`}>{line}</span>
+          <span class={`block text-[13px] ${lineTone === 'warn' ? 'font-extrabold text-warn' : lineTone === 'danger' ? 'font-extrabold text-danger' : 'text-muted'}`}>{line}</span>
         </span>
         <ChevronRightIcon size={20} class="mr-2 shrink-0 text-muted" />
       </Ticket>
@@ -101,6 +101,9 @@ export function Oggi() {
   const mine = me ? personBudget(trip, me.id, fx) : null
   const spent = mine ? mine.spent : round2(summarizeExpenses(trip.expenses, trip.travelers, fx).total + paidFromSections(trip, fx).paid)
   const planned = mine ? mine.planned : summarizeLines([...budgetLines(trip.budget), ...logisticsLines(trip)], trip.travelers, fx).planned
+  // con un budget massimo la card mostra lo speso di tutti rispetto al tetto; senza, resta com'è
+  const tripSpent = round2(summarizeExpenses(trip.expenses, trip.travelers, fx).total + paidFromSections(trip, fx).paid)
+  const limitStatus = budgetStatus(trip.budgetLimit, tripSpent, 0)
   const hasFx = !!trip.fxRate && !!trip.localCurrency && trip.localCurrency !== trip.baseCurrency
 
   return (
@@ -238,8 +241,9 @@ export function Oggi() {
             href="/altro/budget"
             icon={<BudgetIcon size={22} />}
             color="var(--ok)"
-            title={mine ? 'Le tue spese' : 'Spese'}
-            line={planned > 0 ? `${formatMoney(spent, trip.baseCurrency)} su ${formatMoney(planned, trip.baseCurrency)}` : `${formatMoney(spent, trip.baseCurrency)} spesi`}
+            title={limitStatus ? 'Spese' : mine ? 'Le tue spese' : 'Spese'}
+            lineTone={limitStatus?.state === 'over' ? 'danger' : limitStatus?.state === 'warn' ? 'warn' : undefined}
+            line={limitStatus && trip.budgetLimit ? budgetLine(limitStatus, tripSpent, trip.budgetLimit, trip.baseCurrency) : planned > 0 ? `${formatMoney(spent, trip.baseCurrency)} su ${formatMoney(planned, trip.baseCurrency)}` : `${formatMoney(spent, trip.baseCurrency)} spesi`}
           />
           {hasFx && (
             <Link href="/altro/budget" class="block" onClick={() => setScrollTarget('cambio')}>
