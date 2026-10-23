@@ -9,12 +9,15 @@ import { dayBookings, dayChecklist, dayExpenses, dayMovements, dayStays } from '
 import { formatMoney, round2 } from '../lib/money'
 import { mapsLinkFor } from '../lib/mapsUrl'
 import { minutesOfDay, sunForDay } from '../lib/sun'
+import { minutesToHHMM, stopsSummary } from '../lib/stopsSummary'
 import { tripToday } from '../lib/today'
+import { readFlag, writeFlag } from '../lib/uiFlag'
 import { useDayRoute } from '../state/dayRoute'
 import { showToast } from '../state/toast'
 import { useForecast } from '../state/forecast'
 import { useTrip, useTrips } from '../state/trip'
 import type { DayItem, Stay } from '../types'
+import { CollapsibleSection } from '../ui/CollapsibleSection'
 import { DayMapPanel } from '../ui/DayMapPanel'
 import { DaySheet, type DaySheetState } from '../ui/DaySheet'
 import { TrashButton } from '../ui/ConfirmDialog'
@@ -29,6 +32,8 @@ import { MODE_LABEL } from '../ui/TransportForm'
 import { TickIcon } from '../ui/Icons'
 import { Tag } from '../ui/Ticket'
 import { WeatherCard } from '../ui/WeatherCard'
+
+const STOPS_OPEN_KEY = 'jp.giorno.tappe.aperta'
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
@@ -85,6 +90,8 @@ export function Giorno({ params }: { params: { id: string } }) {
   const forecast = useForecast(trip)
   const [sheet, setSheet] = useState<DaySheetState>(null)
   const [reordering, setReordering] = useState(false)
+  // «Tappe del giorno»: chiusa di base; si ricorda l'ultima scelta in questo telefono
+  const [stopsOpen, setStopsOpen] = useState(() => readFlag(STOPS_OPEN_KEY) ?? false)
 
   const index = trip.days.findIndex((d) => d.id === params.id)
   const day = trip.days[index]
@@ -196,53 +203,65 @@ export function Giorno({ params }: { params: { id: string } }) {
           )}
         </section>
 
-        {sun && <LightCard date={day.date} city={day.city} sun={sun} nowMin={day.date === today ? minutesOfDay(new Date(), trip.timezone) : null} />}
-
-        <section aria-label="Tappe" class="pt-1.5">
-          {reordering && (
-            <p class="mb-2 rounded-xl bg-accent-soft px-3 py-2 text-xs text-pale">
-              Le tappe con un orario seguono l'orario: per spostarne una, cambia il suo orario. Le altre si spostano con le frecce.
-            </p>
-          )}
-          {day.items.length > 0 ? (
-            <ul class="space-y-3">
-              {day.items.map((item, i) => (
-                <ItemRow
-                  item={item}
-                  n={i + 1}
-                  onMap={stopByItem.has(item.id)}
-                  hint={hintFor(item)}
-                  place={placeLine(item)}
-                  onOpen={reordering ? undefined : () => setSheet({ kind: 'edit-item', day, item })}
-                  onToggleDone={reordering ? undefined : () => void actions.toggleDone(item)}
-                  onDelete={() => actions.remove(item)}
-                  reorder={
-                    reordering
-                      ? {
-                          onUp: i > 0 && canSwap(day.items[i - 1], item) ? () => void actions.move(day.id, item, -1) : undefined,
-                          onDown: i < day.items.length - 1 && canSwap(item, day.items[i + 1]) ? () => void actions.move(day.id, item, 1) : undefined,
-                        }
-                      : undefined
-                  }
-                />
-              ))}
-            </ul>
-          ) : (
-            <p class="rounded-2xl border-2 border-dashed border-line px-4 py-5 text-center text-sm text-muted">Giornata ancora libera: aggiungi le tappe da qui sotto.</p>
-          )}
-          <button
-            type="button"
-            onClick={() => setSheet({ kind: 'new-item', day })}
-            class="mt-4 grid min-h-[52px] w-full place-items-center rounded-[14px] border-2 border-dashed border-accent text-base font-extrabold text-pale"
-          >
-            + Aggiungi tappa
-          </button>
-          {day.items.length > 1 && (
-            <button type="button" aria-pressed={reordering} onClick={() => setReordering(!reordering)} class="mx-auto mt-1 block min-h-11 px-3 text-sm font-extrabold text-muted">
-              {reordering ? 'Fine' : 'Riordina le tappe'}
+        <CollapsibleSection
+          id="tappe-del-giorno"
+          title="Tappe del giorno"
+          summary={stopsSummary(day.items, day.date === today ? minutesToHHMM(minutesOfDay(new Date(), trip.timezone)) : null)}
+          open={stopsOpen || reordering}
+          locked={day.items.length === 0}
+          onToggle={() => {
+            const open = !(stopsOpen || reordering)
+            setStopsOpen(open)
+            if (!open) setReordering(false)
+            writeFlag(STOPS_OPEN_KEY, open)
+          }}
+        >
+            {reordering && (
+              <p class="mb-2 rounded-xl bg-accent-soft px-3 py-2 text-xs text-pale">
+                Le tappe con un orario seguono l'orario: per spostarne una, cambia il suo orario. Le altre si spostano con le frecce.
+              </p>
+            )}
+            {day.items.length > 0 ? (
+              <ul class="space-y-3">
+                {day.items.map((item, i) => (
+                  <ItemRow
+                    item={item}
+                    n={i + 1}
+                    onMap={stopByItem.has(item.id)}
+                    hint={hintFor(item)}
+                    place={placeLine(item)}
+                    onOpen={reordering ? undefined : () => setSheet({ kind: 'edit-item', day, item })}
+                    onToggleDone={reordering ? undefined : () => void actions.toggleDone(item)}
+                    onDelete={() => actions.remove(item)}
+                    reorder={
+                      reordering
+                        ? {
+                            onUp: i > 0 && canSwap(day.items[i - 1], item) ? () => void actions.move(day.id, item, -1) : undefined,
+                            onDown: i < day.items.length - 1 && canSwap(item, day.items[i + 1]) ? () => void actions.move(day.id, item, 1) : undefined,
+                          }
+                        : undefined
+                    }
+                  />
+                ))}
+              </ul>
+            ) : (
+              <p class="rounded-2xl border-2 border-dashed border-line px-4 py-5 text-center text-sm text-muted">Giornata ancora libera: aggiungi le tappe da qui sotto.</p>
+            )}
+            <button
+              type="button"
+              onClick={() => setSheet({ kind: 'new-item', day })}
+              class="mt-4 grid min-h-[52px] w-full place-items-center rounded-[14px] border-2 border-dashed border-accent text-base font-extrabold text-pale"
+            >
+              + Aggiungi tappa
             </button>
-          )}
-        </section>
+            {day.items.length > 1 && (
+              <button type="button" aria-pressed={reordering} onClick={() => setReordering(!reordering)} class="mx-auto mt-1 block min-h-11 px-3 text-sm font-extrabold text-muted">
+                {reordering ? 'Fine' : 'Riordina le tappe'}
+              </button>
+            )}
+        </CollapsibleSection>
+
+        {sun && <LightCard date={day.date} city={day.city} sun={sun} nowMin={day.date === today ? minutesOfDay(new Date(), trip.timezone) : null} />}
 
         <Section title="Spostamenti">
           {movements.length > 0 ? (

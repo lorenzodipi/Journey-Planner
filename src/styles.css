@@ -151,6 +151,26 @@ fieldset {
 }
 .rise { animation: rise 0.35s ease-out both; }
 
+/* sezione chiudibile: l'altezza segue il contenuto (0fr → 1fr), senza misurarlo da JS */
+.jp-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition: grid-template-rows 0.22s cubic-bezier(0.23, 1, 0.32, 1), visibility 0s linear 0.22s;
+}
+.jp-collapse[data-open='true'] {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition: grid-template-rows 0.22s cubic-bezier(0.23, 1, 0.32, 1), visibility 0s;
+}
+.jp-collapse > div {
+  min-height: 0;
+  overflow: hidden;
+  /* margine negativo uguale al riempimento: il bordo del focus non viene tagliato */
+  margin: -4px;
+  padding: 4px;
+}
+
 /* scorrimento orizzontale senza barra (filtri a chip) */
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
