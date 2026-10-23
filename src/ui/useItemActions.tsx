@@ -7,6 +7,7 @@ import { useDeleter } from './useDeleter'
 /** Azioni sulle tappe di un giorno (riordina, segna fatta, elimina con conferma), uguali in "Giorni" e nella pagina del giorno. */
 export function useItemActions(): {
   move: (dayId: string, item: DayItem, step: -1 | 1) => Promise<void>
+  moveTo: (dayId: string, item: DayItem, to: number) => Promise<void>
   toggleDone: (item: DayItem) => Promise<void>
   remove: (item: DayItem) => void
   dialog: ComponentChildren
@@ -16,6 +17,10 @@ export function useItemActions(): {
   return {
     async move(dayId, item, step) {
       const message = await t.moveItem(dayId, item.id, step)
+      if (message) showToast(message)
+    },
+    async moveTo(dayId, item, to) {
+      const message = await t.moveItemTo(dayId, item.id, to)
       if (message) showToast(message)
     },
     async toggleDone(item) {

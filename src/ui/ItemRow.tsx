@@ -1,6 +1,6 @@
 import type { DayItem, ItemKind } from '../types'
 import { TrashButton } from './ConfirmDialog'
-import { PinIcon, TickIcon } from './Icons'
+import { ArrowDownIcon, ArrowUpIcon, GripIcon, PinIcon, TickIcon } from './Icons'
 import { Ticket } from './Ticket'
 
 export const KIND_LABEL: Record<ItemKind, string> = {
@@ -29,11 +29,17 @@ interface Props {
   onToggleDone?: () => void
   /** Cestino in fondo alla riga (chiede conferma chi lo usa). Non compare mentre si riordina. */
   onDelete?: () => void
-  /** Se presente, al posto della spunta compaiono le frecce per riordinare. */
-  reorder?: { onUp?: () => void; onDown?: () => void }
+  /**
+   * Se presente, al posto della spunta compaiono i comandi per riordinare: le frecce (su web; su touch restano
+   * solo per screen reader e tastiera) e, su touch, la maniglia da trascinare (`onGrab`, assente se la tappa ha un orario).
+   */
+  reorder?: { onUp?: () => void; onDown?: () => void; onGrab?: (e: PointerEvent) => void }
+  /** Stile della riga mentre si trascina (spostamento) e se è proprio questa a essere trascinata. */
+  dragStyle?: { transform: string; transition: string }
+  dragging?: boolean
 }
 
-export function ItemRow({ item, n, onMap, hint, place, mapsHref, onOpen, onToggleDone, onDelete, reorder }: Props) {
+export function ItemRow({ item, n, onMap, hint, place, mapsHref, onOpen, onToggleDone, onDelete, reorder, dragStyle, dragging }: Props) {
   const range = item.time && item.endTime ? `${item.time}–${item.endTime}` : ''
   const sub = [KIND_LABEL[item.kind], item.endTime && range, item.note, place].filter(Boolean).join(' · ')
   const stub = item.time ? (
@@ -56,7 +62,10 @@ export function ItemRow({ item, n, onMap, hint, place, mapsHref, onOpen, onToggl
   )
 
   return (
-    <li>
+    <li
+      style={dragStyle}
+      class={dragging ? 'relative z-20 [filter:drop-shadow(0_10px_16px_rgb(0_0_0/0.35))]' : undefined}
+    >
       {hint && (
         <div class="ml-9 flex h-[30px] items-center gap-2.5" aria-hidden="true">
           <i class="h-full border-l-[3px] border-dashed border-line" />
@@ -87,13 +96,27 @@ export function ItemRow({ item, n, onMap, hint, place, mapsHref, onOpen, onToggl
         </div>
 
         {reorder ? (
-          <span class="flex shrink-0">
-            <button type="button" aria-label="Sposta su" disabled={!reorder.onUp} onClick={reorder.onUp} class="grid size-11 place-items-center rounded-full text-lg text-pale disabled:opacity-30">
-              ↑
-            </button>
-            <button type="button" aria-label="Sposta giù" disabled={!reorder.onDown} onClick={reorder.onDown} class="grid size-11 place-items-center rounded-full text-lg text-pale disabled:opacity-30">
-              ↓
-            </button>
+          <span class="flex shrink-0 items-center">
+            <span class="flex pointer-coarse:sr-only">
+              <button type="button" aria-label="Sposta su" disabled={!reorder.onUp} onClick={reorder.onUp} class="grid size-11 place-items-center rounded-full text-pale disabled:opacity-30">
+                <ArrowUpIcon size={18} />
+              </button>
+              <button type="button" aria-label="Sposta giù" disabled={!reorder.onDown} onClick={reorder.onDown} class="grid size-11 place-items-center rounded-full text-pale disabled:opacity-30">
+                <ArrowDownIcon size={18} />
+              </button>
+            </span>
+            {reorder.onGrab && (
+              <button
+                type="button"
+                aria-hidden="true"
+                tabIndex={-1}
+                onPointerDown={reorder.onGrab}
+                class="hidden size-11 cursor-grab touch-none select-none place-items-center rounded-full text-pale pointer-coarse:grid"
+                title={`Trascina «${item.title}»`}
+              >
+                <GripIcon size={20} />
+              </button>
+            )}
           </span>
         ) : (
           onToggleDone && (

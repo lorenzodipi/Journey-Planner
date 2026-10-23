@@ -16,6 +16,7 @@ import {
   faEllipsis,
   faFile,
   faGear,
+  faGripVertical,
   faLandmark,
   faListCheck,
   faLocationDot,
@@ -111,6 +112,9 @@ export const BagIcon = wrap(faBagShopping)
 export const TrainCarIcon = wrap(faTrain)
 export const PinOutIcon = wrap(faMapLocationDot)
 export const PencilIcon = wrap(faPencil)
+export const ArrowUpIcon = wrap(faArrowUp)
+export const ArrowDownIcon = wrap(faArrowDown)
+export const GripIcon = wrap(faGripVertical)
 export const SunriseIcon = wrap(faArrowUp)
 export const SunsetIcon = wrap(faArrowDown)
 export const FilterIcon = wrap(faSliders)

@@ -9,6 +9,7 @@ import { execOp } from '../lib/outboxExec'
 import { countChange } from '../lib/checklist'
 import { applyQueue, checklistEntry, deletedPatch, expenseEntry } from '../lib/outboxLocal'
 import { showToast } from './toast'
+import { planMove } from '../lib/dragOrder'
 import { canSwap, changedPositions, orderItems, positionForNew, renumber } from '../lib/itemOrder'
 import * as api from '../lib/tripApi'
 import * as logistics from '../lib/logisticsApi'
@@ -69,6 +70,10 @@ interface TripsValue {
   createItem: (tripId: string, dayId: string, input: ItemInput) => Result
   updateItem: (id: string, input: ItemInput) => Result
   moveItem: (dayId: string, itemId: string, step: -1 | 1) => Result
+  /** Porta una tappa al posto `to` (trascinamento): una sola richiesta, con le sole posizioni cambiate. */
+  moveItemTo: (dayId: string, itemId: string, to: number) => Result
+  /** Scrive posizioni già calcolate (es. «Ottimizza percorso» e il suo «Annulla»). */
+  setItemPositions: (list: { id: string; position: number }[]) => Result
   setItemDone: (id: string, done: boolean) => Result
   setItemDeleted: (id: string, deleted: boolean) => Result
   createStay: (tripId: string, input: StayInput) => Result
@@ -448,6 +453,12 @@ export function TripProvider({ children }: { children: ComponentChildren }) {
       const changed = changedPositions(items, renumber(next))
       return changed.length === 0 ? null : run(() => api.setItemPositions(changed), ['items'])
     },
+    moveItemTo: async (dayId, itemId, to) => {
+      const items = trips.flatMap((t) => t.days).find((d) => d.id === dayId)?.items ?? []
+      const changed = planMove(items, items.findIndex((i) => i.id === itemId), to)
+      return changed ? run(() => api.setItemPositions(changed), ['items']) : null
+    },
+    setItemPositions: (list) => (list.length === 0 ? Promise.resolve(null) : run(() => api.setItemPositions(list), ['items'])),
     setItemDone: (id, done) => queued('Tappa fatta', [{ k: 'update', table: 'day_items', id, patch: { done } }], { t: 'item.done', id, done }),
     setItemDeleted: (id, deleted) => run(() => api.setItemDeleted(id, deleted), ['items']),
     createStay: (tripId, input) => run(() => logistics.createStay(tripId, input), ['logistics']),

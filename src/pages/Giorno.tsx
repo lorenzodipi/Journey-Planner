@@ -2,6 +2,7 @@ import { useMemo, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
 import { expenseBase, fxOf } from '../lib/budget'
 import { doneCount } from '../lib/checklist'
+import { shiftDirection } from '../lib/dragOrder'
 import { canSwap } from '../lib/itemOrder'
 import { daysBetween, formatDayLong, formatShort } from '../lib/dates'
 import { describeLeg } from '../lib/dayRoute'
@@ -28,6 +29,7 @@ import { MovementIcon } from '../ui/MovementIcon'
 import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
 import { QuantityStepper } from '../ui/QuantityStepper'
 import { useDeleter } from '../ui/useDeleter'
+import { useDragReorder } from '../ui/useDragReorder'
 import { useItemActions } from '../ui/useItemActions'
 import { MODE_LABEL } from '../ui/TransportForm'
 import { TickIcon } from '../ui/Icons'
@@ -97,6 +99,10 @@ export function Giorno({ params }: { params: { id: string } }) {
   const index = trip.days.findIndex((d) => d.id === params.id)
   const day = trip.days[index]
   const route = useDayRoute(trip, day ?? { id: '', date: '', city: '', items: [] })
+  const { listRef, drag, start } = useDragReorder((from, to) => {
+    const item = day?.items[from]
+    return day && item ? actions.moveTo(day.id, item, to) : undefined
+  })
 
   if (!day) {
     return (
@@ -219,11 +225,13 @@ export function Giorno({ params }: { params: { id: string } }) {
         >
             {reordering && (
               <p class="mb-2 rounded-xl bg-accent-soft px-3 py-2 text-xs text-pale">
-                Le tappe con un orario seguono l'orario: per spostarne una, cambia il suo orario. Le altre si spostano con le frecce.
+                Le tappe con un orario seguono l'orario: per spostarne una, cambia il suo orario. Le altre si spostano{' '}
+              <span class="pointer-coarse:hidden">con le frecce.</span>
+              <span class="hidden pointer-coarse:inline">trascinandole dalla maniglia a destra.</span>
               </p>
             )}
             {day.items.length > 0 ? (
-              <ul class="space-y-3">
+              <ul ref={listRef} class="space-y-3">
                 {day.items.map((item, i) => (
                   <ItemRow
                     item={item}
@@ -235,9 +243,18 @@ export function Giorno({ params }: { params: { id: string } }) {
                     onOpen={reordering ? undefined : () => setSheet({ kind: 'edit-item', day, item })}
                     onToggleDone={reordering ? undefined : () => void actions.toggleDone(item)}
                     onDelete={() => actions.remove(item)}
+                    dragging={drag?.from === i}
+                    dragStyle={
+                      drag
+                        ? drag.from === i
+                          ? { transform: `translateY(${drag.dy}px) scale(1.01)`, transition: 'none' }
+                          : { transform: `translateY(${shiftDirection(i, drag.from, drag.to) * drag.step}px)`, transition: 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1)' }
+                        : undefined
+                    }
                     reorder={
                       reordering
                         ? {
+                            onGrab: item.time ? undefined : (e) => start(i, e),
                             onUp: i > 0 && canSwap(day.items[i - 1], item) ? () => void actions.move(day.id, item, -1) : undefined,
                             onDown: i < day.items.length - 1 && canSwap(item, day.items[i + 1]) ? () => void actions.move(day.id, item, 1) : undefined,
                           }
