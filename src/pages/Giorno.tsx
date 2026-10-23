@@ -1,7 +1,9 @@
+import { Fragment, type ComponentChildren } from 'preact'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
 import { expenseBase, fxOf } from '../lib/budget'
 import { doneCount } from '../lib/checklist'
+import { orderSections, type DaySectionKey } from '../lib/daySections'
 import { shiftDirection } from '../lib/dragOrder'
 import { canSwap } from '../lib/itemOrder'
 import { daysBetween, formatDayLong, formatShort } from '../lib/dates'
@@ -104,6 +106,8 @@ export function Giorno({ params }: { params: { id: string } }) {
   const [selectedStop, setSelectedStop] = useState<string | null>(null)
   const [highlightId, setHighlightId] = useState<string | null>(null)
   const timers = useRef<number[]>([])
+  // dove sta il meteo si decide quando si apre il giorno: se la previsione arriva dopo, non fa saltare la pagina
+  const weatherSeen = useRef<{ day: string; hasData: boolean } | null>(null)
   useEffect(() => () => timers.current.forEach((x) => window.clearTimeout(x)), [])
   const { listRef, drag, start } = useDragReorder((from, to) => {
     const item = day?.items[from]
@@ -217,6 +221,231 @@ export function Giorno({ params }: { params: { id: string } }) {
       if (transport) setSheet({ kind: 'edit-transport', transport })
     }
   }
+
+  const weatherNow = forecast.days.some((d) => d.date === day.date)
+  if (weatherSeen.current?.day !== day.id) weatherSeen.current = { day: day.id, hasData: weatherNow }
+  const weatherHasData = weatherSeen.current.hasData
+
+  const sectionNodes: Record<DaySectionKey, ComponentChildren> = {
+    luce: sun ? <LightCard date={day.date} city={day.city} sun={sun} nowMin={day.date === today ? minutesOfDay(new Date(), trip.timezone) : null} /> : null,
+    meteo: (
+      <WeatherCard forecast={forecast} date={day.date} today={today} tripDates={trip.days.map((d) => d.date)} />
+    ),
+    spostamenti: (
+      <Section title="Spostamenti">
+        {movements.length > 0 ? (
+          <ul class="divide-y-2 divide-dashed divide-line">
+            {movements.map((e) => (
+              <li class="flex min-h-14 items-center">
+                <button
+                  type="button"
+                  disabled={!e.ref}
+                  onClick={() => e.ref && openMovement(e.ref)}
+                  aria-label={`Modifica: ${e.title}`}
+                  class="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2 text-left"
+                >
+                <span class="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-white">
+                  <MovementIcon event={e} />
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate font-extrabold">{e.title}</span>
+                  {e.time && (
+                    <span class="block text-sm tabular-nums">
+                      {e.time}
+                      {e.endTime && ` → ${e.endTime}`}
+                    </span>
+                  )}
+                  <span class="block truncate text-xs text-muted">
+                    {[e.mode && MODE_LABEL[e.mode], e.sub].filter(Boolean).join(' · ')}
+                  </span>
+                  {e.flag && <span class="mt-0.5 block"><Tag tone={e.flag.ok ? 'ok' : 'warn'}>{e.flag.text}</Tag></span>}
+                </span>
+                </button>
+                {e.ref?.type === 'transport' && (
+                  <TrashButton
+                    label={`Elimina il trasporto ${e.title}`}
+                    onClick={() => {
+                      const id = (e.ref as { id: string }).id
+                      void del({
+                        title: `Eliminare «${e.title}»?`,
+                        done: 'Trasporto eliminato',
+                        run: () => t.setTransportDeleted(id, true),
+                        undo: () => t.setTransportDeleted(id, false),
+                      })
+                    }}
+                  />
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="py-2 text-sm text-muted">Nessun volo, treno o spostamento in programma per questo giorno.</p>
+        )}
+        {movements.length > 0 && <p class="mt-1 text-xs text-muted">Voli, treni e check-in/out: tocca per modificare. Orari nel fuso di ogni luogo.</p>}
+        <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t-2 border-dashed border-line pt-1">
+          <button type="button" onClick={() => setSheet({ kind: 'new-transport', day })} class="min-h-11 px-3 text-sm font-extrabold text-pale">
+            + Trasporto
+          </button>
+          <Link href="/altro/trasporti" class="inline-flex min-h-11 items-center px-3 text-sm font-extrabold text-muted">
+            Tutti i trasporti
+          </Link>
+        </div>
+      </Section>
+    ),
+    alloggio: (
+      <Section title="Alloggio">
+        {stays.night || stays.checkIn.length > 0 || stays.checkOut.length > 0 ? (
+          <div class="divide-y-2 divide-dashed divide-line">
+            {stays.checkOut.map((s) => <StayCard stay={s} label="Check-out oggi" onEdit={() => setSheet({ kind: 'edit-stay', stay: s })} />)}
+            {stays.checkIn.filter((s) => s.id !== stays.night?.id).map((s) => <StayCard stay={s} label="Check-in oggi" onEdit={() => setSheet({ kind: 'edit-stay', stay: s })} />)}
+            {stays.night && (
+              <StayCard
+                stay={stays.night}
+                label={stays.night.checkIn === day.date ? 'Check-in oggi · dormi qui' : 'Dormi qui'}
+                onEdit={() => setSheet({ kind: 'edit-stay', stay: stays.night as Stay })}
+              />
+            )}
+          </div>
+        ) : (
+          <p class="py-2 text-sm text-muted">Nessun alloggio per questa notte.</p>
+        )}
+        <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t-2 border-dashed border-line pt-1">
+          <button type="button" onClick={() => setSheet({ kind: 'new-stay', day })} class="min-h-11 px-3 text-sm font-extrabold text-pale">
+            + Alloggio
+          </button>
+          <Link href="/altro/alloggi" class="inline-flex min-h-11 items-center px-3 text-sm font-extrabold text-muted">
+            Tutti gli alloggi
+          </Link>
+        </div>
+      </Section>
+    ),
+    spese: (
+      <Section title="Spese del giorno" aside={expenses.length > 0 ? formatMoney(total, trip.baseCurrency) : undefined}>
+        {expenses.length > 0 ? (
+          <ul class="divide-y-2 divide-dashed divide-line">
+            {expenses.map((e) => {
+              const inBase = expenseBase(e, fx)
+              return (
+                <li class="flex items-center">
+                  <button type="button" onClick={() => setSheet({ kind: 'edit-expense', expense: e })} class="flex min-h-12 min-w-0 flex-1 items-center gap-3 py-2 text-left">
+                    <span class="min-w-0 flex-1">
+                      <span class="block truncate font-extrabold">{e.label}</span>
+                      <span class="block truncate text-xs text-muted">
+                        {[e.category, e.paidBy && payer.get(e.paidBy) && `pagato da ${payer.get(e.paidBy)}`].filter(Boolean).join(' · ')}
+                      </span>
+                    </span>
+                    <span class="shrink-0 text-right">
+                      <span class="block font-extrabold">{formatMoney(e.amount, e.currency)}</span>
+                      {e.currency !== trip.baseCurrency && inBase !== null && (
+                        <span class="block text-xs text-muted">≈ {formatMoney(inBase, trip.baseCurrency)}</span>
+                      )}
+                    </span>
+                  </button>
+                  <TrashButton
+                    label={`Elimina la spesa ${e.label}`}
+                    onClick={() =>
+                      void del({
+                        title: `Eliminare la spesa «${e.label}»?`,
+                        text: 'Sparisce dai totali della categoria e dai conti tra voi. Puoi annullare subito dopo.',
+                        done: 'Spesa eliminata',
+                        run: () => t.setExpenseDeleted(e.id, true),
+                        undo: () => t.setExpenseDeleted(e.id, false),
+                      })
+                    }
+                  />
+                </li>
+              )
+            })}
+          </ul>
+        ) : (
+          <p class="py-2 text-sm text-muted">Nessuna spesa registrata per questo giorno.</p>
+        )}
+        <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t-2 border-dashed border-line pt-1">
+          <button type="button" onClick={() => setSheet({ kind: 'new-expense', day })} class="min-h-11 px-3 text-sm font-extrabold text-pale">
+            + Spesa
+          </button>
+          <Link href="/altro/spese" class="inline-flex min-h-11 items-center px-3 text-sm font-extrabold text-muted">
+            Tutte le spese
+          </Link>
+        </div>
+      </Section>
+    ),
+    prenotazioni:
+      bookings.length > 0 || todos.length > 0 ? (
+      <Section title="Prenotazioni e da fare">
+        {bookings.length > 0 && (
+          <ul class="divide-y-2 divide-dashed divide-line" aria-label="Prenotazioni valide oggi">
+            {bookings.map((b) => (
+              <li class="flex items-center">
+                <button type="button" onClick={() => setSheet({ kind: 'edit-booking', booking: b })} aria-label={`Modifica ${b.title}`} class="block min-h-12 min-w-0 flex-1 py-2 text-left">
+                  <span class="block truncate font-extrabold">{b.title}</span>
+                  <span class="block truncate text-xs text-muted">{b.code ? `Codice ${b.code}` : 'Prenotazione'}</span>
+                </button>
+                <TrashButton
+                  label={`Elimina ${b.title}`}
+                  onClick={() =>
+                    void del({
+                      title: `Eliminare «${b.title}»?`,
+                      done: 'Prenotazione eliminata',
+                      run: () => t.setBookingDeleted(b.id, true),
+                      undo: () => t.setBookingDeleted(b.id, false),
+                    })
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+        {todos.length > 0 && (
+          <ul class={`divide-y-2 divide-dashed divide-line ${bookings.length > 0 ? 'mt-2 border-t-2 border-dashed border-line' : ''}`} aria-label="Da fare oggi">
+            {todos.map((c) => (
+              <li class="flex items-center">
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={c.done}
+                  aria-label={`${c.done ? 'Da rifare' : 'Fatto'}: ${c.text}`}
+                  onClick={async () => {
+                    const message = await t.setChecklistDone(c.id, !c.done)
+                    if (message) showToast(message)
+                  }}
+                  class="grid h-11 w-11 shrink-0 place-items-center"
+                >
+                  <span class={`grid h-6 w-6 place-items-center rounded-md border-2 ${c.done ? 'border-accent bg-accent text-accent-ink' : 'border-line'}`}>
+                    {c.done && <TickIcon size={14} />}
+                  </span>
+                </button>
+                <button type="button" onClick={() => setSheet({ kind: 'edit-checklist', item: c })} class={`min-h-12 min-w-0 flex-1 py-2 text-left text-sm ${c.done ? 'text-muted line-through' : ''}`}>
+                  {c.text}
+                </button>
+                {(c.quantity ?? 1) > 1 && (
+                  <QuantityStepper
+                    label={c.text}
+                    have={doneCount(c)}
+                    total={c.quantity as number}
+                    onChange={async (n) => {
+                      const message = await t.setChecklistCount(c.id, n)
+                      if (message) showToast(message)
+                    }}
+                  />
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+      ) : null,
+  }
+
+  // sezioni sotto le tappe: prima quelle con dati, in fondo le vuote
+  const sectionOrder = orderSections({
+    luce: Boolean(sun),
+    meteo: weatherHasData,
+    spostamenti: movements.length > 0,
+    alloggio: Boolean(stays.night || stays.checkIn.length > 0 || stays.checkOut.length > 0),
+    spese: expenses.length > 0,
+    prenotazioni: bookings.length > 0 || todos.length > 0,
+  })
 
   return (
     <div class="space-y-3.5 pb-4">
@@ -366,210 +595,9 @@ export function Giorno({ params }: { params: { id: string } }) {
             )}
         </CollapsibleSection>
 
-        {sun && <LightCard date={day.date} city={day.city} sun={sun} nowMin={day.date === today ? minutesOfDay(new Date(), trip.timezone) : null} />}
-
-        <Section title="Spostamenti">
-          {movements.length > 0 ? (
-            <ul class="divide-y-2 divide-dashed divide-line">
-              {movements.map((e) => (
-                <li class="flex min-h-14 items-center">
-                  <button
-                    type="button"
-                    disabled={!e.ref}
-                    onClick={() => e.ref && openMovement(e.ref)}
-                    aria-label={`Modifica: ${e.title}`}
-                    class="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2 text-left"
-                  >
-                  <span class="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-white">
-                    <MovementIcon event={e} />
-                  </span>
-                  <span class="min-w-0 flex-1">
-                    <span class="block truncate font-extrabold">{e.title}</span>
-                    {e.time && (
-                      <span class="block text-sm tabular-nums">
-                        {e.time}
-                        {e.endTime && ` → ${e.endTime}`}
-                      </span>
-                    )}
-                    <span class="block truncate text-xs text-muted">
-                      {[e.mode && MODE_LABEL[e.mode], e.sub].filter(Boolean).join(' · ')}
-                    </span>
-                    {e.flag && <span class="mt-0.5 block"><Tag tone={e.flag.ok ? 'ok' : 'warn'}>{e.flag.text}</Tag></span>}
-                  </span>
-                  </button>
-                  {e.ref?.type === 'transport' && (
-                    <TrashButton
-                      label={`Elimina il trasporto ${e.title}`}
-                      onClick={() => {
-                        const id = (e.ref as { id: string }).id
-                        void del({
-                          title: `Eliminare «${e.title}»?`,
-                          done: 'Trasporto eliminato',
-                          run: () => t.setTransportDeleted(id, true),
-                          undo: () => t.setTransportDeleted(id, false),
-                        })
-                      }}
-                    />
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p class="py-2 text-sm text-muted">Nessun volo, treno o spostamento in programma per questo giorno.</p>
-          )}
-          {movements.length > 0 && <p class="mt-1 text-xs text-muted">Voli, treni e check-in/out: tocca per modificare. Orari nel fuso di ogni luogo.</p>}
-          <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t-2 border-dashed border-line pt-1">
-            <button type="button" onClick={() => setSheet({ kind: 'new-transport', day })} class="min-h-11 px-3 text-sm font-extrabold text-pale">
-              + Trasporto
-            </button>
-            <Link href="/altro/trasporti" class="inline-flex min-h-11 items-center px-3 text-sm font-extrabold text-muted">
-              Tutti i trasporti
-            </Link>
-          </div>
-        </Section>
-
-        <Section title="Alloggio">
-          {stays.night || stays.checkIn.length > 0 || stays.checkOut.length > 0 ? (
-            <div class="divide-y-2 divide-dashed divide-line">
-              {stays.checkOut.map((s) => <StayCard stay={s} label="Check-out oggi" onEdit={() => setSheet({ kind: 'edit-stay', stay: s })} />)}
-              {stays.checkIn.filter((s) => s.id !== stays.night?.id).map((s) => <StayCard stay={s} label="Check-in oggi" onEdit={() => setSheet({ kind: 'edit-stay', stay: s })} />)}
-              {stays.night && (
-                <StayCard
-                  stay={stays.night}
-                  label={stays.night.checkIn === day.date ? 'Check-in oggi · dormi qui' : 'Dormi qui'}
-                  onEdit={() => setSheet({ kind: 'edit-stay', stay: stays.night as Stay })}
-                />
-              )}
-            </div>
-          ) : (
-            <p class="py-2 text-sm text-muted">Nessun alloggio per questa notte.</p>
-          )}
-          <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t-2 border-dashed border-line pt-1">
-            <button type="button" onClick={() => setSheet({ kind: 'new-stay', day })} class="min-h-11 px-3 text-sm font-extrabold text-pale">
-              + Alloggio
-            </button>
-            <Link href="/altro/alloggi" class="inline-flex min-h-11 items-center px-3 text-sm font-extrabold text-muted">
-              Tutti gli alloggi
-            </Link>
-          </div>
-        </Section>
-
-        <WeatherCard forecast={forecast} date={day.date} today={today} tripDates={trip.days.map((d) => d.date)} />
-
-        <Section title="Spese del giorno" aside={expenses.length > 0 ? formatMoney(total, trip.baseCurrency) : undefined}>
-          {expenses.length > 0 ? (
-            <ul class="divide-y-2 divide-dashed divide-line">
-              {expenses.map((e) => {
-                const inBase = expenseBase(e, fx)
-                return (
-                  <li class="flex items-center">
-                    <button type="button" onClick={() => setSheet({ kind: 'edit-expense', expense: e })} class="flex min-h-12 min-w-0 flex-1 items-center gap-3 py-2 text-left">
-                      <span class="min-w-0 flex-1">
-                        <span class="block truncate font-extrabold">{e.label}</span>
-                        <span class="block truncate text-xs text-muted">
-                          {[e.category, e.paidBy && payer.get(e.paidBy) && `pagato da ${payer.get(e.paidBy)}`].filter(Boolean).join(' · ')}
-                        </span>
-                      </span>
-                      <span class="shrink-0 text-right">
-                        <span class="block font-extrabold">{formatMoney(e.amount, e.currency)}</span>
-                        {e.currency !== trip.baseCurrency && inBase !== null && (
-                          <span class="block text-xs text-muted">≈ {formatMoney(inBase, trip.baseCurrency)}</span>
-                        )}
-                      </span>
-                    </button>
-                    <TrashButton
-                      label={`Elimina la spesa ${e.label}`}
-                      onClick={() =>
-                        void del({
-                          title: `Eliminare la spesa «${e.label}»?`,
-                          text: 'Sparisce dai totali della categoria e dai conti tra voi. Puoi annullare subito dopo.',
-                          done: 'Spesa eliminata',
-                          run: () => t.setExpenseDeleted(e.id, true),
-                          undo: () => t.setExpenseDeleted(e.id, false),
-                        })
-                      }
-                    />
-                  </li>
-                )
-              })}
-            </ul>
-          ) : (
-            <p class="py-2 text-sm text-muted">Nessuna spesa registrata per questo giorno.</p>
-          )}
-          <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t-2 border-dashed border-line pt-1">
-            <button type="button" onClick={() => setSheet({ kind: 'new-expense', day })} class="min-h-11 px-3 text-sm font-extrabold text-pale">
-              + Spesa
-            </button>
-            <Link href="/altro/spese" class="inline-flex min-h-11 items-center px-3 text-sm font-extrabold text-muted">
-              Tutte le spese
-            </Link>
-          </div>
-        </Section>
-
-        {(bookings.length > 0 || todos.length > 0) && (
-          <Section title="Prenotazioni e da fare">
-            {bookings.length > 0 && (
-              <ul class="divide-y-2 divide-dashed divide-line" aria-label="Prenotazioni valide oggi">
-                {bookings.map((b) => (
-                  <li class="flex items-center">
-                    <button type="button" onClick={() => setSheet({ kind: 'edit-booking', booking: b })} aria-label={`Modifica ${b.title}`} class="block min-h-12 min-w-0 flex-1 py-2 text-left">
-                      <span class="block truncate font-extrabold">{b.title}</span>
-                      <span class="block truncate text-xs text-muted">{b.code ? `Codice ${b.code}` : 'Prenotazione'}</span>
-                    </button>
-                    <TrashButton
-                      label={`Elimina ${b.title}`}
-                      onClick={() =>
-                        void del({
-                          title: `Eliminare «${b.title}»?`,
-                          done: 'Prenotazione eliminata',
-                          run: () => t.setBookingDeleted(b.id, true),
-                          undo: () => t.setBookingDeleted(b.id, false),
-                        })
-                      }
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-            {todos.length > 0 && (
-              <ul class={`divide-y-2 divide-dashed divide-line ${bookings.length > 0 ? 'mt-2 border-t-2 border-dashed border-line' : ''}`} aria-label="Da fare oggi">
-                {todos.map((c) => (
-                  <li class="flex items-center">
-                    <button
-                      type="button"
-                      role="checkbox"
-                      aria-checked={c.done}
-                      aria-label={`${c.done ? 'Da rifare' : 'Fatto'}: ${c.text}`}
-                      onClick={async () => {
-                        const message = await t.setChecklistDone(c.id, !c.done)
-                        if (message) showToast(message)
-                      }}
-                      class="grid h-11 w-11 shrink-0 place-items-center"
-                    >
-                      <span class={`grid h-6 w-6 place-items-center rounded-md border-2 ${c.done ? 'border-accent bg-accent text-accent-ink' : 'border-line'}`}>
-                        {c.done && <TickIcon size={14} />}
-                      </span>
-                    </button>
-                    <button type="button" onClick={() => setSheet({ kind: 'edit-checklist', item: c })} class={`min-h-12 min-w-0 flex-1 py-2 text-left text-sm ${c.done ? 'text-muted line-through' : ''}`}>
-                      {c.text}
-                    </button>
-                    {(c.quantity ?? 1) > 1 && (
-                      <QuantityStepper
-                        label={c.text}
-                        have={doneCount(c)}
-                        total={c.quantity as number}
-                        onChange={async (n) => {
-                          const message = await t.setChecklistCount(c.id, n)
-                          if (message) showToast(message)
-                        }}
-                      />
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Section>
-        )}
+        {sectionOrder.map((k) => (
+          <Fragment key={k}>{sectionNodes[k]}</Fragment>
+        ))}
       </div>
 
       {actions.dialog}
