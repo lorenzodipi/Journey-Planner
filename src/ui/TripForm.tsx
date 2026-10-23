@@ -13,6 +13,7 @@ import {
 } from '../lib/tripForm'
 import type { ThemeName, Trip } from '../types'
 import { FormError, PrimaryButton, TextField } from './Field'
+import { CurrencySelect } from './CurrencySelect'
 import { ChevronDownIcon } from './Icons'
 import { Select } from './Select'
 import { timezoneOptions } from '../lib/timezones'
@@ -256,8 +257,8 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
             options={timezoneOptions(timezone)}
           />
           <div class="grid grid-cols-2 gap-3">
-            <TextField label="Valuta base" value={baseCurrency} onInput={setBaseCurrency} maxLength={3} />
-            <TextField label="Valuta locale" value={localCurrency} onInput={setLocalCurrency} maxLength={3} />
+            <CurrencySelect label="Valuta base" value={baseCurrency} onChange={setBaseCurrency} />
+            <CurrencySelect label="Valuta locale" value={localCurrency} onChange={setLocalCurrency} optional />
           </div>
         </div>
       </details>
