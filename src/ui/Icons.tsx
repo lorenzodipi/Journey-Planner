@@ -13,7 +13,8 @@ import {
   faCloud,
   faCopy,
   faDownload,
-  faEllipsis,
+  faCompass,
+  faGrip,
   faFile,
   faGear,
   faGripVertical,
@@ -74,7 +75,10 @@ export const CalendarIcon = wrap(faCalendarDays)
 export const ClockIcon = wrap(faClock)
 export const MapIcon = wrap(faMap)
 export const PinIcon = wrap(faLocationDot)
-export const MoreIcon = wrap(faEllipsis)
+/** Scheda «Oggi» del menu: una bussola, che non si confonde con l'ingranaggio delle impostazioni. */
+export const TodayIcon = wrap(faCompass)
+/** Scheda «Altro» del menu: una griglia di sezioni. */
+export const SectionsIcon = wrap(faGrip)
 export const PlaneIcon = wrap(faPlane)
 export const TrainIcon = wrap(faTrain)
 export const MetroIcon = wrap(faTrainSubway)

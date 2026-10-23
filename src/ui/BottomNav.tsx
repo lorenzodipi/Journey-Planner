@@ -1,12 +1,12 @@
 import { Link, useLocation } from 'wouter-preact'
-import { CalendarIcon, MapIcon, MoreIcon, PinIcon, SunIcon } from './Icons'
+import { CalendarIcon, MapIcon, PinIcon, SectionsIcon, TodayIcon } from './Icons'
 
 const tabs = [
-  { href: '/', label: 'Oggi', Icon: SunIcon },
+  { href: '/', label: 'Oggi', Icon: TodayIcon },
   { href: '/giorni', label: 'Giorni', Icon: CalendarIcon },
   { href: '/mappa', label: 'Mappa', Icon: MapIcon },
   { href: '/luoghi', label: 'Luoghi', Icon: PinIcon },
-  { href: '/altro', label: 'Altro', Icon: MoreIcon },
+  { href: '/altro', label: 'Altro', Icon: SectionsIcon },
 ]
 
 /** Barra a pillola che galleggia in basso: la scheda attiva mostra anche il nome. */
