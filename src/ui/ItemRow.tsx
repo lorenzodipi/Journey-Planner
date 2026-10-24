@@ -1,7 +1,8 @@
 import type { DayItem, ItemKind } from '../types'
 import { formatDuration } from '../lib/duration'
 import { TrashButton } from './ConfirmDialog'
-import { ArrowDownIcon, ArrowUpIcon, GripIcon, PinIcon, TickIcon } from './Icons'
+import { ArrowDownIcon, ArrowUpIcon, GripIcon, TickIcon } from './Icons'
+import { MapsPill } from './MapsPill'
 import { Ticket } from './Ticket'
 
 export const KIND_LABEL: Record<ItemKind, string> = {
@@ -88,16 +89,9 @@ export function ItemRow({ item, n, onMap, hint, place, duration, mapsHref, onOpe
             <div class="flex min-h-11 min-w-0 items-center">{body}</div>
           )}
           {mapsHref && !reorder && (
-            <a
-              href={mapsHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Apri «${item.title}» in Maps`}
-              class="-mt-1 inline-flex min-h-11 items-center gap-1.5 pr-3 text-sm font-extrabold text-pale"
-            >
-              <PinIcon size={14} />
-              Apri in Maps
-            </a>
+            <div class="pb-1 pt-0.5">
+              <MapsPill href={mapsHref} label={item.title} text="Maps" compact />
+            </div>
           )}
         </div>
 

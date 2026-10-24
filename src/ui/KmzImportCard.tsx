@@ -109,7 +109,7 @@ export function KmzImportCard() {
       )}
 
       {plan && content && (
-        <div class="mt-3 space-y-3 rounded-2xl border-2 border-line bg-bg p-4">
+        <div class="mt-3 space-y-3 rounded-[20px] border border-hairline bg-bg p-4">
           <p class="text-sm text-muted">
             <span class="font-extrabold text-ink">{fileName}</span> · {plural(content.points.length, 'luogo', 'luoghi')}
             {content.skipped > 0 && ` (${plural(content.skipped, 'linea o area ignorata', 'linee o aree ignorate')})`}

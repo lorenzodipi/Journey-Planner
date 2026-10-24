@@ -40,14 +40,14 @@ export function CollapsibleSection({
   return (
     <section aria-label={title} class="rise">
       {locked ? (
-        <div class="flex min-h-14 items-center gap-2 rounded-2xl border-2 border-line bg-surface py-2 pl-4 pr-4">{head}</div>
+        <div class="flex min-h-14 items-center gap-2 rounded-[20px] border border-hairline bg-surface py-2 pl-4 pr-4">{head}</div>
       ) : (
         <button
           type="button"
           aria-expanded={shown}
           aria-controls={id}
           onClick={onToggle}
-          class="flex min-h-14 w-full items-center gap-2 rounded-2xl border-2 border-line bg-surface py-2 pl-4 pr-2 text-left"
+          class="flex min-h-14 w-full items-center gap-2 rounded-[20px] border border-hairline bg-surface py-2 pl-4 pr-2 text-left"
         >
           {head}
         </button>

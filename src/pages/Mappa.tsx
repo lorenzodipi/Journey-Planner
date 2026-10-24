@@ -124,7 +124,7 @@ export function Mappa() {
             placeholder="Cerca sulla mappa"
             aria-label="Cerca sulla mappa"
             onInput={(e) => setText(e.currentTarget.value)}
-            class="min-h-[52px] w-full rounded-2xl border-2 border-line bg-bg pl-11 pr-4 text-base shadow-[0_6px_16px_rgb(0_0_0/0.35)]"
+            class="min-h-[52px] w-full rounded-[20px] border border-hairline bg-bg pl-11 pr-4 text-base shadow-[0_6px_16px_rgb(0_0_0/0.35)]"
           />
         </label>
         <div class="no-scrollbar pointer-events-auto flex items-center gap-2 overflow-x-auto">
@@ -161,7 +161,7 @@ export function Mappa() {
 
       {withCoords.length === 0 && (
         <div class="pointer-events-none absolute inset-x-3.5 z-10" style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}>
-          <div class="rounded-2xl border-2 border-line bg-bg px-4 py-3 shadow-[0_6px_16px_rgb(0_0_0/0.35)]">
+          <div class="rounded-[20px] border border-hairline bg-bg px-4 py-3 shadow-[0_6px_16px_rgb(0_0_0/0.35)]">
             <p class="text-base font-extrabold">Nessun luogo con posizione</p>
             <p class="mt-0.5 text-sm text-muted">Aggiungi luoghi dalla scheda Luoghi: cercandoli per nome o incollando un link di Google Maps, compariranno qui.</p>
           </div>
@@ -169,7 +169,7 @@ export function Mappa() {
       )}
 
       {visible.length === 0 && withCoords.length > 0 && (
-        <p class="pointer-events-none absolute inset-x-6 z-10 rounded-2xl border-2 border-line bg-bg px-4 py-3 text-center text-sm text-muted" style={{ top: 'calc(8.75rem + env(safe-area-inset-top))' }}>
+        <p class="pointer-events-none absolute inset-x-6 z-10 rounded-[20px] border border-hairline bg-bg px-4 py-3 text-center text-sm text-muted" style={{ top: 'calc(8.75rem + env(safe-area-inset-top))' }}>
           Nessun luogo con questi filtri.
         </p>
       )}

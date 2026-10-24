@@ -65,7 +65,7 @@ export function FxCard({ trip, onEdit }: Props) {
   return (
     <Card class="px-4 py-3.5">
       {header}
-      <ul class="mt-2 flex border-t-2 border-dashed border-line text-sm" aria-label={`Esempi di cambio da ${base} a ${local}`}>
+      <ul class="mt-2 flex border-t border-hairline text-sm" aria-label={`Esempi di cambio da ${base} a ${local}`}>
         {ex.map((x, i) => (
           <li class={`flex min-h-11 flex-1 items-center justify-between ${i === 0 ? 'border-r-2 border-dashed border-line pr-3' : 'pl-3'}`}>
             <span class="text-muted">{formatMoney(x.base, base)}</span>
@@ -89,7 +89,7 @@ export function FxCard({ trip, onEdit }: Props) {
                 setSide('base')
                 setRaw(e.currentTarget.value)
               }}
-              class="min-h-12 w-full rounded-[14px] border-2 border-line bg-surface px-3.5 text-base"
+              class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-3.5 text-base"
             />
           </label>
           <label class="block">
@@ -104,7 +104,7 @@ export function FxCard({ trip, onEdit }: Props) {
                 setSide('local')
                 setRaw(e.currentTarget.value)
               }}
-              class="min-h-12 w-full rounded-[14px] border-2 border-line bg-surface px-3.5 text-base"
+              class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-3.5 text-base"
             />
           </label>
         </div>
@@ -160,7 +160,7 @@ function MultiFxCard({ trip, onEdit, extras, picked, onPick, side, setSide, raw,
       </div>
       <ul class="mt-1">
         {rows.map((r, i) => (
-          <li key={r.code} class={`flex min-h-12 items-center gap-3 ${i > 0 ? 'border-t-2 border-dashed border-line' : ''}`}>
+          <li key={r.code} class={`flex min-h-12 items-center gap-3 ${i > 0 ? 'border-t border-hairline' : ''}`}>
             <span class="w-7 shrink-0 text-center text-xl">{currencySymbol(r.code)}</span>
             <span class="min-w-0 flex-1 font-display text-[19px] font-extrabold leading-tight tracking-[-0.5px]">
               {r.rate ? `1 ${currencySymbol(base)} = ${formatRateNumber(localPerBase(r.rate))} ${currencySymbol(r.code)}` : `Manca il cambio ${r.code}`}
@@ -200,7 +200,7 @@ function MultiFxCard({ trip, onEdit, extras, picked, onPick, side, setSide, raw,
                   setSide('base')
                   setRaw(e.currentTarget.value)
                 }}
-                class="min-h-12 w-full rounded-[14px] border-2 border-line bg-surface px-3.5 text-base"
+                class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-3.5 text-base"
               />
             </label>
             <label class="block">
@@ -215,7 +215,7 @@ function MultiFxCard({ trip, onEdit, extras, picked, onPick, side, setSide, raw,
                   setSide('local')
                   setRaw(e.currentTarget.value)
                 }}
-                class="min-h-12 w-full rounded-[14px] border-2 border-line bg-surface px-3.5 text-base"
+                class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-3.5 text-base"
               />
             </label>
           </div>

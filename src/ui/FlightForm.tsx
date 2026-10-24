@@ -126,7 +126,7 @@ export function FlightForm({ trip, initial, onSubmit, onDelete, onDone }: Props)
 
       <div class="space-y-3">
         {legs.map((l, i) => (
-          <fieldset key={l.key} class="space-y-3 rounded-2xl border-2 border-line p-3">
+          <fieldset key={l.key} class="space-y-3 rounded-[20px] border border-hairline p-3">
             <legend class="px-1 text-sm font-extrabold">Tratta {i + 1}</legend>
             <div class="grid grid-cols-3 gap-3">
               <TextField label="Da" value={l.from} onInput={(v) => setAirport(l, 'from', v)} placeholder="MXP" autoComplete="off" />

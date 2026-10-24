@@ -50,7 +50,7 @@ export function DatePicker({ label, value, onInput, min, max, optional = false }
         aria-expanded={open}
         aria-label={`${label}: ${isYmd(value) ? longDay(value) : 'nessuna data'}`}
         onClick={show}
-        class="flex min-h-12 w-full items-center gap-2 rounded-[14px] border-2 border-line bg-bg px-3.5 text-left text-base"
+        class="flex min-h-12 w-full items-center gap-2 rounded-xl border-[1.5px] border-line bg-surface px-3.5 text-left text-base"
       >
         <span class={`min-w-0 flex-1 truncate ${isYmd(value) ? '' : 'text-muted/70'}`}>{isYmd(value) ? shortDay(value) : 'Scegli la data'}</span>
         <CalendarIcon size={18} class="shrink-0 text-muted" />

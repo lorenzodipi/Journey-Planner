@@ -24,7 +24,7 @@ export function LinkAccount({ onSubmit, onDone }: Props) {
   }
 
   return (
-    <form class="space-y-3 rounded-2xl border-2 border-line p-4" onSubmit={submit} noValidate>
+    <form class="space-y-3 rounded-[20px] border border-hairline p-4" onSubmit={submit} noValidate>
       <h3 class="font-extrabold">Collega a un account</h3>
       <p class="text-sm text-muted">
         Questa persona non ha ancora un account collegato. Scrivi la sua email: le spese e le voci già assegnate restano com'è.

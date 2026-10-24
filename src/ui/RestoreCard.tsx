@@ -51,7 +51,7 @@ function Candidate({ item, defaultTitle, onDone }: { item: RestorableTrip; defau
   }
 
   return (
-    <form onSubmit={submit} class="space-y-3 rounded-2xl border-2 border-line bg-bg p-4">
+    <form onSubmit={submit} class="space-y-3 rounded-[20px] border border-hairline bg-bg p-4">
       <div>
         <p class="font-extrabold">{trip.title}</p>
         <p class="text-sm text-muted">

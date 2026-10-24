@@ -6,6 +6,37 @@ import { useTrips } from '../state/trip'
 import { SecondaryButton } from '../ui/Field'
 import { Card, PageHeader } from '../ui/PageHeader'
 import { RestoreCard } from '../ui/RestoreCard'
+import { useThemePref, type ThemePref } from '../lib/theme'
+
+const THEMES: { value: ThemePref; label: string }[] = [
+  { value: 'system', label: 'Sistema' },
+  { value: 'light', label: 'Chiaro' },
+  { value: 'dark', label: 'Scuro' },
+]
+
+/** Aspetto dell'app: segue il telefono o resta sempre chiaro/scuro. Vale solo su questo dispositivo. */
+function AppearanceCard() {
+  const [pref, setPref] = useThemePref()
+  return (
+    <Card>
+      <h2 class="font-display text-xl">Aspetto</h2>
+      <p class="mt-1 text-[13px] leading-snug text-muted">Tema chiaro o scuro. Con «Sistema» l'app segue le impostazioni del telefono.</p>
+      <div role="radiogroup" aria-label="Aspetto dell'app" class="mt-3 flex gap-1 rounded-full bg-surface-2 p-1">
+        {THEMES.map((o) => (
+          <button
+            type="button"
+            role="radio"
+            aria-checked={pref === o.value}
+            onClick={() => setPref(o.value)}
+            class={`h-11 flex-1 touch-manipulation rounded-full text-sm font-semibold ${pref === o.value ? 'bg-accent text-accent-ink' : 'text-muted'}`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </Card>
+  )
+}
 
 const time = (ms: number) =>
   new Date(ms).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -43,6 +74,8 @@ export function Account() {
     <>
       <PageHeader title="Impostazioni account" subtitle="Valgono per tutti i tuoi viaggi" back={{ href: '/altro', label: 'Altro' }} />
       <div class="space-y-3.5 px-5 pb-28">
+        <AppearanceCard />
+
         <Card>
           <h2 class="font-display text-lg font-extrabold">Esporta tutti i viaggi</h2>
           <p class="mt-1 text-[13px] leading-snug text-muted">
@@ -61,15 +94,15 @@ export function Account() {
         <Card>
           <h2 class="font-display mb-1.5 text-lg font-extrabold">Su questo telefono</h2>
           <dl class="text-sm">
-            <div class="flex min-h-11 items-center justify-between gap-3 border-t-2 border-dashed border-line">
+            <div class="flex min-h-11 items-center justify-between gap-3 border-t border-hairline">
               <dt class="text-muted">Ultimo aggiornamento dei dati</dt>
               <dd class="font-extrabold">{savedAt ? time(savedAt) : '—'}</dd>
             </div>
-            <div class="flex min-h-11 items-center justify-between gap-3 border-t-2 border-dashed border-line">
+            <div class="flex min-h-11 items-center justify-between gap-3 border-t border-hairline">
               <dt class="text-muted">Modifiche da inviare</dt>
               <dd class="font-extrabold">{t.pending}</dd>
             </div>
-            <div class="flex min-h-11 items-center justify-between gap-3 border-t-2 border-dashed border-line">
+            <div class="flex min-h-11 items-center justify-between gap-3 border-t border-hairline">
               <dt class="text-muted">Versione dell'app</dt>
               <dd class="font-extrabold">{build ? time(Date.parse(build)) : 'sviluppo'}</dd>
             </div>

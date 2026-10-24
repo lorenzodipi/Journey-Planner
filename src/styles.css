@@ -3,20 +3,25 @@
 @import "./fonts/fonts.css";
 
 /* ---------------------------------------------------------------------------
-   Design token: tema "Eki Notte" (blu notte da stazione, biglietti e tabelloni).
+   Design token: «Faraway Azzurro» (Design System v3), chiaro e scuro.
    Le classi Tailwind usano questi token (bg-bg, bg-surface, text-ink, text-muted,
-   border-line, bg-accent, text-pale, ...). Il tema è uno solo e scuro.
+   border-line, bg-accent, text-pale, ...). Il tema si sceglie in Impostazioni account
+   (Sistema / Chiaro / Scuro) e vive nell'attributo data-theme di <html>.
    --------------------------------------------------------------------------- */
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-high: var(--surface-high);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
+  --color-hairline: var(--hairline);
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-solid: var(--accent-solid);
+  --color-on-accent-solid: var(--on-accent-solid);
   --color-pale: var(--pale);
   --color-secondary: var(--secondary);
   --color-ok: var(--ok);
@@ -25,31 +30,65 @@
   --color-paper: var(--paper);
   --color-paper-ink: var(--paper-ink);
   --color-paper-muted: var(--paper-muted);
-  --radius-card: 1rem;
-  --font-sans: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --color-tinta-azzurro: var(--tinta-azzurro);
+  --color-tinta-menta: var(--tinta-menta);
+  --color-tinta-limone: var(--tinta-limone);
+  --color-tinta-lavanda: var(--tinta-lavanda);
+  --color-tinta-confetto: var(--tinta-confetto);
+  --color-on-tinta: var(--on-tinta);
+  --color-on-tinta-muted: var(--on-tinta-muted);
+  --radius-card: 1.25rem;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Inter e Fredoka sono più larghi di Archivo: «extrabold» diventa 700 e «bold» 600 */
+  --font-weight-bold: 600;
+  --font-weight-extrabold: 700;
 }
 
 :root {
-  color-scheme: dark;
-  --bg: #0b1b33;
-  --surface: #12284a;
-  --surface-2: #0e2140;
-  --ink: #ffffff;
-  --muted: #9fb0c8;
-  --line: #2b4a78;
-  --accent: #3d86ff;
+  color-scheme: light;
+  --bg: #faf6ee;
+  --surface: #ffffff;
+  --surface-2: #f2ede3;
+  --surface-high: #eae4d8;
+  --ink: #141930;
+  --muted: #525772;
+  /* contorno forte (campi, pulsanti a contorno, caselle) e filo sottile (card, righe) */
+  --line: #6f7594;
+  --hairline: #e6dfd0;
+  --scrim: rgb(20 25 48 / 0.56);
+  --accent: #0b79cc;
   --accent-ink: #ffffff;
-  --accent-soft: rgb(61 134 255 / 0.18);
-  --pale: #7fb0ff;
-  --secondary: #ffa23a;
-  --ok: #2cc48a;
-  --warn: #ffa23a;
-  --danger: #ff6b6b;
-  /* scontrino (Budget e Spese) */
-  --paper: #eef3fa;
-  --paper-ink: #0b1b33;
-  --paper-muted: #5b6c86;
-  --night: #0b1b33;
+  --accent-soft: #e3f3ff;
+  --accent-solid: #0b79cc;
+  --on-accent-solid: #ffffff;
+  --pale: #0866ad;
+  --secondary: #ff9a2e;
+  --ok: #096b53;
+  --warn: #8f5300;
+  --danger: #c4162f;
+  /* scontrino (Spese): carta chiara anche col tema scuro? no: segue il tema */
+  --paper: #ffffff;
+  --paper-ink: #141930;
+  --paper-muted: #525772;
+  --night: #1b2440;
+  /* tinte dei biglietti e delle card in evidenza */
+  --tinta-azzurro: #c9e6ff;
+  --tinta-menta: #c6f0e1;
+  --tinta-limone: #ffe89a;
+  --tinta-lavanda: #e2d6ff;
+  --tinta-confetto: #ffd5e8;
+  --on-tinta: #141930;
+  --on-tinta-muted: #525772;
+  /* colori pieni (cerchi, avatar, categorie): uguali nei due temi */
+  --arancia: #ff9a2e;
+  --confetto: #ff8fc4;
+  --menta: #2ec9a8;
+  --cielo: #5bb8ff;
+  --glicine: #9570ff;
+  --turchese: #3dd6d0;
+  --limone: #ffd23f;
+  --pomodoro: #ff5238;
+  --on-bright: #141930;
   --day-a: #ffe9a8;
   --day-b: #ffb36b;
   /* fasi del giorno: sono fisiche */
@@ -57,10 +96,40 @@
   --phase-morning: #f7b733;
   --phase-afternoon: #f08a3c;
   --phase-evening: #d9503f;
-  /* categorie: Cibo arancio, Visita blu, Alloggio verde */
-  --cat-food: #ffa23a;
-  --cat-visit: #3d86ff;
-  --cat-stay: #2cc48a;
+  --cat-food: #ff9a2e;
+  --cat-visit: #0b79cc;
+  --cat-stay: #2ec9a8;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #10172b;
+  --surface: #1b2440;
+  --surface-2: #151d34;
+  --surface-high: #263152;
+  --ink: #f5f3ef;
+  --muted: #aeb6ce;
+  --line: #8c96b5;
+  --hairline: #2b3659;
+  --scrim: rgb(5 10 26 / 0.69);
+  --accent: #4db4ff;
+  --accent-ink: #0b1224;
+  --accent-soft: #0f2d4d;
+  --accent-solid: #0b79cc;
+  --on-accent-solid: #ffffff;
+  --pale: #8fd0ff;
+  --ok: #4eddb8;
+  --warn: #ffc857;
+  --danger: #ff7a8b;
+  --paper: #263152;
+  --paper-ink: #f5f3ef;
+  --paper-muted: #aeb6ce;
+  --tinta-azzurro: #bfe3ff;
+  --tinta-menta: #bdeedd;
+  --tinta-limone: #ffe680;
+  --tinta-lavanda: #d6c9ff;
+  --tinta-confetto: #ffc9e1;
+  --cat-visit: #4db4ff;
 }
 
 html {
@@ -74,25 +143,27 @@ body {
   min-height: 100dvh;
   background: var(--bg);
   color: var(--ink);
-  font-family: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  line-height: 1.45;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
   /* evita il rimbalzo che fa muovere la barra in basso nella PWA */
   overscroll-behavior-y: none;
   /* nessuno scorrimento laterale della pagina, qualunque cosa sbordi */
   overflow-x: clip;
 }
 
-/* Titoli: Archivo pesante e compatto. Le etichette giapponesi usano Zen Kaku Gothic New. */
+/* Titoli: Fredoka, morbido e rotondo. Le etichette giapponesi usano Zen Kaku Gothic New. */
 .font-display {
-  font-family: "Archivo", system-ui, sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: "Fredoka", "Inter", system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 .font-jp {
   font-family: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
+.tabular { font-variant-numeric: tabular-nums; }
 
 /* Input leggibili e senza zoom automatico su iOS (>= 16px) */
 input, select, textarea, button {
@@ -133,8 +204,9 @@ fieldset {
   min-width: 0;
 }
 
+/* il campo di una pagina chiara non deve «tagliare» il caricamento di Inter */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 3px solid var(--pale);
   outline-offset: 2px;
 }
 
@@ -251,7 +323,7 @@ fieldset {
 }
 .jp-hit[data-selected='true'] .jp-num {
   transform: scale(1.3);
-  box-shadow: 0 0 0 4px rgb(61 134 255 / 0.45), 0 2px 8px rgb(0 0 0 / 0.5);
+  box-shadow: 0 0 0 4px rgb(11 121 204 / 0.45), 0 2px 8px rgb(0 0 0 / 0.5);
 }
 .jp-hit:focus-visible {
   outline: none;
@@ -277,7 +349,7 @@ fieldset {
   box-sizing: border-box;
   width: 16px;
   height: 16px;
-  background: #ffa23a;
+  background: #ff9a2e;
   border: 2.5px solid #fff;
   border-radius: 4px;
   box-shadow: 0 1px 4px rgb(0 0 0 / 0.4);
@@ -330,4 +402,49 @@ fieldset {
   .jp-spin {
     animation-duration: 2s;
   }
+}
+
+/* Carta d'imbarco: due metà colorate con le tacche sulla perforazione (come nel design system). */
+.jp-tk {
+  --n: 12px;
+  display: grid;
+  /* sulla tinta il testo è scuro anche col tema scuro */
+  --ink: var(--on-tinta);
+  --muted: var(--on-tinta-muted);
+  --pale: #075a99;
+  --line: #6f7594;
+  --warn: #8f5300;
+  --ok: #096b53;
+  --surface: #ffffff;
+  color: var(--on-tinta);
+}
+.jp-tk-top,
+.jp-tk-bot {
+  position: relative;
+  background: var(--tk, var(--tinta-azzurro));
+}
+.jp-tk-top {
+  border-radius: 28px 28px 0 0;
+  padding: 20px 24px 22px;
+  -webkit-mask: radial-gradient(circle var(--n) at 0 100%, #0000 calc(var(--n) - 0.5px), #000 var(--n)) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--n) at 100% 100%, #0000 calc(var(--n) - 0.5px), #000 var(--n)) right / 51% 100% no-repeat;
+  mask: radial-gradient(circle var(--n) at 0 100%, #0000 calc(var(--n) - 0.5px), #000 var(--n)) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--n) at 100% 100%, #0000 calc(var(--n) - 0.5px), #000 var(--n)) right / 51% 100% no-repeat;
+}
+.jp-tk-bot {
+  border-radius: 0 0 28px 28px;
+  padding: 18px 24px 22px;
+  -webkit-mask: radial-gradient(circle var(--n) at 0 0, #0000 calc(var(--n) - 0.5px), #000 var(--n)) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--n) at 100% 0, #0000 calc(var(--n) - 0.5px), #000 var(--n)) right / 51% 100% no-repeat;
+  mask: radial-gradient(circle var(--n) at 0 0, #0000 calc(var(--n) - 0.5px), #000 var(--n)) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--n) at 100% 0, #0000 calc(var(--n) - 0.5px), #000 var(--n)) right / 51% 100% no-repeat;
+}
+.jp-tk-bot::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--n) + 8px);
+  right: calc(var(--n) + 8px);
+  top: 0;
+  border-top: 2px dashed var(--on-tinta);
+  opacity: 0.55;
 }

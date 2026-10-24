@@ -75,7 +75,7 @@ export function Sheet({ open, title, onClose, children }: Props) {
         // un tocco sullo sfondo oscurato chiude il pannello
         if (e.target === e.currentTarget) onClose()
       }}
-      class="sheet fixed focus:outline-none inset-x-0 bottom-0 top-auto m-0 mx-auto max-h-[92dvh] w-full max-w-xl overflow-x-hidden overflow-y-auto overscroll-contain rounded-t-[1.75rem] border-x-0 border-b-0 border-t-2 border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-black/55"
+      class="sheet fixed focus:outline-none inset-x-0 bottom-0 top-auto m-0 mx-auto max-h-[92dvh] w-full max-w-xl overflow-x-hidden overflow-y-auto overscroll-contain rounded-t-[1.75rem] border-x-0 border-b-0 border-t border-hairline bg-surface p-0 text-ink shadow-2xl backdrop:bg-[var(--scrim)]"
     >
       <div class="px-5 pb-6 pt-3" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
         <div

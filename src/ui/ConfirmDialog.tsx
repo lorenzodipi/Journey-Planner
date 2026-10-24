@@ -34,7 +34,7 @@ function ConfirmDialog({ title, text, confirmLabel = 'Elimina', onAnswer }: Conf
       onClick={(e) => {
         if (e.target === e.currentTarget) onAnswer(false)
       }}
-      class="fixed inset-0 m-auto w-[min(92vw,22rem)] rounded-3xl border-2 border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-black/55"
+      class="fixed inset-0 m-auto w-[min(92vw,22rem)] rounded-3xl border-2 border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-[var(--scrim)]"
     >
       <div class="space-y-4 p-5">
         <div class="flex items-start gap-3">

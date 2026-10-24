@@ -121,7 +121,7 @@ export function Luoghi() {
               placeholder="Cerca un luogo"
               aria-label="Cerca nei tuoi luoghi"
               onInput={(e) => setText(e.currentTarget.value)}
-              class="min-h-[52px] w-full rounded-2xl border-2 border-line bg-surface pl-11 pr-4 text-base"
+              class="min-h-[52px] w-full rounded-[20px] border border-hairline bg-surface pl-11 pr-4 text-base"
             />
           </label>
           <FilterBar filters={filters} onChange={setFilters} onOpen={() => setFilterOpen(true)} counts={counts} />

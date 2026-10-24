@@ -9,7 +9,7 @@ import { SecondaryButton } from '../ui/Field'
 import { BedIcon, BudgetIcon, ChecklistIcon, ChevronRightIcon, PlusIcon, SettingsIcon, SwapIcon, TicketIcon, TrainCarIcon } from '../ui/Icons'
 import { PageHeader } from '../ui/PageHeader'
 import { isJapanTrip } from '../lib/tripLocale'
-import { BoardingNotches, Disc, Jp, Stripe } from '../ui/Ticket'
+import { Disc, Jp, TINT_SCOPE } from '../ui/Ticket'
 import { Sheet } from '../ui/Sheet'
 import { InviteForm } from '../ui/InviteForm'
 import { LinkAccount } from '../ui/LinkAccount'
@@ -22,14 +22,14 @@ const sections = [
   {
     href: '/altro/alloggi',
     title: 'Alloggi',
-    color: '#ffa23a',
+    color: 'var(--glicine)',
     Icon: BedIcon,
     text: (t: Trip) => (t.stays.length ? `${t.stays.length} ${t.stays.length === 1 ? 'alloggio' : 'alloggi'}` : 'Hotel, check-in e check-out, costi'),
   },
   {
     href: '/altro/trasporti',
     title: 'Trasporti e voli',
-    color: '#3fd0e8',
+    color: 'var(--cielo)',
     Icon: TrainCarIcon,
     text: (t: Trip) =>
       t.flights.length + t.transports.length
@@ -39,14 +39,14 @@ const sections = [
   {
     href: '/altro/budget',
     title: 'Spese',
-    color: '#2cc48a',
+    color: 'var(--menta)',
     Icon: BudgetIcon,
     text: (t: Trip) => (t.budget.length + t.expenses.length ? `${t.budget.length} voci · ${t.expenses.length} spese` : 'Previsto, speso e chi deve a chi'),
   },
   {
     href: '/altro/checklist',
     title: 'Checklist e valigia',
-    color: '#3d86ff',
+    color: 'var(--arancia)',
     Icon: ChecklistIcon,
     text: (t: Trip) => {
       const done = t.checklist.filter((c) => c.done).length
@@ -56,14 +56,14 @@ const sections = [
   {
     href: '/altro/prenotazioni',
     title: 'Prenotazioni e documenti',
-    color: '#b58cff',
+    color: 'var(--confetto)',
     Icon: TicketIcon,
     text: (t: Trip) => (t.bookings.length ? `${t.bookings.length} ${t.bookings.length === 1 ? 'prenotazione' : 'prenotazioni'}` : 'Codici, link e biglietti, anche offline'),
   },
   {
     href: '/altro/impostazioni',
     title: 'Impostazioni del viaggio',
-    color: '#f472b6',
+    color: 'var(--turchese)',
     Icon: SettingsIcon,
     text: () => 'Esporta il viaggio, importa luoghi, tasso di cambio',
   },
@@ -108,7 +108,7 @@ export function Altro() {
       <PageHeader title="Altro" jp={isJapanTrip(trip) ? '設定' : undefined} />
       <div class="px-5">
         {/* generale: valgono per tutti i viaggi, non per quello attivo */}
-        <section class="rise rounded-2xl border-2 border-line bg-surface px-4" aria-label="Viaggi">
+        <section class="rise rounded-[20px] border border-hairline bg-surface px-4" aria-label="Viaggi">
           {t.trips.length > 1 && (
             <button
               type="button"
@@ -129,7 +129,7 @@ export function Altro() {
           <button
             type="button"
             onClick={() => setSheet({ kind: 'new-trip' })}
-            class={`flex min-h-14 w-full items-center gap-3 text-left ${t.trips.length > 1 ? 'border-t-2 border-dashed border-line' : ''}`}
+            class={`flex min-h-14 w-full items-center gap-3 text-left ${t.trips.length > 1 ? 'border-t border-hairline' : ''}`}
           >
             <PlusIcon size={18} class="shrink-0 text-pale" />
             <span class="flex-1 text-base font-extrabold">Nuovo viaggio</span>
@@ -137,29 +137,31 @@ export function Altro() {
           </button>
         </section>
 
-        <h2 class="mb-2 mt-6 px-1 text-[13px] font-extrabold text-muted">Questo viaggio</h2>
-        <section class="rise relative rounded-[20px] border-2 border-line bg-surface">
-          <Stripe />
-          <div class="px-[18px] pb-3.5 pt-3">
+        <h2 class="mb-2 mt-6 px-1 font-display text-xl">Questo viaggio</h2>
+        <section class="rise overflow-hidden rounded-[28px] text-on-tinta" style={{ ...TINT_SCOPE, background: 'var(--tinta-azzurro)' }}>
+          <div class="px-5 pb-4 pt-5">
             <div class="flex justify-between">
-              <span class="text-[13px] text-muted">Viaggio attivo</span>
+              <span class="text-[13px] font-semibold text-muted">Viaggio attivo</span>
               {isJapanTrip(trip) && <Jp>日本</Jp>}
             </div>
-            <h2 class="font-display text-[28px] font-extrabold leading-tight tracking-[-0.5px]">{trip.title}</h2>
-            <p class="mt-0.5 text-[13px] text-muted">
+            <h2 class="font-display text-[32px] leading-10 tracking-[-0.01em]">{trip.title}</h2>
+            <p class="mt-0.5 text-sm font-semibold">
               {trip.destination && `${trip.destination} · `}
               {formatShort(trip.startDate)} – {formatShort(trip.endDate)} · {trip.days.length} giorni
             </p>
           </div>
-          <BoardingNotches />
-          <button type="button" onClick={() => setSheet({ kind: 'edit-trip' })} class="block min-h-[52px] w-full border-t-2 border-dashed border-line text-[15px] font-extrabold text-pale">
+          <button
+            type="button"
+            onClick={() => setSheet({ kind: 'edit-trip' })}
+            class="block min-h-[52px] w-full border-t-2 border-dashed border-[color-mix(in_srgb,var(--on-tinta)_40%,transparent)] text-[15px] font-extrabold text-pale"
+          >
             Modifica
           </button>
         </section>
 
-        <section class="mt-4 rounded-2xl border-2 border-line bg-surface px-4 py-1.5">
+        <section class="mt-4 rounded-[20px] border border-hairline bg-surface px-4 py-1.5">
           <div class="flex min-h-12 items-center justify-between">
-            <h2 class="font-display text-lg font-extrabold">Viaggiatori</h2>
+            <h2 class="font-display text-xl">Viaggiatori</h2>
             {isOwner && (
               <button type="button" onClick={() => setSheet({ kind: 'new-traveler' })} class="min-h-11 px-1 text-sm font-extrabold text-pale">
                 + Aggiungi
@@ -167,11 +169,11 @@ export function Altro() {
             )}
           </div>
           {trip.travelers.length === 0 ? (
-            <p class="border-t-2 border-dashed border-line py-3 text-sm text-muted">Nessun viaggiatore: aggiungi una persona con la sua email per assegnare costi e spese.</p>
+            <p class="border-t border-hairline py-3 text-sm text-muted">Nessun viaggiatore: aggiungi una persona con la sua email per assegnare costi e spese.</p>
           ) : (
             <ul>
               {trip.travelers.map((person) => (
-                <li class="flex items-center border-t-2 border-dashed border-line">
+                <li class="flex items-center border-t border-hairline">
                   <button type="button" onClick={() => setSheet({ kind: 'edit-traveler', traveler: person })} class="flex min-h-[60px] min-w-0 flex-1 items-center gap-3 text-left">
                     <span aria-hidden="true" class="size-4 shrink-0 rounded-full" style={{ background: person.color }} />
                     <span class="min-w-0 flex-1">
@@ -203,35 +205,25 @@ export function Altro() {
           )}
         </section>
 
-        {/* pila di carte come nel Wallet: ogni voce ha la linguetta del suo colore */}
-        <ul class="mt-5">
-          {sections.map((sec, i) => {
-            const last = i === sections.length - 1
-            return (
-              <li class="relative" style={{ zIndex: i + 1, marginTop: i ? '-50px' : 0 }}>
-                <Link
-                  href={sec.href}
-                  class="block box-border rounded-[18px] border-2 border-line bg-surface px-[18px] py-3 shadow-[0_-4px_12px_rgb(0_0_0/0.35)]"
-                  style={{ borderTop: `8px solid ${sec.color}`, height: last ? '112px' : '126px' }}
-                >
-                  <span class="flex items-center gap-3">
-                    <Disc color={sec.color}>
-                      <sec.Icon size={22} />
-                    </Disc>
-                    <span class="min-w-0 flex-1">
-                      <span class="block text-[17px] font-extrabold">{sec.title}</span>
-                      <span class="block truncate text-xs text-muted">{sec.text(trip)}</span>
-                    </span>
-                    <ChevronRightIcon size={18} class="shrink-0 text-muted" />
-                  </span>
-                </Link>
-              </li>
-            )
-          })}
+        <ul class="mt-5 divide-y divide-hairline overflow-hidden rounded-[20px] border border-hairline bg-surface">
+          {sections.map((sec) => (
+            <li>
+              <Link href={sec.href} class="flex min-h-16 items-center gap-3 px-4 py-3">
+                <Disc color={sec.color}>
+                  <sec.Icon size={20} />
+                </Disc>
+                <span class="min-w-0 flex-1">
+                  <span class="block text-base font-semibold">{sec.title}</span>
+                  <span class="block truncate text-sm text-muted">{sec.text(trip)}</span>
+                </span>
+                <ChevronRightIcon size={18} class="shrink-0 text-muted" />
+              </Link>
+            </li>
+          ))}
         </ul>
 
-        <h2 class="mb-2 mt-6 px-1 text-[13px] font-extrabold text-muted">Account</h2>
-        <section class="flex items-center gap-2 rounded-2xl border-2 border-line bg-surface py-2 pl-4 pr-2">
+        <h2 class="mb-2 mt-6 px-1 font-display text-xl">Account</h2>
+        <section class="flex items-center gap-2 rounded-[20px] border border-hairline bg-surface py-2 pl-4 pr-2">
           {auth.status === 'demo' && <p class="min-w-0 flex-1 py-1 text-sm text-muted">Anteprima con dati fittizi: Supabase non è ancora collegato.</p>}
           {auth.status === 'signed-in' && (
             <>
@@ -261,7 +253,7 @@ export function Altro() {
                 onInput={(e) => setTripFilter(e.currentTarget.value)}
                 placeholder="Cerca un viaggio"
                 aria-label="Cerca un viaggio"
-                class="min-h-12 w-full rounded-[14px] border-2 border-line bg-bg px-4"
+                class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-4"
               />
             )}
             {(() => {

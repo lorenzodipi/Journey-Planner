@@ -14,7 +14,7 @@ export function DetailRows({ rows }: { rows: { label: string; value: ComponentCh
   return (
     <dl class="pr-3 text-sm">
       {rows.map((r) => (
-        <div class="flex items-baseline justify-between gap-4 border-t-2 border-dashed border-line py-1.5 first:border-t-0">
+        <div class="flex items-baseline justify-between gap-4 border-t border-hairline py-1.5 first:border-t-0">
           <dt class="shrink-0 text-muted">{r.label}</dt>
           <dd class="min-w-0 text-right font-extrabold">{r.value}</dd>
         </div>
@@ -38,10 +38,10 @@ export function CardDetail({
   children?: ComponentChildren
 }) {
   return (
-    <div class="mt-2 border-t-2 border-dashed border-line pt-2">
+    <div class="mt-2 border-t border-hairline pt-2">
       <DetailRows rows={rows} />
       {note && (
-        <p class="mt-1 whitespace-pre-line border-t-2 border-dashed border-line pr-3 pt-2 text-sm text-muted">{note}</p>
+        <p class="mt-1 whitespace-pre-line border-t border-hairline pr-3 pt-2 text-sm text-muted">{note}</p>
       )}
       {children}
       <div class="mt-2 flex pr-2">

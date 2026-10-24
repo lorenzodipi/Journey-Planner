@@ -36,7 +36,7 @@ export function WeatherCard({ forecast, date, today, tripDates }: Props) {
       </div>
       {body}
       {strip.length > 0 && (
-        <ul class="mt-3 grid grid-cols-4 gap-2 border-t border-line pt-3" aria-label="Prossimi giorni">
+        <ul class="mt-3 grid grid-cols-4 gap-2 border-t border-hairline pt-3" aria-label="Prossimi giorni">
           {strip.map((d) => {
             const w = byDate.get(d) as DayWeather
             return (

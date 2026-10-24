@@ -7,7 +7,7 @@ import { DatePicker } from './DatePicker'
 import { TickIcon } from './Icons'
 import { Select } from './Select'
 
-const inputClass = 'min-h-12 w-full rounded-[14px] border-2 border-line bg-bg px-3.5 text-base placeholder:text-muted/70'
+const inputClass = 'min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-3.5 text-base placeholder:text-muted/70'
 const labelClass = 'mb-1 block text-[13px] font-extrabold'
 
 interface TextProps {
@@ -77,7 +77,7 @@ export function TextArea({
         value={value}
         placeholder={placeholder}
         onInput={(e) => onInput(e.currentTarget.value)}
-        class="w-full rounded-[14px] border-2 border-line bg-bg px-3.5 py-3 text-base"
+        class="w-full rounded-xl border-[1.5px] border-line bg-surface px-3.5 py-3 text-base"
       />
     </label>
   )

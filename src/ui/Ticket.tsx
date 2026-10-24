@@ -14,6 +14,7 @@ export function Ticket({
   tone = 'line',
   flash = false,
   stubFill = false,
+  tint,
   class: cls = '',
 }: {
   stub: ComponentChildren
@@ -23,25 +24,27 @@ export function Ticket({
   flash?: boolean
   /** Lo spezzone senza margini, a tutta altezza (foto): angoli a sinistra arrotondati e tacche ritagliate. */
   stubFill?: boolean
+  /** Biglietto colorato con una tinta del design system (azzurro, menta, limone, lavanda, confetto): testo scuro in ogni tema. */
+  tint?: Tint
   class?: string
 }) {
-  const border = { line: 'var(--line)', warn: 'var(--warn)', ok: 'var(--ok)', accent: 'var(--accent)' }[tone]
+  const border = tint ? `var(--tinta-${tint})` : { line: 'var(--hairline)', warn: 'var(--warn)', ok: 'var(--ok)', accent: 'var(--accent)' }[tone]
   return (
     // il bordo trasparente da 2px tiene il contenuto alla stessa distanza di sempre dal bordo disegnato
-    <div class={`relative isolate flex rounded-[14px] ${cls}`} style={{ border: '2px solid transparent' }}>
+    <div class={`relative isolate flex rounded-[18px] ${cls}`} style={{ border: '2px solid transparent', ...(tint ? TINT_SCOPE : null) }}>
       <i
         aria-hidden="true"
-        class="jp-ticket-edge pointer-events-none absolute -inset-0.5 -z-10 rounded-[14px]"
+        class="jp-ticket-edge pointer-events-none absolute -inset-0.5 -z-10 rounded-[18px]"
         style={{ background: border, '--tx': `${stubWidth + 1}px` }}
       />
       <i
         aria-hidden="true"
-        class={`jp-ticket-fill pointer-events-none absolute -z-10 rounded-xl bg-surface ${flash ? 'jp-flash' : ''}`}
-        style={{ inset: 0, '--tx': `${stubWidth - 1}px` }}
+        class={`jp-ticket-fill pointer-events-none absolute -z-10 rounded-[16px] ${tint ? '' : 'bg-surface'} ${flash ? 'jp-flash' : ''}`}
+        style={{ inset: 0, '--tx': `${stubWidth - 1}px`, ...(tint ? { background: `var(--tinta-${tint})` } : null) }}
       />
       <div
-        class={`box-border grid shrink-0 place-items-center border-r-2 border-dashed border-line text-center ${
-          stubFill ? 'jp-ticket-fill relative overflow-hidden rounded-l-xl' : 'px-1 py-2.5'
+        class={`box-border grid shrink-0 place-items-center border-r-2 border-dashed border-[color-mix(in_srgb,var(--ink)_28%,transparent)] text-center ${
+          stubFill ? 'jp-ticket-fill relative overflow-hidden rounded-l-[16px]' : 'px-1 py-2.5'
         }`}
         style={stubFill ? { width: `${stubWidth}px`, '--tx': `${stubWidth - 1}px` } : { width: `${stubWidth}px` }}
       >
@@ -52,11 +55,26 @@ export function Ticket({
   )
 }
 
+export type Tint = 'azzurro' | 'menta' | 'limone' | 'lavanda' | 'confetto'
+
+/** Dentro una tinta il testo è sempre scuro (anche col tema scuro): si ridefiniscono i colori del testo. */
+export const TINT_SCOPE = {
+  '--ink': 'var(--on-tinta)',
+  '--muted': 'var(--on-tinta-muted)',
+  '--pale': '#075a99',
+  '--line': '#6f7594',
+  '--surface': '#ffffff',
+  '--warn': '#8f5300',
+  '--ok': '#096b53',
+  '--accent-soft': 'rgb(255 255 255 / 0.55)',
+  color: 'var(--on-tinta)',
+} as Record<string, string>
+
 /** Tacche laterali per la carta d'imbarco (cerchi tagliati a metà sul bordo). */
 export function BoardingNotches() {
   const base = {
     background: 'var(--bg)',
-    border: '2px solid var(--line)',
+    border: '2px solid var(--hairline)',
   }
   return (
     <div class="relative h-0" aria-hidden="true">
@@ -66,30 +84,31 @@ export function BoardingNotches() {
   )
 }
 
-/** Striscia tricolore in cima alle carte principali (blu, verde, arancio). */
+/** Striscia in cima alle carte principali: azzurro, menta e arancia del design system. */
 export function Stripe() {
   return (
     <div class="flex h-2 overflow-hidden rounded-t-[18px]" aria-hidden="true">
-      <i class="block flex-[3] bg-accent" />
-      <i class="block flex-[2] bg-ok" />
-      <i class="block flex-1 bg-secondary" />
+      <i class="block flex-[3]" style={{ background: 'var(--cielo)' }} />
+      <i class="block flex-[2]" style={{ background: 'var(--menta)' }} />
+      <i class="block flex-1" style={{ background: 'var(--arancia)' }} />
     </div>
   )
 }
 
 type Tone = 'ok' | 'warn' | 'accent' | 'muted' | 'danger'
-const toneClass: Record<Tone, string> = {
-  ok: 'border-ok text-ok',
-  warn: 'border-warn text-warn',
-  accent: 'border-pale text-pale',
-  muted: 'border-line text-muted',
-  danger: 'border-danger text-danger',
+const dotClass: Record<Tone, string> = {
+  ok: 'bg-ok',
+  warn: 'bg-warn',
+  accent: 'bg-pale',
+  muted: 'bg-muted',
+  danger: 'bg-danger',
 }
 
-/** Etichetta di stato: bordo 2px, testo piccolo e pesante (Prenotato, Non acquistato…). */
+/** Etichetta di stato del design system: pillola a contorno con un pallino del colore dello stato (Prenotato, Da pagare…). */
 export function Tag({ tone, children }: { tone: Tone; children: ComponentChildren }) {
   return (
-    <span class={`inline-block whitespace-nowrap rounded-md border-2 px-1.5 text-xs font-extrabold leading-snug ${toneClass[tone]}`}>
+    <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-xs font-extrabold leading-[1.45rem] text-ink shadow-[inset_0_0_0_1.5px_var(--line)]">
+      <i class={`size-2 rounded-full ${dotClass[tone]}`} aria-hidden="true" />
       {children}
     </span>
   )
@@ -100,7 +119,7 @@ export function Disc({ color, size = 40, children }: { color: string; size?: num
   return (
     <span
       class="grid shrink-0 place-items-center rounded-full font-extrabold"
-      style={{ width: `${size}px`, height: `${size}px`, background: color, color: 'var(--bg)' }}
+      style={{ width: `${size}px`, height: `${size}px`, background: color, color: 'var(--on-bright)' }}
     >
       {children}
     </span>
@@ -112,8 +131,8 @@ export function Avatar({ name, color, size = 24 }: { name: string; color: string
   return (
     <span
       aria-hidden="true"
-      class="grid shrink-0 place-items-center rounded-full font-extrabold text-white"
-      style={{ width: `${size}px`, height: `${size}px`, background: color, fontSize: `${Math.round(size * 0.46)}px` }}
+      class="grid shrink-0 place-items-center rounded-full font-display font-medium"
+      style={{ width: `${size}px`, height: `${size}px`, background: color, color: 'var(--on-bright)', fontSize: `${Math.round(size * 0.46)}px` }}
     >
       {name.slice(0, 1).toUpperCase()}
     </span>
@@ -140,7 +159,7 @@ export function Fab({ label, onClick, wide = false }: { label: string; onClick: 
       onClick={onClick}
       aria-label={`Aggiungi ${label.toLowerCase()}`}
       title={`Aggiungi ${label.toLowerCase()}`}
-      class={`fixed right-5 z-10 inline-flex h-14 items-center justify-center gap-2 bg-accent text-[15px] font-extrabold text-accent-ink shadow-[0_6px_16px_rgb(0_0_0/0.45)] ${wide ? 'rounded-full px-5' : 'w-14 rounded-[18px]'}`}
+      class={`fixed right-5 z-10 inline-flex h-14 items-center justify-center gap-2 bg-accent text-[15px] font-extrabold text-accent-ink shadow-[0_6px_16px_rgb(20_25_48/0.28)] ${wide ? 'rounded-full px-5' : 'w-14 rounded-full'}`}
       style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}
     >
       <PlusIcon size={wide ? 22 : 28} stroke-width={2.4} />

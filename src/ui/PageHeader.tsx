@@ -18,12 +18,12 @@ export function PageHeader({ title, subtitle, back, jp, aside, children }: Props
   return (
     <header class="px-5 pb-3" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
       {back && (
-        <Link href={back.href} class="-ml-1 inline-flex min-h-11 items-center text-[15px] font-extrabold text-pale">
+        <Link href={back.href} class="-ml-2 inline-flex min-h-11 items-center px-2 text-base font-semibold text-pale">
           ‹ {back.label}
         </Link>
       )}
       <div class="flex items-center justify-between gap-3">
-        <h1 class="font-display text-[28px] font-extrabold leading-tight">{title}</h1>
+        <h1 class="font-display text-[32px] leading-[38px]">{title}</h1>
         {jp && <Jp>{jp}</Jp>}
         {aside && <span class="text-[13px] text-muted">{aside}</span>}
       </div>
@@ -33,14 +33,14 @@ export function PageHeader({ title, subtitle, back, jp, aside, children }: Props
   )
 }
 
-/** Riquadro base: sfondo surface, bordo 2px, angoli morbidi. */
+/** Riquadro base: sfondo surface, filo sottile, angoli morbidi. */
 export function Card({ children, class: cls = '' }: { children: ComponentChildren; class?: string }) {
-  return <section class={`rounded-2xl border-2 border-line bg-surface p-4 ${cls}`}>{children}</section>
+  return <section class={`rounded-[20px] border border-hairline bg-surface p-4 ${cls}`}>{children}</section>
 }
 
 export function EmptyState({ title, text }: { title: string; text: string }) {
   return (
-    <div class="rounded-2xl border-2 border-dashed border-line px-5 py-10 text-center">
+    <div class="rounded-[20px] border-2 border-dashed border-line px-5 py-10 text-center">
       <p class="font-display text-lg">{title}</p>
       <p class="mx-auto mt-1 max-w-xs text-sm text-muted">{text}</p>
     </div>

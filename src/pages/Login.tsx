@@ -41,7 +41,7 @@ export function Login() {
               required
               value={email}
               onInput={(e) => setEmail(e.currentTarget.value)}
-              class="min-h-12 w-full rounded-[14px] border-2 border-line bg-surface px-4"
+              class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-4"
             />
           </label>
           <label class="block">
@@ -52,7 +52,7 @@ export function Login() {
               required
               value={password}
               onInput={(e) => setPassword(e.currentTarget.value)}
-              class="min-h-12 w-full rounded-[14px] border-2 border-line bg-surface px-4"
+              class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-4"
             />
           </label>
 

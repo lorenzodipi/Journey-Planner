@@ -12,12 +12,12 @@ import { originOf } from '../lib/origin'
 import { useForecast } from '../state/forecast'
 import { setScrollTarget } from '../state/scrollTarget'
 import { useTrip } from '../state/trip'
-import { BedIcon, BudgetIcon, ChecklistIcon, ChevronRightIcon, ClockIcon, PlaneIcon, SwapIcon } from '../ui/Icons'
+import { BedIcon, BudgetIcon, ChecklistIcon, ChevronRightIcon, PlaneIcon, SwapIcon } from '../ui/Icons'
 import { ItemRow } from '../ui/ItemRow'
 import { LightCard } from '../ui/LightBar'
 import { Card } from '../ui/PageHeader'
 import { isJapanTrip } from '../lib/tripLocale'
-import { BoardingNotches, Disc, Jp, Stripe, Tag, Ticket } from '../ui/Ticket'
+import { Disc, Jp, Tag, Ticket, type Tint } from '../ui/Ticket'
 import { WeatherCard } from '../ui/WeatherCard'
 
 /** Data/ora corrente, aggiornata ogni minuto (l'orologio e la prossima tappa restano giusti anche a schermo acceso). */
@@ -48,19 +48,18 @@ function Shortcut({ href, icon, color, title, line, lineTone }: { href: string; 
   )
 }
 
-/** Pillola con l'ora di un posto: icona, ora grande e, su due righe, il nome del posto e lo scarto orario. */
-function ClockPill({ time, place, diff }: { time: string; place: string; diff: string }) {
+/** Card colorata con l'ora di un posto: nome del posto, ora grande e scarto orario. */
+function ClockCard({ tint, time, place, diff }: { tint: Tint; time: string; place: string; diff: string }) {
   return (
-    <div class="flex min-h-[52px] min-w-0 items-center gap-2 rounded-full border-2 border-line bg-surface px-3.5">
-      <ClockIcon size={16} class="shrink-0 text-pale" />
-      <span class="font-display shrink-0 whitespace-nowrap text-xl font-extrabold leading-none tabular-nums text-pale">{time}</span>
-      <span class="min-w-0 text-xs leading-tight text-muted">
-        <span class="block truncate">{place}</span>
-        <span class="block truncate">{diff}</span>
-      </span>
+    <div class="flex min-w-0 flex-col gap-0.5 rounded-[20px] px-4 pb-4 pt-3.5 text-on-tinta" style={{ background: `var(--tinta-${tint})` }}>
+      <span class="truncate text-[13px] font-semibold text-on-tinta-muted">{place}</span>
+      <span class="font-display text-[42px] font-semibold leading-[46px] tracking-[-0.02em] tabular-nums">{time}</span>
+      <span class="text-[13px] text-on-tinta-muted">{diff}</span>
     </div>
   )
 }
+
+const flightTime = (iso: string, timeZone: string) => new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit', timeZone }).format(new Date(iso))
 
 export function Oggi() {
   const trip = useTrip()
@@ -70,7 +69,6 @@ export function Oggi() {
   const today = tripToday(trip, now) // oggi nel fuso della destinazione
   const toStart = daysBetween(today, trip.startDate)
   const toEnd = daysBetween(today, trip.endDate)
-  const total = daysBetween(trip.startDate, trip.endDate) + 1
   const inTrip = toStart <= 0 && toEnd >= 0
   const before = toStart > 0
 
@@ -112,68 +110,58 @@ export function Oggi() {
 
   return (
     <div class="px-5" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
-      <div class="flex items-center justify-between pb-3.5">
-        <h1 class="font-display text-base font-extrabold">{trip.title}</h1>
-        <span class="text-[13px] text-muted">
+      <header class="pb-4 pt-2">
+        <h1 class="font-display text-[32px] leading-[38px]">{trip.title}</h1>
+        <p class="mt-0.5 text-sm text-muted">
           {formatShort(trip.startDate)} – {formatShort(trip.endDate)}
-        </span>
+          {isJapanTrip(trip) && <Jp class="ml-2">{before ? '出発まで' : inTrip ? '旅行中' : '旅の思い出'}</Jp>}
+        </p>
+      </header>
+
+      {/* l'ora nel paese del viaggio (sinistra) e a casa (destra) */}
+      <div class="mb-4 grid grid-cols-2 gap-3">
+        <ClockCard tint="azzurro" time={clock.time} place={trip.destination || 'Destinazione'} diff={clock.diffHours === 0 ? 'stesso fuso' : formatDiffHours(clock.diffHours)} />
+        <ClockCard tint="lavanda" time={homeClock} place={homeName} diff={clock.diffHours === 0 ? 'stesso fuso' : formatDiffHours(-clock.diffHours)} />
       </div>
 
-      {/* l'ora nel paese del viaggio (sinistra) e a casa (destra), una pillola per metà pagina */}
-      <div class="mb-3.5 grid grid-cols-2 gap-2.5">
-        <ClockPill time={clock.time} place={trip.destination || 'Destinazione'} diff={clock.diffHours === 0 ? 'stesso fuso' : formatDiffHours(clock.diffHours)} />
-        <ClockPill time={homeClock} place={homeName} diff={clock.diffHours === 0 ? 'stesso fuso' : formatDiffHours(-clock.diffHours)} />
-      </div>
-
-      {/* carta d'imbarco: conto alla rovescia (o giorno del viaggio) e prossimo volo */}
-      <section class="rise relative rounded-[20px] border-2 border-line bg-surface">
-        <Stripe />
-        <div class="px-5 pb-[18px] pt-4">
-          <div class="flex items-center justify-between">
-            <span class="text-[13px] text-muted">{before ? 'Alla partenza mancano' : inTrip ? 'Sei in viaggio' : 'Viaggio concluso'}</span>
-            {isJapanTrip(trip) && <Jp>{before ? '出発まで' : inTrip ? '旅行中' : '旅の思い出'}</Jp>}
-          </div>
+      {/* carta d'imbarco: conto alla rovescia (o stato del viaggio) e prossimo volo */}
+      <section class="rise jp-tk" aria-label="Carta d'imbarco">
+        <div class="jp-tk-top">
+          <p class="text-sm font-semibold text-on-tinta-muted">{before ? 'Alla partenza mancano' : inTrip ? 'Sei in viaggio' : 'Viaggio concluso'}</p>
           {before ? (
-            <div class="mt-1.5 flex items-end gap-3.5">
-              <span class="font-display text-[132px] font-extrabold leading-[0.8] tracking-[-6px] text-pale tabular-nums">{toStart}</span>
+            <div class="mt-1 flex items-end gap-3.5" role="timer" aria-label={`${toStart} giorni alla partenza`}>
+              <span class="font-display text-[124px] font-semibold leading-[100px] tracking-[-0.04em] tabular-nums">{toStart}</span>
               <div class="pb-1">
-                <div class="font-display text-[28px] font-extrabold leading-none">{toStart === 1 ? 'giorno' : 'giorni'}</div>
-                <div class="mt-0.5 text-sm text-muted">alla partenza</div>
+                <div class="font-display text-[32px] leading-9">{toStart === 1 ? 'giorno' : 'giorni'}</div>
               </div>
             </div>
           ) : inTrip ? (
-            <div class="mt-1.5 flex items-end gap-3.5">
-              <span class="font-display text-[96px] font-extrabold leading-[0.85] tracking-[-4px] text-pale tabular-nums">{-toStart + 1}</span>
-              <div class="pb-1">
-                <div class="font-display text-[28px] font-extrabold leading-none">di {total}</div>
-                <div class="mt-0.5 text-sm text-muted">giorni di viaggio</div>
-              </div>
-            </div>
+            <p class="font-display mt-1 text-4xl leading-10">{formatShort(focus?.date ?? today)}</p>
           ) : (
-            <p class="font-display mt-2 text-3xl font-extrabold">Bentornati</p>
+            <p class="font-display mt-1 text-4xl leading-10">Bentornati</p>
           )}
         </div>
-        <BoardingNotches />
-        <div class="border-t-2 border-dashed border-line" />
-        <div class="px-5 pb-[18px] pt-3.5">
+        <div class="jp-tk-bot">
           {flight ? (
             <>
-              <div class="text-[13px] text-muted">Prossima partenza</div>
+              <p class="text-sm font-semibold text-on-tinta-muted">Prossima partenza</p>
               <div class="mt-1.5 flex items-center gap-3">
-                <span class="font-display text-4xl font-extrabold tracking-[-1px]">{fromLabel}</span>
-                <PlaneIcon size={30} class="text-pale" />
-                <span class="font-display text-4xl font-extrabold tracking-[-1px]">{toLabel}</span>
+                <span class="font-display text-[38px] leading-[44px]">{fromLabel}</span>
+                <PlaneIcon size={28} />
+                <span class="font-display text-[38px] leading-[44px]">{toLabel}</span>
               </div>
-              <div class="mt-2 flex flex-wrap items-center gap-2.5">
-                <span class="text-[15px] text-muted">{cap(longDateIn(flight.leg.departAt, flight.leg.fromTz))}</span>
-                {!flight.f.paid && <Tag tone="warn">Non acquistato</Tag>}
-              </div>
+              <p class="mt-1.5 text-base font-semibold">{cap(longDateIn(flight.leg.departAt, flight.leg.fromTz))} · {flightTime(flight.leg.departAt, flight.leg.fromTz)}</p>
+              {!flight.f.paid && (
+                <div class="mt-2">
+                  <Tag tone="warn">Non acquistato</Tag>
+                </div>
+              )}
             </>
           ) : (
             <>
-              <div class="text-[13px] text-muted">{trip.destination || 'Il viaggio'}</div>
-              <p class="mt-1 text-[17px] font-extrabold">{trip.flights.length === 0 ? 'Nessun volo inserito' : 'Nessun volo in programma'}</p>
-              <Link href="/altro/trasporti" class="mt-1 inline-flex min-h-11 items-center text-[15px] font-extrabold text-pale">
+              <p class="text-sm font-semibold text-on-tinta-muted">{trip.destination || 'Il viaggio'}</p>
+              <p class="mt-1 text-[17px] font-bold">{trip.flights.length === 0 ? 'Nessun volo inserito' : 'Nessun volo in programma'}</p>
+              <Link href="/altro/trasporti" class="mt-1 inline-flex min-h-11 items-center text-[15px] font-bold text-[#075a99]">
                 Vai ai trasporti
               </Link>
             </>
@@ -187,7 +175,7 @@ export function Oggi() {
         {next && (
           <Card class="rise">
             <p class="text-[13px] text-muted">{next.status === 'now' ? 'In corso' : 'Prossima tappa'}</p>
-            <p class="font-display mt-0.5 text-xl font-extrabold leading-tight">{next.item.title}</p>
+            <p class="font-display mt-0.5 text-xl leading-tight">{next.item.title}</p>
             <p class="text-sm text-muted tabular-nums">
               {next.item.time}
               {next.item.endTime ? `–${next.item.endTime}` : ''}
@@ -198,8 +186,8 @@ export function Oggi() {
 
         {events.length > 0 && (
           <Card class="rise">
-            <h2 class="font-display mb-1 text-lg font-extrabold">Logistica del giorno</h2>
-            <ul class="divide-y-2 divide-dashed divide-line">
+            <h2 class="font-display mb-1 text-xl">Logistica del giorno</h2>
+            <ul class="divide-y-2 divide-dashed divide-hairline">
               {events.map((e) => (
                 <li class={`flex min-h-12 items-center gap-3 py-2 ${isToday && e.time && e.at < now.toISOString() ? 'opacity-50' : ''}`}>
                   <span class="w-11 shrink-0 text-right text-sm font-extrabold tabular-nums text-pale">{e.time}</span>
@@ -218,7 +206,7 @@ export function Oggi() {
 
         {inTrip && focus && (
           <section class="rise">
-            <h2 class="font-display mb-2 text-lg font-extrabold">Programma</h2>
+            <h2 class="font-display mb-2 text-2xl">Programma di oggi</h2>
             {focus.items.length > 0 ? (
               <ul class="space-y-3">
                 {focus.items.map((item) => (
@@ -226,17 +214,17 @@ export function Oggi() {
                 ))}
               </ul>
             ) : (
-              <p class="rounded-2xl border-2 border-dashed border-line px-4 py-5 text-center text-sm text-muted">Giornata ancora libera: aggiungi le tappe dalla scheda Giorni.</p>
+              <p class="rounded-[20px] border-2 border-dashed border-line px-4 py-5 text-center text-sm text-muted">Giornata ancora libera: aggiungi le tappe dalla scheda Giorni.</p>
             )}
           </section>
         )}
 
         <div class="flex flex-col gap-3.5 pt-0.5">
-          <Shortcut href="/altro/checklist" icon={<ChecklistIcon size={22} />} color="var(--accent)" title="Checklist" line={check.total === 0 ? 'Ancora vuota' : `${check.done} di ${check.total} fatte`} />
+          <Shortcut href="/altro/checklist" icon={<ChecklistIcon size={22} />} color="var(--arancia)" title="Checklist" line={check.total === 0 ? 'Ancora vuota' : `${check.done} di ${check.total} fatte`} />
           <Shortcut
             href="/altro/alloggi"
             icon={<BedIcon size={22} />}
-            color="var(--warn)"
+            color="var(--glicine)"
             title="Alloggi"
             line={trip.stays.length === 0 ? 'Nessun alloggio' : unbooked > 0 ? `${unbooked} non ${unbooked === 1 ? 'prenotato' : 'prenotati'}` : `${trip.stays.length} prenotati`}
             lineTone={unbooked > 0 ? 'warn' : undefined}
@@ -244,14 +232,14 @@ export function Oggi() {
           <Shortcut
             href="/altro/budget"
             icon={<BudgetIcon size={22} />}
-            color="var(--ok)"
+            color="var(--menta)"
             title={limitStatus ? 'Spese' : mine ? 'Le tue spese' : 'Spese'}
             lineTone={limitStatus?.state === 'over' ? 'danger' : limitStatus?.state === 'warn' ? 'warn' : undefined}
             line={limitStatus && trip.budgetLimit ? budgetLine(limitStatus, tripSpent, trip.budgetLimit, trip.baseCurrency) : planned > 0 ? `${formatMoney(spent, trip.baseCurrency)} su ${formatMoney(planned, trip.baseCurrency)}` : `${formatMoney(spent, trip.baseCurrency)} spesi`}
           />
           {hasFx && (
             <Link href="/altro/budget" class="block" onClick={() => setScrollTarget('cambio')}>
-              <Ticket stub={<Disc color="var(--pale)"><SwapIcon size={22} /></Disc>} stubWidth={76}>
+              <Ticket stub={<Disc color="var(--cielo)"><SwapIcon size={22} /></Disc>} stubWidth={76}>
                 <span class="min-w-0 flex-1">
                   <span class="block text-[13px] text-muted">Cambio</span>
                   <span class="block text-[17px] font-extrabold leading-tight">

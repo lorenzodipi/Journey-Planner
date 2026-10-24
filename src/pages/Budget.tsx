@@ -237,29 +237,29 @@ export function Budget() {
         )}
 
         {c.expenses.length > 0 && (
-          <div class="mt-3 border-t-2 border-dashed border-line">
+          <div class="mt-3 border-t border-hairline">
             <p class="px-1 pt-2 text-xs font-extrabold text-muted">
               {c.expenses.length} {c.expenses.length === 1 ? 'spesa' : 'spese'}
             </p>
-            <ul class="divide-y-2 divide-dashed divide-line px-1">{c.expenses.map(expenseRow)}</ul>
+            <ul class="divide-y-2 divide-dashed divide-hairline px-1">{c.expenses.map(expenseRow)}</ul>
           </div>
         )}
 
         {c.lines.some((l) => l.source !== 'budget') && (
-          <div class="mt-2 border-t-2 border-dashed border-line">
+          <div class="mt-2 border-t border-hairline">
             <p class="px-1 pt-2 text-xs font-extrabold text-muted">Già inseriti in {c.label} · il pagato conta come speso</p>
-            <ul class="divide-y-2 divide-dashed divide-line">{c.lines.filter((l) => l.source !== 'budget').map(lineRow)}</ul>
+            <ul class="divide-y-2 divide-dashed divide-hairline">{c.lines.filter((l) => l.source !== 'budget').map(lineRow)}</ul>
           </div>
         )}
 
         {c.lines.some((l) => l.source === 'budget') && (
-          <div class="mt-2 border-t-2 border-dashed border-line">
+          <div class="mt-2 border-t border-hairline">
             <p class="px-1 pt-2 text-xs font-extrabold text-muted">Costi previsti</p>
-            <ul class="divide-y-2 divide-dashed divide-line">{c.lines.filter((l) => l.source === 'budget').map(lineRow)}</ul>
+            <ul class="divide-y-2 divide-dashed divide-hairline">{c.lines.filter((l) => l.source === 'budget').map(lineRow)}</ul>
           </div>
         )}
 
-        <div class="mt-2 flex flex-wrap items-center border-t-2 border-dashed border-line">
+        <div class="mt-2 flex flex-wrap items-center border-t border-hairline">
           <button type="button" onClick={() => setSheet({ kind: 'new-expense', category: c.label })} class="min-h-11 px-2 text-sm font-extrabold text-pale">
             + Spesa
           </button>
@@ -380,7 +380,7 @@ export function Budget() {
             <h2 class="font-display text-lg font-extrabold">Spese per valuta</h2>
             <ul class="mt-1">
               {expensesByCurrency(trip.expenses, fx).map((r, i) => (
-                <li key={r.currency} class={`flex min-h-12 items-center justify-between gap-3 ${i > 0 ? 'border-t-2 border-dashed border-line' : ''}`}>
+                <li key={r.currency} class={`flex min-h-12 items-center justify-between gap-3 ${i > 0 ? 'border-t border-hairline' : ''}`}>
                   <span class="min-w-0">
                     <span class="block font-extrabold tabular-nums">{formatMoney(r.amount, r.currency)}</span>
                     {r.currency !== base && (

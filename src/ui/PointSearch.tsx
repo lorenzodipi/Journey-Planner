@@ -73,7 +73,7 @@ export function PointSearch({ label, fallbackQuery, near, value, onChange }: Pro
   }
 
   return (
-    <div class="rounded-2xl border-2 border-line p-3">
+    <div class="rounded-[20px] border border-hairline p-3">
       <div class="flex items-center justify-between gap-2">
         <p class="text-sm font-extrabold">{label}</p>
         {value ? (
@@ -98,7 +98,7 @@ export function PointSearch({ label, fallbackQuery, near, value, onChange }: Pro
               void search()
             }
           }}
-          class="min-h-12 min-w-0 flex-1 rounded-[14px] border-2 border-line bg-bg px-4"
+          class="min-h-12 min-w-0 flex-1 rounded-xl border-[1.5px] border-line bg-surface px-4"
         />
         <button
           type="button"
@@ -115,7 +115,7 @@ export function PointSearch({ label, fallbackQuery, near, value, onChange }: Pro
         </p>
       )}
       {results && results.length > 0 && (
-        <ul class="mt-2 divide-y divide-line rounded-2xl border-2 border-line">
+        <ul class="mt-2 divide-y divide-hairline rounded-[20px] border border-hairline">
           {results.map((r) => (
             <li>
               <button type="button" onClick={() => pick(r)} class="block min-h-12 w-full px-3 py-2 text-left text-sm">
@@ -134,7 +134,7 @@ export function PointSearch({ label, fallbackQuery, near, value, onChange }: Pro
           placeholder="https://www.google.com/maps/place/…"
           aria-label={`Link di Google Maps: ${label.toLowerCase()}`}
           onInput={(e) => onLink((e.currentTarget as HTMLInputElement).value)}
-          class="min-h-12 w-full rounded-[14px] border-2 border-line bg-bg px-4"
+          class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-4"
         />
       </label>
       {linkHint && (

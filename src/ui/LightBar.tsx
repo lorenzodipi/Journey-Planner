@@ -152,7 +152,7 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 /** La card "luce del giorno": data e città in testa, poi la barra. Usata in Oggi e nella pagina del giorno. */
 export function LightCard({ date, city, sun, nowMin = null }: { date: string; city?: string; sun: DaySun; nowMin?: number | null }) {
   return (
-    <section class="rise rounded-2xl border-2 border-line bg-surface px-4 pb-3.5 pt-3.5">
+    <section class="rise rounded-[20px] border border-hairline bg-surface px-4 pb-3.5 pt-3.5">
       <div class="flex items-baseline justify-between gap-3">
         <h2 class="font-display text-lg font-extrabold">{cap(formatDayLong(date))}</h2>
         {city && <span class="text-[13px] text-muted">{city}</span>}

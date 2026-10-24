@@ -10,8 +10,9 @@ import { TrashButton } from '../ui/ConfirmDialog'
 import { Sheet } from '../ui/Sheet'
 import { StayForm } from '../ui/StayForm'
 import { CardDetail, useOpenCard } from '../ui/CardDetail'
-import { ChevronDownIcon, PinOutIcon } from '../ui/Icons'
+import { ChevronDownIcon } from '../ui/Icons'
 import { EmptyState, PageHeader } from '../ui/PageHeader'
+import { MapsPill } from '../ui/MapsPill'
 import { Fab, Tag, Ticket } from '../ui/Ticket'
 import { useDeleter } from '../ui/useDeleter'
 
@@ -72,7 +73,7 @@ export function Alloggi() {
       />
       <div class="space-y-3.5 px-5 pb-24">
         {gaps.length > 0 && (
-          <p class="rounded-2xl border-2 border-dashed border-line px-4 py-3 text-xs text-muted">
+          <p class="rounded-[20px] border-2 border-dashed border-line px-4 py-3 text-xs text-muted">
             Notti senza alloggio: {gaps.map(formatShort).join(', ')} (ok se sei in volo o in treno di notte).
           </p>
         )}
@@ -93,10 +94,10 @@ export function Alloggi() {
               return (
                 <li>
                   <Ticket
-                    tone={s.booked ? 'line' : 'warn'}
+                    tint={s.booked ? 'azzurro' : 'limone'}
                     stub={
                       <div>
-                        <div class={`text-[34px] font-extrabold leading-[0.9] tabular-nums ${s.booked ? 'text-ok' : 'text-warn'}`}>{n}</div>
+                        <div class="font-display text-[34px] font-medium leading-[0.9] tabular-nums">{n}</div>
                         <div class="mt-0.5 text-xs text-muted">{n === 1 ? 'notte' : 'notti'}</div>
                       </div>
                     }
@@ -131,13 +132,12 @@ export function Alloggi() {
                           }
                         />
                       </div>
-                      <div class="mt-0.5 flex items-center gap-2">
+                      <div class="mt-1 flex items-center gap-2">
                         <Tag tone={s.booked ? 'ok' : 'warn'}>{s.booked ? 'Prenotato' : 'Non prenotato'}</Tag>
                         {href && (
-                          <a href={href} target="_blank" rel="noreferrer" class="ml-auto inline-flex min-h-11 items-center gap-1 pr-3 text-sm font-extrabold text-pale">
-                            <PinOutIcon size={18} />
-                            Apri in Maps
-                          </a>
+                          <span class="ml-auto">
+                            <MapsPill href={href} label={s.name} text="Mappa" compact />
+                          </span>
                         )}
                       </div>
                       {open && (

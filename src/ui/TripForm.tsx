@@ -199,7 +199,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
               maxLength={40}
               autoComplete="off"
               onInput={(e) => setSelfName(e.currentTarget.value)}
-              class="min-h-12 min-w-0 flex-1 rounded-[14px] border-2 border-line bg-bg px-4"
+              class="min-h-12 min-w-0 flex-1 rounded-xl border-[1.5px] border-line bg-surface px-4"
             />
           </div>
           {ownEmail && <p class="-mt-1 pl-6 text-xs text-muted">Sei tu: {ownEmail}</p>}
@@ -220,7 +220,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
                   autoComplete="off"
                   autoCapitalize="none"
                   onInput={(e) => setOthers(others.map((x, j) => (j === i ? { ...x, email: e.currentTarget.value } : x)))}
-                  class="min-h-12 w-full rounded-[14px] border-2 border-line bg-bg px-4"
+                  class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-4"
                 />
                 <input
                   type="text"
@@ -230,7 +230,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
                   maxLength={40}
                   autoComplete="off"
                   onInput={(e) => setOthers(others.map((x, j) => (j === i ? { ...x, name: e.currentTarget.value } : x)))}
-                  class="min-h-12 w-full rounded-[14px] border-2 border-line bg-bg px-4"
+                  class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-4"
                 />
               </div>
               <button
@@ -258,7 +258,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
         </fieldset>
       )}
 
-      <details class="group rounded-2xl border-2 border-line px-4 py-1">
+      <details class="group rounded-[20px] border border-hairline px-4 py-1">
         <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 py-1 text-sm font-extrabold [&::-webkit-details-marker]:hidden">
           Fuso e valute
           <span class="grid size-11 shrink-0 place-items-center text-pale transition-transform duration-200 group-open:rotate-180">

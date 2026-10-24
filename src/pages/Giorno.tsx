@@ -37,6 +37,7 @@ import { useDragReorder } from '../ui/useDragReorder'
 import { useItemActions } from '../ui/useItemActions'
 import { MODE_LABEL } from '../ui/TransportForm'
 import { ArrowDownIcon, CloseIcon, RouteIcon, TickIcon } from '../ui/Icons'
+import { MapsPill } from '../ui/MapsPill'
 import { Tag } from '../ui/Ticket'
 import { WeatherCard } from '../ui/WeatherCard'
 
@@ -75,14 +76,11 @@ function StayCard({ stay, label, onEdit }: { stay: Stay; label: string; onEdit: 
         <Tag tone={stay.booked ? 'ok' : 'warn'}>{stay.booked ? 'Prenotato' : 'Non prenotato'}</Tag>
         <Tag tone={stay.paid ? 'ok' : 'warn'}>{stay.paid ? 'Pagato' : 'Non pagato'}</Tag>
         {(stay.address || stay.mapsUrl) && (
-          <a
+          <MapsPill
             href={mapsLinkFor({ mapsUrl: stay.mapsUrl, lat: null, lng: null, name: [stay.name, stay.address, stay.city].filter(Boolean).join(' ') })}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="font-extrabold text-pale"
-          >
-            Apri in Maps
-          </a>
+            label={stay.name}
+            compact
+          />
         )}
       </p>
     </div>
@@ -235,7 +233,7 @@ export function Giorno({ params }: { params: { id: string } }) {
     spostamenti: (
       <Section title="Spostamenti">
         {movements.length > 0 ? (
-          <ul class="divide-y-2 divide-dashed divide-line">
+          <ul class="divide-y-2 divide-dashed divide-hairline">
             {movements.map((e) => (
               <li class="flex min-h-14 items-center">
                 <button
@@ -283,7 +281,7 @@ export function Giorno({ params }: { params: { id: string } }) {
           <p class="py-2 text-sm text-muted">Nessun volo, treno o spostamento in programma per questo giorno.</p>
         )}
         {movements.length > 0 && <p class="mt-1 text-xs text-muted">Voli, treni e check-in/out: tocca per modificare. Orari nel fuso di ogni luogo.</p>}
-        <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t-2 border-dashed border-line pt-1">
+        <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-1">
           <button type="button" onClick={() => setSheet({ kind: 'new-transport', day })} class="min-h-11 px-3 text-sm font-extrabold text-pale">
             + Trasporto
           </button>
@@ -296,7 +294,7 @@ export function Giorno({ params }: { params: { id: string } }) {
     alloggio: (
       <Section title="Alloggio">
         {stays.night || stays.checkIn.length > 0 || stays.checkOut.length > 0 ? (
-          <div class="divide-y-2 divide-dashed divide-line">
+          <div class="divide-y-2 divide-dashed divide-hairline">
             {stays.checkOut.map((s) => <StayCard stay={s} label="Check-out oggi" onEdit={() => setSheet({ kind: 'edit-stay', stay: s })} />)}
             {stays.checkIn.filter((s) => s.id !== stays.night?.id).map((s) => <StayCard stay={s} label="Check-in oggi" onEdit={() => setSheet({ kind: 'edit-stay', stay: s })} />)}
             {stays.night && (
@@ -310,7 +308,7 @@ export function Giorno({ params }: { params: { id: string } }) {
         ) : (
           <p class="py-2 text-sm text-muted">Nessun alloggio per questa notte.</p>
         )}
-        <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t-2 border-dashed border-line pt-1">
+        <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-1">
           <button type="button" onClick={() => setSheet({ kind: 'new-stay', day })} class="min-h-11 px-3 text-sm font-extrabold text-pale">
             + Alloggio
           </button>
@@ -323,7 +321,7 @@ export function Giorno({ params }: { params: { id: string } }) {
     spese: (
       <Section title="Spese del giorno" aside={expenses.length > 0 ? formatMoney(total, trip.baseCurrency) : undefined}>
         {expenses.length > 0 ? (
-          <ul class="divide-y-2 divide-dashed divide-line">
+          <ul class="divide-y-2 divide-dashed divide-hairline">
             {expenses.map((e) => {
               const inBase = expenseBase(e, fx)
               return (
@@ -361,7 +359,7 @@ export function Giorno({ params }: { params: { id: string } }) {
         ) : (
           <p class="py-2 text-sm text-muted">Nessuna spesa registrata per questo giorno.</p>
         )}
-        <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t-2 border-dashed border-line pt-1">
+        <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-1">
           <button type="button" onClick={() => setSheet({ kind: 'new-expense', day })} class="min-h-11 px-3 text-sm font-extrabold text-pale">
             + Spesa
           </button>
@@ -375,7 +373,7 @@ export function Giorno({ params }: { params: { id: string } }) {
       bookings.length > 0 || todos.length > 0 ? (
       <Section title="Prenotazioni e da fare">
         {bookings.length > 0 && (
-          <ul class="divide-y-2 divide-dashed divide-line" aria-label="Prenotazioni valide oggi">
+          <ul class="divide-y-2 divide-dashed divide-hairline" aria-label="Prenotazioni valide oggi">
             {bookings.map((b) => (
               <li class="flex items-center">
                 <button type="button" onClick={() => setSheet({ kind: 'edit-booking', booking: b })} aria-label={`Modifica ${b.title}`} class="block min-h-12 min-w-0 flex-1 py-2 text-left">
@@ -398,7 +396,7 @@ export function Giorno({ params }: { params: { id: string } }) {
           </ul>
         )}
         {todos.length > 0 && (
-          <ul class={`divide-y-2 divide-dashed divide-line ${bookings.length > 0 ? 'mt-2 border-t-2 border-dashed border-line' : ''}`} aria-label="Da fare oggi">
+          <ul class={`divide-y-2 divide-dashed divide-hairline ${bookings.length > 0 ? 'mt-2 border-t border-hairline' : ''}`} aria-label="Da fare oggi">
             {todos.map((c) => (
               <li class="flex items-center">
                 <button
@@ -481,10 +479,10 @@ export function Giorno({ params }: { params: { id: string } }) {
           </Card>
         )}
 
-        <section class="rise overflow-hidden rounded-2xl border-2 border-line bg-surface">
+        <section class="rise overflow-hidden rounded-[20px] border border-hairline bg-surface">
           <DayMapPanel route={route} center={trip.center} selectedId={selected?.id} onSelect={onPin} />
           {selected && (
-            <div class="flex items-center gap-1 border-t-2 border-dashed border-line pl-4 pr-1" role="status">
+            <div class="flex items-center gap-1 border-t border-hairline pl-4 pr-1" role="status">
               <span class="grid size-7 shrink-0 place-items-center rounded-full bg-accent text-sm font-extrabold text-white">{selected.n}</span>
               <span class="min-w-0 flex-1 truncate py-2 pl-2 font-extrabold">{selected.name}</span>
               <button type="button" onClick={() => goToStop(selected.id)} class="inline-flex min-h-11 shrink-0 items-center gap-1.5 px-2.5 text-sm font-extrabold text-pale">
@@ -497,7 +495,7 @@ export function Giorno({ params }: { params: { id: string } }) {
             </div>
           )}
           {route.stops.length > 0 && (
-            <div class="flex justify-between border-t-2 border-dashed border-line px-4 py-2.5 text-sm">
+            <div class="flex justify-between border-t border-hairline px-4 py-2.5 text-sm">
               <span class="font-extrabold">{route.legs.length > 0 && route.legs.every((l) => l.kind === 'walk') ? 'Percorso a piedi' : 'Percorso del giorno'}</span>
               <span class="text-muted">
                 {route.stops.length} {route.stops.length === 1 ? 'tappa' : 'tappe'}
@@ -562,7 +560,7 @@ export function Giorno({ params }: { params: { id: string } }) {
                 ))}
               </ul>
             ) : (
-              <p class="rounded-2xl border-2 border-dashed border-line px-4 py-5 text-center text-sm text-muted">Giornata ancora libera: aggiungi le tappe da qui sotto.</p>
+              <p class="rounded-[20px] border-2 border-dashed border-line px-4 py-5 text-center text-sm text-muted">Giornata ancora libera: aggiungi le tappe da qui sotto.</p>
             )}
             <button
               type="button"

@@ -68,7 +68,7 @@ export function Select({ label, value, options, onChange, placeholder = 'Scegliâ
           role="textbox"
           aria-readonly="true"
           aria-label={label}
-          class={`flex min-h-12 w-full items-center gap-3 rounded-2xl border-2 border-line px-4 text-left text-muted ${tone === 'surface' ? 'bg-surface' : 'bg-bg'}`}
+          class={`flex min-h-12 w-full items-center gap-3 rounded-[20px] border border-hairline px-4 text-left text-muted ${tone === 'surface' ? 'bg-surface' : 'bg-bg'}`}
         >
           <span class="min-w-0 flex-1 truncate">{shownLabel || placeholder}</span>
         </div>
@@ -78,7 +78,7 @@ export function Select({ label, value, options, onChange, placeholder = 'Scegliâ
           aria-haspopup="dialog"
           aria-expanded={open}
           onClick={() => setOpen(true)}
-          class={`flex min-h-12 w-full items-center gap-3 rounded-2xl border-2 border-line px-4 text-left ${tone === 'surface' ? 'bg-surface' : 'bg-bg'}`}
+          class={`flex min-h-12 w-full items-center gap-3 rounded-[20px] border border-hairline px-4 text-left ${tone === 'surface' ? 'bg-surface' : 'bg-bg'}`}
         >
           {selected?.color && <span aria-hidden="true" class="h-3 w-3 shrink-0 rounded-full" style={{ background: selected.color }} />}
           <span class={`min-w-0 flex-1 truncate ${shownLabel ? '' : 'text-muted'}`}>{shownLabel || placeholder}</span>
@@ -98,7 +98,7 @@ export function Select({ label, value, options, onChange, placeholder = 'Scegliâ
               placeholder="Cercaâ€¦"
               autoComplete="off"
               enterkeyhint="search"
-              class="min-h-12 w-full rounded-2xl border-2 border-line bg-bg pl-11 pr-4"
+              class="min-h-12 w-full rounded-[20px] border border-hairline bg-bg pl-11 pr-4"
               onKeyDown={(e) => {
                 // Invio non deve inviare il modulo che sta sotto
                 if (e.key === 'Enter') {
@@ -147,7 +147,7 @@ export function Select({ label, value, options, onChange, placeholder = 'Scegliâ
           })}
           {filtered.length === 0 && !canCreate && <li class="px-3 py-4 text-sm text-muted">Nessun risultato.</li>}
           {extra && (
-            <li class="mt-1.5 border-t-2 border-line pt-1.5">
+            <li class="mt-1.5 border-t border-hairline pt-1.5">
               <button
                 type="button"
                 onClick={() => {

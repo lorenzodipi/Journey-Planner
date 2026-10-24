@@ -55,7 +55,7 @@ export function DayMapPanel({
       </div>
 
       {transports.length > 0 && (
-        <ul class="space-y-1 border-t-2 border-dashed border-line px-4 py-2.5 text-sm" aria-label="Trasporti sulla mappa">
+        <ul class="space-y-1 border-t border-hairline px-4 py-2.5 text-sm" aria-label="Trasporti sulla mappa">
           {transports.map((t) => (
             <li class="flex items-center gap-3">
               <span
@@ -72,7 +72,7 @@ export function DayMapPanel({
       )}
 
       {missing > 0 && (
-        <p class="border-t-2 border-dashed border-line px-4 py-2.5 text-xs text-muted">
+        <p class="border-t border-hairline px-4 py-2.5 text-xs text-muted">
           {missing} {missing === 1 ? 'tappa non ha' : 'tappe non hanno'} una posizione e non compare sulla mappa.
         </p>
       )}

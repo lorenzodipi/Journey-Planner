@@ -151,7 +151,7 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
                   void search()
                 }
               }}
-              class="min-h-12 min-w-0 flex-1 rounded-[14px] border-2 border-line bg-surface px-4"
+              class="min-h-12 min-w-0 flex-1 rounded-xl border-[1.5px] border-line bg-surface px-4"
             />
             <button
               type="button"
@@ -166,7 +166,7 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
         {searchError && <p class="text-sm text-danger">{searchError}</p>}
         {results && results.length === 0 && <p class="text-sm text-muted">Nessun risultato: prova con un altro nome.</p>}
         {results && results.length > 0 && (
-          <ul class="divide-y divide-line overflow-hidden rounded-2xl border-2 border-line bg-surface">
+          <ul class="divide-y divide-hairline overflow-hidden rounded-[20px] border border-hairline bg-surface">
             {results.map((r) => (
               <li>
                 <button type="button" onClick={() => pick(r)} class="block min-h-12 w-full px-4 py-2 text-left">
@@ -224,7 +224,7 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
 
       <TextArea label="Note" value={notes} onInput={setNotes} placeholder="Consigli, orari migliori, cosa ordinare…" />
 
-      <details class="rounded-2xl border-2 border-line px-4 py-1">
+      <details class="rounded-[20px] border border-hairline px-4 py-1">
         <summary class="min-h-11 cursor-pointer list-none py-3 text-sm font-extrabold">Indirizzo, orari e coordinate</summary>
         <div class="space-y-4 pb-4">
           <TextField label="Indirizzo" value={address} onInput={setAddress} />

@@ -1,3 +1,4 @@
+import { MapsPill } from './MapsPill'
 import { useState } from 'preact/hooks'
 import { formatDay } from '../lib/dates'
 import { formatDuration } from '../lib/duration'
@@ -141,14 +142,7 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
         </p>
       )}
 
-      <a
-        href={mapsLinkFor(place)}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="grid min-h-12 w-full place-items-center rounded-full border-2 border-line px-6 font-extrabold"
-      >
-        Apri in Maps
-      </a>
+      <MapsPill href={mapsLinkFor(place)} label={place.name} />
 
       {trip.days.length > 0 && (
         <div class="space-y-2 rounded-2xl bg-bg p-3">
