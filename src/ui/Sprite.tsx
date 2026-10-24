@@ -1,4 +1,4 @@
-import { SPRITE } from './sprite'
+import { SPRITE } from './spriteData'
 
 /** Le icone del Design System (dischi colorati con il glifo scuro): si disegnano una volta sola, poi si richiamano con <Ic name="i-..."/>. */
 export function Sprite() {
