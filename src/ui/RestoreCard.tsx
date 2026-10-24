@@ -94,7 +94,7 @@ export function RestoreCard() {
     if (!file) return
     setFileName(file.name)
     if (file.size > MAX_BYTES) {
-      setOutcome({ ok: false, error: 'Il file è troppo grande (oltre 20 MB): non sembra un\'esportazione di Journey Planner.' })
+      setOutcome({ ok: false, error: 'Il file è troppo grande (oltre 20 MB): non sembra un\'esportazione di Faraway.' })
       return
     }
     setReading(true)

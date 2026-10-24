@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Journey Planner</string>
-    <string name="title_activity_main">Journey Planner</string>
+    <string name="app_name">Faraway</string>
+    <string name="title_activity_main">Faraway</string>
     <string name="package_name">it.lorenzodipi.journeyplanner</string>
     <string name="custom_url_scheme">it.lorenzodipi.journeyplanner</string>
 </resources>

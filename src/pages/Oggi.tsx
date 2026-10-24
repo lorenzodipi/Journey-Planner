@@ -1,5 +1,5 @@
 import { Fragment } from 'preact'
-import { useEffect, useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
 import { budgetStatus, fxOf, paidFromSections, summarizeExpenses } from '../lib/budget'
 import { buildExport, downloadJson, exportFileName, serializeExport } from '../lib/exportData'
@@ -198,26 +198,17 @@ function WeatherHero({ day, hours, city, nowHour }: { day: DayWeather; hours: Ho
   const temp = current?.t ?? day.max
   const rain = rainWindow(hours, 0)
   const rainLater = rainWindow(hours, nowHour)
-  // sei orari: una mattina presto, «Ora» e le ore che seguono, con l'inizio della pioggia
-  const picks = useMemo(() => {
-    if (!hours) return [] as { label: string; h: HourWeather; now?: boolean }[]
-    const want = new Set<number>([9, 12, 15, 18, 21])
-    if (rainLater) want.add(rainLater.from)
-    const list = [...want].filter((h) => Math.abs(h - nowHour) >= 2).sort((a, b) => a - b)
-    const out: { label: string; h: HourWeather; now?: boolean }[] = list
-      .map((h) => hours.find((x) => x.h === h))
-      .filter((x): x is HourWeather => !!x)
-      .map((h) => ({ label: `${h.h}:00`, h }))
-    const nowH = hours.find((h) => h.h === nowHour)
-    if (nowH) out.push({ label: 'Ora', h: nowH, now: true })
-    out.sort((a, b) => a.h.h - b.h.h)
-    // al massimo sei: si tengono quelli più vicini a «Ora»
-    while (out.length > 6) {
-      const far = out.reduce((best, x, i) => (!x.now && Math.abs(x.h.h - nowHour) > Math.abs(out[best].h.h - nowHour) ? i : best), 0)
-      out.splice(far, 1)
-    }
-    return out
-  }, [hours, nowHour, rainLater])
+  // tutte e 24 le ore del giorno, scorribili; si parte da «Ora»
+  const picks = useMemo(
+    () => (hours ?? []).map((h) => ({ label: h.h === nowHour ? 'Ora' : `${h.h}:00`, h, now: h.h === nowHour })),
+    [hours, nowHour],
+  )
+  const strip = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = strip.current
+    const n = el?.querySelector<HTMLElement>('.wxi.now')
+    if (el && n) el.scrollLeft = Math.max(0, n.offsetLeft - 8)
+  }, [picks.length])
   const w = weatherLabel(code)
   const sentence = rainLater ? `Pioggia dalle ${rainLater.from}` : rain ? 'Pioggia già passata' : undefined
   return (
@@ -233,7 +224,7 @@ function WeatherHero({ day, hours, city, nowHour }: { day: DayWeather; hours: Ho
         <span class="num">Minima {day.min}°</span>
       </div>
       {picks.length > 0 && (
-        <div class="wxh" role="list" aria-label={`Meteo ora per ora a ${city}`}>
+        <div class="wxh" ref={strip} role="list" aria-label={`Meteo ora per ora a ${city}, scorri in orizzontale`} tabIndex={0}>
           {picks.map(({ label, h, now }) => (
             <div class={`wxi ${now ? 'now' : ''}`.trim()} role="listitem">
               <span class="num">{label}</span>

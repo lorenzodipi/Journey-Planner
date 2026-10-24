@@ -27,8 +27,8 @@ export default defineConfig(({ mode }) => {
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'favicon-64.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png'],
       manifest: {
-        name: 'Journey Planner',
-        short_name: 'Journey',
+        name: 'Faraway',
+        short_name: 'Faraway',
         description: 'Il tuo planner di viaggio, sempre in tasca.',
         lang: 'it',
         start_url: base,

@@ -27,9 +27,9 @@ const colHeight = (t: number) => Math.round(Math.max(8, Math.min(48, 14 + (t - 5
 type Cell = { min: number; hour: HourWeather; now: boolean } | { min: number; event: 'sunrise' | 'sunset' }
 
 function cellsFor(hours: HourWeather[], sun: DaySun | null, nowHour: number | null): Cell[] {
-  const cells: Cell[] = hours.filter((h) => h.h >= 6 && h.h <= 21).map((hour) => ({ min: hour.h * 60, hour, now: hour.h === nowHour }))
+  const cells: Cell[] = hours.filter((h) => h.h >= 0 && h.h <= 23).map((hour) => ({ min: hour.h * 60, hour, now: hour.h === nowHour }))
   const add = (min: number | null | undefined, event: 'sunrise' | 'sunset') => {
-    if (min != null && min >= 6 * 60 && min < 22 * 60) cells.push({ min, event })
+    if (min != null && min >= 0 && min < 24 * 60) cells.push({ min, event })
   }
   add(sun?.sunrise, 'sunrise')
   add(sun?.sunset, 'sunset')

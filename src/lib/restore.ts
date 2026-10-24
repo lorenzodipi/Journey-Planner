@@ -492,7 +492,7 @@ export function parseExport(text: string): ParseOutcome {
     return { ok: false, error: 'Il file non è un JSON valido.' }
   }
   if (!isObj(data) || data.format !== EXPORT_FORMAT) {
-    return { ok: false, error: 'Questo non è un file esportato da Journey Planner.' }
+    return { ok: false, error: 'Questo non è un file esportato da Faraway.' }
   }
   if (typeof data.version !== 'number' || data.version > EXPORT_VERSION) {
     return { ok: false, error: "Il file è stato creato da una versione più recente dell'app: aggiorna l'app e riprova." }

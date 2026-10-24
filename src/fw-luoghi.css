@@ -22,7 +22,7 @@
 .rows .prow.cur .pm{color:var(--on-tinta-muted)}
 .sec-t{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 10px}
 .lst{display:flex;flex-direction:column;gap:20px}
-.chips.scroll{overflow-x:auto;scrollbar-width:none}
+.chips.scroll{overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
 .chips.scroll::-webkit-scrollbar{display:none}
 
 /* ricerca (stessa pillola del mock della Mappa) */
@@ -48,7 +48,7 @@ main.screen.mapscr{position:fixed;left:0;right:0;top:0;bottom:calc(64px + env(sa
 .mapscr .maptop{position:absolute;left:16px;right:16px;top:calc(8px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:8px;z-index:10;pointer-events:none}
 .mapscr .maptop > *{pointer-events:auto}
 .mapscr .maptop .fld.srch{background:var(--surface-card)}
-.mapscr .maptop .chips{margin:0 -16px;padding:0 16px}
+.mapscr .maptop .chips{margin:0 -16px;padding:0 16px;overflow-x:auto;overflow-y:hidden}
 .mapscr.map-full .maplibregl-ctrl-top-right{top:calc(112px + env(safe-area-inset-top))}
 .mapscr .maplibregl-ctrl-bottom-left,.mapscr .maplibregl-ctrl-bottom-right{margin-bottom:0}
 .mapscr .mapnote{position:absolute;left:12px;right:12px;z-index:10;pointer-events:none}
@@ -59,8 +59,8 @@ main.screen.mapscr{position:fixed;left:0;right:0;top:0;bottom:calc(64px + env(sa
 .mapscr .mapcard .btn.soft{background:var(--azzurro-soft);color:var(--azzurro-ink)}
 
 /* i pin della mappa: i dischi del Design System (36 px, 56 px quello scelto) */
-.jp-pin.fw-pin{width:36px;height:36px;padding:0;border:0;background:transparent;border-radius:50%;box-shadow:0 0 0 3px var(--canvas);transition:width .15s cubic-bezier(.23,1,.32,1),height .15s cubic-bezier(.23,1,.32,1)}
+.jp-pin.fw-pin{width:26px;height:26px;padding:0;border:0;background:transparent;border-radius:50%;box-shadow:0 0 0 2px var(--canvas);transition:width .15s cubic-bezier(.23,1,.32,1),height .15s cubic-bezier(.23,1,.32,1)}
 .jp-pin.fw-pin svg{display:block;width:100%;height:100%;filter:none}
-.jp-pin.fw-pin.fw-ring{box-shadow:0 0 0 3px var(--canvas),0 0 0 5px var(--pin-ring)}
-.jp-pin.fw-pin.jp-pin-selected{width:56px;height:56px;border:0;box-shadow:0 0 0 3px var(--canvas),0 0 0 6px var(--azzurro-solid)}
+.jp-pin.fw-pin.fw-ring{box-shadow:0 0 0 2px var(--canvas),0 0 0 4px var(--pin-ring)}
+.jp-pin.fw-pin.jp-pin-selected{width:40px;height:40px;border:0;box-shadow:0 0 0 2px var(--canvas),0 0 0 5px var(--azzurro-solid)}
 @media (prefers-reduced-motion:reduce){.jp-pin.fw-pin{transition:none}}

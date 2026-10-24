@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   // Identificativo dell'app. Una volta pubblicato/installato NON va più cambiato
   // (Android lo registra anche per la verifica sviluppatore di Google).
   appId: 'it.lorenzodipi.journeyplanner',
-  appName: 'Journey Planner',
+  appName: 'Faraway',
   webDir: 'dist-native',
   backgroundColor: '#FAF6EE',
   server: {
