@@ -132,7 +132,7 @@ export function Mappa() {
             type="button"
             aria-pressed={filters.categories.length === 0}
             onClick={() => setFilters({ ...filters, categories: [] })}
-            class={`min-h-11 shrink-0 rounded-full border-2 px-4 text-sm font-extrabold ${filters.categories.length === 0 ? 'border-accent bg-accent text-white' : 'border-line bg-bg text-ink'}`}
+            class={`min-h-11 shrink-0 rounded-full border-2 px-4 text-sm font-extrabold ${filters.categories.length === 0 ? 'border-accent bg-accent text-accent-ink' : 'border-transparent bg-surface text-ink'}`}
           >
             Tutti
           </button>
@@ -142,7 +142,7 @@ export function Mappa() {
               key={c.id}
               aria-pressed={onlyCat === c.label}
               onClick={() => setFilters({ ...filters, categories: onlyCat === c.label ? [] : [c.label] })}
-              class={`flex min-h-11 shrink-0 items-center gap-2 rounded-full border-2 px-3.5 text-sm font-extrabold ${onlyCat === c.label ? 'border-accent bg-accent text-white' : 'border-line bg-bg text-ink'}`}
+              class={`flex min-h-11 shrink-0 items-center gap-2 rounded-full border-2 px-3.5 text-sm font-extrabold ${onlyCat === c.label ? 'border-accent bg-accent text-accent-ink' : 'border-transparent bg-surface text-ink'}`}
             >
               <span aria-hidden="true" class="size-2.5 rounded-full" style={{ background: colorForCategory(trip, c.id) }} />
               {c.label}

@@ -99,7 +99,7 @@ export function DatePicker({ label, value, onInput, min, max, optional = false }
                       onClick={() => pick(ymd)}
                       class={`grid size-11 place-items-center rounded-full text-[15px] tabular-nums ${
                         on
-                          ? 'bg-accent font-extrabold text-white'
+                          ? 'bg-accent font-extrabold text-accent-ink'
                           : blocked
                             ? 'text-muted/40 line-through decoration-1'
                             : ymd === today

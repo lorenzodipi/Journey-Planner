@@ -336,7 +336,7 @@ export function Checklist() {
             type="button"
             disabled={chosen.length === 0}
             onClick={() => void deleteChosen()}
-            class="inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-full border-2 border-transparent bg-danger text-base font-extrabold text-white shadow-[0_8px_20px_rgb(20_25_48/0.3)] disabled:cursor-not-allowed disabled:border-danger disabled:bg-surface-high disabled:text-muted disabled:shadow-none"
+            class="inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-full border-2 border-transparent bg-danger text-base font-extrabold text-bg shadow-[0_8px_20px_rgb(20_25_48/0.3)] disabled:cursor-not-allowed disabled:border-danger disabled:bg-surface-high disabled:text-muted disabled:shadow-none"
           >
             <TrashIcon size={22} />
             {chosen.length === 0 ? 'Elimina' : chosen.length === 1 ? 'Elimina 1 voce' : `Elimina ${chosen.length} voci`}

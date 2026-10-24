@@ -52,7 +52,7 @@ export function ItemRow({ item, n, onMap, hint, place, duration, mapsHref, onOpe
     <span class={`text-[22px] font-extrabold leading-none tabular-nums ${item.done ? 'text-muted' : 'text-pale'}`}>{item.time}</span>
   ) : n != null ? (
     <span
-      class={`grid size-7 place-items-center rounded-full text-sm font-extrabold ${onMap ? 'bg-accent text-white' : 'border-2 border-line text-muted'}`}
+      class={`grid size-7 place-items-center rounded-full text-sm font-extrabold ${onMap ? 'bg-accent text-accent-ink' : 'border-2 border-line text-muted'}`}
       title={onMap ? `Tappa ${n} sulla mappa` : `Tappa ${n} (senza posizione sulla mappa)`}
     >
       {n}

@@ -1,8 +1,8 @@
 import { budgetLine, type BudgetStatus } from '../lib/budget'
 import { formatMoney } from '../lib/money'
 
-// Colori dello stato sulla carta chiara dello scontrino (contrasto ≥ 4.5:1 su #eef3fa); il testo dice lo stesso a parole.
-const FILL = { ok: '#167a55', warn: '#9a5b00', over: '#b3261e' } as const
+// Colori dello stato sulla carta chiara dello scontrino (i token seguono il tema); il testo dice lo stesso a parole.
+const FILL = { ok: 'var(--ok)', warn: 'var(--warn)', over: 'var(--danger)' } as const
 
 /** Barra «speso rispetto al budget massimo»; il segno scuro è dove arriva il previsto. */
 export function BudgetLimitBar({ status, spent, limit, currency }: { status: BudgetStatus; spent: number; limit: number; currency: string }) {
@@ -19,7 +19,7 @@ export function BudgetLimitBar({ status, spent, limit, currency }: { status: Bud
         aria-valuemax={limit}
         aria-valuenow={Math.min(spent, limit)}
         aria-valuetext={budgetLine(status, spent, limit, currency)}
-        class="relative mt-1.5 h-2.5 rounded-full bg-[#d5dfec]"
+        class="relative mt-1.5 h-2.5 rounded-full bg-surface-high"
       >
         <i class="absolute inset-y-0 left-0 block rounded-full" style={{ width: `${status.spentPct}%`, background: FILL[status.state] }} />
         {status.plannedPct > 0 && status.plannedPct < 100 && (

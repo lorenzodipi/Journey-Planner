@@ -411,7 +411,7 @@ export function Budget() {
           <button type="button" onClick={() => setSheet({ kind: 'new-category' })} class="grid min-h-[52px] flex-1 place-items-center rounded-[14px] border-2 border-line text-[15px] font-extrabold">
             + Categoria
           </button>
-          <button type="button" onClick={() => setSheet({ kind: 'new-expense' })} class="grid min-h-[52px] flex-1 place-items-center rounded-[14px] bg-accent text-[15px] font-extrabold text-white">
+          <button type="button" onClick={() => setSheet({ kind: 'new-expense' })} class="grid min-h-[52px] flex-1 place-items-center rounded-[14px] bg-accent text-[15px] font-extrabold text-accent-ink">
             + Spesa
           </button>
         </div>

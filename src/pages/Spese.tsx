@@ -57,7 +57,7 @@ export function Spese() {
               <ChevronRightIcon size={18} class="text-paper-muted" />
               {to && <Avatar name={to.name} color={to.color} size={30} />}
               <span class="flex-1" />
-              <span class="text-2xl font-extrabold tracking-[-0.5px] tabular-nums text-[#1559c7]">{formatMoney(x.amount, base)}</span>
+              <span class="text-2xl font-extrabold tracking-[-0.5px] tabular-nums text-pale">{formatMoney(x.amount, base)}</span>
             </div>
             <p class="mt-1.5 text-sm font-extrabold">
               {from?.name} deve a {to?.name} {formatMoney(x.amount, base)}
@@ -82,7 +82,7 @@ export function Spese() {
               role="tab"
               aria-selected={!selected}
               onClick={() => setWho('all')}
-              class={`min-h-10 min-w-0 flex-1 truncate rounded-[10px] px-1 text-sm font-extrabold ${!selected ? 'bg-accent text-white' : 'text-muted'}`}
+              class={`min-h-10 min-w-0 flex-1 truncate rounded-[10px] px-1 text-sm font-extrabold ${!selected ? 'bg-accent text-accent-ink' : 'text-muted'}`}
             >
               Tutti
             </button>
@@ -93,7 +93,7 @@ export function Spese() {
                 key={p.id}
                 aria-selected={selected?.id === p.id}
                 onClick={() => setWho(p.id)}
-                class={`min-h-10 min-w-0 flex-1 truncate rounded-[10px] px-1 text-sm font-extrabold ${selected?.id === p.id ? 'bg-accent text-white' : 'text-muted'}`}
+                class={`min-h-10 min-w-0 flex-1 truncate rounded-[10px] px-1 text-sm font-extrabold ${selected?.id === p.id ? 'bg-accent text-accent-ink' : 'text-muted'}`}
               >
                 {p.name}
               </button>

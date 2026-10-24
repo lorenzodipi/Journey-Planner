@@ -243,7 +243,7 @@ export function Giorno({ params }: { params: { id: string } }) {
                   aria-label={`Modifica: ${e.title}`}
                   class="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2 text-left"
                 >
-                <span class="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-white">
+                <span class="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-accent-ink">
                   <MovementIcon event={e} />
                 </span>
                 <span class="min-w-0 flex-1">
@@ -483,7 +483,7 @@ export function Giorno({ params }: { params: { id: string } }) {
           <DayMapPanel route={route} center={trip.center} selectedId={selected?.id} onSelect={onPin} />
           {selected && (
             <div class="flex items-center gap-1 border-t border-hairline pl-4 pr-1" role="status">
-              <span class="grid size-7 shrink-0 place-items-center rounded-full bg-accent text-sm font-extrabold text-white">{selected.n}</span>
+              <span class="grid size-7 shrink-0 place-items-center rounded-full bg-accent text-sm font-extrabold text-accent-ink">{selected.n}</span>
               <span class="min-w-0 flex-1 truncate py-2 pl-2 font-extrabold">{selected.name}</span>
               <button type="button" onClick={() => goToStop(selected.id)} class="inline-flex min-h-11 shrink-0 items-center gap-1.5 px-2.5 text-sm font-extrabold text-pale">
                 Vai alla tappa

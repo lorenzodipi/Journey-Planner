@@ -178,7 +178,7 @@ export function Luoghi() {
             onClick={() => setSel(allSelected ? new Set() : new Set(visible.map((p) => p.id)))}
             class="mb-4 flex min-h-14 w-full items-center gap-3.5 rounded-[14px] border-2 border-line bg-surface-2 px-4 text-left"
           >
-            <span class={`grid size-7 shrink-0 place-items-center rounded-lg border-2 text-white ${chosen.length > 0 ? 'border-accent bg-accent' : 'border-line'}`}>
+            <span class={`grid size-7 shrink-0 place-items-center rounded-lg border-2 text-accent-ink ${chosen.length > 0 ? 'border-accent bg-accent' : 'border-line'}`}>
               {allSelected ? <TickIcon size={16} /> : chosen.length > 0 ? <MinusIcon size={16} /> : null}
             </span>
             <span class="flex-1 text-base font-extrabold">{allSelected ? 'Deseleziona tutti' : 'Seleziona tutti'}</span>
@@ -206,7 +206,7 @@ export function Luoghi() {
                     stub={
                       selecting ? (
                         <button type="button" role="checkbox" aria-checked={picked} aria-label={`Seleziona: ${p.name}`} onClick={() => toggleSel(p.id)} class="grid size-11 place-items-center">
-                          <span class={`grid size-7 place-items-center rounded-lg border-2 text-white ${picked ? 'border-accent bg-accent' : 'border-line'}`}>{picked && <TickIcon size={16} />}</span>
+                          <span class={`grid size-7 place-items-center rounded-lg border-2 text-accent-ink ${picked ? 'border-accent bg-accent' : 'border-line'}`}>{picked && <TickIcon size={16} />}</span>
                         </button>
                       ) : (
                         <PlaceDisc category={p.category} color={color} />
@@ -234,7 +234,7 @@ export function Luoghi() {
                         )}
                         {(p.lat == null || p.lng == null) && (
                           <span
-                            class="inline-flex items-center gap-1 rounded-md border-2 border-warn px-1.5 text-xs font-extrabold leading-snug text-warn"
+                            class="inline-flex items-center gap-1 rounded-full border-2 border-warn px-2.5 text-xs font-extrabold leading-[1.35rem] text-warn"
                             title="Senza posizione: non compare sulla mappa"
                           >
                             <NoPinIcon size={12} />
@@ -242,7 +242,7 @@ export function Luoghi() {
                           </span>
                         )}
                         {p.status !== 'idea' && (
-                          <span class={`rounded-md border-2 px-1.5 text-xs font-extrabold leading-snug ${STATUS_STYLE[p.status]}`}>{STATUS_LABEL[p.status]}</span>
+                          <span class={`rounded-full border-2 px-2.5 text-xs font-extrabold leading-[1.35rem] ${STATUS_STYLE[p.status]}`}>{STATUS_LABEL[p.status]}</span>
                         )}
                       </span>
                     </button>
