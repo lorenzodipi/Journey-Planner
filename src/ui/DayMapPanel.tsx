@@ -6,17 +6,19 @@ import { MODE_LABEL } from './TransportForm'
 
 type DayMapComponent = typeof import('./MapView').DayMapView
 
-/** Mappa di un giorno: pin numerati, linee tra le tappe e partenze/arrivi dei mezzi. L'elenco delle tappe sta nella pagina del giorno. */
+/** Mappa di un giorno (riquadro `.map` del Design System v3): pin, linee tra le tappe e partenze/arrivi dei mezzi. L'elenco delle tappe sta nella pagina del giorno. */
 export function DayMapPanel({
   route,
   center,
   selectedId,
   onSelect,
+  height = 260,
 }: {
   route: DayRoute
   center: Trip['center']
   selectedId?: string | null
   onSelect?: (stopId: string) => void
+  height?: number
 }) {
   const [View, setView] = useState<DayMapComponent | null>(null)
   const [loadError, setLoadError] = useState(false)
@@ -36,7 +38,7 @@ export function DayMapPanel({
 
   if (stops.length === 0 && transports.length === 0) {
     return (
-      <p class="bg-accent-soft px-4 py-3 text-sm text-pale">
+      <p class="card b-sm muted">
         Nessuna tappa di questo giorno ha ancora una posizione: collega le tappe a luoghi con una posizione sulla mappa, oppure imposta partenza e arrivo di un trasporto.
       </p>
     )
@@ -44,26 +46,22 @@ export function DayMapPanel({
 
   return (
     <div>
-      <div class="h-[170px] overflow-hidden bg-bg">
+      <div class="map" style={{ height: `${height}px`, border: '1.5px solid var(--border-strong)' }}>
         {View ? (
           <View stops={stops} lines={lines} ends={ends} center={stops[0] ?? transports[0]?.from ?? center} selectedId={selectedId} onSelect={onSelect} />
         ) : (
-          <p class="grid h-full place-items-center px-6 text-center text-sm text-muted" role="status">
+          <p class="b-sm muted" style={{ display: 'grid', height: '100%', placeItems: 'center', padding: '0 24px', textAlign: 'center' }} role="status">
             {loadError ? 'Non riesco a caricare la mappa: serve la connessione la prima volta.' : 'Carico la mappa…'}
           </p>
         )}
       </div>
 
       {transports.length > 0 && (
-        <ul class="space-y-1 border-t border-hairline px-4 py-2.5 text-sm" aria-label="Trasporti sulla mappa">
+        <ul class="b-sm" style={{ display: 'grid', gap: '6px', marginTop: '10px' }} aria-label="Trasporti sulla mappa">
           {transports.map((t) => (
-            <li class="flex items-center gap-3">
-              <span
-                aria-hidden="true"
-                class="h-3 w-3 shrink-0 rotate-45 rounded-[3px]"
-                style={{ background: TRANSPORT_COLOR, marginInline: '0.4rem' }}
-              />
-              <span class="min-w-0 flex-1 truncate">
+            <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span aria-hidden="true" style={{ width: '12px', height: '12px', flexShrink: 0, transform: 'rotate(45deg)', borderRadius: '3px', background: TRANSPORT_COLOR, marginInline: '4px' }} />
+              <span style={{ minWidth: 0, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {MODE_LABEL[t.mode]}: {t.fromName} → {t.toName}
               </span>
             </li>
@@ -72,7 +70,7 @@ export function DayMapPanel({
       )}
 
       {missing > 0 && (
-        <p class="border-t border-hairline px-4 py-2.5 text-xs text-muted">
+        <p class="cap muted" style={{ marginTop: '8px' }}>
           {missing} {missing === 1 ? 'tappa non ha' : 'tappe non hanno'} una posizione e non compare sulla mappa.
         </p>
       )}

@@ -7,18 +7,21 @@ import { ChipSelect, FormError, PrimaryButton, SecondaryButton, TextField } from
 
 interface Props {
   trip: Trip
-  initial: ChecklistItem
+  /** Assente = nuova voce. */
+  initial?: ChecklistItem
+  /** Elenco e persona proposti per una nuova voce. */
+  defaults?: { kind?: ChecklistItem['kind']; travelerId?: string }
   onSubmit: (input: ChecklistInput) => Promise<string | null>
-  onDelete: () => Promise<string | null>
+  onDelete?: () => Promise<string | null>
   onDone: () => void
 }
 
-export function ChecklistItemForm({ trip, initial, onSubmit, onDelete, onDone }: Props) {
-  const [text, setText] = useState(initial.text)
-  const [kind, setKind] = useState(initial.kind)
-  const [who, setWho] = useState(initial.travelerId ?? 'all')
-  const [dueDate, setDueDate] = useState(initial.dueDate ?? '')
-  const [quantity, setQuantity] = useState(String(initial.quantity ?? 1))
+export function ChecklistItemForm({ trip, initial, defaults, onSubmit, onDelete, onDone }: Props) {
+  const [text, setText] = useState(initial?.text ?? '')
+  const [kind, setKind] = useState(initial?.kind ?? defaults?.kind ?? 'todo')
+  const [who, setWho] = useState(initial?.travelerId ?? defaults?.travelerId ?? 'all')
+  const [dueDate, setDueDate] = useState(initial?.dueDate ?? '')
+  const [quantity, setQuantity] = useState(String(initial?.quantity ?? 1))
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -36,6 +39,7 @@ export function ChecklistItemForm({ trip, initial, onSubmit, onDelete, onDone }:
   const [confirm, confirmDialog] = useConfirm()
 
   async function remove() {
+    if (!onDelete) return
     if (!(await confirm({ title: 'Eliminare questa voce?', text: 'Puoi annullare subito dopo.' }))) return
     setBusy(true)
     const message = await onDelete()
@@ -59,8 +63,8 @@ export function ChecklistItemForm({ trip, initial, onSubmit, onDelete, onDone }:
       )}
       <TextField label="Entro il (facoltativo)" type="date" value={dueDate} onInput={setDueDate} optional />
       <FormError message={error} />
-      <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : 'Salva'}</PrimaryButton>
-      <SecondaryButton danger onClick={() => void remove()}>Elimina voce</SecondaryButton>
+      <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva' : 'Aggiungi'}</PrimaryButton>
+      {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina voce</SecondaryButton>}
     {confirmDialog}
     </form>
   )

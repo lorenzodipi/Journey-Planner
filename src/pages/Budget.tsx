@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
-import { budgetLines, budgetStatus, categoryOverview, expenseBase, expensesByCurrency, fxOf, logisticsLines, paidByTraveler, paidFromSections, shareAmounts, summarizeExpenses, summarizeLines, toBase, type CategoryOverview, type Line } from '../lib/budget'
+import { budgetLines, budgetStatus, categoryOverview, expenseBase, expensesByCurrency, fxOf, logisticsLines, paidByTraveler, paidFromSections, personSummary, shareAmounts, summarizeExpenses, summarizeLines, toBase, type CategoryOverview, type Line } from '../lib/budget'
+import { useAuth } from '../lib/auth'
 import { formatShort } from '../lib/dates'
 import { dateInZone } from '../lib/flights'
 import { extraCurrencies, formatMoney, round2 } from '../lib/money'
@@ -9,16 +10,13 @@ import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
 import type { BudgetItem, Expense } from '../types'
 import { BudgetItemForm } from '../ui/BudgetItemForm'
-import { BudgetLimitBar } from '../ui/BudgetLimitBar'
 import { CategoryForm } from '../ui/CategoryForm'
 import { ExpenseForm } from '../ui/ExpenseForm'
 import { TrashButton } from '../ui/ConfirmDialog'
-import { FxCard } from '../ui/FxCard'
 import { FxForm } from '../ui/FxForm'
-import { BudgetIcon, ChevronRightIcon, TrashIcon } from '../ui/Icons'
+import { ChevronRightG, PlusG, SwapG, TrashG, LogoSym } from '../ui/glyphs'
 import { Card, PageHeader } from '../ui/PageHeader'
-import { DASH, Leader, Receipt } from '../ui/Receipt'
-import { Disc, Ticket } from '../ui/Ticket'
+import { Ic } from '../ui/Sprite'
 import { Sheet } from '../ui/Sheet'
 import { useDeleter } from '../ui/useDeleter'
 
@@ -38,6 +36,7 @@ const SOURCE_HREF = { flight: '/altro/trasporti', stay: '/altro/alloggi', transp
 export function Budget() {
   const trip = useTrip()
   const t = useTrips()
+  const auth = useAuth()
   const [del, delDialog] = useDeleter()
   const [sheet, setSheet] = useState<SheetState>(null)
   const close = () => setSheet(null)
@@ -46,8 +45,11 @@ export function Budget() {
   useEffect(() => {
     const id = takeScrollTarget()
     if (!id) return
-    const frame = requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start', behavior: 'instant' }))
-    return () => cancelAnimationFrame(frame)
+    if (id === 'cambio') setSheet({ kind: 'fx' })
+    else {
+      const frame = requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start', behavior: 'instant' }))
+      return () => cancelAnimationFrame(frame)
+    }
   }, [])
   const fx = fxOf(trip)
   const base = trip.baseCurrency
@@ -279,33 +281,133 @@ export function Budget() {
   const left = round2(planned - spentTotal)
   const limitStatus = budgetStatus(trip.budgetLimit, spentTotal, planned)
 
-  return (
-    <>
-      <PageHeader title="Spese" back={{ href: '/altro', label: 'Altro' }} />
-      <div class="px-5 pb-28">
-        <Receipt>
-          <p class="text-[13px] text-paper-muted">Speso finora</p>
-          <p class="font-display text-[50px] font-extrabold leading-[1.05] tracking-[-2px] tabular-nums">{formatMoney(spentTotal, base)}</p>
-          <p class="text-[13px] text-paper-muted">
-            {planned > 0
-              ? `su ${formatMoney(planned, base)} previsti · ${left >= 0 ? `restano ${formatMoney(left, base)}` : `oltre di ${formatMoney(-left, base)}`}`
-              : `${trip.expenses.length} ${trip.expenses.length === 1 ? 'spesa' : 'spese'}`}
-          </p>
-          {limitStatus && trip.budgetLimit && <BudgetLimitBar status={limitStatus} spent={spentTotal} limit={trip.budgetLimit} currency={base} />}
+  // il saldo di chi usa l'app (se il suo account è collegato a un viaggiatore); altrimenti il conto principale tra voi
+  const meTraveler = trip.travelers.find((p) => p.userId && p.userId === auth.session?.user.id)
+  const me = meTraveler ? personSummary(spentAll, meTraveler.id) : undefined
+  const nameOf = (id: string) => person.get(id)?.name ?? 'Qualcuno'
+  const first = spentAll.transfers[0]
+  const saldo = (() => {
+    if (trip.travelers.length < 2 || trip.expenses.length === 0) return null
+    if (me) {
+      if (me.net > 0.004) {
+        const who = me.receives.map((x) => nameOf(x.from))
+        return { badge: 'Da incassare', title: 'Il tuo saldo', value: `+${formatMoney(me.net, base)}`, note: who.length === 1 ? `Te li deve ${who[0]}` : `Te li devono ${who.join(' e ')}`, now: true }
+      }
+      if (me.net < -0.004) {
+        const who = me.gives.map((x) => nameOf(x.to))
+        return { badge: 'Da dare', title: 'Il tuo saldo', value: `−${formatMoney(-me.net, base)}`, note: `Li devi a ${who.join(' e ')}`, now: false }
+      }
+      return { badge: 'In pari', title: 'Il tuo saldo', value: formatMoney(0, base), note: 'Non devi né dare né ricevere', now: false }
+    }
+    if (!first) return { badge: 'In pari', title: 'Il saldo', value: formatMoney(0, base), note: 'Nessuno deve niente', now: false }
+    return {
+      badge: 'Da regolare',
+      title: 'Il saldo',
+      value: formatMoney(first.amount, base),
+      note: `${nameOf(first.from)} deve a ${nameOf(first.to)}${spentAll.transfers.length > 1 ? ` · +${spentAll.transfers.length - 1}` : ''}`,
+      now: true,
+    }
+  })()
 
-          <div class={`${DASH} mb-1.5 mt-3.5`} />
+  const sym = (c: string) => new Intl.NumberFormat('en-US', { style: 'currency', currency: c, currencyDisplay: 'narrowSymbol' }).formatToParts(0).find((x) => x.type === 'currency')?.value ?? c
+  const fxNote = hasLocal && trip.fxRate ? ` · 1 ${sym(base)} = ${Math.round(1 / trip.fxRate)} ${sym(trip.localCurrency as string)}` : ''
+  const unconverted = Array.from(new Set([...summary.unconverted, ...spentAll.unconverted, ...sectionsPaid.unconverted]))
+  const expenseCount = trip.expenses.length + lines.filter((l) => l.source !== 'budget').length
+
+  const askDeleteCategory = (c: CategoryOverview) =>
+    void del({
+      title: `Eliminare la categoria «${c.label}»?`,
+      text: c.expenses.length + c.lines.filter((l) => l.source === 'budget').length > 0 ? 'Le spese e le voci restano, ma finiscono in «Altro». Puoi annullare subito dopo.' : undefined,
+      done: 'Categoria eliminata',
+      run: () => t.setExpenseCategoryDeleted(c.id as string, true),
+      undo: () => t.setExpenseCategoryDeleted(c.id as string, false),
+    })
+
+  const budgetNote = (() => {
+    if (!limitStatus || !trip.budgetLimit) return null
+    const rest = round2(trip.budgetLimit - Math.max(planned, spentTotal))
+    return rest >= 0 ? `Entro il budget: restano ${formatMoney(rest, base)} sul previsto` : `Oltre il budget di ${formatMoney(-rest, base)}`
+  })()
+
+  return (
+    <main class="screen">
+      <PageHeader
+        title="Spese"
+        subtitle={`${trip.title}${fxNote}`}
+        back={{ href: '/altro', label: 'Altro' }}
+        actions={
+          <>
+            <button type="button" class="rbtn" aria-label="Nuova categoria" onClick={() => setSheet({ kind: 'new-category' })}>
+              <PlusG />
+            </button>
+            {hasLocal && (
+              <button type="button" class="rbtn" aria-label="Cambia valuta" onClick={() => setSheet({ kind: 'fx' })}>
+                <SwapG />
+              </button>
+            )}
+          </>
+        }
+      />
+
+      <section class="riep" aria-label="Speso finora">
+        <LogoSym class="logo-sym" width={62} height={73} style={{ position: 'absolute', right: '24px', top: '18px' }} />
+        <span class="l">Speso finora</span>
+        <span class="big num">{formatMoney(spentTotal, base)}</span>
+        <span class="c">
+          {planned > 0 ? `previsti ${formatMoney(planned, base)}` : `${trip.expenses.length} ${trip.expenses.length === 1 ? 'spesa' : 'spese'}`}
+          {trip.budgetLimit ? ` · budget ${formatMoney(trip.budgetLimit, base)}` : planned > 0 ? ` · ${left >= 0 ? `restano ${formatMoney(left, base)}` : `oltre di ${formatMoney(-left, base)}`}` : ''}
+        </span>
+        {limitStatus && trip.budgetLimit && (
+          <>
+            <div class="rbar" role="progressbar" aria-valuemin={0} aria-valuemax={trip.budgetLimit} aria-valuenow={Math.min(spentTotal, trip.budgetLimit)} aria-label="Speso sul budget massimo">
+              <i style={{ width: `${limitStatus.spentPct}%` }} />
+            </div>
+            <span class="c">{budgetNote}</span>
+          </>
+        )}
+      </section>
+
+      <div class="riep2">
+        {saldo && (
+          <div class="rc a">
+            <span class={`badge ${saldo.now ? 'now' : 'soft'}`}>{saldo.badge}</span>
+            <span class="l" style={{ marginTop: '8px' }}>{saldo.title}</span>
+            <span class="v num">{saldo.value}</span>
+            <span class="c">{saldo.note}</span>
+          </div>
+        )}
+        <div class="rc b" style={saldo ? undefined : { gridColumn: '1 / -1' }}>
+          <span class="l">Persone</span>
+          <span class="v num">{trip.travelers.length}</span>
+          <div class="avr">
+            {trip.travelers.map((p) => (
+              <span key={p.id} style={{ background: p.color }} title={p.name}>
+                {p.name.slice(0, 1).toUpperCase()}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <section class="rcp" aria-label="Resoconto delle spese">
+        <div class="rc-body">
+          <p class="b-bold" style={{ marginBottom: '6px' }}>Per categoria</p>
           {categories.length === 0 ? (
-            <p class="py-3 text-sm text-paper-muted">Nessuna categoria: creane una (Cibo, Souvenir…) e il totale si aggiorna da solo.</p>
+            <p class="sm" style={{ padding: '8px 0 12px' }}>Nessuna categoria: creane una (Cibo, Souvenir…) e il totale si aggiorna da solo.</p>
           ) : (
             categories.map((c) => (
-              <div key={c.key} class="flex min-h-[58px] items-center gap-1">
-                <button type="button" onClick={() => setSheet({ kind: 'category', key: c.key })} aria-label={`Apri ${c.label}`} class="min-w-0 flex-1 py-1.5 text-left">
-                  <Leader label={c.label} value={formatMoney(c.spent, base)} />
-                  <span class="block text-xs text-paper-muted">
+              <div class="rc-cat" key={c.key}>
+                <button type="button" class="grow" style={{ border: 0, background: 'none', textAlign: 'left', color: 'inherit' }} aria-label={`Apri ${c.label}`} onClick={() => setSheet({ kind: 'category', key: c.key })}>
+                  <div class="lead">
+                    <span class="lb">{c.label}</span>
+                    <i />
+                    <span class="vl">{formatMoney(c.spent, base)}</span>
+                  </div>
+                  <span class="sm">
                     {[
                       c.expenses.length > 0 ? `${c.expenses.length} ${c.expenses.length === 1 ? 'spesa' : 'spese'}` : null,
                       c.sections.count > 0 ? `${c.sections.paid} di ${c.sections.count} pagati` : null,
-                      c.planned > 0 ? `costo previsto ${formatMoney(c.planned, base)}` : c.expenses.length > 0 ? 'nessun costo previsto' : 'Ancora vuota · registra una spesa',
+                      c.planned > 0 ? `previsto ${formatMoney(c.planned, base)}` : c.expenses.length > 0 ? 'nessun costo previsto' : 'Ancora vuota · registra una spesa',
                     ]
                       .filter(Boolean)
                       .join(' · ')}
@@ -313,27 +415,11 @@ export function Budget() {
                   </span>
                 </button>
                 {c.id ? (
-                  <button
-                    type="button"
-                    aria-label={`Elimina la categoria ${c.label}`}
-                    onClick={() =>
-                      void del({
-                        title: `Eliminare la categoria «${c.label}»?`,
-                        text:
-                          c.expenses.length + c.lines.filter((l) => l.source === 'budget').length > 0
-                            ? 'Le spese e le voci restano, ma finiscono in «Altro». Puoi annullare subito dopo.'
-                            : undefined,
-                        done: 'Categoria eliminata',
-                        run: () => t.setExpenseCategoryDeleted(c.id as string, true),
-                        undo: () => t.setExpenseCategoryDeleted(c.id as string, false),
-                      })
-                    }
-                    class="grid size-11 shrink-0 place-items-center text-paper-muted"
-                  >
-                    <TrashIcon size={20} />
+                  <button type="button" class="rc-trash" aria-label={`Elimina la categoria ${c.label}`} style={{ color: 'var(--ink)' }} onClick={() => askDeleteCategory(c)}>
+                    <TrashG />
                   </button>
                 ) : (
-                  <span class="size-11 shrink-0" />
+                  <span class="rc-trash" aria-hidden="true" />
                 )}
               </div>
             ))
@@ -341,82 +427,91 @@ export function Budget() {
 
           {planned > 0 && (
             <>
-              <div class={`${DASH} mb-2.5 mt-2`} />
-              <div class="space-y-1.5">
-                <Leader label="Previsto" value={formatMoney(summary.planned, base)} bold={false} />
-                <Leader label="Già pagato" value={formatMoney(summary.paid, base)} bold={false} />
-                <Leader label="Da pagare" value={formatMoney(summary.outstanding, base)} />
+              <div class="dash" style={{ marginTop: '6px' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
+                <div class="lead">
+                  <span class="lb reg">Previsto</span>
+                  <i />
+                  <span class="vl reg">{formatMoney(summary.planned, base)}</span>
+                </div>
+                <div class="lead">
+                  <span class="lb reg">Già pagato</span>
+                  <i />
+                  <span class="vl reg">{formatMoney(summary.paid, base)}</span>
+                </div>
+                <div class="lead">
+                  <span class="lb">Da pagare</span>
+                  <i />
+                  <span class="vl">{formatMoney(summary.outstanding, base)}</span>
+                </div>
               </div>
             </>
           )}
 
           {trip.travelers.length > 1 && anyPaid && (
             <>
-              <div class={`${DASH} mb-2.5 mt-2`} />
-              <div class="space-y-1.5">
+              <div class="dash" style={{ marginTop: '14px' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
                 {trip.travelers.map((p) => (
-                  <Leader key={p.id} label={`${p.name} ha pagato`} value={formatMoney(paidBy.get(p.id) ?? 0, base)} />
+                  <div class="lead" key={p.id}>
+                    <span class="lb">{p.name} ha pagato</span>
+                    <i />
+                    <span class="vl">{formatMoney(paidBy.get(p.id) ?? 0, base)}</span>
+                  </div>
                 ))}
               </div>
             </>
           )}
 
-          {(summary.unconverted.length > 0 || spentAll.unconverted.length > 0 || sectionsPaid.unconverted.length > 0) && (
-            <p role="alert" class="mt-3 rounded-lg border-2 border-ink px-3 py-2 text-xs font-extrabold">
-              Mancano i tassi per {Array.from(new Set([...summary.unconverted, ...spentAll.unconverted, ...sectionsPaid.unconverted])).join(', ')}: queste voci non sono nei totali.
+          {unconverted.length > 0 && (
+            <p role="alert" class="b-sm" style={{ marginTop: '14px', fontWeight: 600 }}>
+              Mancano i tassi per {unconverted.join(', ')}: queste voci non sono nei totali.
             </p>
           )}
-        </Receipt>
-
-        {hasLocal && (
-          <div id="cambio" class="mt-[18px] scroll-mt-24">
-            <FxCard trip={trip} onEdit={() => setSheet({ kind: 'fx' })} />
-          </div>
-        )}
-
-        {/* solo nei viaggi con valute extra: quanto si è speso in ciascuna valuta e a quanto corrisponde */}
-        {extraCurrencies(trip).length > 0 && trip.expenses.length > 0 && (
-          <Card class="mt-3.5">
-            <h2 class="font-display text-lg font-extrabold">Spese per valuta</h2>
-            <ul class="mt-1">
-              {expensesByCurrency(trip.expenses, fx).map((r, i) => (
-                <li key={r.currency} class={`flex min-h-12 items-center justify-between gap-3 ${i > 0 ? 'border-t border-hairline' : ''}`}>
-                  <span class="min-w-0">
-                    <span class="block font-extrabold tabular-nums">{formatMoney(r.amount, r.currency)}</span>
-                    {r.currency !== base && (
-                      <span class={`block text-xs ${r.base === null ? 'font-extrabold text-warn' : 'text-muted'}`}>
-                        {r.base === null ? `manca il cambio per ${r.currency}` : `≈ ${formatMoney(r.base, base)}`}
-                      </span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
-
-        <Link href="/altro/spese" class="mt-3.5 block">
-          <Ticket stub={<Disc color="var(--accent)"><BudgetIcon size={22} /></Disc>} stubWidth={76}>
-            <span class="min-w-0 flex-1">
-              <span class="block text-[17px] font-extrabold leading-tight">Dettaglio spese</span>
-              <span class="block text-[13px] text-muted">
-                {trip.expenses.length ? `${trip.expenses.length} ${trip.expenses.length === 1 ? 'spesa registrata' : 'spese registrate'} · chi deve a chi` : 'Registra cosa spendi, anche in yen'}
-              </span>
-            </span>
-            <ChevronRightIcon size={20} class="mr-2 shrink-0 text-muted" />
-          </Ticket>
-        </Link>
-
-        <div class="mt-5 flex gap-2.5">
-          <button type="button" onClick={() => setSheet({ kind: 'new-category' })} class="grid min-h-[52px] flex-1 place-items-center rounded-[14px] border-2 border-line text-[15px] font-extrabold">
-            + Categoria
-          </button>
-          <button type="button" onClick={() => setSheet({ kind: 'new-expense' })} class="grid min-h-[52px] flex-1 place-items-center rounded-[14px] bg-accent text-[15px] font-extrabold text-accent-ink">
-            + Spesa
-          </button>
         </div>
-        <button type="button" onClick={() => setSheet({ kind: 'new' })} class="mx-auto mt-1 block min-h-11 px-3 text-sm font-extrabold text-muted">
-          + Costo previsto
+        <svg class="rc-zig" width="100%" height="10" aria-hidden="true">
+          <defs>
+            <pattern id="zz" width="20" height="10" patternUnits="userSpaceOnUse">
+              <path d="M0 0H20L10 10z" style={{ fill: 'var(--surface-card)' }} />
+            </pattern>
+          </defs>
+          <rect width="100%" height="10" fill="url(#zz)" />
+        </svg>
+      </section>
+
+      {/* solo nei viaggi con valute extra: quanto si è speso in ciascuna valuta e a quanto corrisponde */}
+      {extraCurrencies(trip).length > 0 && trip.expenses.length > 0 && (
+        <Card>
+          <h2 class="h-sm">Spese per valuta</h2>
+          <ul style={{ marginTop: '4px' }}>
+            {expensesByCurrency(trip.expenses, fx).map((r, i) => (
+              <li key={r.currency} style={{ display: 'flex', minHeight: '48px', alignItems: 'center', borderTop: i > 0 ? '1px solid var(--hairline)' : undefined }}>
+                <span>
+                  <span class="b-bold num" style={{ display: 'block' }}>{formatMoney(r.amount, r.currency)}</span>
+                  {r.currency !== base && <span class="b-sm muted" style={{ display: 'block' }}>{r.base === null ? `manca il cambio per ${r.currency}` : `≈ ${formatMoney(r.base, base)}`}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      <Link href="/altro/spese" class="card" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 16px 16px 18px', borderRadius: '20px' }} aria-label="Apri il dettaglio delle spese">
+        <Ic name="i-con-spese" size={48} />
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span class="h-sm" style={{ display: 'block' }}>Dettaglio spese</span>
+          <span class="b-sm" style={{ display: 'block' }}>{expenseCount > 0 ? `Tutte le ${expenseCount} spese, una per una` : 'Registra cosa spendi, anche in yen'}</span>
+        </span>
+        <ChevronRightG size={24} sw={2.8} />
+      </Link>
+
+      <div class="cta" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <button type="button" class="btn block" onClick={() => setSheet({ kind: 'new-expense' })}>
+          <PlusG />
+          Registra spesa
+        </button>
+        <button type="button" class="btn soft block" onClick={() => setSheet({ kind: 'new' })}>
+          Aggiungi costo previsto
         </button>
       </div>
 
@@ -478,7 +573,7 @@ export function Budget() {
             onDone={close}
           />}
       </Sheet>
-    </>
+    </main>
   )
 }
 

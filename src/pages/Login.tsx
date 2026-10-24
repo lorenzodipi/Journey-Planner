@@ -1,10 +1,14 @@
 import { useState } from 'preact/hooks'
 import { useAuth } from '../lib/auth'
+import { ART } from '../ui/art'
+import { FormError } from '../ui/Field'
+import '../fw-altro.css'
 
 export function Login() {
   const auth = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [show, setShow] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -18,59 +22,63 @@ export function Login() {
   }
 
   return (
-    <main
-      class="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6"
-      style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
-    >
-      <div class="rise">
-        <span
-          aria-hidden="true"
-          class="mb-6 block h-14 w-14 rounded-full"
-          style={{ background: 'linear-gradient(145deg, var(--accent), var(--secondary))' }}
-        />
-        <h1 class="font-display text-4xl font-extrabold leading-none">Journey Planner</h1>
-        <p class="mt-2 text-muted">Accedi per aprire i tuoi viaggi.</p>
+    <main class="screen">
+      <form onSubmit={onSubmit} noValidate style={{ display: 'contents' }}>
+        <div style={{ paddingTop: '48px' }}>
+          <img class="logo lt" src={ART.lockup} alt="Faraway" width="232" height="58" />
+          <img class="logo dk" src={ART.lockupReverse} alt="Faraway" width="232" height="58" />
+          <h1 class="d-md" style={{ marginTop: '40px' }}>
+            Accedi
+          </h1>
+          <p class="body-lg muted" style={{ marginTop: '8px', fontSize: '18px', lineHeight: '26px', letterSpacing: 0 }}>
+            Il tuo viaggio, tappa dopo tappa. Funziona anche senza rete.
+          </p>
+        </div>
 
-        <form class="mt-8 space-y-4" onSubmit={onSubmit} noValidate>
-          <label class="block">
-            <span class="mb-1 block text-sm font-extrabold">Email</span>
-            <input
-              type="email"
-              inputMode="email"
-              autoComplete="username"
-              required
-              value={email}
-              onInput={(e) => setEmail(e.currentTarget.value)}
-              class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-4"
-            />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <label class="fld">
+            <div>
+              <span class="l">Email</span>
+              <input
+                type="email"
+                inputMode="email"
+                autoComplete="username"
+                autoCapitalize="none"
+                required
+                class="v"
+                value={email}
+                onInput={(e) => setEmail(e.currentTarget.value)}
+              />
+            </div>
           </label>
-          <label class="block">
-            <span class="mb-1 block text-sm font-extrabold">Password</span>
-            <input
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onInput={(e) => setPassword(e.currentTarget.value)}
-              class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-4"
-            />
-          </label>
+          <div class="fld">
+            <label style={{ flex: 1, minWidth: 0 }}>
+              <span class="l">Password</span>
+              <input
+                type={(show ? 'text' : 'password') as 'password'}
+                autoComplete="current-password"
+                required
+                class="v"
+                value={password}
+                onInput={(e) => setPassword(e.currentTarget.value)}
+              />
+            </label>
+            <button type="button" class="fld-act" aria-pressed={show} onClick={() => setShow(!show)}>
+              {show ? 'Nascondi' : 'Mostra'}
+            </button>
+          </div>
+          <FormError message={error} />
+        </div>
 
-          {error && (
-            <p role="alert" class="rounded-2xl bg-danger/10 px-4 py-3 text-sm text-danger">
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={busy || !email || !password}
-            class="min-h-12 w-full rounded-full bg-accent px-6 font-extrabold text-accent-ink transition-opacity disabled:opacity-50"
-          >
+        <div class="cta">
+          <button type="submit" class="btn block" disabled={busy || !email || !password}>
             {busy ? 'Accesso in corso…' : 'Accedi'}
           </button>
-        </form>
-      </div>
+          <p class="cap muted" style={{ textAlign: 'center', marginTop: '12px' }}>
+            Le registrazioni sono chiuse: usa l’account che hai ricevuto.
+          </p>
+        </div>
+      </form>
     </main>
   )
 }

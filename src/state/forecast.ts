@@ -28,7 +28,8 @@ export function useForecast(trip: Pick<Trip, 'center' | 'timezone' | 'startDate'
     const relevant = daysBetween(today, trip.endDate) >= 0 && daysBetween(today, trip.startDate) < FORECAST_DAYS
     if (!relevant || !navigator.onLine) return
     const cached = loadForecast(key)
-    if (cached && Date.now() - cached.savedAt < FORECAST_TTL_MS) return
+    // una copia salvata prima dell'arrivo delle previsioni orarie è da riscaricare
+    if (cached && Date.now() - cached.savedAt < FORECAST_TTL_MS && cached.days.some((d) => d.hours)) return
     let active = true
     setState((s) => ({ ...s, loading: true, error: null }))
     fetchForecast(trip.center.lat, trip.center.lng, trip.timezone).then(

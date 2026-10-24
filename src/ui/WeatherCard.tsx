@@ -1,7 +1,9 @@
-import { daysBetween, formatDay, formatShort } from '../lib/dates'
-import { FORECAST_DAYS, forecastAvailableFrom, inForecastRange, weatherLabel, type DayWeather } from '../lib/weather'
+import { useEffect, useRef } from 'preact/hooks'
+import { daysBetween, formatShort } from '../lib/dates'
+import type { DaySun } from '../lib/sun'
+import { FORECAST_DAYS, forecastAvailableFrom, inForecastRange, rainWindow, weatherLabel, weatherSymbol, windFrom, type HourWeather } from '../lib/weather'
 import type { ForecastState } from '../state/forecast'
-import { Card } from './PageHeader'
+import { Ic } from './Sprite'
 
 interface Props {
   forecast: ForecastState
@@ -9,63 +11,158 @@ interface Props {
   date: string
   /** oggi nel fuso della destinazione */
   today: string
-  /** giorni del viaggio, per la striscia dei prossimi giorni */
-  tripDates: string[]
+  /** città mostrata accanto all'orario di aggiornamento */
+  city: string
+  /** alba e tramonto del giorno, mostrati nella striscia oraria */
+  sun: DaySun | null
+  /** minuti dalla mezzanotte locale adesso (solo se il giorno è oggi): evidenzia «Ora» */
+  nowMin: number | null
 }
 
 const hhmm = (ms: number) => new Date(ms).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+const clock = (min: number) => `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`
+/** Altezza della colonna della temperatura (stessa scala del mock: 5° = 14 px, 12° = 43 px). */
+const colHeight = (t: number) => Math.round(Math.max(8, Math.min(48, 14 + (t - 5) * 4.14)))
 
-export function WeatherCard({ forecast, date, today, tripDates }: Props) {
-  const byDate = new Map(forecast.days.map((d) => [d.date, d]))
-  const day = byDate.get(date)
-  const strip = tripDates.filter((d) => d > date && byDate.has(d)).slice(0, 4)
+type Cell = { min: number; hour: HourWeather; now: boolean } | { min: number; event: 'sunrise' | 'sunset' }
 
-  let body
-  if (day) body = <Main day={day} />
-  else if (forecast.loading) body = <p class="text-sm text-muted">Carico le previsioni…</p>
-  else if (!inForecastRange(today, date) && daysBetween(today, date) >= FORECAST_DAYS)
-    body = <p class="text-sm text-muted">Le previsioni per questo giorno saranno disponibili dal {formatShort(forecastAvailableFrom(date))}.</p>
-  else if (forecast.error) body = <p class="text-sm text-muted">{forecast.error} Riprova più tardi.</p>
-  else body = <p class="text-sm text-muted">Previsioni non disponibili per questo giorno.</p>
-
-  return (
-    <Card class="rise">
-      <div class="mb-2 flex items-baseline justify-between gap-3">
-        <h2 class="font-display text-lg font-extrabold">Meteo</h2>
-        {forecast.savedAt && <span class="text-xs text-muted">aggiornato alle {hhmm(forecast.savedAt)}</span>}
-      </div>
-      {body}
-      {strip.length > 0 && (
-        <ul class="mt-3 grid grid-cols-4 gap-2 border-t border-hairline pt-3" aria-label="Prossimi giorni">
-          {strip.map((d) => {
-            const w = byDate.get(d) as DayWeather
-            return (
-              <li class="text-center text-xs">
-                <p class="text-muted">{formatDay(d).split(' ')[0]}</p>
-                <p class="text-xl" aria-label={weatherLabel(w.code).label}>{weatherLabel(w.code).icon}</p>
-                <p class="font-extrabold tabular-nums">{w.max}°</p>
-                <p class="tabular-nums text-muted">{w.min}°</p>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </Card>
-  )
+function cellsFor(hours: HourWeather[], sun: DaySun | null, nowHour: number | null): Cell[] {
+  const cells: Cell[] = hours.filter((h) => h.h >= 6 && h.h <= 21).map((hour) => ({ min: hour.h * 60, hour, now: hour.h === nowHour }))
+  const add = (min: number | null | undefined, event: 'sunrise' | 'sunset') => {
+    if (min != null && min >= 6 * 60 && min < 22 * 60) cells.push({ min, event })
+  }
+  add(sun?.sunrise, 'sunrise')
+  add(sun?.sunset, 'sunset')
+  // a parità di minuti l'ora viene prima dell'evento
+  return cells.sort((a, b) => a.min - b.min || ('hour' in a ? -1 : 1))
 }
 
-function Main({ day }: { day: DayWeather }) {
-  const w = weatherLabel(day.code)
-  return (
-    <div class="flex items-center gap-4">
-      <span class="text-5xl leading-none" aria-hidden="true">{w.icon}</span>
-      <div class="min-w-0 flex-1">
-        <p class="font-extrabold">{w.label}</p>
-        <p class="text-sm text-muted">
-          Max <span class="font-extrabold text-ink tabular-nums">{day.max}°</span> · min <span class="tabular-nums">{day.min}°</span>
-          {day.rainPct != null && ` · pioggia ${day.rainPct}%`}
+/** Meteo del giorno (Design System v3): sintesi, striscia ora per ora scorrevole e dettagli. */
+export function WeatherCard({ forecast, date, today, city, sun, nowMin }: Props) {
+  const day = forecast.days.find((d) => d.date === date)
+  const slider = useRef<HTMLDivElement>(null)
+  const hasSlider = Boolean(day?.hours?.length)
+
+  // la striscia parte da «Ora» (se il giorno è oggi)
+  useEffect(() => {
+    const el = slider.current
+    if (!el) return
+    const now = el.querySelector<HTMLElement>('.wc.now')
+    el.scrollLeft = now ? Math.max(0, now.offsetLeft - 12) : 0
+  }, [date, hasSlider])
+
+  if (!day) {
+    let text: string
+    if (forecast.loading) text = 'Carico le previsioni…'
+    else if (!inForecastRange(today, date) && daysBetween(today, date) >= FORECAST_DAYS)
+      text = `Le previsioni per questo giorno saranno disponibili dal ${formatShort(forecastAvailableFrom(date))}.`
+    else if (forecast.error) text = `${forecast.error} Riprova più tardi.`
+    else text = 'Previsioni non disponibili per questo giorno.'
+    return (
+      <section class="card" aria-label="Meteo del giorno">
+        <h2 class="b-bold">Meteo</h2>
+        <p class="b-sm muted" style={{ marginTop: '4px' }}>
+          {text}
         </p>
+      </section>
+    )
+  }
+
+  const hours = day.hours ?? []
+  const nowHour = nowMin != null ? Math.floor(nowMin / 60) : null
+  const current = nowHour != null ? hours.find((h) => h.h === nowHour) : undefined
+  // per un altro giorno si guarda il primo pomeriggio
+  const ref = current ?? hours.find((h) => h.h === 14) ?? hours[Math.floor(hours.length / 2)]
+  const code = current?.code ?? day.code
+  const w = weatherLabel(code)
+  const rain = rainWindow(hours, nowHour ?? 0)
+  const headline = `${w.label}${rain ? `, pioggia dalle ${rain.from}` : ''}`
+  const big = current?.t ?? day.max
+  const wettest = hours.reduce<HourWeather | null>((m, h) => ((h.rain ?? -1) > (m?.rain ?? -1) ? h : m), null)
+  const cells = hasSlider ? cellsFor(hours, sun, nowHour) : []
+
+  return (
+    <section class="card" aria-label="Meteo del giorno">
+      <div class="tr">
+        <div>
+          <p style={{ font: '500 40px/44px var(--font-display)', letterSpacing: '-.02em' }} class="num">
+            {big}°
+          </p>
+          <p class="b-bold">{headline}</p>
+          <p class="b-sm muted num">
+            Minima {day.min}° · massima {day.max}°
+          </p>
+        </div>
+        <Ic name={weatherSymbol(code)} size={56} />
       </div>
-    </div>
+
+      {cells.length > 0 && (
+        <>
+          <div class="sec-h" style={{ margin: '16px 0 0' }}>
+            <h2 class="b-bold">Ora per ora</h2>
+            <span class="cap muted">
+              {city}
+              {forecast.savedAt ? ` · aggiornato alle ${hhmm(forecast.savedAt)}` : ''}
+            </span>
+          </div>
+          <div class="wsl" ref={slider} role="group" aria-label="Meteo ora per ora, scorri in orizzontale" tabIndex={0}>
+            {cells.map((c) =>
+              'event' in c ? (
+                <div class="wc ev" key={c.event}>
+                  <span class="tm">{clock(c.min)}</span>
+                  <Ic name={c.event === 'sunrise' ? 'i-nav-sunrise' : 'i-nav-sunset'} size={28} />
+                  <span class="tp">{c.event === 'sunrise' ? 'Alba' : 'Tramonto'}</span>
+                </div>
+              ) : (
+                <div class={`wc${c.now ? ' now' : ''}`} key={c.hour.h}>
+                  <span class="tm">{c.now ? 'Ora' : clock(c.min)}</span>
+                  <Ic name={weatherSymbol(c.hour.code)} size={28} />
+                  <b class="tp">{c.hour.t}°</b>
+                  <span class="col">
+                    <i style={{ height: `${colHeight(c.hour.t)}px` }} />
+                  </span>
+                  <span class={`pr${(c.hour.rain ?? 0) >= 60 ? ' hi' : ''}`}>{c.hour.rain ?? 0}%</span>
+                </div>
+              ),
+            )}
+          </div>
+        </>
+      )}
+
+      {ref && (
+        <div class="wdet">
+          {ref.feels != null && (
+            <div>
+              <p class="cap muted">Percepita</p>
+              <p class="b-bold num">{ref.feels}°</p>
+            </div>
+          )}
+          {ref.wind != null && (
+            <div>
+              <p class="cap muted">Vento</p>
+              <p class="b-bold num">
+                {ref.wind} km/h{ref.windDir != null ? ` da ${windFrom(ref.windDir)}` : ''}
+              </p>
+            </div>
+          )}
+          {ref.hum != null && (
+            <div>
+              <p class="cap muted">Umidità</p>
+              <p class="b-bold num">{ref.hum}%</p>
+            </div>
+          )}
+          {wettest?.rain != null && (
+            <div>
+              <p class="cap muted">Pioggia, al massimo</p>
+              <p class="b-bold num">
+                {wettest.rain}% alle {clock(wettest.h * 60)}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+      {!ref && day.rainPct != null && <p class="b-sm muted num">Probabilità di pioggia {day.rainPct}%</p>}
+    </section>
   )
 }
+

@@ -3,7 +3,7 @@ import { formatShort } from '../lib/dates'
 import { parseExport, summarizeTrip, type ParseOutcome, type RestorableTrip } from '../lib/restore'
 import { showToast } from '../state/toast'
 import { useTrips } from '../state/trips'
-import { FormError, PrimaryButton, SecondaryButton, TextField } from './Field'
+import { FormError, PrimaryButton, TextField } from './Field'
 import { Card } from './PageHeader'
 
 const MAX_BYTES = 20 * 1024 * 1024
@@ -112,17 +112,17 @@ export function RestoreCard() {
 
   return (
     <Card>
-      <h2 class="font-display text-lg font-extrabold">Ripristina da un backup</h2>
-      <p class="mt-1 text-[13px] leading-snug text-muted">
-        Scegli un file JSON esportato dall'app: i viaggi vengono ricreati, quelli che hai già non vengono toccati.
+      <h2 class="h-sm">Ripristina da file</h2>
+      <p class="b-sm muted" style={{ marginTop: '4px' }}>
+        Riporta i viaggi da un file esportato: i viaggi vengono ricreati, quelli che hai già non vengono toccati.
       </p>
-      <p class="mt-1 text-xs leading-snug text-muted">
+      <p class="cap muted" style={{ marginTop: '4px' }}>
         Nel file non ci sono gli allegati (PDF) né gli account: i viaggiatori tornano senza account e si collegano da Altro → Viaggiatori.
       </p>
       <input ref={input} type="file" accept=".json,application/json" class="sr-only" tabIndex={-1} onChange={(e) => void onFile(e)} aria-label="File di esportazione" />
-      <div class="mt-3">
-        <SecondaryButton onClick={() => input.current?.click()}>{reading ? 'Leggo il file…' : outcome ? 'Scegli un altro file' : 'Scegli il file'}</SecondaryButton>
-      </div>
+      <button type="button" class="btn soft block" style={{ marginTop: '12px' }} onClick={() => input.current?.click()}>
+        {reading ? 'Leggo il file…' : outcome ? 'Scegli un altro file' : 'Scegli il file'}
+      </button>
 
       {outcome && !outcome.ok && (
         <div class="mt-3">

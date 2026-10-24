@@ -1,4 +1,4 @@
-import { FilterIcon } from './Icons'
+import { CloseG, FilterG } from './glyphs'
 import { countActive, toggleValue, type PlaceFilters } from '../lib/placeFilter'
 import type { PlaceStatus } from '../types'
 import { STATUS_LABEL } from './placeMeta'
@@ -34,46 +34,30 @@ export function FilterBar({ filters, onChange, onOpen, label = 'Filtri', counts 
     ...(statusOnly && quick.some((q) => q.on) ? [] : filters.statuses.map((v) => ({ key: `s:${v}`, text: STATUS_LABEL[v], remove: () => onChange({ ...filters, statuses: toggleValue(filters.statuses, v) }) }))),
   ]
   return (
-    <div class="space-y-2">
-      <div class="no-scrollbar flex items-center gap-2 overflow-x-auto">
+    <>
+      <div class="chips">
         {quick.map((q) => (
-          <button
-            type="button"
-            key={q.key}
-            aria-pressed={q.on}
-            onClick={() => onChange({ ...filters, statuses: q.set })}
-            class={`min-h-11 shrink-0 rounded-full px-4 text-sm font-semibold ${q.on ? 'bg-accent text-accent-ink' : 'bg-surface-2 text-ink'}`}
-          >
+          <button type="button" key={q.key} aria-pressed={q.on} onClick={() => onChange({ ...filters, statuses: q.set })} class={`chip${q.on ? ' on' : ''}`}>
             {q.text}
-            {q.n != null && <span class="ml-1.5 tabular-nums">{q.n}</span>}
+            {q.n != null && <span class="n num">{q.n}</span>}
           </button>
         ))}
-        <button
-          type="button"
-          onClick={onOpen}
-          class={`ml-auto flex min-h-11 shrink-0 items-center gap-2 rounded-full border-2 px-4 text-sm font-extrabold ${active > 0 && !statusOnly ? 'border-pale text-pale' : 'border-line text-ink'}`}
-        >
-          <FilterIcon size={18} />
+        <button type="button" onClick={onOpen} class={`chip${active > 0 && !statusOnly ? ' on' : ''}`} style={{ marginLeft: 'auto' }}>
+          <FilterG size={18} />
           {label}
-          {active > 0 && <span class="rounded-full bg-accent px-1.5 text-xs tabular-nums text-accent-ink">{active}</span>}
+          {active > 0 && <span class="n num">{active}</span>}
         </button>
       </div>
       {chips.length > 0 && (
-        <div class="no-scrollbar flex gap-2 overflow-x-auto">
+        <div class="chips">
           {chips.map((c) => (
-            <button
-              type="button"
-              key={c.key}
-              onClick={c.remove}
-              aria-label={`Togli filtro ${c.text}`}
-              class="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border-2 border-pale px-3 text-sm font-extrabold text-pale"
-            >
+            <button type="button" key={c.key} onClick={c.remove} aria-label={`Togli filtro ${c.text}`} class="chip on">
               {c.text}
-              <span aria-hidden="true">✕</span>
+              <CloseG size={14} sw={2.6} />
             </button>
           ))}
         </div>
       )}
-    </div>
+    </>
   )
 }

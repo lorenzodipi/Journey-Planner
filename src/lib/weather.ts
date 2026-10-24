@@ -4,12 +4,26 @@ import { daysBetween } from './dates'
 // prima la scheda lo dice e mostra solo la data da cui saranno disponibili.
 // L'ultimo risultato resta salvato sul telefono per l'uso offline.
 
+/** Un'ora di previsione (ora locale della destinazione). */
+export interface HourWeather {
+  h: number // 0-23
+  t: number // temperatura, °C
+  code: number // codice WMO
+  rain: number | null // probabilità di pioggia, %
+  feels?: number // temperatura percepita
+  wind?: number // km/h
+  windDir?: number // gradi, da dove soffia
+  hum?: number // umidità, %
+}
+
 export interface DayWeather {
   date: string // YYYY-MM-DD, giorno locale della destinazione
   code: number // codice WMO
   max: number
   min: number
   rainPct: number | null
+  /** Previsioni ora per ora (assenti nelle copie salvate prima di questa versione). */
+  hours?: HourWeather[]
 }
 
 export const FORECAST_DAYS = 16
@@ -37,9 +51,48 @@ interface ForecastJson {
     temperature_2m_min?: number[]
     precipitation_probability_max?: (number | null)[]
   }
+  hourly?: {
+    time?: string[]
+    temperature_2m?: (number | null)[]
+    apparent_temperature?: (number | null)[]
+    precipitation_probability?: (number | null)[]
+    weather_code?: (number | null)[]
+    wind_speed_10m?: (number | null)[]
+    wind_direction_10m?: (number | null)[]
+    relative_humidity_2m?: (number | null)[]
+  }
+}
+
+const num = (v: number | null | undefined): number | undefined => (typeof v === 'number' ? Math.round(v) : undefined)
+
+function parseHours(json: ForecastJson): Map<string, HourWeather[]> {
+  const h = json.hourly
+  const out = new Map<string, HourWeather[]>()
+  if (!h?.time || !h.temperature_2m || !h.weather_code) return out
+  h.time.forEach((stamp, i) => {
+    const [date, hh] = stamp.split('T')
+    const t = h.temperature_2m?.[i]
+    const code = h.weather_code?.[i]
+    if (!date || !hh || typeof t !== 'number' || typeof code !== 'number') return
+    const rain = h.precipitation_probability?.[i]
+    const hour: HourWeather = { h: Number(hh.slice(0, 2)), t: Math.round(t), code, rain: typeof rain === 'number' ? Math.round(rain) : null }
+    const feels = num(h.apparent_temperature?.[i])
+    const wind = num(h.wind_speed_10m?.[i])
+    const windDir = num(h.wind_direction_10m?.[i])
+    const hum = num(h.relative_humidity_2m?.[i])
+    if (feels != null) hour.feels = feels
+    if (wind != null) hour.wind = wind
+    if (windDir != null) hour.windDir = windDir
+    if (hum != null) hour.hum = hum
+    const list = out.get(date) ?? []
+    list.push(hour)
+    out.set(date, list)
+  })
+  return out
 }
 
 export function parseForecast(json: unknown): DayWeather[] {
+  const hours = parseHours((json ?? {}) as ForecastJson)
   const d = (json as ForecastJson)?.daily
   if (!d?.time || !d.weather_code || !d.temperature_2m_max || !d.temperature_2m_min) return []
   const out: DayWeather[] = []
@@ -49,7 +102,10 @@ export function parseForecast(json: unknown): DayWeather[] {
     const code = d.weather_code?.[i]
     if (typeof max !== 'number' || typeof min !== 'number' || typeof code !== 'number') return
     const rain = d.precipitation_probability_max?.[i]
-    out.push({ date, code, max: Math.round(max), min: Math.round(min), rainPct: typeof rain === 'number' ? Math.round(rain) : null })
+    const day: DayWeather = { date, code, max: Math.round(max), min: Math.round(min), rainPct: typeof rain === 'number' ? Math.round(rain) : null }
+    const hs = hours.get(date)
+    if (hs && hs.length > 0) day.hours = hs
+    out.push(day)
   })
   return out
 }
@@ -59,6 +115,7 @@ export function forecastUrl(lat: number, lng: number, timeZone: string): string 
     latitude: lat.toFixed(3),
     longitude: lng.toFixed(3),
     daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max',
+    hourly: 'temperature_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m,relative_humidity_2m',
     timezone: timeZone,
     forecast_days: String(FORECAST_DAYS),
   })
@@ -71,6 +128,28 @@ export async function fetchForecast(lat: number, lng: number, timeZone: string):
   const days = parseForecast(await res.json())
   if (days.length === 0) throw new Error('Previsioni non disponibili.')
   return days
+}
+
+/** Simbolo del Design System per un codice meteo: sole, nuvola o pioggia. */
+export function weatherSymbol(code: number): 'i-nav-sun' | 'i-sez-cloud' | 'i-sez-rain' {
+  if (code <= 1) return 'i-nav-sun'
+  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95 || (code >= 71 && code <= 77) || code === 85 || code === 86) return 'i-sez-rain'
+  return 'i-sez-cloud'
+}
+
+const rainy = (h: HourWeather) => weatherSymbol(h.code) === 'i-sez-rain' || (h.rain ?? 0) >= 60
+
+/** La finestra di pioggia del giorno (prima e ultima ora piovosa dopo `fromHour`), se c'è. */
+export function rainWindow(hours: HourWeather[] | undefined, fromHour = 0): { from: number; to: number } | null {
+  const r = (hours ?? []).filter((h) => h.h >= fromHour && rainy(h))
+  if (r.length === 0) return null
+  return { from: r[0].h, to: r[r.length - 1].h + 1 }
+}
+
+/** Punto cardinale da cui soffia il vento («nord», «sud-est», …). */
+export function windFrom(deg: number): string {
+  const names = ['nord', 'nord-est', 'est', 'sud-est', 'sud', 'sud-ovest', 'ovest', 'nord-ovest']
+  return names[Math.round((((deg % 360) + 360) % 360) / 45) % 8]
 }
 
 /** Il giorno `ymd` rientra nelle previsioni disponibili a partire da `today`? */

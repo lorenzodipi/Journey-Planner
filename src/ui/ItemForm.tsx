@@ -2,8 +2,7 @@ import { useState } from 'preact/hooks'
 import { useConfirm } from './ConfirmDialog'
 import type { ItemInput } from '../lib/tripApi'
 import type { DayItem, ItemKind, Trip } from '../types'
-import { formatDuration, parseDuration } from '../lib/duration'
-import { DurationField } from './DurationField'
+import { DURATION_CHIPS, formatDuration, parseDuration } from '../lib/duration'
 import { FormError, PrimaryButton, SecondaryButton, TextArea, TextField } from './Field'
 import { KIND_LABEL } from './ItemRow'
 import { Select } from './Select'
@@ -73,14 +72,20 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
     else onDone()
   }
 
+  const placeCount = trip.places.length
+  const place = trip.places.find((p) => p.id === placeId)
+  // «Altre opzioni» (fine e tipo) si aprono da sole se la tappa le usa già
+  const extraOpen = Boolean(initial && (initial.endTime || initial.kind !== 'visit'))
+
   return (
     <form class="space-y-4" onSubmit={submit} noValidate>
-      {trip.places.length > 0 && (
+      {placeCount > 0 && (
         <Select
-          label="Luogo collegato"
+          label="Luogo"
           value={placeId}
           onChange={onPlace}
-          placeholder="Nessuno"
+          placeholder={`Cerca tra i ${placeCount} luoghi`}
+          searchable
           options={[
             { value: '', label: 'Nessuno' },
             ...trip.places.map((p) => ({ value: p.id, label: p.name, hint: [p.city, p.category].filter(Boolean).join(' · ') || undefined })),
@@ -88,44 +93,53 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
         />
       )}
 
-      {placeId && onOpenPlace && trip.places.some((p) => p.id === placeId) && (
-        <button type="button" onClick={() => onOpenPlace(placeId)} class="-mt-2 min-h-11 rounded-full px-3 text-sm font-extrabold text-accent">
+      {placeId && onOpenPlace && place && (
+        <button type="button" onClick={() => onOpenPlace(placeId)} class="btn soft sm" style={{ marginTop: '-4px' }}>
           Apri la scheda del luogo
         </button>
       )}
 
       <TextField label="Cosa fai" value={title} onInput={setTitle} maxLength={120} />
 
-      <fieldset>
-        <legend class="mb-1 block text-sm font-extrabold">Tipo</legend>
-        <div class="flex flex-wrap gap-2">
-          {KINDS.map((k) => (
-            <button
-              type="button"
-              aria-pressed={kind === k}
-              onClick={() => setKind(k)}
-              class={`min-h-11 rounded-full border-2 px-4 text-sm font-extrabold ${
-                kind === k ? 'border-accent bg-accent-soft text-pale' : 'border-line text-muted'
-              }`}
-            >
-              {KIND_LABEL[k]}
-            </button>
-          ))}
-        </div>
-      </fieldset>
-
       <div class="grid grid-cols-2 gap-3">
-        <TextField label="Dalle" type="time" value={startTime} onInput={onStartTime} />
-        <TextField label="Alle" type="time" value={endTime} onInput={setEndTime} min={startTime || undefined} />
+        <TextField label="Orario" type="time" value={startTime} onInput={onStartTime} />
+        <TextField
+          label="Durata"
+          value={duration}
+          onInput={setDuration}
+          list="durate-tappa"
+          placeholder={place?.visitMinutes ? formatDuration(place.visitMinutes) : 'es. 1 h 30'}
+        />
       </div>
+      <datalist id="durate-tappa">
+        {DURATION_CHIPS.map((m) => (
+          <option value={formatDuration(m)} />
+        ))}
+      </datalist>
 
-      <DurationField label="Quanto ti fermi" value={duration} onInput={setDuration} inherited={trip.places.find((p) => p.id === placeId)?.visitMinutes} />
+      <TextArea label="Nota" value={notes} onInput={setNotes} />
 
-      <TextArea label="Note" value={notes} onInput={setNotes} />
+      <details open={extraOpen} class="space-y-4">
+        <summary class="b-bold" style={{ cursor: 'pointer', color: 'var(--azzurro-ink)', minHeight: '44px', display: 'flex', alignItems: 'center' }}>
+          Altre opzioni
+        </summary>
+        <TextField label="Fine" type="time" value={endTime} onInput={setEndTime} min={startTime || undefined} />
+        <fieldset>
+          <legend class="b-bold" style={{ marginBottom: '8px' }}>Tipo</legend>
+          <div class="chips" style={{ flexWrap: 'wrap', margin: 0, padding: 0, overflow: 'visible' }}>
+            {KINDS.map((k) => (
+              <button type="button" aria-pressed={kind === k} onClick={() => setKind(k)} class={`chip${kind === k ? ' on' : ''}`}>
+                {KIND_LABEL[k]}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      </details>
+
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva tappa' : 'Aggiungi tappa'}</PrimaryButton>
       {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina tappa</SecondaryButton>}
-    {confirmDialog}
+      {confirmDialog}
     </form>
   )
 }

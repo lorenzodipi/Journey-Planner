@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import type { ComponentChildren } from 'preact'
 import { stampOpen } from './dialogStack'
-import { TrashIcon } from './Icons'
+import { TrashG } from './glyphs'
 
 export interface ConfirmOptions {
   title: string
@@ -34,23 +34,23 @@ function ConfirmDialog({ title, text, confirmLabel = 'Elimina', onAnswer }: Conf
       onClick={(e) => {
         if (e.target === e.currentTarget) onAnswer(false)
       }}
-      class="fixed inset-0 m-auto w-[min(92vw,22rem)] rounded-3xl border-2 border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-[var(--scrim)]"
+      class="fdialog"
     >
-      <div class="space-y-4 p-5">
-        <div class="flex items-start gap-3">
-          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-danger/15 text-danger">
-            <TrashIcon size={20} />
+      <div class="fdialog-in">
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+          <span class="fdialog-ic">
+            <TrashG size={22} />
           </span>
-          <div class="min-w-0">
-            <h2 class="font-display text-xl font-extrabold leading-tight">{title}</h2>
-            {text && <p class="mt-1 text-sm text-muted">{text}</p>}
+          <div style={{ minWidth: 0 }}>
+            <h2 class="h-md">{title}</h2>
+            {text && <p class="b-sm muted" style={{ marginTop: '4px' }}>{text}</p>}
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          <button type="button" onClick={() => onAnswer(false)} class="min-h-[52px] rounded-full border-2 border-line px-4 font-extrabold">
+        <div class="grid2">
+          <button type="button" onClick={() => onAnswer(false)} class="btn line">
             Annulla
           </button>
-          <button type="button" onClick={() => onAnswer(true)} class="min-h-[52px] rounded-full bg-danger px-4 font-extrabold text-bg">
+          <button type="button" onClick={() => onAnswer(true)} class="btn" style={{ background: 'var(--danger)', color: 'var(--canvas)' }}>
             {confirmLabel}
           </button>
         </div>
@@ -102,9 +102,9 @@ export function TrashButton({ label, onClick, disabled }: { label: string; onCli
         e.stopPropagation()
         onClick()
       }}
-      class="grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted transition-colors hover:text-danger active:text-danger disabled:opacity-40"
+      class="rbtn sm trash"
     >
-      <TrashIcon size={20} />
+      <TrashG size={20} />
     </button>
   )
 }

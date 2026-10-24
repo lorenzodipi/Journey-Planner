@@ -24,9 +24,7 @@ export function DurationField({ label, value, onInput, inherited, inheritedFrom 
             type="button"
             aria-pressed={parsed === m}
             onClick={() => onInput(parsed === m ? '' : formatDuration(m))}
-            class={`min-h-11 rounded-full border-2 px-3.5 text-sm font-extrabold ${
-              parsed === m ? 'border-accent bg-accent-soft text-pale' : 'border-line text-muted'
-            }`}
+            class={`chip${parsed === m ? ' on' : ''}`}
           >
             {formatDuration(m)}
           </button>

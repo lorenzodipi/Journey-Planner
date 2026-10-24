@@ -10,7 +10,7 @@ export interface DragState {
   step: number
 }
 
-const GAP = 12 // lo spazio tra le righe dell'elenco (space-y-3)
+const DEFAULT_GAP = 12 // lo spazio tra le righe dell'elenco (space-y-3)
 const EDGE_TOP = 96
 const EDGE_BOTTOM = 120 // sotto c'è la barra di navigazione
 const MAX_SPEED = 14
@@ -21,7 +21,7 @@ const MAX_SPEED = 14
  * Vicino ai bordi dello schermo la pagina scorre da sola; al rilascio si chiama `onDrop(from, to)`
  * e la riga resta dov'è arrivata finché il salvataggio non finisce.
  */
-export function useDragReorder(onDrop: (from: number, to: number) => void | Promise<void>) {
+export function useDragReorder(onDrop: (from: number, to: number) => void | Promise<void>, gap: number = DEFAULT_GAP) {
   const listRef = useRef<HTMLUListElement>(null)
   const [drag, setDrag] = useState<DragState | null>(null)
   const stop = useRef<(() => void) | null>(null)
@@ -40,7 +40,7 @@ export function useDragReorder(onDrop: (from: number, to: number) => void | Prom
     const scrollY0 = window.scrollY
     const rects = rows.map((r) => r.getBoundingClientRect())
     const mids = rects.map((r) => r.top + scrollY0 + r.height / 2)
-    const step = rects[from].height + GAP
+    const step = rects[from].height + gap
     const startPageY = e.clientY + scrollY0
     let clientY = e.clientY
     let current: DragState = { from, to: from, dy: 0, step }

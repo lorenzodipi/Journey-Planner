@@ -1,9 +1,7 @@
-import type { DayItem, ItemKind } from '../types'
-import { formatDuration } from '../lib/duration'
-import { TrashButton } from './ConfirmDialog'
-import { ArrowDownIcon, ArrowUpIcon, GripIcon, TickIcon } from './Icons'
+import type { ItemKind } from '../types'
+import { NodeCheck } from './glyphs'
 import { MapsPill } from './MapsPill'
-import { Ticket } from './Ticket'
+import { Ic } from './Sprite'
 
 export const KIND_LABEL: Record<ItemKind, string> = {
   visit: 'Visita',
@@ -14,128 +12,189 @@ export const KIND_LABEL: Record<ItemKind, string> = {
   note: 'Nota',
 }
 
-interface Props {
-  item: DayItem
-  /** Numero d'ordine della tappa nel giorno (vale anche per la mappa). */
-  n?: number
-  /** La tappa ha una posizione e compare sulla mappa del giorno. */
-  onMap?: boolean
-  /** Riga in più sotto il titolo (es. il tempo dalla tappa precedente). */
-  hint?: string
-  /** Il luogo collegato (nome e città), se serve a capire dove si va. */
-  place?: string
-  /** Tempo di permanenza in minuti (proprio o del luogo). */
-  duration?: number
-  /** Link per aprire il luogo della tappa in Maps (solo se ha un luogo collegato). Non compare mentre si riordina. */
+export type StepState = 'done' | 'now' | 'next'
+
+/** Glifo del nodo dello stepper per una categoria (stessi segni del mock). */
+export function nodeGlyph(icon: string): string {
+  return ['district', 'food', 'shopping', 'temple'].includes(icon) ? `g-${icon}` : icon === 'pin' ? 'gl-nav-pin' : `gl-cat-${icon}`
+}
+
+const UpIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V5M6 11l6-6 6 6" />
+  </svg>
+)
+const DownIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 5v14M6 13l6 6 6-6" />
+  </svg>
+)
+const GripIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <circle cx="9" cy="6" r="1.6" />
+    <circle cx="15" cy="6" r="1.6" />
+    <circle cx="9" cy="12" r="1.6" />
+    <circle cx="15" cy="12" r="1.6" />
+    <circle cx="9" cy="18" r="1.6" />
+    <circle cx="15" cy="18" r="1.6" />
+  </svg>
+)
+
+interface StepProps {
+  id: string
+  title: string
+  state: StepState
+  /** simbolo del nodo (id nello sprite) */
+  glyph: string
+  meta?: string
+  time?: string
+  /** Mostra «Dopo»/«Da fare» accanto all'ora (solo per le tappe di oggi). */
+  badge?: 'Dopo' | 'Da fare'
   mapsHref?: string
-  /** Tocco sulla riga: apre la modifica. Senza, la riga è di sola lettura. */
   onOpen?: () => void
   onToggleDone?: () => void
-  /** Cestino in fondo alla riga (chiede conferma chi lo usa). Non compare mentre si riordina. */
-  onDelete?: () => void
+  /** La tappa trovata toccando la mappa: per un attimo ha il fondo colorato. */
+  highlight?: boolean
+}
+
+/** Una tappa con orario nello stepper «Tappe del giorno» (`.tp-stp`). */
+export function StepRow({ id, title, state, glyph, meta, time, badge, mapsHref, onOpen, onToggleDone, highlight }: StepProps) {
+  const done = state === 'done'
+  const head = (
+    <>
+      <span class="tp-t">{title}</span>
+      {meta && <span class="tp-m">{meta}</span>}
+    </>
+  )
+  const nodeInner = done ? (
+    <NodeCheck />
+  ) : (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <use href={`#${glyph}`} />
+    </svg>
+  )
+  return (
+    <li id={`tappa-${id}`} class={`tp-stp ${state}${highlight ? ' hl' : ''}`}>
+      <span class="tp-rail">
+        {onToggleDone ? (
+          <button type="button" class={`tp-nd ${state}`} role="checkbox" aria-checked={done} aria-label={`${done ? 'Segna come da fare' : 'Segna come fatta'}: ${title}`} onClick={onToggleDone}>
+            {nodeInner}
+          </button>
+        ) : (
+          <span class={`tp-nd ${state}`}>{nodeInner}</span>
+        )}
+      </span>
+      <div class="tp-body">
+        <div class="tp-top">
+          {onOpen ? (
+            <button type="button" class="tp-edit" onClick={onOpen} aria-label={`Modifica ${title}`}>
+              {head}
+            </button>
+          ) : (
+            <div class="tp-edit">{head}</div>
+          )}
+          <div class="tp-r">
+            {time && <span class="tp-time">{time}</span>}
+            {done ? (
+              <span class="tp-st">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6.5 12.5l3.8 3.8 7.2-8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                Fatta
+              </span>
+            ) : state === 'now' ? (
+              <span class="tp-badge now">Ora</span>
+            ) : badge ? (
+              <span class="tp-badge next">{badge}</span>
+            ) : null}
+          </div>
+        </div>
+        {mapsHref && (
+          <div class="tp-foot">
+            <MapsPill kind="tp" href={mapsHref} label={title} />
+          </div>
+        )}
+      </div>
+    </li>
+  )
+}
+
+interface RowProps {
+  id: string
+  title: string
+  /** simbolo del disco (id nello sprite, es. i-cat-shopping) */
+  icon: string
+  meta?: string
+  done?: boolean
+  mapsHref?: string
+  /** Tocco sulla riga: apre la modifica. */
+  onOpen?: () => void
+  onToggleDone?: () => void
   /**
-   * Se presente, al posto della spunta compaiono i comandi per riordinare: le frecce (su web; su touch restano
-   * solo per screen reader e tastiera) e, su touch, la maniglia da trascinare (`onGrab`, assente se la tappa ha un orario).
+   * Se presente, al posto del pulsante Maps compaiono i comandi per riordinare: le frecce (su touch restano
+   * solo per screen reader e tastiera) e, su touch, la maniglia da trascinare.
    */
   reorder?: { onUp?: () => void; onDown?: () => void; onGrab?: (e: PointerEvent) => void }
   /** Stile della riga mentre si trascina (spostamento) e se è proprio questa a essere trascinata. */
   dragStyle?: { transform: string; transition: string }
   dragging?: boolean
-  /** La tappa trovata toccando la mappa: per un attimo ha il fondo colorato. */
   highlight?: boolean
 }
 
-export function ItemRow({ item, n, onMap, hint, place, duration, mapsHref, onOpen, onToggleDone, onDelete, reorder, dragStyle, dragging, highlight }: Props) {
-  const range = item.time && item.endTime ? `${item.time}–${item.endTime}` : ''
-  const sub = [KIND_LABEL[item.kind], item.endTime && range, duration ? `sosta ${formatDuration(duration)}` : '', item.note, place].filter(Boolean).join(' · ')
-  const stub = item.time ? (
-    <span class={`text-[22px] font-extrabold leading-none tabular-nums ${item.done ? 'text-muted' : 'text-pale'}`}>{item.time}</span>
-  ) : n != null ? (
-    <span
-      class={`grid size-7 place-items-center rounded-full text-sm font-extrabold ${onMap ? 'bg-accent text-accent-ink' : 'border-2 border-line text-muted'}`}
-      title={onMap ? `Tappa ${n} sulla mappa` : `Tappa ${n} (senza posizione sulla mappa)`}
-    >
-      {n}
+/** Una tappa senza orario: riga `.prow` con il disco della categoria (toccandolo si segna fatta). */
+export function ItemRow({ id, title, icon, meta, done, mapsHref, onOpen, onToggleDone, reorder, dragStyle, dragging, highlight }: RowProps) {
+  const disc = done ? (
+    <span class="tp-nd done" aria-hidden="true">
+      <NodeCheck />
     </span>
   ) : (
-    <span class="text-sm font-extrabold text-muted">—</span>
+    <Ic name={icon} size={44} />
   )
-  const body = (
-    <span class="min-w-0 flex-1">
-      <span class={`block line-clamp-2 text-[17px] font-extrabold leading-tight ${item.done ? 'text-muted line-through' : ''}`}>{item.title}</span>
-      {sub && <span class="mt-0.5 block truncate text-[13px] text-muted">{sub}</span>}
-    </span>
-  )
-
   return (
-    <li
-      id={`tappa-${item.id}`}
-      style={dragStyle}
-      class={`scroll-mt-24 scroll-mb-28 ${dragging ? 'relative z-20 [filter:drop-shadow(0_10px_16px_rgb(0_0_0/0.35))]' : ''}`}
-    >
-      {hint && (
-        <div class="ml-9 flex h-[30px] items-center gap-2.5" aria-hidden="true">
-          <i class="h-full border-l-[3px] border-dashed border-line" />
-          <span class="text-xs text-muted">{hint}</span>
-        </div>
+    <li id={`tappa-${id}`} class={`prow${highlight ? ' hl' : ''}${dragging ? ' dragging' : ''}`} style={dragStyle}>
+      {onToggleDone ? (
+        <button type="button" class="tp-disc" role="checkbox" aria-checked={Boolean(done)} aria-label={`${done ? 'Segna come da fare' : 'Segna come fatta'}: ${title}`} onClick={onToggleDone}>
+          {disc}
+        </button>
+      ) : (
+        disc
       )}
-      <Ticket stub={stub} tone={highlight ? 'accent' : item.done ? 'ok' : 'line'} flash={highlight}>
-        <div class="min-w-0 flex-1">
-          {onOpen ? (
-            <button type="button" onClick={onOpen} aria-label={`Modifica ${item.title}`} class="flex min-h-11 w-full min-w-0 items-center text-left">
-              {body}
-            </button>
-          ) : (
-            <div class="flex min-h-11 min-w-0 items-center">{body}</div>
-          )}
-          {mapsHref && !reorder && (
-            <div class="pb-1 pt-0.5">
-              <MapsPill href={mapsHref} label={item.title} text="Maps" compact />
-            </div>
-          )}
-        </div>
-
-        {reorder ? (
-          <span class="flex shrink-0 items-center">
-            <span class="flex pointer-coarse:sr-only">
-              <button type="button" aria-label="Sposta su" disabled={!reorder.onUp} onClick={reorder.onUp} class="grid size-11 place-items-center rounded-full text-pale disabled:opacity-30">
-                <ArrowUpIcon size={18} />
-              </button>
-              <button type="button" aria-label="Sposta giù" disabled={!reorder.onDown} onClick={reorder.onDown} class="grid size-11 place-items-center rounded-full text-pale disabled:opacity-30">
-                <ArrowDownIcon size={18} />
-              </button>
-            </span>
-            {reorder.onGrab && (
-              <button
-                type="button"
-                aria-hidden="true"
-                tabIndex={-1}
-                onPointerDown={reorder.onGrab}
-                class="hidden size-11 cursor-grab touch-none select-none place-items-center rounded-full text-pale pointer-coarse:grid"
-                title={`Trascina «${item.title}»`}
-              >
-                <GripIcon size={20} />
-              </button>
-            )}
-          </span>
+      <div class="grow">
+        {onOpen ? (
+          <button type="button" class="pt2 tp-edit" onClick={onOpen} aria-label={`Modifica ${title}`} style={done ? { color: 'var(--ink-muted)', textDecoration: 'line-through' } : undefined}>
+            {title}
+          </button>
         ) : (
-          onToggleDone && (
+          <p class="pt2">{title}</p>
+        )}
+        {meta && <p class="pm">{meta}</p>}
+      </div>
+      {reorder ? (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+          <span class="flex pointer-coarse:sr-only" style={{ gap: '4px' }}>
+            <button type="button" class="rbtn sm" aria-label="Sposta su" disabled={!reorder.onUp} onClick={reorder.onUp} style={{ opacity: reorder.onUp ? 1 : 0.35 }}>
+              <UpIcon />
+            </button>
+            <button type="button" class="rbtn sm" aria-label="Sposta giù" disabled={!reorder.onDown} onClick={reorder.onDown} style={{ opacity: reorder.onDown ? 1 : 0.35 }}>
+              <DownIcon />
+            </button>
+          </span>
+          {reorder.onGrab && (
             <button
               type="button"
-              role="checkbox"
-              aria-checked={Boolean(item.done)}
-              aria-label={item.done ? 'Segna come da fare' : 'Segna come fatta'}
-              onClick={onToggleDone}
-              class="grid size-11 shrink-0 place-items-center"
+              aria-hidden="true"
+              tabIndex={-1}
+              onPointerDown={reorder.onGrab}
+              class="rbtn hidden cursor-grab touch-none select-none pointer-coarse:grid"
+              title={`Trascina «${title}»`}
             >
-              <span class={`grid size-6 place-items-center rounded-full border-2 ${item.done ? 'border-ok bg-ok text-bg' : 'border-line'}`}>
-                {item.done && <TickIcon size={14} />}
-              </span>
+              <GripIcon />
             </button>
-          )
-        )}
-        {!reorder && onDelete && <TrashButton label={`Elimina ${item.title}`} onClick={onDelete} />}
-      </Ticket>
+          )}
+        </span>
+      ) : (
+        mapsHref && <MapsPill kind="btn" href={mapsHref} label={title} />
+      )}
     </li>
   )
 }

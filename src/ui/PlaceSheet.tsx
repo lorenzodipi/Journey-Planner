@@ -8,7 +8,7 @@ import { showToast } from '../state/toast'
 import { useTrips } from '../state/trip'
 import type { Place, PlaceStatus, Trip } from '../types'
 import { useConfirm } from './ConfirmDialog'
-import { FormError, SecondaryButton } from './Field'
+import { FormError } from './Field'
 import { PlaceForm } from './PlaceForm'
 import { STATUSES, STATUS_LABEL } from './placeMeta'
 import { Select } from './Select'
@@ -48,7 +48,7 @@ export function PlaceSheet({ trip, state, onChange }: Props) {
       {state?.kind === 'detail' && place && (
         <Detail trip={trip} place={place} onEdit={() => onChange({ kind: 'edit', placeId: place.id })} onClose={close} />
       )}
-      {state?.kind === 'detail' && !place && <p class="text-sm text-muted">Questo luogo non esiste più.</p>}
+      {state?.kind === 'detail' && !place && <p class="b-sm muted">Questo luogo non esiste più.</p>}
     </Sheet>
   )
 }
@@ -100,40 +100,36 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
   return (
     <div class="space-y-4">
       {place.nameLocal && (
-        <p lang="ja" class="rounded-2xl bg-accent-soft px-4 py-3 text-xl font-extrabold text-accent">
+        <p lang="ja" class="card" style={{ background: 'var(--tinta-azzurro)', color: 'var(--on-tinta)', border: 0, font: "500 24px/30px 'Zen Kaku Gothic New','Hiragino Sans','Yu Gothic',sans-serif" }}>
           {place.nameLocal}
         </p>
       )}
-      <p class="text-sm text-muted">
-        {[place.category, place.city].filter(Boolean).join(' · ') || 'Senza categoria'}
-      </p>
+      <p class="b-bold">{[place.category, place.city].filter(Boolean).join(' · ') || 'Senza categoria'}</p>
       {plannedDays.length > 0 && (
-        <p class="rounded-2xl bg-accent-soft px-4 py-3 text-sm text-accent">
+        <p class="card b-sm" style={{ background: 'var(--tinta-azzurro)', color: 'var(--on-tinta)', border: 0, padding: '12px 16px' }}>
           In programma: {plannedDays.map((d) => formatDay(d.date)).join(' · ')}
         </p>
       )}
 
-      <div class="flex flex-wrap gap-2" role="group" aria-label="Stato">
+      <div class="chips" style={{ margin: 0, padding: 0, flexWrap: 'wrap' }} role="group" aria-label="Stato">
         {STATUSES.map((s) => (
           <button
             type="button"
             aria-pressed={place.status === s}
             onClick={() => void setStatus(s)}
-            class={`min-h-11 rounded-full border-2 px-4 text-sm font-extrabold ${
-              place.status === s ? 'border-accent bg-accent-soft text-pale' : 'border-line text-muted'
-            }`}
+            class={`chip${place.status === s ? ' on' : ''}`}
           >
             {STATUS_LABEL[s]}
           </button>
         ))}
       </div>
 
-      {place.note && <p class="whitespace-pre-line text-sm">{place.note}</p>}
-      {place.visitMinutes && <p class="text-sm text-muted">Ci si ferma circa {formatDuration(place.visitMinutes)}</p>}
-      {place.openingHours && <p class="text-sm text-muted">Orari: {place.openingHours}</p>}
-      {place.address && <p class="text-xs text-muted">{place.address}</p>}
+      {place.note && <p class="b-sm" style={{ whiteSpace: 'pre-line' }}>{place.note}</p>}
+      {place.visitMinutes && <p class="b-sm muted">Ci si ferma circa {formatDuration(place.visitMinutes)}</p>}
+      {place.openingHours && <p class="b-sm muted">Orari: {place.openingHours}</p>}
+      {place.address && <p class="cap muted">{place.address}</p>}
       {photo && (
-        <p class="text-xs text-muted">
+        <p class="cap muted">
           Foto:{' '}
           <a href={photo.page} target="_blank" rel="noopener noreferrer" class="underline">
             Wikimedia Commons
@@ -145,7 +141,7 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
       <MapsPill href={mapsLinkFor(place)} label={place.name} />
 
       {trip.days.length > 0 && (
-        <div class="space-y-2 rounded-2xl bg-bg p-3">
+        <div class="card" style={{ background: 'var(--surface-soft)', display: 'grid', gap: '8px', padding: '12px' }}>
           <Select
             label="Aggiungi a un giorno"
             value={dayId}
@@ -153,11 +149,7 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
             tone="surface"
             options={trip.days.map((d, i) => ({ value: d.id, label: `${i + 1} · ${formatDay(d.date)}`, hint: d.city || undefined }))}
           />
-          <button
-            type="button"
-            onClick={() => void addToDay()}
-            class="min-h-12 w-full rounded-full bg-accent px-6 font-extrabold text-accent-ink"
-          >
+          <button type="button" onClick={() => void addToDay()} class="btn block">
             Aggiungi al giorno
           </button>
         </div>
@@ -165,11 +157,13 @@ function Detail({ trip, place, onEdit, onClose }: { trip: Trip; place: Place; on
 
       <FormError message={error} />
       {confirmDialog}
-      <div class="grid grid-cols-2 gap-2">
-        <SecondaryButton onClick={onEdit}>Modifica</SecondaryButton>
-        <SecondaryButton danger onClick={() => void remove()}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        <button type="button" class="btn soft" onClick={onEdit}>
+          Modifica
+        </button>
+        <button type="button" class="btn line" style={{ color: 'var(--danger)', boxShadow: 'inset 0 0 0 1.5px var(--danger)' }} onClick={() => void remove()}>
           Elimina
-        </SecondaryButton>
+        </button>
       </div>
     </div>
   )

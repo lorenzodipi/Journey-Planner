@@ -210,9 +210,7 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
               type="button"
               aria-pressed={status === s}
               onClick={() => setStatus(s)}
-              class={`min-h-11 rounded-full border-2 px-4 text-sm font-extrabold ${
-                status === s ? 'border-accent bg-accent-soft text-pale' : 'border-line text-muted'
-              }`}
+              class={`chip${status === s ? ' on' : ''}`}
             >
               {STATUS_LABEL[s]}
             </button>

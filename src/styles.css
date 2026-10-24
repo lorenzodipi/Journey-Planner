@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @import "./fonts/fonts.css";
+@import "./faraway.css";
 
 /* ---------------------------------------------------------------------------
    Design token: «Faraway Azzurro» (Design System v3), chiaro e scuro.
@@ -46,49 +47,25 @@
 
 :root {
   color-scheme: light;
-  --bg: #faf6ee;
-  --surface: #ffffff;
-  --surface-2: #f2ede3;
-  --surface-high: #eae4d8;
-  --ink: #141930;
-  --muted: #525772;
-  /* contorno forte (campi, pulsanti a contorno, caselle) e filo sottile (card, righe) */
-  --line: #6f7594;
-  --hairline: #e6dfd0;
-  --scrim: rgb(20 25 48 / 0.56);
-  --accent: #0b79cc;
-  --accent-ink: #ffffff;
-  --accent-soft: #e3f3ff;
-  --accent-solid: #0b79cc;
-  --on-accent-solid: #ffffff;
-  --pale: #0866ad;
-  --secondary: #ff9a2e;
-  --ok: #096b53;
-  --warn: #8f5300;
-  --danger: #c4162f;
-  /* scontrino (Spese): carta chiara anche col tema scuro? no: segue il tema */
-  --paper: #ffffff;
-  --paper-ink: #141930;
-  --paper-muted: #525772;
+  /* i nomi usati dalle classi Tailwind puntano ai token del Design System (faraway.css) */
+  --bg: var(--canvas);
+  --surface: var(--surface-card);
+  --surface-2: var(--surface-soft);
+  --muted: var(--ink-muted);
+  --line: var(--border-strong);
+  --accent: var(--azzurro);
+  --accent-ink: var(--on-azzurro);
+  --accent-soft: var(--azzurro-soft);
+  --accent-solid: var(--azzurro-solid);
+  --on-accent-solid: var(--on-azzurro-solid);
+  --pale: var(--azzurro-ink);
+  --secondary: var(--arancia);
+  --ok: var(--success);
+  --warn: var(--warning);
+  --paper: var(--surface-card);
+  --paper-ink: var(--ink);
+  --paper-muted: var(--ink-muted);
   --night: #1b2440;
-  /* tinte dei biglietti e delle card in evidenza */
-  --tinta-azzurro: #c9e6ff;
-  --tinta-menta: #c6f0e1;
-  --tinta-limone: #ffe89a;
-  --tinta-lavanda: #e2d6ff;
-  --tinta-confetto: #ffd5e8;
-  --on-tinta: #141930;
-  --on-tinta-muted: #525772;
-  /* colori pieni (cerchi, avatar, categorie): uguali nei due temi */
-  --arancia: #ff9a2e;
-  --confetto: #ff8fc4;
-  --menta: #2ec9a8;
-  --cielo: #5bb8ff;
-  --glicine: #9570ff;
-  --turchese: #3dd6d0;
-  --limone: #ffd23f;
-  --pomodoro: #ff5238;
-  --on-bright: #141930;
   --day-a: #ffe9a8;
   --day-b: #ffb36b;
   /* fasi del giorno: sono fisiche */
@@ -103,32 +80,6 @@
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #10172b;
-  --surface: #1b2440;
-  --surface-2: #151d34;
-  --surface-high: #263152;
-  --ink: #f5f3ef;
-  --muted: #aeb6ce;
-  --line: #8c96b5;
-  --hairline: #2b3659;
-  --scrim: rgb(5 10 26 / 0.69);
-  --accent: #4db4ff;
-  --accent-ink: #0b1224;
-  --accent-soft: #0f2d4d;
-  --accent-solid: #0b79cc;
-  --on-accent-solid: #ffffff;
-  --pale: #8fd0ff;
-  --ok: #4eddb8;
-  --warn: #ffc857;
-  --danger: #ff7a8b;
-  --paper: #263152;
-  --paper-ink: #f5f3ef;
-  --paper-muted: #aeb6ce;
-  --tinta-azzurro: #bfe3ff;
-  --tinta-menta: #bdeedd;
-  --tinta-limone: #ffe680;
-  --tinta-lavanda: #d6c9ff;
-  --tinta-confetto: #ffc9e1;
   --cat-visit: #4db4ff;
 }
 
@@ -385,7 +336,7 @@ fieldset {
 }
 
 /* barra di navigazione nascosta (selezione multipla): vedi useHideNav */
-:root[data-hide-nav] nav[aria-label='Navigazione principale'] {
+:root[data-hide-nav] nav.tabbar {
   display: none;
 }
 
@@ -402,49 +353,4 @@ fieldset {
   .jp-spin {
     animation-duration: 2s;
   }
-}
-
-/* Carta d'imbarco: due metà colorate con le tacche sulla perforazione (come nel design system). */
-.jp-tk {
-  --n: 12px;
-  display: grid;
-  /* sulla tinta il testo è scuro anche col tema scuro */
-  --ink: var(--on-tinta);
-  --muted: var(--on-tinta-muted);
-  --pale: #075a99;
-  --line: #6f7594;
-  --warn: #8f5300;
-  --ok: #096b53;
-  --surface: #ffffff;
-  color: var(--on-tinta);
-}
-.jp-tk-top,
-.jp-tk-bot {
-  position: relative;
-  background: var(--tk, var(--tinta-azzurro));
-}
-.jp-tk-top {
-  border-radius: 28px 28px 0 0;
-  padding: 20px 24px 22px;
-  -webkit-mask: radial-gradient(circle var(--n) at 0 100%, #0000 calc(var(--n) - 0.5px), #000 var(--n)) left / 51% 100% no-repeat,
-    radial-gradient(circle var(--n) at 100% 100%, #0000 calc(var(--n) - 0.5px), #000 var(--n)) right / 51% 100% no-repeat;
-  mask: radial-gradient(circle var(--n) at 0 100%, #0000 calc(var(--n) - 0.5px), #000 var(--n)) left / 51% 100% no-repeat,
-    radial-gradient(circle var(--n) at 100% 100%, #0000 calc(var(--n) - 0.5px), #000 var(--n)) right / 51% 100% no-repeat;
-}
-.jp-tk-bot {
-  border-radius: 0 0 28px 28px;
-  padding: 18px 24px 22px;
-  -webkit-mask: radial-gradient(circle var(--n) at 0 0, #0000 calc(var(--n) - 0.5px), #000 var(--n)) left / 51% 100% no-repeat,
-    radial-gradient(circle var(--n) at 100% 0, #0000 calc(var(--n) - 0.5px), #000 var(--n)) right / 51% 100% no-repeat;
-  mask: radial-gradient(circle var(--n) at 0 0, #0000 calc(var(--n) - 0.5px), #000 var(--n)) left / 51% 100% no-repeat,
-    radial-gradient(circle var(--n) at 100% 0, #0000 calc(var(--n) - 0.5px), #000 var(--n)) right / 51% 100% no-repeat;
-}
-.jp-tk-bot::before {
-  content: '';
-  position: absolute;
-  left: calc(var(--n) + 8px);
-  right: calc(var(--n) + 8px);
-  top: 0;
-  border-top: 2px dashed var(--on-tinta);
-  opacity: 0.55;
 }

@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'preact/hooks'
 import { useAuth } from '../lib/auth'
 import { COUNTRIES, countryByCode, countryByName, themeForCountry, zonesOf } from '../lib/countries'
-import { parseAmount } from '../lib/money'
+import { currencyName, parseAmount } from '../lib/money'
+import { tzOffsetMinutes } from '../lib/sun'
+import { formatDiffHours } from '../lib/today'
 import type { TripInput, TripPeople } from '../lib/tripApi'
 import {
   PRESETS,
@@ -9,12 +11,12 @@ import {
   cleanPeople,
   isValidTimezone,
   validateTrip,
-  type Preset,
 } from '../lib/tripForm'
 import type { ThemeName, Trip } from '../types'
 import { FormError, PrimaryButton, TextField } from './Field'
 import { CurrencySelect } from './CurrencySelect'
-import { ChevronDownIcon } from './Icons'
+import { ChevronDownG, CloseG, PlusG } from './glyphs'
+import '../fw-altro.css'
 import { Select } from './Select'
 import { timezoneOptions } from '../lib/timezones'
 import { centerForTimezone } from '../lib/tzCenter'
@@ -29,8 +31,8 @@ interface Props {
 
 export function TripForm({ trip, onSubmit, onDone }: Props) {
   const editing = Boolean(trip)
-  const [presetId, setPresetId] = useState<string>(editing ? '' : 'japan')
   const first = PRESETS[0]
+  const AV = ['var(--arancia)', 'var(--confetto)', 'var(--menta)', 'var(--cielo)', 'var(--limone)', 'var(--glicine)']
 
   const [title, setTitle] = useState(trip?.title ?? '')
   const [destination, setDestination] = useState(trip?.destination ?? first.destination)
@@ -66,7 +68,6 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
   // scegliendo il paese si propongono fuso, valuta locale, centro mappa e tema: restano tutti modificabili
   function onCountry(name: string) {
     setDestination(name)
-    setPresetId(PRESETS.find((p) => p.destination === name)?.id ?? '')
     const c = countryByName(name)
     if (!c) return
     setTimezone(c.timezone)
@@ -89,14 +90,14 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
     setOriginTz(code ? (countryByCode(code)?.timezone ?? '') : '')
   }
 
-  function applyPreset(p: Preset) {
-    setPresetId(p.id)
-    setDestination(p.destination)
-    setTimezone(p.timezone)
-    setTheme(p.theme)
-    setLocalCurrency(p.localCurrency)
-    setCenter(p.center)
-  }
+  // «+8 h, yen»: scarto dal fuso del telefono e valuta locale della destinazione
+  const autoNote = (() => {
+    if (!isValidTimezone(timezone)) return ''
+    const diff = (tzOffsetMinutes(new Date(), timezone) - tzOffsetMinutes(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone)) / 60
+    const cur = localCurrency.trim().toUpperCase()
+    const name = cur ? currencyName(cur)?.split(' ')[0]?.toLowerCase() : undefined
+    return [diff !== 0 ? formatDiffHours(diff) : 'stesso fuso', name ?? (cur || '')].filter(Boolean).join(', ')
+  })()
 
   async function submit(e: Event) {
     e.preventDefault()
@@ -143,36 +144,16 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
   }
 
   return (
-    <form class="space-y-4" onSubmit={submit} noValidate>
-      {!editing && (
-        <fieldset>
-          <legend class="mb-1 block text-sm font-extrabold">Dove vai?</legend>
-          <div class="flex gap-2">
-            {PRESETS.map((p) => (
-              <button
-                type="button"
-                aria-pressed={presetId === p.id}
-                onClick={() => applyPreset(p)}
-                class={`min-h-11 flex-1 rounded-full border-2 px-3 text-sm font-extrabold ${
-                  presetId === p.id ? 'border-accent bg-accent-soft text-pale' : 'border-line text-muted'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-      )}
-
+    <form onSubmit={submit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <TextField label="Nome del viaggio" value={title} onInput={setTitle} placeholder="Es. Estate 2027" maxLength={80} />
       <Select label="Destinazione" value={destination} onChange={onCountry} options={countryOptions} placeholder="Scegli il paese" searchable />
 
-      <div class="grid grid-cols-2 gap-3">
-        <TextField label="Dal" type="date" value={startDate} onInput={onStartDate} />
-        <TextField label="Al" type="date" value={endDate} onInput={setEndDate} min={startDate || undefined} />
+      <div class="grid2">
+        <TextField label="Partenza" type="date" value={startDate} onInput={onStartDate} />
+        <TextField label="Ritorno" type="date" value={endDate} onInput={setEndDate} min={startDate || undefined} />
       </div>
 
-      <Select label="Paese di origine (facoltativo)" value={originCountry} onChange={onOrigin} options={originOptions} placeholder="Nessuno" searchable />
+      <Select label="Paese di partenza (facoltativo)" value={originCountry} onChange={onOrigin} options={originOptions} placeholder="Nessuno" searchable />
       {originZones.length > 1 && (
         <Select label="Fuso di casa" value={originTz} onChange={setOriginTz} options={originZones.map((z) => ({ value: z, label: z }))} />
       )}
@@ -187,93 +168,80 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
       />
 
       {!editing && (
-        <fieldset class="space-y-3">
-          <legend class="mb-1 block text-sm font-extrabold">Chi viaggia</legend>
-          <div class="flex items-center gap-2">
-            <span aria-hidden="true" class="h-4 w-4 shrink-0 rounded-full" style={{ background: TRAVELER_COLORS[0] }} />
-            <input
-              type="text"
-              aria-label="Il tuo nome"
-              value={selfName}
-              placeholder="Il tuo nome"
-              maxLength={40}
-              autoComplete="off"
-              onInput={(e) => setSelfName(e.currentTarget.value)}
-              class="min-h-12 min-w-0 flex-1 rounded-xl border-[1.5px] border-line bg-surface px-4"
-            />
-          </div>
-          {ownEmail && <p class="-mt-1 pl-6 text-xs text-muted">Sei tu: {ownEmail}</p>}
-          {others.map((o, i) => (
-            <div class="flex items-start gap-2">
-              <span
-                aria-hidden="true"
-                class="mt-4 h-4 w-4 shrink-0 rounded-full"
-                style={{ background: TRAVELER_COLORS[(i + 1) % TRAVELER_COLORS.length] }}
-              />
-              <div class="min-w-0 flex-1 space-y-2">
-                <input
-                  type="email"
-                  inputMode="email"
-                  aria-label={`Email della persona ${i + 1}`}
-                  value={o.email}
-                  placeholder="Email del suo account"
-                  autoComplete="off"
-                  autoCapitalize="none"
-                  onInput={(e) => setOthers(others.map((x, j) => (j === i ? { ...x, email: e.currentTarget.value } : x)))}
-                  class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-4"
-                />
-                <input
-                  type="text"
-                  aria-label={`Nome della persona ${i + 1}`}
-                  value={o.name}
-                  placeholder="Nome (facoltativo)"
-                  maxLength={40}
-                  autoComplete="off"
-                  onInput={(e) => setOthers(others.map((x, j) => (j === i ? { ...x, name: e.currentTarget.value } : x)))}
-                  class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-4"
-                />
+        <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
+          <legend class="b-bold" style={{ marginBottom: '8px' }}>
+            Chi viaggia
+          </legend>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <label class="fld person">
+              <span class="av" style={{ background: 'var(--arancia)' }} aria-hidden="true">
+                {(selfName.trim().charAt(0) || '?').toUpperCase()}
+              </span>
+              <div>
+                <span class="l">Il tuo nome</span>
+                <input type="text" class="v" value={selfName} maxLength={40} autoComplete="off" placeholder="Come ti chiami" onInput={(e) => setSelfName(e.currentTarget.value)} />
               </div>
-              <button
-                type="button"
-                aria-label={`Rimuovi persona ${i + 1}`}
-                onClick={() => setOthers(others.filter((_, j) => j !== i))}
-                class="grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-          {others.length < 5 && (
-            <button
-              type="button"
-              onClick={() => setOthers([...others, { email: '', name: '' }])}
-              class="min-h-11 rounded-full px-2 text-sm font-extrabold text-accent"
-            >
-              + Aggiungi persona
-            </button>
-          )}
-          <p class="text-xs text-muted">
-            Gli altri partecipanti devono avere già un account: scrivi la loro email e potranno vedere e modificare il viaggio.
-          </p>
+            </label>
+            {ownEmail && <p class="cap muted">Sei tu: {ownEmail}</p>}
+            {others.map((o, i) => (
+              <div class="fld person" style={{ alignItems: 'flex-start', paddingTop: '10px', paddingBottom: '10px' }}>
+                <span class="av" style={{ background: AV[(i + 1) % AV.length] }} aria-hidden="true">
+                  {(o.name.trim().charAt(0) || o.email.trim().charAt(0) || '?').toUpperCase()}
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label>
+                    <span class="l">Email della persona {i + 1}</span>
+                    <input
+                      type="email"
+                      inputMode="email"
+                      class="v"
+                      value={o.email}
+                      placeholder="Email del suo account"
+                      autoComplete="off"
+                      autoCapitalize="none"
+                      onInput={(e) => setOthers(others.map((x, j) => (j === i ? { ...x, email: e.currentTarget.value } : x)))}
+                    />
+                  </label>
+                  <label>
+                    <span class="l">Nome (facoltativo)</span>
+                    <input
+                      type="text"
+                      class="v"
+                      value={o.name}
+                      maxLength={40}
+                      autoComplete="off"
+                      onInput={(e) => setOthers(others.map((x, j) => (j === i ? { ...x, name: e.currentTarget.value } : x)))}
+                    />
+                  </label>
+                </div>
+                <button type="button" class="rbtn sm" aria-label={`Rimuovi persona ${i + 1}`} onClick={() => setOthers(others.filter((_, j) => j !== i))}>
+                  <CloseG size={16} />
+                </button>
+              </div>
+            ))}
+            {others.length < 5 && (
+              <div class="chips" style={{ margin: 0, padding: 0 }}>
+                <button type="button" class="chip dash" onClick={() => setOthers([...others, { email: '', name: '' }])}>
+                  <PlusG size={16} />
+                  Aggiungi
+                </button>
+              </div>
+            )}
+            <p class="cap muted">Gli altri partecipanti devono avere già un account: scrivi la loro email e potranno vedere e modificare il viaggio.</p>
+          </div>
         </fieldset>
       )}
 
-      <details class="group rounded-[20px] border border-hairline px-4 py-1">
-        <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 py-1 text-sm font-extrabold [&::-webkit-details-marker]:hidden">
-          Fuso e valute
-          <span class="grid size-11 shrink-0 place-items-center text-pale transition-transform duration-200 group-open:rotate-180">
-            <ChevronDownIcon size={18} />
+      <details class="group rows">
+        <summary class="row" style={{ minHeight: '56px', cursor: 'pointer', listStyle: 'none' }}>
+          <span class="grow tt">Fuso e valute</span>
+          <span class="muted transition-transform duration-200 group-open:rotate-180">
+            <ChevronDownG />
           </span>
         </summary>
-        <div class="space-y-4 pb-4">
-          <Select
-            label="Fuso orario della destinazione"
-            value={timezone}
-            onChange={onTimezone}
-            creatable
-            options={timezoneOptions(timezone)}
-          />
-          <div class="grid grid-cols-2 gap-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '4px 16px 16px' }}>
+          <Select label="Fuso orario della destinazione" value={timezone} onChange={onTimezone} creatable options={timezoneOptions(timezone)} />
+          <div class="grid2">
             <CurrencySelect label="Valuta base" value={baseCurrency} onChange={setBaseCurrency} />
             <CurrencySelect label="Valuta locale" value={localCurrency} onChange={setLocalCurrency} optional />
           </div>
@@ -281,7 +249,14 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
       </details>
 
       <FormError message={error} />
-      <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : editing ? 'Salva modifiche' : 'Crea viaggio'}</PrimaryButton>
+      <div class="cta">
+        <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : editing ? 'Salva modifiche' : 'Crea viaggio'}</PrimaryButton>
+        {!editing && autoNote && (
+          <p class="cap muted" style={{ textAlign: 'center', marginTop: '8px' }}>
+            Fuso orario e valuta si compilano da soli: {autoNote}.
+          </p>
+        )}
+      </div>
     </form>
   )
 }

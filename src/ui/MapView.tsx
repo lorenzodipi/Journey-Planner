@@ -138,14 +138,24 @@ function newMap(el: HTMLElement, center: { lat: number; lng: number }, zoom: num
   return map
 }
 
-function pinElement(p: { name: string; color: string; icon?: PinIcon }, selected: boolean): HTMLElement {
+function pinElement(p: { name: string; color: string; icon?: PinIcon; symbol?: string; ring?: string }, selected: boolean): HTMLElement {
   const el = document.createElement('button')
   el.type = 'button'
   el.className = 'jp-pin'
-  el.style.background = p.color
   el.title = p.name
   el.setAttribute('aria-label', p.name)
-  if (p.icon) el.innerHTML = pinIconSvg(p.icon)
+  if (p.symbol) {
+    // disco del Design System (simbolo dello sprite, già colorato); l'anello colorato indica il giorno
+    el.classList.add('fw-pin')
+    el.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#${p.symbol}"/></svg>`
+    if (p.ring) {
+      el.classList.add('fw-ring')
+      el.style.setProperty('--pin-ring', p.ring)
+    }
+  } else {
+    el.style.background = p.color
+    if (p.icon) el.innerHTML = pinIconSvg(p.icon)
+  }
   setSelected(el, selected)
   return el
 }
@@ -163,6 +173,10 @@ export interface MapPin {
   color: string
   /** Icona della categoria, disegnata dentro il pallino. */
   icon?: PinIcon
+  /** Simbolo dello sprite del Design System (es. `i-cat-temple`): se c'è, sostituisce colore e icona. */
+  symbol?: string
+  /** Anello colorato attorno al disco (es. colore del giorno). */
+  ring?: string
 }
 
 interface MapViewProps {

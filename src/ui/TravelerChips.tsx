@@ -16,27 +16,20 @@ export function TravelerChips({
 }) {
   const toggle = (id: string) => onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id])
   return (
-    <fieldset>
-      <legend class="mb-1 block text-[13px] font-extrabold">{label}</legend>
-      <div class="flex flex-wrap gap-2">
+    <fieldset class="fgroup">
+      <legend>{label}</legend>
+      <div class="chips">
         {travelers.map((t) => {
           const on = selected.includes(t.id)
           return (
-            <button
-              type="button"
-              aria-pressed={on}
-              onClick={() => toggle(t.id)}
-              class={`inline-flex min-h-11 items-center gap-2 rounded-full border-2 px-4 text-sm font-extrabold ${
-                on ? 'border-accent bg-accent-soft text-pale' : 'border-line text-muted'
-              }`}
-            >
-              <span aria-hidden="true" class="h-3 w-3 rounded-full" style={{ background: t.color }} />
+            <button type="button" aria-pressed={on} onClick={() => toggle(t.id)} class={`chip${on ? ' on' : ''}`}>
+              <span aria-hidden="true" style={{ width: '12px', height: '12px', borderRadius: '9999px', background: t.color, boxShadow: '0 0 0 2px var(--surface-card)' }} />
               {t.name}
             </button>
           )
         })}
       </div>
-      {hint && <p class="mt-1 text-xs text-muted">{hint}</p>}
+      {hint && <p class="b-sm muted" style={{ marginTop: '8px' }}>{hint}</p>}
     </fieldset>
   )
 }

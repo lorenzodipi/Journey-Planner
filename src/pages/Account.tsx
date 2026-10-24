@@ -1,12 +1,16 @@
 import { useState } from 'preact/hooks'
+import { useAuth } from '../lib/auth'
 import { loadSnapshot, clearSnapshot } from '../lib/cache'
 import { buildExport, downloadJson, exportFileName, serializeExport } from '../lib/exportData'
 import { showToast } from '../state/toast'
 import { useTrips } from '../state/trip'
-import { SecondaryButton } from '../ui/Field'
-import { Card, PageHeader } from '../ui/PageHeader'
+import { ART } from '../ui/art'
+import { ChevronLeftG, ChevronRightG } from '../ui/glyphs'
+import { PageHeader } from '../ui/PageHeader'
 import { RestoreCard } from '../ui/RestoreCard'
+import { Ic } from '../ui/Sprite'
 import { useThemePref, type ThemePref } from '../lib/theme'
+import { initialOf } from './altroBits'
 
 const THEMES: { value: ThemePref; label: string }[] = [
   { value: 'system', label: 'Sistema' },
@@ -18,36 +22,39 @@ const THEMES: { value: ThemePref; label: string }[] = [
 function AppearanceCard() {
   const [pref, setPref] = useThemePref()
   return (
-    <Card>
-      <h2 class="font-display text-xl">Aspetto</h2>
-      <p class="mt-1 text-[13px] leading-snug text-muted">Tema chiaro o scuro. Con «Sistema» l'app segue le impostazioni del telefono.</p>
-      <div role="radiogroup" aria-label="Aspetto dell'app" class="mt-3 flex gap-1 rounded-full bg-surface-2 p-1">
+    <section class="card" aria-label="Aspetto" style={{ padding: '20px' }}>
+      <h2 class="h-sm">Aspetto</h2>
+      <p class="b-sm muted" style={{ marginTop: '4px' }}>
+        Tema chiaro o scuro. Con «Sistema» l'app segue le impostazioni del telefono.
+      </p>
+      <div role="radiogroup" aria-label="Aspetto dell'app" class="chips" style={{ margin: '12px 0 0', padding: 0 }}>
         {THEMES.map((o) => (
-          <button
-            type="button"
-            role="radio"
-            aria-checked={pref === o.value}
-            onClick={() => setPref(o.value)}
-            class={`h-11 flex-1 touch-manipulation rounded-full text-sm font-semibold ${pref === o.value ? 'bg-accent text-accent-ink' : 'text-muted'}`}
-          >
+          <button type="button" role="radio" aria-checked={pref === o.value} class={`chip${pref === o.value ? ' on' : ''}`} style={{ flex: 1, justifyContent: 'center', height: '44px' }} onClick={() => setPref(o.value)}>
             {o.label}
           </button>
         ))}
       </div>
-    </Card>
+    </section>
   )
 }
 
-const time = (ms: number) =>
-  new Date(ms).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+const time = (ms: number) => new Date(ms).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+const clock = (ms: number) => new Date(ms).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
 
-/** Impostazioni dell'intero account: valgono per tutti i viaggi, non solo per quello attivo. */
+/** Profilo: impostazioni dell'intero account, valgono per tutti i viaggi, non solo per quello attivo. */
 export function Account() {
   const t = useTrips()
+  const auth = useAuth()
   const [confirm, setConfirm] = useState(false)
+  const [restore, setRestore] = useState(false)
 
   const savedAt = loadSnapshot()?.savedAt
   const build = typeof __BUILD_TIME__ === 'string' ? __BUILD_TIME__ : ''
+  const email = auth.session?.user.email ?? ''
+  const me = t.active?.travelers.find((x) => x.userId && x.userId === auth.session?.user.id)
+  const name = me?.name || (email ? email.split('@')[0].replace(/^./, (c) => c.toUpperCase()) : 'Anteprima demo')
+  const places = t.trips.reduce((n, x) => n + x.places.length, 0)
+  const days = t.trips.reduce((n, x) => n + x.days.length, 0)
 
   async function exportAll() {
     try {
@@ -71,66 +78,127 @@ export function Account() {
   }
 
   return (
-    <>
-      <PageHeader title="Impostazioni account" subtitle="Valgono per tutti i tuoi viaggi" back={{ href: '/altro', label: 'Altro' }} />
-      <div class="space-y-3.5 px-5 pb-28">
-        <AppearanceCard />
+    <main class="screen">
+      <PageHeader title="Profilo" subtitle="Account e dati, per tutti i viaggi" back={{ href: '/altro', label: 'Altro' }} />
 
-        <Card>
-          <h2 class="font-display text-lg font-extrabold">Esporta tutti i viaggi</h2>
-          <p class="mt-1 text-[13px] leading-snug text-muted">
-            Una copia di sicurezza in formato JSON di tutti i tuoi viaggi. Contiene anche i codici di prenotazione, quindi tienila al sicuro.
-            Per esportarne uno solo vai nelle impostazioni del viaggio.
-          </p>
-          <div class="mt-3">
-            <SecondaryButton onClick={() => void exportAll()}>
-              {t.trips.length > 1 ? `Esporta tutti i ${t.trips.length} viaggi` : 'Esporta il viaggio'}
-            </SecondaryButton>
+      <section aria-label="Profilo" class="prof">
+        <div class="prof-cover">
+          <img src={ART.profilo} alt="" />
+        </div>
+        <span class="prof-av" aria-hidden="true">
+          {initialOf(name)}
+        </span>
+        <h2 class="d-md" style={{ marginTop: '8px' }}>
+          {name}
+        </h2>
+        {email && <p class="b-sm muted">{email}</p>}
+      </section>
+
+      <section aria-label="I tuoi numeri" class="pnums">
+        <div style={{ background: 'var(--tinta-menta)' }}>
+          <b class="num">{t.trips.length}</b>
+          <span>{t.trips.length === 1 ? 'Viaggio' : 'Viaggi'}</span>
+        </div>
+        <div style={{ background: 'var(--tinta-confetto)' }}>
+          <b class="num">{places}</b>
+          <span>{places === 1 ? 'Luogo' : 'Luoghi'}</span>
+        </div>
+        <div style={{ background: 'var(--tinta-limone)' }}>
+          <b class="num">{days}</b>
+          <span>Giorni in viaggio</span>
+        </div>
+      </section>
+
+      <AppearanceCard />
+
+      <section>
+        <h2 class="h-sm" style={{ marginBottom: '8px' }}>
+          I tuoi dati
+        </h2>
+        <div class="rows">
+          <button type="button" class="row" style={{ width: '100%', border: 0, background: 'none', textAlign: 'left' }} onClick={() => void exportAll()}>
+            <Ic name="i-azi-download" size={44} />
+            <span class="grow">
+              <span class="tt" style={{ display: 'block' }}>
+                {t.trips.length > 1 ? `Esporta tutti i ${t.trips.length} viaggi` : 'Esporta il viaggio'}
+              </span>
+              <span class="mm">Un solo file con tutto, da conservare</span>
+            </span>
+            <span class="muted">
+              <ChevronRightG size={18} sw={2.2} />
+            </span>
+          </button>
+          <button type="button" class="row" aria-expanded={restore} style={{ width: '100%', border: 0, background: 'none', textAlign: 'left' }} onClick={() => setRestore(!restore)}>
+            <Ic name="i-azi-copy" size={44} />
+            <span class="grow">
+              <span class="tt" style={{ display: 'block' }}>
+                Ripristina da file
+              </span>
+              <span class="mm">Riporta i viaggi da un file esportato</span>
+            </span>
+            <span class="muted">
+              <ChevronRightG size={18} sw={2.2} />
+            </span>
+          </button>
+        </div>
+      </section>
+
+      {restore && <RestoreCard />}
+
+      <section>
+        <h2 class="h-sm" style={{ marginBottom: '8px' }}>
+          Dispositivo
+        </h2>
+        <div class="rows">
+          <div class="row">
+            <Ic name="i-sez-cloud" size={44} />
+            <span class="grow">
+              <span class="tt" style={{ display: 'block' }}>
+                Su questo telefono
+              </span>
+              <span class="mm">
+                {savedAt ? `Aggiornato alle ${clock(savedAt)}` : 'Nessuna copia salvata'} · {t.pending === 1 ? '1 modifica in coda' : `${t.pending} modifiche in coda`}
+              </span>
+              <span class="mm" style={{ display: 'block' }}>
+                Versione dell'app: {build ? time(Date.parse(build)) : 'sviluppo'}
+              </span>
+            </span>
           </div>
-        </Card>
+        </div>
+        {confirm ? (
+          <div class="card" style={{ marginTop: '12px', padding: '16px' }}>
+            <p class="b-sm muted">
+              Cancello la copia salvata sul telefono (dati, meteo, biglietti offline) e la riscarico. Serve la connessione.
+              {t.pending > 0 && ' Le modifiche da inviare restano in coda.'}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+              <button type="button" class="btn block" onClick={() => void clearLocal()}>
+                Sì, scarica di nuovo
+              </button>
+              <button type="button" class="btn line block" onClick={() => setConfirm(false)}>
+                Annulla
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" class="btn soft block" style={{ marginTop: '12px' }} onClick={() => setConfirm(true)}>
+            Scarica di nuovo i dati
+          </button>
+        )}
+      </section>
 
-        <RestoreCard />
+      {auth.status === 'signed-in' && (
+        <div class="cta" style={{ textAlign: 'center' }}>
+          <button type="button" class="btn danger" onClick={() => void auth.signOut()}>
+            <ChevronLeftG />
+            Esci dall’account
+          </button>
+        </div>
+      )}
 
-        <Card>
-          <h2 class="font-display mb-1.5 text-lg font-extrabold">Su questo telefono</h2>
-          <dl class="text-sm">
-            <div class="flex min-h-11 items-center justify-between gap-3 border-t border-hairline">
-              <dt class="text-muted">Ultimo aggiornamento dei dati</dt>
-              <dd class="font-extrabold">{savedAt ? time(savedAt) : '—'}</dd>
-            </div>
-            <div class="flex min-h-11 items-center justify-between gap-3 border-t border-hairline">
-              <dt class="text-muted">Modifiche da inviare</dt>
-              <dd class="font-extrabold">{t.pending}</dd>
-            </div>
-            <div class="flex min-h-11 items-center justify-between gap-3 border-t border-hairline">
-              <dt class="text-muted">Versione dell'app</dt>
-              <dd class="font-extrabold">{build ? time(Date.parse(build)) : 'sviluppo'}</dd>
-            </div>
-          </dl>
-          {confirm ? (
-            <div class="mt-3 space-y-2">
-              <p class="text-sm text-muted">
-                Cancello la copia salvata sul telefono (dati, meteo, biglietti offline) e la riscarico. Serve la connessione.
-                {t.pending > 0 && ' Le modifiche da inviare restano in coda.'}
-              </p>
-              <SecondaryButton danger onClick={() => void clearLocal()}>Sì, scarica di nuovo</SecondaryButton>
-              <SecondaryButton onClick={() => setConfirm(false)}>Annulla</SecondaryButton>
-            </div>
-          ) : (
-            <div class="mt-3">
-              <SecondaryButton onClick={() => setConfirm(true)}>Scarica di nuovo i dati</SecondaryButton>
-            </div>
-          )}
-        </Card>
-
-        <p class="px-1 pb-2 text-center text-xs text-muted">
-          Icone:{' '}
-          <a href="https://fontawesome.com" target="_blank" rel="noreferrer" class="font-extrabold text-pale">
-            Font Awesome Free
-          </a>{' '}
-          (CC BY 4.0)
-        </p>
-      </div>
-    </>
+      <p class="cap muted" style={{ textAlign: 'center' }}>
+        Icone di sezione: Font Awesome Free (CC BY 4.0)
+      </p>
+    </main>
   )
 }

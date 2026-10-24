@@ -24,6 +24,7 @@ import { PullToRefresh } from './ui/PullToRefresh'
 import { OutboxBanner } from './ui/OutboxBanner'
 import { ToastHost } from './ui/ToastHost'
 import { EmptyState } from './ui/PageHeader'
+import { Sprite } from './ui/Sprite'
 
 /** Ogni cambio di pagina riparte dall'alto (altrimenti resta la posizione della pagina precedente). */
 function ScrollToTop() {
@@ -84,15 +85,10 @@ export function App() {
   return (
     <Router hook={useHashLocation}>
       <ScrollToTop />
-      <div
-        class="mx-auto min-h-dvh max-w-xl"
-        style={{ paddingBottom: 'calc(7.25rem + env(safe-area-inset-bottom))' }}
-      >
+      <Sprite />
+      <div>
         {auth.status === 'demo' && (
-          <p
-            class="bg-accent-soft px-4 py-2 text-center text-xs font-bold text-pale"
-            style={{ paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}
-          >
+          <p class="cap" style={{ textAlign: 'center', padding: 'calc(4px + env(safe-area-inset-top)) 16px 4px', background: 'var(--azzurro-soft)', color: 'var(--azzurro-ink)', fontWeight: 600 }}>
             Anteprima demo · dati fittizi
           </p>
         )}
@@ -113,9 +109,9 @@ export function App() {
           <Route path="/altro/impostazioni" component={Impostazioni} />
           <Route path="/altro/account" component={Account} />
           <Route>
-            <div class="px-4 pt-10">
+            <main class="screen">
               <EmptyState title="Pagina non trovata" text="Torna alla scheda Oggi dalla barra in basso." />
-            </div>
+            </main>
           </Route>
         </Switch>
       </div>

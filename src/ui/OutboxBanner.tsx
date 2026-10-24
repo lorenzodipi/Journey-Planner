@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { useAuth } from '../lib/auth'
 import { useTrips } from '../state/trip'
 
-const bar = 'px-4 py-2 text-center text-xs font-extrabold'
+const bar = 'obar'
 
 function useOnline(): boolean {
   const [online, setOnline] = useState(typeof navigator === 'undefined' ? true : navigator.onLine)
@@ -34,7 +34,7 @@ function SendingPill({ count }: { count: number }) {
   if (!visible || count === 0) return null
   return (
     <p
-      class="pointer-events-none fixed inset-x-0 z-40 mx-auto w-fit max-w-[90vw] rounded-full border-2 border-line bg-surface px-4 py-1.5 text-center text-xs font-extrabold text-pale shadow-[0_6px_16px_rgb(0_0_0/0.35)]"
+      class="sending"
       style={{ top: 'calc(0.5rem + env(safe-area-inset-top))' }}
     >
       Invio di {count} {count === 1 ? 'modifica' : 'modifiche'}…
@@ -53,17 +53,17 @@ export function OutboxBanner() {
   return (
     <div role="status">
       {failed.map((f) => (
-        <div class={`${bar} flex items-center justify-between gap-3 bg-danger/10 text-danger`} style={top}>
-          <span class="min-w-0 flex-1 text-left">
+        <div class={`${bar} bad`} style={top}>
+          <span class="obar-t">
             Non salvata: {f.label}. {f.error}
           </span>
-          <button type="button" onClick={() => dismissFailed(f.id)} class="min-h-11 shrink-0 rounded-full px-3 font-extrabold underline">
+          <button type="button" onClick={() => dismissFailed(f.id)} class="obar-b">
             Scarta
           </button>
         </div>
       ))}
       {stale || !online ? (
-        <p class={`${bar} bg-accent-soft text-pale`} style={top}>
+        <p class={bar} style={top}>
           {pending > 0
             ? `Offline · ${pending} ${pending === 1 ? 'modifica partirà' : 'modifiche partiranno'} quando torna la rete`
             : 'Offline · spese, checklist e tappe si salvano sul telefono; le altre modifiche richiedono la rete'}

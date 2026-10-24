@@ -18,18 +18,11 @@ function Group({
 }) {
   if (options.length === 0) return null
   return (
-    <fieldset>
-      <legend class="mb-2 text-sm font-extrabold">{title}</legend>
-      <div class="flex flex-wrap gap-2">
+    <fieldset class="fgroup">
+      <legend>{title}</legend>
+      <div class="chips">
         {options.map((o) => (
-          <button
-            type="button"
-            aria-pressed={selected.includes(o.value)}
-            onClick={() => onToggle(o.value)}
-            class={`min-h-11 rounded-full border-2 px-4 text-sm font-extrabold ${
-              selected.includes(o.value) ? 'border-accent bg-accent text-accent-ink' : 'border-line text-ink'
-            }`}
-          >
+          <button type="button" aria-pressed={selected.includes(o.value)} onClick={() => onToggle(o.value)} class={`chip${selected.includes(o.value) ? ' on' : ''}`}>
             {o.label}
           </button>
         ))}
@@ -51,19 +44,11 @@ function Choice<T extends string>({
   onPick: (v: T) => void
 }) {
   return (
-    <fieldset>
-      <legend class="mb-2 text-sm font-extrabold">{title}</legend>
-      <div class="flex flex-wrap gap-2">
+    <fieldset class="fgroup">
+      <legend>{title}</legend>
+      <div class="chips">
         {options.map((o) => (
-          <button
-            type="button"
-            role="radio"
-            aria-checked={value === o.value}
-            onClick={() => onPick(o.value)}
-            class={`min-h-11 rounded-full border-2 px-4 text-sm font-extrabold ${
-              value === o.value ? 'border-pale bg-accent-soft text-pale' : 'border-line text-ink'
-            }`}
-          >
+          <button type="button" role="radio" aria-checked={value === o.value} onClick={() => onPick(o.value)} class={`chip${value === o.value ? ' on' : ''}`}>
             {o.label}
           </button>
         ))}
@@ -91,8 +76,8 @@ export function FilterSheet({ trip, open, filters, onChange, onClose, view, onVi
   const viewChanged = view != null && !isDefaultView(view)
   return (
     <Sheet open={open} title={view ? 'Filtri e ordine' : 'Filtri'} onClose={onClose}>
-      <div class="space-y-5">
-        <p class="-mt-2 text-sm text-muted">Puoi sceglierne più di uno per gruppo.</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <p class="b-sm muted">Puoi sceglierne più di uno per gruppo.</p>
         <Group
           title="Città"
           options={uniqueCities(trip.places).map((c) => ({ value: c, label: c }))}
@@ -128,23 +113,20 @@ export function FilterSheet({ trip, open, filters, onChange, onClose, view, onVi
           </>
         )}
         {children}
-        <div class="grid grid-cols-[auto_1fr] gap-2 pt-1">
+        <div class="acts2" style={{ marginTop: 0 }}>
           <button
             type="button"
+            class="btn line"
+            style={{ opacity: active === 0 && !viewChanged ? 0.4 : 1 }}
             disabled={active === 0 && !viewChanged}
             onClick={() => {
               onChange(EMPTY_FILTERS)
               onViewChange?.(DEFAULT_VIEW)
             }}
-            class="min-h-[52px] rounded-[14px] border-2 border-line px-5 font-extrabold disabled:opacity-40"
           >
             Azzera
           </button>
-          <button
-            type="button"
-            onClick={onClose}
-            class="min-h-[52px] rounded-[14px] bg-accent px-6 font-extrabold text-accent-ink"
-          >
+          <button type="button" class="btn" onClick={onClose}>
             Mostra {matching} {matching === 1 ? 'luogo' : 'luoghi'}
           </button>
         </div>

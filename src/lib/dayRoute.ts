@@ -283,3 +283,32 @@ export function describeLeg(leg: Pick<Leg, 'kind' | 'straightM' | 'via'>, route:
   if (route === null) return `${formatDistance(leg.straightM)} in linea d'aria a piedi (percorso non disponibile)`
   return 'Calcolo il percorso…'
 }
+
+const MODE_IN: Record<TransportMode, string> = {
+  train: 'In treno',
+  metro: 'In metro',
+  bus: 'In bus',
+  taxi: 'In taxi',
+  walk: 'A piedi',
+  car: 'In auto',
+  plane: 'In aereo',
+  ferry: 'In traghetto',
+  other: 'Spostamento',
+}
+
+/** Simbolo del Design System per un mezzo (bus, metro, treno, aereo, a piedi). */
+export function modeSymbol(mode: TransportMode): string {
+  if (mode === 'walk') return 'i-tra-walk'
+  if (mode === 'metro') return 'i-tra-metro'
+  if (mode === 'train') return 'i-tra-train'
+  if (mode === 'plane') return 'i-tra-plane'
+  return 'i-tra-bus'
+}
+
+/** Riga breve per il tratto tra due tappe, come nei mock: «A piedi · 8 min», «In bus · Kyoto → Nara». */
+export function hopSummary(leg: Pick<Leg, 'kind' | 'straightM' | 'via'>, route: WalkRoute | null | undefined): { symbol: string; text: string } {
+  if (leg.kind === 'line' && leg.via) return { symbol: modeSymbol(leg.via.mode), text: `${MODE_IN[leg.via.mode]} · ${leg.via.fromName} → ${leg.via.toName}` }
+  if (leg.kind === 'line') return { symbol: 'i-tra-bus', text: `Serve un mezzo · ${formatDistance(leg.straightM)}` }
+  if (route) return { symbol: 'i-tra-walk', text: `A piedi · ${formatMinutes(route.seconds)}` }
+  return { symbol: 'i-tra-walk', text: route === null ? `A piedi · ${formatDistance(leg.straightM)}` : 'A piedi · calcolo…' }
+}

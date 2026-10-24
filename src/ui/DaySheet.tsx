@@ -31,7 +31,7 @@ export type DaySheetState =
 
 const TITLES = {
   day: 'Modifica giornata',
-  'new-item': 'Nuova tappa',
+  'new-item': 'Aggiungi tappa',
   'edit-item': 'Modifica tappa',
   'new-stay': 'Nuovo alloggio',
   'edit-stay': 'Modifica alloggio',

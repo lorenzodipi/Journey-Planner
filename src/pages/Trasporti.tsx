@@ -1,43 +1,20 @@
 import { useState } from 'preact/hooks'
-import { dayOffset, formatDateInZone, formatDuration, formatInZone, layover, legDuration, totalTravelTime } from '../lib/flights'
-import { formatWhen, earliestFirst, transportWhen, whenKey } from '../lib/logistics'
-import { convert, formatMoney, rateFor } from '../lib/money'
+import { formatDay, parseYmd } from '../lib/dates'
+import { dateInZone, dayOffset, formatInZone, layover, totalTravelTime } from '../lib/flights'
+import { formatDuration } from '../lib/duration'
+import { earliestFirst, formatWhen, transportWhen, whenKey } from '../lib/logistics'
+import { formatMoney } from '../lib/money'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
-import type { ComponentChildren } from 'preact'
-import type { Flight, Transport } from '../types'
-import { TrashButton } from '../ui/ConfirmDialog'
+import type { Flight, Transport, TransportMode } from '../types'
+import { ART } from '../ui/art'
+import { CheckG, ChevronRightG, ClockG, PlusG } from '../ui/glyphs'
 import { FlightForm } from '../ui/FlightForm'
-import { CardDetail, useOpenCard } from '../ui/CardDetail'
-import { ChevronDownIcon, ChevronRightIcon, PlaneIcon } from '../ui/Icons'
-import { MovementIcon } from '../ui/MovementIcon'
+import { MapsPill } from '../ui/MapsPill'
 import { EmptyState, PageHeader } from '../ui/PageHeader'
-import { Disc, Fab, Tag, Ticket } from '../ui/Ticket'
 import { Sheet } from '../ui/Sheet'
+import { Ic } from '../ui/Sprite'
 import { MODE_LABEL, TransportForm } from '../ui/TransportForm'
-import { useDeleter } from '../ui/useDeleter'
-
-function transportRows(x: Transport, tz: string, days: { id: string; date: string }[], trip: { baseCurrency: string; localCurrency?: string; fxRate?: number; fxRates?: Record<string, number> }) {
-  const rows: { label: string; value: ComponentChildren }[] = [{ label: 'Mezzo', value: MODE_LABEL[x.mode] }]
-  const { depart, arrive } = transportWhen(x, tz, days)
-  if (depart) rows.push({ label: 'Partenza', value: formatWhen(depart, tz) })
-  if (arrive) rows.push({ label: 'Arrivo', value: formatWhen(arrive, tz) })
-  if (x.refCode) rows.push({ label: 'Codice', value: <span class="tracking-[1.5px]">{x.refCode}</span> })
-  if (x.cost != null) {
-    const rate = trip.baseCurrency !== x.currency ? rateFor(trip, x.currency) : undefined
-    const approx = rate ? convert(x.cost, rate) : null
-    rows.push({
-      label: x.scope === 'per_person' ? 'Costo a persona' : 'Costo totale',
-      value: (
-        <>
-          {formatMoney(x.cost, x.currency)}
-          {approx != null && <span class="block text-xs font-normal text-muted">≈ {formatMoney(approx, trip.baseCurrency)}</span>}
-        </>
-      ),
-    })
-  }
-  return rows
-}
 
 type SheetState =
   | { kind: 'choose' }
@@ -47,135 +24,172 @@ type SheetState =
   | { kind: 'edit-transport'; transport: Transport }
   | null
 
+const MODE_ICON: Record<TransportMode, string> = {
+  train: 'i-tra-train',
+  metro: 'i-tra-metro',
+  bus: 'i-tra-bus',
+  taxi: 'i-tra-bus',
+  walk: 'i-tra-walk',
+  car: 'i-tra-bus',
+  plane: 'i-tra-plane',
+  ferry: 'i-tra-bus',
+  other: 'i-nav-route',
+}
+const MODE_TINT: Record<TransportMode, string> = {
+  train: 't-menta',
+  metro: 't-limone',
+  bus: 't-limone',
+  taxi: 't-lavanda',
+  walk: 't-confetto',
+  car: 't-lavanda',
+  plane: 't-azzurro',
+  ferry: 't-azzurro',
+  other: 't-confetto',
+}
+
+const mapsFor = (q: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`
+const activate = (fn: () => void) => ({
+  role: 'button' as never,
+  tabIndex: 0,
+  onClick: fn,
+  onKeyDown: (e: { key: string; preventDefault(): void }) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      fn()
+    }
+  },
+})
+
 export function Trasporti() {
   const trip = useTrip()
   const t = useTrips()
-  const [del, delDialog] = useDeleter()
   const [sheet, setSheet] = useState<SheetState>(null)
   const close = () => setSheet(null)
-  const [openId, toggle] = useOpenCard()
 
   const title =
-    sheet?.kind === 'choose'
-      ? 'Nuovo trasporto'
-      : sheet?.kind === 'new-flight'
-      ? 'Nuovo volo'
-      : sheet?.kind === 'edit-flight'
-        ? 'Modifica volo'
-        : sheet?.kind === 'new-transport'
-          ? 'Nuovo trasporto'
-          : 'Modifica trasporto'
+    sheet?.kind === 'choose' ? 'Nuovo trasporto' : sheet?.kind === 'new-flight' ? 'Nuovo volo' : sheet?.kind === 'edit-flight' ? 'Modifica volo' : sheet?.kind === 'new-transport' ? 'Nuovo trasporto' : 'Modifica trasporto'
 
   // voli in alto e gli altri trasporti sotto; in ogni gruppo in ordine di data e ora, il primo in alto
   const flights = earliestFirst(trip.flights, (f) => f.legs[0]?.departAt ?? '')
   const transports = earliestFirst(trip.transports, (x) => whenKey(transportWhen(x, trip.timezone, trip.days).depart))
-
-  const notBought = trip.transports.filter((x) => !x.bought).length + trip.flights.filter((f) => !f.paid).length
   const count = trip.transports.length + trip.flights.length
-  const subtitle = count === 0 ? 'Voli, treni e spostamenti' : `${count} ${count === 1 ? 'voce' : 'voci'}${notBought > 0 ? ` · ${notBought} non ${notBought === 1 ? 'acquistato' : 'acquistati'}` : ''}`
+  const subtitle =
+    count === 0
+      ? 'Voli, treni e spostamenti'
+      : [flights.length ? `${flights.length} ${flights.length === 1 ? 'volo' : 'voli'}` : '', transports.length ? `${transports.length} ${transports.length === 1 ? 'trasporto' : 'trasporti'}` : ''].filter(Boolean).join(' · ')
 
   return (
-    <>
-      <PageHeader title="Trasporti" subtitle={subtitle} back={{ href: '/altro', label: 'Altro' }} />
-      <div class="px-5 pb-28">
-        {count === 0 && <EmptyState title="Nessun trasporto" text="Voli con scali, treni, pass metro, bus e taxi: orari, costo e se il biglietto è già comprato." />}
-        <ul class="mt-1 space-y-3.5">
-          {flights.map((f) => (
-            <li key={f.id}>
-              <FlightCard
-                flight={f}
-                onEdit={() => setSheet({ kind: 'edit-flight', flight: f })}
-                onDelete={() =>
-                  void del({
-                    title: `Eliminare «${f.title}»?`,
-                    text: 'Saranno tolte anche le tratte. Puoi annullare subito dopo.',
-                    done: 'Volo eliminato',
-                    run: () => t.setFlightDeleted(f.id, true),
-                    undo: () => t.setFlightDeleted(f.id, false),
-                  })
-                }
-              />
-            </li>
-          ))}
-          {transports.map((x) => (
-            <li key={x.id}>
-              <Ticket
-                tone={x.bought ? 'line' : 'warn'}
-                stubWidth={76}
-                stub={
-                  <Disc color={x.bought ? 'var(--ok)' : 'var(--warn)'}>
-                    <MovementIcon event={{ kind: 'transport', mode: x.mode, title: '' }} size={22} />
-                  </Disc>
-                }
-              >
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-start gap-1">
-                    <button type="button" onClick={() => toggle(x.id)} aria-expanded={openId === x.id} aria-label={`${openId === x.id ? 'Chiudi' : 'Apri'} ${x.from} → ${x.to}`} class="flex min-w-0 flex-1 items-center gap-1 text-left">
-                      <span class="min-w-0 flex-1">
-                        <span class="flex flex-wrap items-center gap-x-2 text-lg font-extrabold leading-tight">
-                          {x.from}
-                          <ChevronRightIcon size={16} class="shrink-0 text-pale" />
-                          {x.to}
-                        </span>
-                        <span class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                          <span class="text-[13px] text-muted">
-                            {[MODE_LABEL[x.mode], (() => {
-                              const { depart } = transportWhen(x, trip.timezone, trip.days)
-                              return depart ? formatWhen(depart, trip.timezone, ' ') : ''
-                            })()].filter(Boolean).join(' · ')}
+    <main class="screen">
+      <PageHeader
+        title="Trasporti e voli"
+        subtitle={subtitle}
+        back={{ href: '/altro', label: 'Altro' }}
+        actions={
+          <button type="button" class="rbtn" aria-label="Aggiungi trasporto" onClick={() => setSheet({ kind: 'choose' })}>
+            <PlusG />
+          </button>
+        }
+      />
+
+      {count === 0 && <EmptyState title="Nessun trasporto" text="Voli con scali, treni, pass metro, bus e taxi: orari, costo e se il biglietto è già comprato." art={ART.partenza} />}
+
+      {flights.length > 0 && (
+        <section aria-label="Voli">
+          <h2 class="h-md" style={{ marginBottom: '10px' }}>
+            Voli
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {flights.map((f) => (
+              <FlightTicket key={f.id} flight={f} onEdit={() => setSheet({ kind: 'edit-flight', flight: f })} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {transports.length > 0 && (
+        <section aria-label="Treni e pass">
+          <h2 class="h-md" style={{ marginBottom: '10px' }}>
+            {flights.length > 0 ? 'Treni e pass' : 'Trasporti'}
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {transports.map((x) => {
+              const { depart } = transportWhen(x, trip.timezone, trip.days)
+              const d = depart ? parseYmd(depart.date) : null
+              const day = d ? { n: String(d.getDate()), m: new Intl.DateTimeFormat('it-IT', { month: 'short' }).format(d).replace('.', '') } : null
+              const costText = x.cost != null ? formatMoney(x.cost, x.currency) : ''
+              const costParts = x.cost != null ? costText.replace(/\s?[^\d.,\s-]+$/u, '').trim() : ''
+              const sub = [depart ? formatWhen(depart, trip.timezone) : MODE_LABEL[x.mode], x.cost != null ? `${costText}${x.scope === 'per_person' ? ' a persona' : ''}` : '', x.refCode && `Cod. ${x.refCode}`].filter(Boolean).join(' · ')
+              const label = `${x.from} → ${x.to}`
+              return (
+                <div class="tkwrap" key={x.id}>
+                  <article class={`ct ${MODE_TINT[x.mode]}`} aria-label={`Modifica ${label}`} {...activate(() => setSheet({ kind: 'edit-transport', transport: x }))}>
+                    <div class="cl">
+                      <Ic name={MODE_ICON[x.mode]} size={40} />
+                      <div style={{ minWidth: 0 }}>
+                        <p class="rt">
+                          {MODE_LABEL[x.mode]} {label}
+                        </p>
+                        <p class="m">{sub}</p>
+                        {x.bought ? (
+                          <span class="sp ok">
+                            <CheckG size={14} sw={3} />
+                            Acquistato
                           </span>
-                          <Tag tone={x.bought ? 'ok' : 'warn'}>{x.bought ? 'Acquistato' : 'Non acquistato'}</Tag>
-                        </span>
-                      </span>
-                      <ChevronDownIcon size={20} class={`shrink-0 text-muted transition-transform ${openId === x.id ? 'rotate-180' : ''}`} />
-                    </button>
-                  <TrashButton
-                    label={`Elimina ${x.from} → ${x.to}`}
-                    onClick={() =>
-                      void del({
-                        title: `Eliminare «${x.from} → ${x.to}»?`,
-                        done: 'Trasporto eliminato',
-                        run: () => t.setTransportDeleted(x.id, true),
-                        undo: () => t.setTransportDeleted(x.id, false),
-                      })
-                    }
-                  />
+                        ) : (
+                          <span class="sp warn">
+                            <ClockG size={14} sw={2.4} />
+                            Da acquistare
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div class="cr2">
+                      {day ? (
+                        <>
+                          <b>{day.n}</b>
+                          <span>{day.m}</span>
+                        </>
+                      ) : x.cost != null ? (
+                        <>
+                          <b>{costParts}</b>
+                          <span>{x.currency === 'EUR' ? '€' : x.currency}</span>
+                        </>
+                      ) : (
+                        <ChevronRightG />
+                      )}
+                    </div>
+                  </article>
+                  <div class="below">
+                    <MapsPill href={mapsFor(x.from)} label={x.from} text="Punto di partenza" kind="sm" />
                   </div>
-                  {openId === x.id && (
-                    <CardDetail rows={transportRows(x, trip.timezone, trip.days, trip)} note={x.notes} editLabel={`Modifica ${x.from} → ${x.to}`} onEdit={() => setSheet({ kind: 'edit-transport', transport: x })} />
-                  )}
                 </div>
-              </Ticket>
-            </li>
-          ))}
-        </ul>
-      </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
-      <Fab label="Trasporto" wide onClick={() => setSheet({ kind: 'choose' })} />
-
-      {delDialog}
       <Sheet open={sheet !== null} title={title} onClose={close}>
         {sheet?.kind === 'choose' && (
-          <div class="space-y-3" role="group" aria-label="Che tipo di trasporto">
-            <p class="-mt-2 text-sm text-muted">Che cosa aggiungi?</p>
+          <div style={{ display: 'grid', gap: '12px' }} role="group" aria-label="Che tipo di trasporto">
+            <p class="b-sm muted">Che cosa aggiungi?</p>
             {(
               [
-                { kind: 'new-flight', label: 'Volo', hint: 'Con scali, orari e fusi orari', icon: <PlaneIcon size={26} /> },
-                { kind: 'new-transport', label: 'Altro trasporto', hint: 'Treno, bus, metro, taxi, traghetto…', icon: <MovementIcon event={{ kind: 'transport', mode: 'train', title: '' }} size={26} /> },
+                { kind: 'new-flight', label: 'Volo', hint: 'Con scali, orari e fusi orari', icon: 'i-tra-plane' },
+                { kind: 'new-transport', label: 'Altro trasporto', hint: 'Treno, bus, metro, taxi, traghetto…', icon: 'i-tra-train' },
               ] as const
             ).map((o) => (
-              <button
-                type="button"
-                key={o.kind}
-                onClick={() => setSheet({ kind: o.kind })}
-                class="flex min-h-[72px] w-full items-center gap-4 rounded-[14px] border-2 border-line bg-surface-2 px-4 text-left"
-              >
-                <span class="grid size-12 shrink-0 place-items-center rounded-full bg-accent-soft text-pale">{o.icon}</span>
-                <span class="min-w-0 flex-1">
-                  <span class="block text-lg font-extrabold leading-tight">{o.label}</span>
-                  <span class="block text-sm text-muted">{o.hint}</span>
+              <button type="button" key={o.kind} onClick={() => setSheet({ kind: o.kind })} class="card row" style={{ minHeight: '72px', textAlign: 'left', width: '100%' }}>
+                <Ic name={o.icon} size={44} />
+                <span class="grow">
+                  <span class="tt" style={{ display: 'block', fontWeight: 700 }}>
+                    {o.label}
+                  </span>
+                  <span class="mm" style={{ display: 'block' }}>
+                    {o.hint}
+                  </span>
                 </span>
-                <ChevronRightIcon size={18} class="shrink-0 text-muted" />
+                <ChevronRightG />
               </button>
             ))}
           </div>
@@ -196,9 +210,7 @@ export function Trasporti() {
             onDone={close}
           />
         )}
-        {sheet?.kind === 'new-transport' && (
-          <TransportForm trip={trip} onSubmit={(i) => t.createTransport(trip.id, i)} onDone={close} />
-        )}
+        {sheet?.kind === 'new-transport' && <TransportForm trip={trip} onSubmit={(i) => t.createTransport(trip.id, i)} onDone={close} />}
         {sheet?.kind === 'edit-transport' && (
           <TransportForm
             key={sheet.transport.id}
@@ -215,67 +227,81 @@ export function Trasporti() {
           />
         )}
       </Sheet>
-    </>
+    </main>
   )
 }
 
-function FlightCard({ flight, onEdit, onDelete }: { flight: Flight; onEdit: () => void; onDelete: () => void }) {
-  const times = flight.legs.map((l) => ({ depart: l.departAt, arrive: l.arriveAt }))
+/** Biglietto aereo: rotta da prima a ultima tratta, durata complessiva e scali. */
+function FlightTicket({ flight, onEdit }: { flight: Flight; onEdit: () => void }) {
+  const legs = flight.legs
+  const first = legs[0]
+  const last = legs[legs.length - 1]
+  const times = legs.map((l) => ({ depart: l.departAt, arrive: l.arriveAt }))
+  const stops = legs.slice(1).map((l, i) => ({ at: l.from, min: layover(times[i], times[i + 1]) }))
+  const off = first && last ? dayOffset({ depart: first.departAt, arrive: last.arriveAt }, first.fromTz, last.toTz) : 0
+  const total = legs.length ? totalTravelTime(times) : 0
+  const mins = (m: number) => formatDuration(Math.max(0, m))
+  const third = stops.length === 1 ? { k: `Scalo · ${stops[0].at}`, v: mins(stops[0].min) } : stops.length > 1 ? { k: `${stops.length} scali`, v: mins(stops.reduce((a, s) => a + s.min, 0)) } : flight.cost != null ? { k: flight.scope === 'per_person' ? 'A persona' : 'Totale', v: formatMoney(flight.cost, flight.currency) } : { k: 'Compagnia', v: flight.airline || '—' }
+  const numbers = legs.map((l) => l.flightNumber).filter(Boolean) as string[]
   return (
-    <Ticket
-      tone={flight.paid ? 'line' : 'warn'}
-      stubWidth={76}
-      stub={
-        <Disc color={flight.paid ? 'var(--ok)' : 'var(--warn)'}>
-          <PlaneIcon size={22} />
-        </Disc>
-      }
-    >
-      <div class="min-w-0 flex-1">
-        <div class="flex items-start gap-1">
-          <button type="button" onClick={onEdit} aria-label={`Modifica ${flight.title}`} class="min-w-0 flex-1 text-left">
-            <span class="block text-lg font-extrabold leading-tight">{flight.title}</span>
-            <span class="block text-[13px] text-muted">{[flight.airline, flight.bookingRef && `Cod. ${flight.bookingRef}`].filter(Boolean).join(' · ') || 'Volo'}</span>
-          </button>
-          <TrashButton label={`Elimina ${flight.title}`} onClick={onDelete} />
+    <article class="tk t-azzurro" aria-label={`Modifica ${flight.title}`} {...activate(onEdit)}>
+      <div class="top">
+        <div class="hd">
+          <span class="kind">
+            <Ic name="i-tra-plane" size={32} />
+            {flight.title}
+          </span>
+          <span class="okp">
+            {flight.paid ? <CheckG size={14} sw={3} /> : <ClockG size={14} sw={2.4} />}
+            {flight.paid ? 'Acquistato' : 'Non acquistato'}
+          </span>
         </div>
-        <ol class="mt-1 space-y-1.5">
-          {flight.legs.map((l, i) => {
-            const off = dayOffset(times[i], l.fromTz, l.toTz)
-            return (
-              <li>
-                {i > 0 && (
-                  <p class="mb-1.5 inline-block rounded-md border-2 border-dashed border-line px-1.5 text-xs font-extrabold text-pale">
-                    Scalo a {l.from}: {formatDuration(layover(times[i - 1], times[i]))}
-                  </p>
-                )}
-                <p class="text-sm font-extrabold">
-                  {l.from} → {l.to}
-                  {l.flightNumber && <span class="font-normal text-muted"> · {l.flightNumber}</span>}
-                </p>
-                <p class="text-xs tabular-nums text-muted">
-                  {formatDateInZone(l.departAt, l.fromTz)} {formatInZone(l.departAt, l.fromTz)} → {formatInZone(l.arriveAt, l.toTz)}
-                  {off !== 0 && <sup class="ml-0.5 font-extrabold text-warn">{off > 0 ? `+${off}` : off}</sup>}
-                  {' · '}
-                  {formatDuration(legDuration(times[i]))}
-                  {(l.seats || l.cabin) && ` · ${[l.cabin, l.seats && `posti ${l.seats}`].filter(Boolean).join(' · ')}`}
-                </p>
-              </li>
-            )
-          })}
-        </ol>
-        {flight.notes && <p class="mt-2 whitespace-pre-line pr-2 text-xs text-muted">{flight.notes}</p>}
-        <div class="mt-2 flex flex-wrap items-center gap-2">
-          <Tag tone={flight.paid ? 'ok' : 'warn'}>{flight.paid ? 'Acquistato' : 'Non acquistato'}</Tag>
-          {flight.legs.length > 1 && <span class="text-xs text-muted">In viaggio {formatDuration(totalTravelTime(times))}</span>}
-          {flight.cost != null && (
-            <span class="ml-auto pr-2 text-sm">
-              <span class="font-extrabold">{formatMoney(flight.cost, flight.currency)}</span>
-              <span class="text-muted"> {flight.scope === 'per_person' ? 'a persona' : 'totale'}</span>
-            </span>
-          )}
+        {first && last && (
+          <div class="route">
+            <div class="pt">
+              <b>{first.from}</b>
+              <span>{numbers[0] ?? ' '}</span>
+              <span class="tm">{formatInZone(first.departAt, first.fromTz)}</span>
+            </div>
+            <div class="mid">
+              <Ic name="i-tra-plane" size={28} />
+              <span class="dur">{legs.length} {legs.length === 1 ? 'volo' : 'voli'}</span>
+            </div>
+            <div class="pt r">
+              <b>{last.to}</b>
+              <span>{numbers.length > 1 ? numbers[numbers.length - 1] : ' '}</span>
+              <span class="tm">
+                {formatInZone(last.arriveAt, last.toTz)}
+                {off !== 0 && ` ${off > 0 ? `+${off}` : off}`}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+      <div class="bot">
+        {first && (
+          <div class="f3">
+            <div>
+              <span class="k">Data</span>
+              <b>{formatDay(dateInZone(first.departAt, first.fromTz))}</b>
+            </div>
+            <div>
+              <span class="k">Durata</span>
+              <b>{mins(total)}</b>
+            </div>
+            <div>
+              <span class="k">{third.k}</span>
+              <b>{third.v}</b>
+            </div>
+          </div>
+        )}
+        <div class="bars" aria-hidden="true" />
+        {flight.notes && <p class="ad" style={{ whiteSpace: 'pre-line' }}>{flight.notes}</p>}
+        <div class="row2">
+          <span class="code">{flight.bookingRef ? `PNR · ${flight.bookingRef}` : flight.airline || 'Volo'}</span>
+          {first && <MapsPill href={mapsFor(`Aeroporto ${first.from}`)} label={`Aeroporto ${first.from}`} text={`Apri ${first.from}`} kind="sm" />}
         </div>
       </div>
-    </Ticket>
+    </article>
   )
 }

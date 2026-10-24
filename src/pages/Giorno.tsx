@@ -1,132 +1,168 @@
 import { Fragment, type ComponentChildren } from 'preact'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { Link } from 'wouter-preact'
+import '../fw-giorni.css'
 import { expenseBase, fxOf } from '../lib/budget'
+import { categoryIcon } from '../lib/categoryIcon'
 import { doneCount } from '../lib/checklist'
-import { orderSections, type DaySectionKey } from '../lib/daySections'
 import { shiftDirection } from '../lib/dragOrder'
-import { canSwap } from '../lib/itemOrder'
-import { daysBetween, formatDayLong, formatShort } from '../lib/dates'
-import { describeLeg, formatDistance } from '../lib/dayRoute'
+import { formatDay, formatShort } from '../lib/dates'
+import { formatDistance, hopSummary } from '../lib/dayRoute'
 import { dayBookings, dayChecklist, dayExpenses, dayMovements, dayStays } from '../lib/dayView'
 import { formatMoney, round2 } from '../lib/money'
 import { itemMapsHref } from '../lib/itemMaps'
 import { mapsLinkFor, parseMapsUrl } from '../lib/mapsUrl'
-import { itemDuration, totalDuration } from '../lib/duration'
+import { formatDuration, itemDuration } from '../lib/duration'
 import { planRoute } from '../lib/routeOrder'
 import { minutesOfDay, sunForDay } from '../lib/sun'
-import { minutesToHHMM, stopsSummary } from '../lib/stopsSummary'
-import { tripToday } from '../lib/today'
-import { readFlag, writeFlag } from '../lib/uiFlag'
+import { nextItem, tripToday } from '../lib/today'
 import { useDayRoute } from '../state/dayRoute'
 import { showToast } from '../state/toast'
 import { useForecast } from '../state/forecast'
 import { useTrip, useTrips } from '../state/trip'
-import type { DayItem, Stay } from '../types'
-import { CollapsibleSection } from '../ui/CollapsibleSection'
+import type { DayItem, Place, Stay } from '../types'
+import { ART, catSymbol } from '../ui/art'
 import { DayMapPanel } from '../ui/DayMapPanel'
 import { DaySheet, type DaySheetState } from '../ui/DaySheet'
-import { TrashButton } from '../ui/ConfirmDialog'
-import { ItemRow } from '../ui/ItemRow'
-import { LightCard } from '../ui/LightBar'
-import { MovementIcon } from '../ui/MovementIcon'
-import { Card, EmptyState, PageHeader } from '../ui/PageHeader'
+import { CheckG, ChevronLeftG, ChevronRightG, CloseG, PlusG } from '../ui/glyphs'
+import { ItemRow, KIND_LABEL, nodeGlyph, StepRow, type StepState } from '../ui/ItemRow'
+import { MapsPill } from '../ui/MapsPill'
+import { EmptyState, PageHeader } from '../ui/PageHeader'
 import { QuantityStepper } from '../ui/QuantityStepper'
-import { useDeleter } from '../ui/useDeleter'
+import { Ic } from '../ui/Sprite'
+import { MODE_LABEL } from '../ui/TransportForm'
 import { useDragReorder } from '../ui/useDragReorder'
 import { useItemActions } from '../ui/useItemActions'
-import { MODE_LABEL } from '../ui/TransportForm'
-import { ArrowDownIcon, CloseIcon, RouteIcon, TickIcon } from '../ui/Icons'
-import { MapsPill } from '../ui/MapsPill'
-import { Tag } from '../ui/Ticket'
 import { WeatherCard } from '../ui/WeatherCard'
 
-const STOPS_OPEN_KEY = 'jp.giorno.tappe.aperta'
-
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+const toMin = (hhmm: string) => {
+  const [h, m] = hhmm.split(':').map(Number)
+  return h * 60 + m
+}
+const fromMin = (min: number) => `${String(Math.floor(min / 60) % 24).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`
 
-function Section({ title, aside, children }: { title: string; aside?: string; children: preact.ComponentChildren }) {
+/** Chiave del disco di categoria («temple», «food»…) per una tappa; `pin` se non ha una categoria. */
+function symbolKey(place: Place | undefined, kind: DayItem['kind']): string {
+  if (kind === 'meal') return 'food'
+  if (!place) return 'pin'
+  const sym = catSymbol(categoryIcon(place.category))
+  return sym.startsWith('i-cat-') ? sym.slice(6) : 'pin'
+}
+
+const MOVE_ICON: Record<string, string> = { plane: 'i-tra-plane', train: 'i-tra-train', metro: 'i-tra-metro', walk: 'i-tra-walk', bus: 'i-tra-bus' }
+
+interface Pill {
+  tone: 'ok' | 'warn' | 'vi'
+  text: string
+}
+
+/** Riga `.prow` di una sezione (alloggio, spostamenti, spese…): disco, titolo, dettaglio, pillole e azione a destra. */
+function InfoRow({ icon, title, meta, pills, onOpen, mapsHref, right }: { icon: string; title: string; meta?: string; pills?: Pill[]; onOpen?: () => void; mapsHref?: string; right?: ComponentChildren }) {
   return (
-    <Card class="rise">
-      <div class="mb-2 flex items-baseline justify-between gap-3">
-        <h2 class="font-display text-lg font-extrabold">{title}</h2>
-        {aside && <span class="text-xs text-muted">{aside}</span>}
+    <li class="prow">
+      <Ic name={icon} size={44} />
+      <div class="grow">
+        {onOpen ? (
+          <button type="button" class="pt2 tp-edit" onClick={onOpen} aria-label={`Modifica ${title}`}>
+            {title}
+          </button>
+        ) : (
+          <p class="pt2">{title}</p>
+        )}
+        {meta && <p class="pm">{meta}</p>}
+        {pills && pills.length > 0 && (
+          <span style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            {pills.map((p) => (
+              <span class={`sp ${p.tone}`}>{p.text}</span>
+            ))}
+          </span>
+        )}
+      </div>
+      {right ?? (mapsHref && <MapsPill kind="btn" href={mapsHref} label={title} />)}
+    </li>
+  )
+}
+
+function Section({ title, label, aside, children }: { title: string; label?: string; aside?: ComponentChildren; children: ComponentChildren }) {
+  return (
+    <section aria-label={label ?? title}>
+      <div class="sec-h" style={{ marginBottom: '10px' }}>
+        <h2 class="h-md">{title}</h2>
+        {aside}
       </div>
       {children}
-    </Card>
+    </section>
   )
 }
 
-function StayCard({ stay, label, onEdit }: { stay: Stay; label: string; onEdit: () => void }) {
-  const meals = [stay.breakfast && 'Colazione', stay.dinner && 'Cena', stay.kitchen && 'Cucina'].filter(Boolean).join(' · ')
-  return (
-    <div class="py-2">
-      <div class="flex items-center justify-between gap-2">
-        <p class="text-[13px] text-muted">{label}</p>
-        <button type="button" onClick={onEdit} aria-label={`Modifica ${stay.name}`} class="min-h-11 px-3 text-sm font-extrabold text-pale">
-          Modifica
-        </button>
-      </div>
-      <p class="text-[17px] font-extrabold">{stay.name}</p>
-      <p class="text-sm text-muted">
-        {[stay.city, stay.checkInInfo && `check-in ${stay.checkInInfo}`, stay.checkOutInfo && `check-out ${stay.checkOutInfo}`].filter(Boolean).join(' · ')}
-      </p>
-      {meals && <p class="text-sm text-muted">{meals}</p>}
-      <p class="mt-1 flex flex-wrap items-center gap-2 text-xs">
-        <Tag tone={stay.booked ? 'ok' : 'warn'}>{stay.booked ? 'Prenotato' : 'Non prenotato'}</Tag>
-        <Tag tone={stay.paid ? 'ok' : 'warn'}>{stay.paid ? 'Pagato' : 'Non pagato'}</Tag>
-        {(stay.address || stay.mapsUrl) && (
-          <MapsPill
-            href={mapsLinkFor({ mapsUrl: stay.mapsUrl, lat: null, lng: null, name: [stay.name, stay.address, stay.city].filter(Boolean).join(' ') })}
-            label={stay.name}
-            compact
-          />
-        )}
-      </p>
-    </div>
-  )
-}
+const DotsIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="5" cy="12" r="1.2" />
+    <circle cx="12" cy="12" r="1.2" />
+    <circle cx="19" cy="12" r="1.2" />
+  </svg>
+)
+
+const allLink = (href: string, text = 'Tutti') => (
+  <Link href={href} class="b-bold" style={{ color: 'var(--azzurro-ink)' }}>
+    {text}
+  </Link>
+)
 
 export function Giorno({ params }: { params: { id: string } }) {
   const trip = useTrip()
   const actions = useItemActions()
   const t = useTrips()
-  const [del, delDialog] = useDeleter()
   const forecast = useForecast(trip)
   const [sheet, setSheet] = useState<DaySheetState>(null)
   const [reordering, setReordering] = useState(false)
-  // «Tappe del giorno»: chiusa di base; si ricorda l'ultima scelta in questo telefono
-  const [stopsOpen, setStopsOpen] = useState(() => readFlag(STOPS_OPEN_KEY) ?? false)
 
   const index = trip.days.findIndex((d) => d.id === params.id)
   const day = trip.days[index]
   const route = useDayRoute(trip, day ?? { id: '', date: '', city: '', items: [] })
-  // tocco su un pin della mappa: prima si seleziona, poi «Vai alla tappa» porta alla sua card
+  // tocco su un pin della mappa: prima si seleziona, poi «Vai alla tappa» porta alla sua riga
   const [selectedStop, setSelectedStop] = useState<string | null>(null)
   const [highlightId, setHighlightId] = useState<string | null>(null)
   const timers = useRef<number[]>([])
-  // dove sta il meteo si decide quando si apre il giorno: se la previsione arriva dopo, non fa saltare la pagina
-  const weatherSeen = useRef<{ day: string; hasData: boolean } | null>(null)
   useEffect(() => () => timers.current.forEach((x) => window.clearTimeout(x)), [])
+  const stopByItem = useMemo(() => new Map(route.stops.map((s) => [s.id, s])), [route.stops])
+
+  // le tappe senza orario si riordinano tra loro: gli indici del trascinamento sono quelli di questo elenco
+  const loose = useMemo(() => (day ? day.items.filter((i) => !i.time) : []), [day])
   const { listRef, drag, start } = useDragReorder((from, to) => {
-    const item = day?.items[from]
-    return day && item ? actions.moveTo(day.id, item, to) : undefined
-  })
+    const item = loose[from]
+    const target = loose[to]
+    return day && item && target ? actions.moveTo(day.id, item, day.items.indexOf(target)) : undefined
+  }, 1.5)
+
+  // il tratto che porta a ciascuna tappa, se arriva dalla tappa che la precede sulla mappa
+  const legTo = useMemo(() => {
+    const m = new Map<string, { from: string; leg: (typeof route.legs)[number] }>()
+    route.legs.forEach((leg, i) => {
+      const a = route.stops[i]
+      const b = route.stops[i + 1]
+      if (a && b) m.set(b.id, { from: a.id, leg })
+    })
+    return m
+  }, [route.legs, route.stops])
 
   if (!day) {
     return (
-      <div class="px-4 pt-10">
-        <EmptyState title="Giorno non trovato" text="Questo giorno non esiste più: torna all'elenco e scegline un altro." />
-        <Link href="/giorni" class="mt-4 grid min-h-12 place-items-center rounded-full bg-accent font-extrabold text-accent-ink">
+      <main class="screen">
+        <EmptyState art={ART.calendario} title="Giorno non trovato" text="Questo giorno non esiste più: torna all'elenco e scegline un altro." />
+        <Link href="/giorni" class="btn block">
           Vai ai giorni
         </Link>
-      </div>
+      </main>
     )
   }
 
   const prev = trip.days[index - 1]
   const next = trip.days[index + 1]
   const today = tripToday(trip)
+  const isToday = day.date === today
+  const nowMin = isToday ? minutesOfDay(new Date(), trip.timezone) : null
   const fx = fxOf(trip)
   const movements = dayMovements(trip, day)
   const stays = dayStays(trip.stays, day.date)
@@ -136,31 +172,30 @@ export function Giorno({ params }: { params: { id: string } }) {
   const sun = sunForDay(day.date, trip.center.lat, trip.center.lng, trip.timezone)
   const payer = new Map(trip.travelers.map((p) => [p.id, p.name]))
   const total = round2(expenses.reduce((n, e) => n + (expenseBase(e, fx) ?? 0), 0))
-  const stopByItem = useMemo(() => new Map(route.stops.map((s) => [s.id, s])), [route.stops])
+  const placeOf = (it: DayItem) => (it.placeId ? trip.places.find((p) => p.id === it.placeId) : undefined)
+  const city = day.city || trip.destination
 
-  const rel = daysBetween(today, day.date)
-  const relative = rel === 0 ? 'Oggi' : rel === 1 ? 'Domani' : rel === -1 ? 'Ieri' : null
-  const subtitle = [`Giorno ${index + 1} di ${trip.days.length}`, day.city, day.title, relative].filter(Boolean).join(' · ')
+  const timed = day.items.filter((i) => i.time).sort((a, b) => (a.time as string).localeCompare(b.time as string))
+  const cur = nowMin != null ? nextItem(day, nowMin) : null
+  const stateOf = (it: DayItem): StepState => (it.done ? 'done' : cur?.status === 'now' && cur.item.id === it.id ? 'now' : 'next')
+  const doneTimed = timed.filter((i) => i.done).length
+  // «Prossima»: la prossima tappa con orario ancora da fare (oggi: dopo l'ora attuale)
+  const upcoming = timed.find((i) => !i.done && (nowMin == null || toMin(i.time as string) >= nowMin))
 
+  const subtitle = [city, day.title, `giorno ${index + 1}`, `${day.items.length} ${day.items.length === 1 ? 'tappa' : 'tappe'}`].filter(Boolean).join(' · ')
 
   const goToStop = (id: string) => {
-    const wasOpen = stopsOpen || reordering
-    setStopsOpen(true)
     setSelectedStop(null)
-    const show = () => {
-      const el = document.getElementById(`tappa-${id}`)
-      if (!el) return
-      const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      el.scrollIntoView({ block: 'center', behavior: calm ? 'auto' : 'smooth' })
-      setHighlightId(id)
-      timers.current.push(window.setTimeout(() => setHighlightId((cur) => (cur === id ? null : cur)), 1500))
-    }
-    // se la sezione era chiusa si aspetta che finisca di aprirsi, poi si scorre
-    if (wasOpen) show()
-    else timers.current.push(window.setTimeout(show, 240))
+    const el = document.getElementById(`tappa-${id}`)
+    if (!el) return
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    el.scrollIntoView({ block: 'center', behavior: calm ? 'auto' : 'smooth' })
+    setHighlightId(id)
+    timers.current.push(window.setTimeout(() => setHighlightId((c) => (c === id ? null : c)), 1500))
   }
+
   // «Ottimizza percorso»: le tappe senza orario sul tragitto più breve, dopo quelle con orario
-  const homeStay = dayStays(trip.stays, day.date).night
+  const homeStay = stays.night
   const homePoint = homeStay?.mapsUrl ? parseMapsUrl(homeStay.mapsUrl) : null
   const routePlan = planRoute(
     day.items.map((i) => ({ id: i.id, position: i.position, time: i.time, lat: stopByItem.get(i.id)?.lat, lng: stopByItem.get(i.id)?.lng })),
@@ -190,22 +225,11 @@ export function Giorno({ params }: { params: { id: string } }) {
   const onPin = (id: string) => (id === selectedStop ? goToStop(id) : setSelectedStop(id))
   const selected = route.stops.find((x) => x.id === selectedStop)
 
-  // "arrivo da…" per le tappe con posizione: il tempo dalla tappa numerata precedente
-  const hintFor = (item: DayItem): string | undefined => {
-    const stop = stopByItem.get(item.id)
-    if (!stop) return undefined
-    const at = route.stops.findIndex((s) => s.id === stop.id)
-    if (at < 1) return undefined
-    const leg = route.legs[at - 1]
-    return leg ? `Dalla tappa ${route.stops[at - 1].n}: ${describeLeg(leg, route.routes[leg.key])}` : undefined
-  }
-
-  // il luogo collegato alla tappa, se il nome è diverso dal titolo
-  const placeLine = (item: DayItem): string | undefined => {
-    const place = item.placeId ? trip.places.find((p) => p.id === item.placeId) : undefined
-    if (!place) return undefined
-    const same = place.name.trim().toLowerCase() === item.title.trim().toLowerCase()
-    return [same ? '' : place.name, place.city].filter(Boolean).join(' · ') || undefined
+  const metaOf = (item: DayItem, extra?: string): string => {
+    const place = placeOf(item)
+    const dur = itemDuration(item, place)
+    const sameName = place ? place.name.trim().toLowerCase() === item.title.trim().toLowerCase() : true
+    return [dur ? formatDuration(dur) : '', item.note || place?.category || (place ? '' : KIND_LABEL[item.kind]), !sameName && place ? place.name : '', extra].filter(Boolean).join(' · ')
   }
 
   const openMovement = (ref: NonNullable<(typeof movements)[number]['ref']>) => {
@@ -221,186 +245,293 @@ export function Giorno({ params }: { params: { id: string } }) {
     }
   }
 
-  const weatherNow = forecast.days.some((d) => d.date === day.date)
-  if (weatherSeen.current?.day !== day.id) weatherSeen.current = { day: day.id, hasData: weatherNow }
-  const weatherHasData = weatherSeen.current.hasData
+  const stayRow = (s: Stay, label: string) => {
+    const meals = [s.breakfast && 'colazione inclusa', s.dinner && 'cena', s.kitchen && 'cucina'].filter(Boolean).join(' · ')
+    const info = label.startsWith('Check-out') ? s.checkOutInfo : label.startsWith('Check-in') ? s.checkInInfo : undefined
+    return (
+      <InfoRow
+        key={`${label}-${s.id}`}
+        icon="i-sez-bed"
+        title={s.name}
+        meta={[label, info, s.city, meals].filter(Boolean).join(' · ')}
+        pills={[
+          { tone: s.booked ? 'ok' : 'warn', text: s.booked ? 'Prenotato' : 'Non prenotato' },
+          { tone: s.paid ? 'ok' : 'warn', text: s.paid ? 'Pagato' : 'Non pagato' },
+        ]}
+        onOpen={() => setSheet({ kind: 'edit-stay', stay: s })}
+        mapsHref={s.address || s.mapsUrl ? mapsLinkFor({ mapsUrl: s.mapsUrl, lat: null, lng: null, name: [s.name, s.address, s.city].filter(Boolean).join(' ') }) : undefined}
+      />
+    )
+  }
+  const hasStay = Boolean(stays.night) || stays.checkIn.length > 0 || stays.checkOut.length > 0
 
-  const sectionNodes: Record<DaySectionKey, ComponentChildren> = {
-    luce: sun ? <LightCard date={day.date} city={day.city} sun={sun} nowMin={day.date === today ? minutesOfDay(new Date(), trip.timezone) : null} /> : null,
-    meteo: (
-      <WeatherCard forecast={forecast} date={day.date} today={today} tripDates={trip.days.map((d) => d.date)} />
-    ),
-    spostamenti: (
-      <Section title="Spostamenti">
-        {movements.length > 0 ? (
-          <ul class="divide-y-2 divide-dashed divide-hairline">
-            {movements.map((e) => (
-              <li class="flex min-h-14 items-center">
-                <button
-                  type="button"
-                  disabled={!e.ref}
-                  onClick={() => e.ref && openMovement(e.ref)}
-                  aria-label={`Modifica: ${e.title}`}
-                  class="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2 text-left"
-                >
-                <span class="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-accent-ink">
-                  <MovementIcon event={e} />
-                </span>
-                <span class="min-w-0 flex-1">
-                  <span class="block truncate font-extrabold">{e.title}</span>
-                  {e.time && (
-                    <span class="block text-sm tabular-nums">
-                      {e.time}
-                      {e.endTime && ` → ${e.endTime}`}
-                    </span>
-                  )}
-                  <span class="block truncate text-xs text-muted">
-                    {[e.mode && MODE_LABEL[e.mode], e.sub].filter(Boolean).join(' · ')}
-                  </span>
-                  {e.flag && <span class="mt-0.5 block"><Tag tone={e.flag.ok ? 'ok' : 'warn'}>{e.flag.text}</Tag></span>}
-                </span>
-                </button>
-                {e.ref?.type === 'transport' && (
-                  <TrashButton
-                    label={`Elimina il trasporto ${e.title}`}
-                    onClick={() => {
-                      const id = (e.ref as { id: string }).id
-                      void del({
-                        title: `Eliminare «${e.title}»?`,
-                        done: 'Trasporto eliminato',
-                        run: () => t.setTransportDeleted(id, true),
-                        undo: () => t.setTransportDeleted(id, false),
-                      })
-                    }}
-                  />
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p class="py-2 text-sm text-muted">Nessun volo, treno o spostamento in programma per questo giorno.</p>
-        )}
-        {movements.length > 0 && <p class="mt-1 text-xs text-muted">Voli, treni e check-in/out: tocca per modificare. Orari nel fuso di ogni luogo.</p>}
-        <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-1">
-          <button type="button" onClick={() => setSheet({ kind: 'new-transport', day })} class="min-h-11 px-3 text-sm font-extrabold text-pale">
-            + Trasporto
+  // link «Apri il percorso» di Google Maps con le tappe in ordine
+  const ll = (s: { lat: number; lng: number }) => encodeURIComponent(`${s.lat},${s.lng}`)
+  const rs = route.stops
+  const routeHref =
+    rs.length >= 2
+      ? `https://www.google.com/maps/dir/?api=1&origin=${ll(rs[0])}&destination=${ll(rs[rs.length - 1])}${
+          rs.length > 2 ? `&waypoints=${rs.slice(1, -1).slice(0, 9).map(ll).join('%7C')}` : ''
+        }&travelmode=${route.legs.length > 0 && route.legs.every((l) => l.kind === 'walk') ? 'walking' : 'transit'}`
+      : undefined
+
+  return (
+    <main class="screen">
+      <PageHeader
+        title={cap(formatDay(day.date))}
+        subtitle={subtitle}
+        back={{ href: '/giorni', label: 'Giorni' }}
+        actions={
+          <button type="button" class="rbtn" aria-label="Modifica il giorno" onClick={() => setSheet({ kind: 'day', day })}>
+            <DotsIcon />
           </button>
-          <Link href="/altro/trasporti" class="inline-flex min-h-11 items-center px-3 text-sm font-extrabold text-muted">
-            Tutti i trasporti
-          </Link>
-        </div>
-      </Section>
-    ),
-    alloggio: (
-      <Section title="Alloggio">
-        {stays.night || stays.checkIn.length > 0 || stays.checkOut.length > 0 ? (
-          <div class="divide-y-2 divide-dashed divide-hairline">
-            {stays.checkOut.map((s) => <StayCard stay={s} label="Check-out oggi" onEdit={() => setSheet({ kind: 'edit-stay', stay: s })} />)}
-            {stays.checkIn.filter((s) => s.id !== stays.night?.id).map((s) => <StayCard stay={s} label="Check-in oggi" onEdit={() => setSheet({ kind: 'edit-stay', stay: s })} />)}
-            {stays.night && (
-              <StayCard
-                stay={stays.night}
-                label={stays.night.checkIn === day.date ? 'Check-in oggi · dormi qui' : 'Dormi qui'}
-                onEdit={() => setSheet({ kind: 'edit-stay', stay: stays.night as Stay })}
-              />
-            )}
+        }
+      />
+
+      {day.notes && (
+        <section class="card" aria-label="Note del giorno">
+          <p class="b-sm" style={{ whiteSpace: 'pre-line' }}>
+            {day.notes}
+          </p>
+        </section>
+      )}
+
+      <WeatherCard forecast={forecast} date={day.date} today={today} city={city} sun={sun} nowMin={nowMin} />
+
+      {(day.items.length > 0 || route.transports.length > 0) && (
+        <section aria-label="Mappa del giorno">
+          <DayMapPanel route={route} center={trip.center} selectedId={selected?.id} onSelect={onPin} />
+          {selected && (
+            <div class="row card" style={{ marginTop: '12px', minHeight: '56px', padding: '6px 8px 6px 14px' }} role="status">
+              <span class="grow tt" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {selected.name}
+              </span>
+              <button type="button" class="btn soft sm" onClick={() => goToStop(selected.id)}>
+                Vai alla tappa
+              </button>
+              <button type="button" class="rbtn sm" onClick={() => setSelectedStop(null)} aria-label="Deseleziona la tappa">
+                <CloseG size={16} />
+              </button>
+            </div>
+          )}
+          {routeHref && (
+            <div style={{ marginTop: '12px' }}>
+              <a class="btn block" href={routeHref} target="_blank" rel="noopener noreferrer" aria-label="Apri il percorso in Google Maps: percorso del giorno">
+                <Ic name="i-nav-route" size={28} />
+                Apri il percorso in Google Maps
+              </a>
+            </div>
+          )}
+        </section>
+      )}
+
+      {day.items.length === 0 && <EmptyState art={ART.calendario} title="Giornata ancora libera" text="Aggiungi le tappe con il pulsante qui sotto." />}
+
+      {timed.length > 0 && (
+        <Section
+          title="Tappe del giorno"
+          aside={
+            <span class="b-bold num">
+              {day.items.length} {day.items.length === 1 ? 'tappa' : 'tappe'}
+            </span>
+          }
+        >
+          <div class="tp-prog">
+            <div class="tp-pl">
+              <b>
+                {doneTimed} di {timed.length} {timed.length === 1 ? 'tappa' : 'tappe'}
+              </b>
+              {upcoming && <span>Prossima: {upcoming.time}</span>}
+            </div>
+            <div class="tp-pb" role="progressbar" aria-valuemin={0} aria-valuemax={timed.length} aria-valuenow={doneTimed} aria-label="Tappe fatte">
+              <i style={{ width: `${(doneTimed / timed.length) * 100}%` }} />
+            </div>
           </div>
-        ) : (
-          <p class="py-2 text-sm text-muted">Nessun alloggio per questa notte.</p>
-        )}
-        <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-1">
-          <button type="button" onClick={() => setSheet({ kind: 'new-stay', day })} class="min-h-11 px-3 text-sm font-extrabold text-pale">
-            + Alloggio
-          </button>
-          <Link href="/altro/alloggi" class="inline-flex min-h-11 items-center px-3 text-sm font-extrabold text-muted">
-            Tutti gli alloggi
-          </Link>
-        </div>
-      </Section>
-    ),
-    spese: (
-      <Section title="Spese del giorno" aside={expenses.length > 0 ? formatMoney(total, trip.baseCurrency) : undefined}>
-        {expenses.length > 0 ? (
-          <ul class="divide-y-2 divide-dashed divide-hairline">
-            {expenses.map((e) => {
-              const inBase = expenseBase(e, fx)
+          <ol class="tp-steps">
+            {timed.map((item, i) => {
+              const place = placeOf(item)
+              const state = stateOf(item)
+              const before = timed[i - 1]
+              const link = legTo.get(item.id)
+              const hop = before && link && link.from === before.id ? hopSummary(link.leg, route.routes[link.leg.key]) : null
+              const startMin = toMin(item.time as string)
+              const dur = itemDuration(item, place)
+              const end = item.endTime ? toMin(item.endTime) : dur ? startMin + dur : undefined
+              const late = nowMin != null && state === 'next' && startMin + (dur ?? 30) < nowMin
               return (
-                <li class="flex items-center">
-                  <button type="button" onClick={() => setSheet({ kind: 'edit-expense', expense: e })} class="flex min-h-12 min-w-0 flex-1 items-center gap-3 py-2 text-left">
-                    <span class="min-w-0 flex-1">
-                      <span class="block truncate font-extrabold">{e.label}</span>
-                      <span class="block truncate text-xs text-muted">
-                        {[e.category, e.paidBy && payer.get(e.paidBy) && `pagato da ${payer.get(e.paidBy)}`].filter(Boolean).join(' · ')}
+                <Fragment key={item.id}>
+                  {hop && (
+                    <li class={`tp-seg${stateOf(before) === 'done' ? '' : ' after'}`}>
+                      <span class="tp-rail" />
+                      <span class="tp-sg">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <use href={`#${hop.symbol}`} />
+                        </svg>
+                        {hop.text}
                       </span>
-                    </span>
-                    <span class="shrink-0 text-right">
-                      <span class="block font-extrabold">{formatMoney(e.amount, e.currency)}</span>
-                      {e.currency !== trip.baseCurrency && inBase !== null && (
-                        <span class="block text-xs text-muted">≈ {formatMoney(inBase, trip.baseCurrency)}</span>
-                      )}
-                    </span>
-                  </button>
-                  <TrashButton
-                    label={`Elimina la spesa ${e.label}`}
-                    onClick={() =>
-                      void del({
-                        title: `Eliminare la spesa «${e.label}»?`,
-                        text: 'Sparisce dai totali della categoria e dai conti tra voi. Puoi annullare subito dopo.',
-                        done: 'Spesa eliminata',
-                        run: () => t.setExpenseDeleted(e.id, true),
-                        undo: () => t.setExpenseDeleted(e.id, false),
-                      })
-                    }
+                    </li>
+                  )}
+                  <StepRow
+                    id={item.id}
+                    title={item.title}
+                    state={state}
+                    glyph={nodeGlyph(symbolKey(place, item.kind))}
+                    meta={metaOf(item, state === 'now' && end != null ? `fino alle ${fromMin(end)}` : undefined)}
+                    time={item.time}
+                    badge={nowMin != null && state === 'next' ? (late ? 'Da fare' : 'Dopo') : undefined}
+                    mapsHref={itemMapsHref(item, trip.places)}
+                    highlight={highlightId === item.id}
+                    onOpen={() => setSheet({ kind: 'edit-item', day, item })}
+                    onToggleDone={() => void actions.toggleDone(item)}
                   />
-                </li>
+                </Fragment>
+              )
+            })}
+          </ol>
+        </Section>
+      )}
+
+      {loose.length > 0 && (
+        <Section title="Senza orario">
+          {reordering && (
+            <p class="b-sm muted" style={{ marginBottom: '10px' }}>
+              Le tappe con un orario seguono l'orario. Le altre si spostano <span class="pointer-coarse:hidden">con le frecce.</span>
+              <span class="hidden pointer-coarse:inline">trascinandole dalla maniglia a destra.</span>
+            </p>
+          )}
+          <ul class="rows" ref={listRef}>
+            {loose.map((item, i) => {
+              const place = placeOf(item)
+              const sym = item.kind === 'meal' ? 'i-cat-food' : place ? catSymbol(categoryIcon(place.category)) : 'i-nav-pin'
+              const prevLoose = loose[i - 1]
+              const nextLoose = loose[i + 1]
+              return (
+                <ItemRow
+                  key={item.id}
+                  id={item.id}
+                  title={item.title}
+                  icon={sym}
+                  meta={metaOf(item)}
+                  done={item.done}
+                  mapsHref={itemMapsHref(item, trip.places)}
+                  highlight={highlightId === item.id}
+                  onOpen={reordering ? undefined : () => setSheet({ kind: 'edit-item', day, item })}
+                  onToggleDone={reordering ? undefined : () => void actions.toggleDone(item)}
+                  dragging={drag?.from === i}
+                  dragStyle={
+                    drag
+                      ? drag.from === i
+                        ? { transform: `translateY(${drag.dy}px) scale(1.01)`, transition: 'none' }
+                        : { transform: `translateY(${shiftDirection(i, drag.from, drag.to) * drag.step}px)`, transition: 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1)' }
+                      : undefined
+                  }
+                  reorder={
+                    reordering
+                      ? {
+                          onGrab: (e) => start(i, e),
+                          onUp: prevLoose ? () => void actions.moveTo(day.id, item, day.items.indexOf(prevLoose)) : undefined,
+                          onDown: nextLoose ? () => void actions.moveTo(day.id, item, day.items.indexOf(nextLoose)) : undefined,
+                        }
+                      : undefined
+                  }
+                />
               )
             })}
           </ul>
-        ) : (
-          <p class="py-2 text-sm text-muted">Nessuna spesa registrata per questo giorno.</p>
-        )}
-        <div class="mt-1 flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-1">
-          <button type="button" onClick={() => setSheet({ kind: 'new-expense', day })} class="min-h-11 px-3 text-sm font-extrabold text-pale">
-            + Spesa
-          </button>
-          <Link href="/altro/spese" class="inline-flex min-h-11 items-center px-3 text-sm font-extrabold text-muted">
-            Tutte le spese
-          </Link>
-        </div>
-      </Section>
-    ),
-    prenotazioni:
-      bookings.length > 0 || todos.length > 0 ? (
-      <Section title="Prenotazioni e da fare">
-        {bookings.length > 0 && (
-          <ul class="divide-y-2 divide-dashed divide-hairline" aria-label="Prenotazioni valide oggi">
-            {bookings.map((b) => (
-              <li class="flex items-center">
-                <button type="button" onClick={() => setSheet({ kind: 'edit-booking', booking: b })} aria-label={`Modifica ${b.title}`} class="block min-h-12 min-w-0 flex-1 py-2 text-left">
-                  <span class="block truncate font-extrabold">{b.title}</span>
-                  <span class="block truncate text-xs text-muted">{b.code ? `Codice ${b.code}` : 'Prenotazione'}</span>
+          {(loose.length > 1 || routePlan) && (
+            <div class="tp-foot" style={{ marginTop: '12px' }}>
+              {loose.length > 1 && (
+                <button type="button" class="btn line sm" aria-pressed={reordering} onClick={() => setReordering(!reordering)}>
+                  {reordering ? 'Fine' : 'Riordina le tappe'}
                 </button>
-                <TrashButton
-                  label={`Elimina ${b.title}`}
-                  onClick={() =>
-                    void del({
-                      title: `Eliminare «${b.title}»?`,
-                      done: 'Prenotazione eliminata',
-                      run: () => t.setBookingDeleted(b.id, true),
-                      undo: () => t.setBookingDeleted(b.id, false),
-                    })
-                  }
-                />
-              </li>
+              )}
+              {!reordering && routePlan && (
+                <button type="button" class="btn line sm" onClick={() => void optimizeRoute()}>
+                  Ottimizza percorso
+                </button>
+              )}
+            </div>
+          )}
+        </Section>
+      )}
+
+      {movements.length > 0 && (
+        <Section title="Spostamenti" aside={allLink('/altro/trasporti')}>
+          <ul class="rows">
+            {movements.map((e) => (
+              <InfoRow
+                key={`${e.ref?.type}-${e.ref?.id}-${e.title}`}
+                icon={e.kind === 'stay' ? 'i-sez-bed' : e.kind === 'flight' ? 'i-tra-plane' : (e.mode && MOVE_ICON[e.mode]) || 'i-tra-bus'}
+                title={e.title}
+                meta={[e.time && `${e.time}${e.endTime ? ` → ${e.endTime}` : ''}`, e.mode && MODE_LABEL[e.mode], e.sub].filter(Boolean).join(' · ')}
+                pills={e.flag ? [{ tone: e.flag.ok ? 'ok' : 'warn', text: e.flag.text }] : undefined}
+                onOpen={e.ref ? () => openMovement(e.ref as NonNullable<typeof e.ref>) : undefined}
+                right={e.ref ? <ChevronRightG size={20} /> : undefined}
+              />
             ))}
           </ul>
-        )}
-        {todos.length > 0 && (
-          <ul class={`divide-y-2 divide-dashed divide-hairline ${bookings.length > 0 ? 'mt-2 border-t border-hairline' : ''}`} aria-label="Da fare oggi">
+        </Section>
+      )}
+
+      {hasStay && (
+        <Section title="Alloggio" aside={allLink('/altro/alloggi')}>
+          <ul class="rows">
+            {stays.checkOut.map((s) => stayRow(s, 'Check-out oggi'))}
+            {stays.checkIn.filter((s) => s.id !== stays.night?.id).map((s) => stayRow(s, 'Check-in oggi'))}
+            {stays.night && stayRow(stays.night, stays.night.checkIn === day.date ? 'Check-in oggi · dormi qui' : 'Dormi qui')}
+          </ul>
+        </Section>
+      )}
+
+      {expenses.length > 0 && (
+        <Section title="Spese del giorno" aside={<span class="b-bold num">{formatMoney(total, trip.baseCurrency)}</span>}>
+          <ul class="rows">
+            {expenses.map((e) => {
+              const inBase = expenseBase(e, fx)
+              return (
+                <InfoRow
+                  key={e.id}
+                  icon="i-sez-budget"
+                  title={e.label}
+                  meta={[e.category, e.paidBy && payer.get(e.paidBy) && `pagato da ${payer.get(e.paidBy)}`].filter(Boolean).join(' · ')}
+                  onOpen={() => setSheet({ kind: 'edit-expense', expense: e })}
+                  right={
+                    <span style={{ textAlign: 'right', flexShrink: 0, paddingRight: '4px' }}>
+                      <b class="b-bold num" style={{ display: 'block' }}>
+                        {formatMoney(e.amount, e.currency)}
+                      </b>
+                      {e.currency !== trip.baseCurrency && inBase !== null && (
+                        <span class="cap muted num" style={{ display: 'block' }}>
+                          ≈ {formatMoney(inBase, trip.baseCurrency)}
+                        </span>
+                      )}
+                    </span>
+                  }
+                />
+              )
+            })}
+          </ul>
+        </Section>
+      )}
+
+      {(bookings.length > 0 || todos.length > 0) && (
+        <Section title="Prenotazioni e da fare">
+          <ul class="rows">
+            {bookings.map((b) => (
+              <InfoRow
+                key={b.id}
+                icon="i-sez-ticket"
+                title={b.title}
+                meta={b.code ? `Codice ${b.code}` : 'Prenotazione'}
+                onOpen={() => setSheet({ kind: 'edit-booking', booking: b })}
+                right={<ChevronRightG size={20} />}
+              />
+            ))}
             {todos.map((c) => (
-              <li class="flex items-center">
+              <li class="row" key={c.id}>
                 <button
                   type="button"
+                  class="hit"
                   role="checkbox"
                   aria-checked={c.done}
                   aria-label={`${c.done ? 'Da rifare' : 'Fatto'}: ${c.text}`}
@@ -408,13 +539,10 @@ export function Giorno({ params }: { params: { id: string } }) {
                     const message = await t.setChecklistDone(c.id, !c.done)
                     if (message) showToast(message)
                   }}
-                  class="grid h-11 w-11 shrink-0 place-items-center"
                 >
-                  <span class={`grid h-6 w-6 place-items-center rounded-md border-2 ${c.done ? 'border-accent bg-accent text-accent-ink' : 'border-line'}`}>
-                    {c.done && <TickIcon size={14} />}
-                  </span>
+                  <span class={`cb${c.done ? ' on' : ''}`}>{c.done && <CheckG size={16} sw={3} />}</span>
                 </button>
-                <button type="button" onClick={() => setSheet({ kind: 'edit-checklist', item: c })} class={`min-h-12 min-w-0 flex-1 py-2 text-left text-sm ${c.done ? 'text-muted line-through' : ''}`}>
+                <button type="button" class="grow tt tp-edit" onClick={() => setSheet({ kind: 'edit-checklist', item: c })} style={c.done ? { color: 'var(--ink-muted)', textDecoration: 'line-through' } : undefined}>
                   {c.text}
                 </button>
                 {(c.quantity ?? 1) > 1 && (
@@ -431,178 +559,45 @@ export function Giorno({ params }: { params: { id: string } }) {
               </li>
             ))}
           </ul>
-        )}
-      </Section>
-      ) : null,
-  }
+        </Section>
+      )}
 
-  // sezioni sotto le tappe: prima quelle con dati, in fondo le vuote
-  const sectionOrder = orderSections({
-    luce: Boolean(sun),
-    meteo: weatherHasData,
-    spostamenti: movements.length > 0,
-    alloggio: Boolean(stays.night || stays.checkIn.length > 0 || stays.checkOut.length > 0),
-    spese: expenses.length > 0,
-    prenotazioni: bookings.length > 0 || todos.length > 0,
-  })
-
-  return (
-    <div class="space-y-3.5 pb-4">
-      <PageHeader title={cap(formatDayLong(day.date))} subtitle={subtitle} back={{ href: '/giorni', label: 'Giorni' }}>
-        <div class="mt-2 flex items-center gap-2">
-          {prev ? (
-            <Link href={`/giorni/${prev.id}`} aria-label={`Giorno precedente, ${formatShort(prev.date)}`} class="grid min-h-11 min-w-11 place-items-center rounded-full border-2 border-line px-3.5 text-sm font-extrabold">
-              ‹ {formatShort(prev.date)}
-            </Link>
-          ) : (
-            <span class="min-h-11 min-w-11" />
-          )}
-          {next ? (
-            <Link href={`/giorni/${next.id}`} aria-label={`Giorno successivo, ${formatShort(next.date)}`} class="grid min-h-11 min-w-11 place-items-center rounded-full border-2 border-line px-3.5 text-sm font-extrabold">
-              {formatShort(next.date)} ›
-            </Link>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => setSheet({ kind: 'day', day })}
-            class="ml-auto min-h-11 px-3 text-sm font-extrabold text-pale"
-          >
-            Modifica giorno
+      <div class="cta" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <button type="button" class="btn block" onClick={() => setSheet({ kind: 'new-item', day })}>
+          <PlusG />
+          Aggiungi tappa
+        </button>
+        <div class="chips" role="group" aria-label="Aggiungi al giorno">
+          <button type="button" class="chip" onClick={() => setSheet({ kind: 'new-transport', day })}>
+            <PlusG size={16} sw={2.6} /> Trasporto
+          </button>
+          <button type="button" class="chip" onClick={() => setSheet({ kind: 'new-stay', day })}>
+            <PlusG size={16} sw={2.6} /> Alloggio
+          </button>
+          <button type="button" class="chip" onClick={() => setSheet({ kind: 'new-expense', day })}>
+            <PlusG size={16} sw={2.6} /> Spesa
           </button>
         </div>
-      </PageHeader>
-
-      <div class="space-y-3.5 px-5">
-        {day.notes && (
-          <Card class="rise">
-            <p class="whitespace-pre-line text-sm">{day.notes}</p>
-          </Card>
-        )}
-
-        <section class="rise overflow-hidden rounded-[20px] border border-hairline bg-surface">
-          <DayMapPanel route={route} center={trip.center} selectedId={selected?.id} onSelect={onPin} />
-          {selected && (
-            <div class="flex items-center gap-1 border-t border-hairline pl-4 pr-1" role="status">
-              <span class="grid size-7 shrink-0 place-items-center rounded-full bg-accent text-sm font-extrabold text-accent-ink">{selected.n}</span>
-              <span class="min-w-0 flex-1 truncate py-2 pl-2 font-extrabold">{selected.name}</span>
-              <button type="button" onClick={() => goToStop(selected.id)} class="inline-flex min-h-11 shrink-0 items-center gap-1.5 px-2.5 text-sm font-extrabold text-pale">
-                Vai alla tappa
-                <ArrowDownIcon size={14} />
-              </button>
-              <button type="button" onClick={() => setSelectedStop(null)} aria-label="Deseleziona la tappa" class="grid size-11 shrink-0 place-items-center text-muted">
-                <CloseIcon size={16} />
-              </button>
-            </div>
-          )}
-          {route.stops.length > 0 && (
-            <div class="flex justify-between border-t border-hairline px-4 py-2.5 text-sm">
-              <span class="font-extrabold">{route.legs.length > 0 && route.legs.every((l) => l.kind === 'walk') ? 'Percorso a piedi' : 'Percorso del giorno'}</span>
-              <span class="text-muted">
-                {route.stops.length} {route.stops.length === 1 ? 'tappa' : 'tappe'}
-              </span>
-            </div>
-          )}
-        </section>
-
-        <CollapsibleSection
-          id="tappe-del-giorno"
-          title="Tappe del giorno"
-          summary={stopsSummary(day.items, day.date === today ? minutesToHHMM(minutesOfDay(new Date(), trip.timezone)) : null, totalDuration(day.items, trip.places))}
-          open={stopsOpen || reordering}
-          locked={day.items.length === 0}
-          onToggle={() => {
-            const open = !(stopsOpen || reordering)
-            setStopsOpen(open)
-            if (!open) setReordering(false)
-            writeFlag(STOPS_OPEN_KEY, open)
-          }}
-        >
-            {reordering && (
-              <p class="mb-2 rounded-xl bg-accent-soft px-3 py-2 text-xs text-pale">
-                Le tappe con un orario seguono l'orario: per spostarne una, cambia il suo orario. Le altre si spostano{' '}
-              <span class="pointer-coarse:hidden">con le frecce.</span>
-              <span class="hidden pointer-coarse:inline">trascinandole dalla maniglia a destra.</span>
-              </p>
-            )}
-            {day.items.length > 0 ? (
-              <ul ref={listRef} class="space-y-3">
-                {day.items.map((item, i) => (
-                  <ItemRow
-                    item={item}
-                    n={i + 1}
-                    onMap={stopByItem.has(item.id)}
-                    hint={hintFor(item)}
-                    place={placeLine(item)}
-                    duration={itemDuration(item, item.placeId ? trip.places.find((p) => p.id === item.placeId) : undefined)}
-                    mapsHref={itemMapsHref(item, trip.places)}
-                    onOpen={reordering ? undefined : () => setSheet({ kind: 'edit-item', day, item })}
-                    onToggleDone={reordering ? undefined : () => void actions.toggleDone(item)}
-                    onDelete={() => actions.remove(item)}
-                    dragging={drag?.from === i}
-                    highlight={highlightId === item.id}
-                    dragStyle={
-                      drag
-                        ? drag.from === i
-                          ? { transform: `translateY(${drag.dy}px) scale(1.01)`, transition: 'none' }
-                          : { transform: `translateY(${shiftDirection(i, drag.from, drag.to) * drag.step}px)`, transition: 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1)' }
-                        : undefined
-                    }
-                    reorder={
-                      reordering
-                        ? {
-                            onGrab: item.time ? undefined : (e) => start(i, e),
-                            onUp: i > 0 && canSwap(day.items[i - 1], item) ? () => void actions.move(day.id, item, -1) : undefined,
-                            onDown: i < day.items.length - 1 && canSwap(item, day.items[i + 1]) ? () => void actions.move(day.id, item, 1) : undefined,
-                          }
-                        : undefined
-                    }
-                  />
-                ))}
-              </ul>
+        {(prev || next) && (
+          <div class="dnav">
+            {prev ? (
+              <Link href={`/giorni/${prev.id}`} class="btn line sm" aria-label={`Giorno precedente, ${formatShort(prev.date)}`}>
+                <ChevronLeftG size={18} /> {formatShort(prev.date)}
+              </Link>
             ) : (
-              <p class="rounded-[20px] border-2 border-dashed border-line px-4 py-5 text-center text-sm text-muted">Giornata ancora libera: aggiungi le tappe da qui sotto.</p>
+              <span />
             )}
-            <button
-              type="button"
-              onClick={() => setSheet({ kind: 'new-item', day })}
-              class="mt-4 grid min-h-[52px] w-full place-items-center rounded-[14px] border-2 border-dashed border-accent text-base font-extrabold text-pale"
-            >
-              + Aggiungi tappa
-            </button>
-            {day.items.length > 1 && (
-              <div class="mt-1 flex flex-wrap items-center justify-center gap-x-2">
-                <button type="button" aria-pressed={reordering} onClick={() => setReordering(!reordering)} class="min-h-11 px-3 text-sm font-extrabold text-muted">
-                  {reordering ? 'Fine' : 'Riordina le tappe'}
-                </button>
-                {!reordering && (
-                  <button
-                    type="button"
-                    aria-disabled={!routePlan}
-                    aria-describedby={routePlan ? undefined : 'ottimizza-spiega'}
-                    onClick={() => routePlan && void optimizeRoute()}
-                    class={`inline-flex min-h-11 items-center gap-1.5 px-3 text-sm font-extrabold ${routePlan ? 'text-pale' : 'text-muted opacity-60'}`}
-                  >
-                    <RouteIcon size={14} />
-                    Ottimizza percorso
-                  </button>
-                )}
-                {!reordering && !routePlan && (
-                  <p id="ottimizza-spiega" class="basis-full text-center text-xs text-muted">
-                    Servono almeno due tappe senza orario e con una posizione sulla mappa.
-                  </p>
-                )}
-              </div>
+            {next && (
+              <Link href={`/giorni/${next.id}`} class="btn line sm" aria-label={`Giorno successivo, ${formatShort(next.date)}`}>
+                {formatShort(next.date)} <ChevronRightG size={18} />
+              </Link>
             )}
-        </CollapsibleSection>
-
-        {sectionOrder.map((k) => (
-          <Fragment key={k}>{sectionNodes[k]}</Fragment>
-        ))}
+          </div>
+        )}
       </div>
 
       {actions.dialog}
-      {delDialog}
       <DaySheet trip={trip} state={sheet} onChange={setSheet} />
-    </div>
+    </main>
   )
 }

@@ -1,6 +1,7 @@
 import type { ComponentChildren } from 'preact'
 import { useEffect, useRef } from 'preact/hooks'
 import { stampOpen } from './dialogStack'
+import { CloseG } from './glyphs'
 
 interface Props {
   open: boolean
@@ -75,27 +76,17 @@ export function Sheet({ open, title, onClose, children }: Props) {
         // un tocco sullo sfondo oscurato chiude il pannello
         if (e.target === e.currentTarget) onClose()
       }}
-      class="sheet fixed focus:outline-none inset-x-0 bottom-0 top-auto m-0 mx-auto max-h-[92dvh] w-full max-w-xl overflow-x-hidden overflow-y-auto overscroll-contain rounded-t-[1.75rem] border-x-0 border-b-0 border-t border-hairline bg-surface p-0 text-ink shadow-2xl backdrop:bg-[var(--scrim)]"
+      class="fsheet sheet-dlg"
     >
-      <div class="px-5 pb-6 pt-3" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
-        <div
-          onPointerDown={dragStart}
-          onPointerMove={dragMove}
-          onPointerUp={dragEnd}
-          onPointerCancel={dragEnd}
-          class="-mx-5 -mt-3 touch-none px-5 pt-3"
-        >
-        <span aria-hidden="true" class="mx-auto mb-3 block h-1.5 w-10 rounded-full bg-line" />
-        <div class="mb-4 flex items-center justify-between gap-3">
-          <h2 class="font-display text-2xl font-extrabold leading-tight">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            class="min-h-11 shrink-0 rounded-full px-3 text-sm font-bold text-muted"
-          >
-            Chiudi
-          </button>
-        </div>
+      <div class="fsheet-in">
+        <div onPointerDown={dragStart} onPointerMove={dragMove} onPointerUp={dragEnd} onPointerCancel={dragEnd} class="fsheet-head">
+          <span aria-hidden="true" class="grab" />
+          <div class="tr">
+            <h2 class="h-md">{title}</h2>
+            <button type="button" class="rbtn" aria-label="Chiudi" onClick={onClose}>
+              <CloseG />
+            </button>
+          </div>
         </div>
         {children}
       </div>

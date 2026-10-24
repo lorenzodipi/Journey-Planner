@@ -181,7 +181,7 @@ function MultiFxCard({ trip, onEdit, extras, picked, onPick, side, setSide, raw,
                 role="radio"
                 aria-checked={r.code === code}
                 onClick={() => onPick(r.code)}
-                class={`min-h-9 rounded-full border-2 px-3.5 text-sm font-extrabold ${r.code === code ? 'border-accent bg-accent text-accent-ink' : 'border-line'}`}
+                class={`chip${r.code === code ? ' on' : ''}`}
               >
                 {currencySymbol(r.code)} {r.code}
               </button>
