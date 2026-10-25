@@ -15,3 +15,11 @@
 .fs-add{position:fixed;left:16px;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));z-index:20;max-width:calc(36rem - 32px);margin:0 auto}
 .btn.danger{background:var(--danger);color:var(--surface-card)}
 .btn.danger:disabled{background:var(--surface-high);color:var(--ink-muted)}
+
+/* voce della checklist aperta: dettagli e azioni sotto il titolo */
+.ckd{flex:1 0 100%;display:flex;flex-direction:column;gap:12px;padding:4px 0 8px 36px}
+.ckd dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;margin:0}
+.ckd dt{font:400 13px/18px var(--font-sans);letter-spacing:0;color:var(--ink-muted)}
+.ckd dd{margin:0;font:600 15px/22px var(--font-sans);letter-spacing:0}
+.ckd-a{display:flex;gap:8px;flex-wrap:wrap}
+.row.open{background:var(--surface-soft)}

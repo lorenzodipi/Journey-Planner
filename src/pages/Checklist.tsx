@@ -26,6 +26,7 @@ export function Checklist() {
   const [who, setWho] = useState<'all' | string>('all')
   const [pending, setPending] = useState<Set<string>>(new Set())
   const [sheet, setSheet] = useState<SheetState>(null)
+  const [openId, setOpenId] = useState<string | null>(null)
   const [selecting, setSelecting] = useState(false)
   const [sel, setSel] = useState<Set<string>>(new Set())
   useHideNav(selecting)
@@ -96,7 +97,7 @@ export function Checklist() {
     const picked = selecting && sel.has(i.id)
     const on = selecting ? picked : i.done
     return (
-      <div class={`row${picked ? ' pick' : ''}`} key={i.id} style={{ minHeight: '56px' }}>
+      <div class={`row${picked ? ' pick' : ''}${openId === i.id && !selecting ? ' open' : ''}`} key={i.id} style={{ minHeight: '56px', flexWrap: 'wrap' }}>
         <button
           type="button"
           class="hit"
@@ -109,7 +110,7 @@ export function Checklist() {
         >
           <span class={`cb${on ? ' on' : ''}${partial && !on ? ' part' : ''}`}>{on ? <CheckG size={14} sw={3.2} /> : partial ? <MinusG size={14} sw={3.2} /> : null}</span>
         </button>
-        <button type="button" class="grow edit" onClick={() => (selecting ? toggleSel(i.id) : setSheet({ kind: 'edit', item: i }))}>
+        <button type="button" class="grow edit" aria-expanded={selecting ? undefined : openId === i.id} onClick={() => (selecting ? toggleSel(i.id) : setOpenId(openId === i.id ? null : i.id))}>
           <span class="tt" style={i.done ? { textDecoration: 'line-through', color: 'var(--ink-muted)', fontWeight: 400 } : undefined}>
             {i.text}
           </span>
@@ -142,6 +143,46 @@ export function Checklist() {
           </span>
         ) : (
           many && <span class="mm">Tutti</span>
+        )}
+        {openId === i.id && !selecting && (
+          <div class="ckd">
+            <dl>
+              <div>
+                <dt>Elenco</dt>
+                <dd>{SECTION_TITLE[i.kind]}</dd>
+              </div>
+              <div>
+                <dt>Per chi</dt>
+                <dd>{owner ? owner.name : 'Per tutti'}</dd>
+              </div>
+              {multi && (
+                <div>
+                  <dt>Pezzi a posto</dt>
+                  <dd class="num">
+                    {have} su {i.quantity}
+                  </dd>
+                </div>
+              )}
+              <div>
+                <dt>Entro il</dt>
+                <dd style={late ? { color: 'var(--danger)' } : undefined}>{i.dueDate ? formatShort(i.dueDate) : 'Nessuna data'}</dd>
+              </div>
+              <div>
+                <dt>Stato</dt>
+                <dd>{i.done ? 'Fatto' : partial ? 'In parte' : 'Da fare'}</dd>
+              </div>
+            </dl>
+            <div class="ckd-a">
+              {i.url && (
+                <a class="btn soft sm" href={i.url} target="_blank" rel="noopener noreferrer">
+                  Apri il link
+                </a>
+              )}
+              <button type="button" class="btn line sm" onClick={() => setSheet({ kind: 'edit', item: i })}>
+                Modifica
+              </button>
+            </div>
+          </div>
         )}
       </div>
     )
