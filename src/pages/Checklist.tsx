@@ -297,11 +297,6 @@ export function Checklist() {
               <PlusG />
               Aggiungi voce
             </button>
-            {trip.checklist.length > 0 && (
-              <button type="button" class="b-sm muted" style={{ border: 0, background: 'none', minHeight: '44px', fontWeight: 600 }} onClick={() => void addTemplate()}>
-                Aggiungi le voci del modello mancanti
-              </button>
-            )}
           </>
         )}
       </div>
