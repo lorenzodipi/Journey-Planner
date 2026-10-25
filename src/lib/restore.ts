@@ -1,3 +1,4 @@
+import { cleanUrl } from './planningData'
 import type {
   Booking,
   BookingType,
@@ -424,6 +425,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
           const partial = quantity && !bool(c.done) && d !== undefined && d >= 1 ? Math.min(Math.floor(d), quantity - 1) : undefined
           return { quantity, quantityDone: partial }
         })(),
+        url: cleanUrl(optStr(c.url)) || undefined,
         position: num(c.position) ?? (i + 1) * 1000,
       }
     })
@@ -760,6 +762,7 @@ export function buildSteps(trip: Trip, tripId: string, newId: () => string): Res
   // la colonna quantity si scrive solo se serve (il file può arrivare da un database senza la colonna)
   const anyQuantity = trip.checklist.some((c) => (c.quantity ?? 1) > 1)
   const anyPartial = trip.checklist.some((c) => (c.quantityDone ?? 0) > 0)
+  const anyUrl = trip.checklist.some((c) => c.url)
   const checklist = trip.checklist.map((c) => ({
     id: newId(),
     trip_id: tripId,
@@ -770,6 +773,7 @@ export function buildSteps(trip: Trip, tripId: string, newId: () => string): Res
     due_date: nul(c.dueDate),
     ...(anyQuantity ? { quantity: c.quantity && c.quantity > 1 ? c.quantity : null } : {}),
     ...(anyPartial ? { quantity_done: c.quantityDone ?? null } : {}),
+    ...(anyUrl ? { url: c.url ?? null } : {}),
     position: c.position,
   }))
 

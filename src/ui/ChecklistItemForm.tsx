@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks'
 import { useConfirm } from './ConfirmDialog'
 import { KIND_LABEL, KINDS, parseQuantity } from '../lib/checklist'
-import type { ChecklistInput } from '../lib/planningData'
+import { cleanUrl, type ChecklistInput } from '../lib/planningData'
 import type { ChecklistItem, Trip } from '../types'
 import { ChipSelect, FormError, PrimaryButton, SecondaryButton, TextField } from './Field'
 
@@ -22,15 +22,17 @@ export function ChecklistItemForm({ trip, initial, defaults, onSubmit, onDelete,
   const [who, setWho] = useState(initial?.travelerId ?? defaults?.travelerId ?? 'all')
   const [dueDate, setDueDate] = useState(initial?.dueDate ?? '')
   const [quantity, setQuantity] = useState(String(initial?.quantity ?? 1))
+  const [url, setUrl] = useState(initial?.url ?? '')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   async function submit(e: Event) {
     e.preventDefault()
     if (!text.trim()) return setError('Scrivi la voce.')
+    if (url.trim() && !cleanUrl(url)) return setError('Il link non sembra un indirizzo web (es. https://…).')
     setBusy(true)
     setError(null)
-    const message = await onSubmit({ text, kind, travelerId: who === 'all' ? null : who, dueDate, quantity: parseQuantity(quantity) })
+    const message = await onSubmit({ text, kind, travelerId: who === 'all' ? null : who, dueDate, quantity: parseQuantity(quantity), url: cleanUrl(url) })
     setBusy(false)
     if (message) setError(message)
     else onDone()
@@ -52,6 +54,12 @@ export function ChecklistItemForm({ trip, initial, defaults, onSubmit, onDelete,
     <form class="space-y-4" onSubmit={submit} noValidate>
       <TextField label="Voce" value={text} onInput={setText} maxLength={200} />
       <TextField label="Quantità" value={quantity} onInput={setQuantity} inputMode="numeric" maxLength={3} />
+      <TextField label="Link (facoltativo)" value={url} onInput={setUrl} inputMode="text" placeholder="https://…" maxLength={500} />
+      {initial?.url && cleanUrl(initial.url) && (
+        <a class="btn soft block" href={cleanUrl(initial.url)} target="_blank" rel="noopener noreferrer">
+          Apri il link
+        </a>
+      )}
       <ChipSelect label="Elenco" value={kind} onChange={setKind} options={KINDS.map((k) => ({ value: k, label: KIND_LABEL[k] }))} />
       {trip.travelers.length > 1 && (
         <ChipSelect

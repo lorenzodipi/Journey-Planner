@@ -118,6 +118,11 @@ export function Checklist() {
               entro {formatShort(i.dueDate)}
             </span>
           )}
+          {i.url && (
+            <span class="mm" style={{ display: 'block' }}>
+              Con link
+            </span>
+          )}
         </button>
         {multi && !selecting ? (
           <span class="stepper" role="group" aria-label={`Pezzi a posto: ${i.text}`}>

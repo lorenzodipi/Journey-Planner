@@ -119,7 +119,7 @@ export function checklistEntry(
 ): { ops: Op[]; local: Local; label: string } {
   const id = existing?.id ?? newId()
   const hadQuantity = (existing?.quantity ?? 1) > 1
-  const cols = checklistColumns(input, hadQuantity)
+  const cols = checklistColumns(input, hadQuantity, !!existing?.url)
   const quantity = cols.quantity && cols.quantity > 1 ? cols.quantity : undefined
   // i pezzi già a posto restano, ma non possono superare la nuova quantità
   const count = Math.min(existing ? doneCount(existing) : 0, quantity ?? 1)
@@ -133,6 +133,7 @@ export function checklistEntry(
     dueDate: cols.due_date ?? undefined,
     quantity,
     quantityDone: quantity && count > 0 && count < quantity ? count : undefined,
+    url: cols.url ?? undefined,
     position: existing?.position ?? position,
   }
   // la colonna dei pezzi si scrive solo per le voci con quantità (o per azzerarla)

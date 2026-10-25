@@ -192,6 +192,8 @@ export interface ChecklistItem {
   quantity?: number
   /** Pezzi già presi/fatti, da 0 a `quantity`. Vuoto = nessuno (o tutti, se la voce è segnata fatta). */
   quantityDone?: number
+  /** Link facoltativo (es. la pagina di un prodotto da comprare). */
+  url?: string
   position: number
 }
 

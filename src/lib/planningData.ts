@@ -13,6 +13,8 @@ export interface ChecklistRow {
   due_date: string | null
   quantity?: number | null
   quantity_done?: number | null
+  // dalla migrazione 0016
+  url?: string | null
   position: number
 }
 
@@ -47,6 +49,7 @@ export function mapChecklist(rows: ChecklistRow[], tripId: string): ChecklistIte
       dueDate: r.due_date ?? undefined,
       quantity: r.quantity && r.quantity > 1 ? r.quantity : undefined,
       quantityDone: r.quantity && r.quantity > 1 && r.quantity_done && r.quantity_done > 0 && r.quantity_done < r.quantity ? r.quantity_done : undefined,
+      url: r.url?.trim() || undefined,
       position: r.position,
     }))
     .sort((a, b) => a.position - b.position)
@@ -81,20 +84,38 @@ export interface ChecklistInput {
   dueDate: string
   /** Quanti pezzi; 1 = nessuna quantità. */
   quantity?: number
+  /** Link facoltativo; vuoto = nessuno. */
+  url?: string
+}
+
+/** Rende utilizzabile un link scritto a mano: aggiunge https:// se manca, vuoto se non è un indirizzo web. */
+export function cleanUrl(raw: string | undefined): string {
+  const v = (raw ?? '').trim()
+  if (!v) return ''
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(v) ? v : `https://${v}`
+  try {
+    const u = new URL(withScheme)
+    return u.protocol === 'http:' || u.protocol === 'https:' ? u.toString() : ''
+  } catch {
+    return ''
+  }
 }
 
 /**
  * Colonne da salvare. `quantity` viaggia solo quando serve (maggiore di 1, o per azzerare una quantità
  * già salvata): così le voci semplici si salvano anche se la colonna non esiste ancora nel database.
  */
-export function checklistColumns(i: ChecklistInput, hadQuantity = false) {
+export function checklistColumns(i: ChecklistInput, hadQuantity = false, hadUrl = false) {
   const qty = i.quantity && i.quantity > 1 ? i.quantity : null
+  const url = cleanUrl(i.url)
   return {
     text: i.text.trim(),
     kind: i.kind,
     traveler_id: i.travelerId,
     due_date: i.dueDate || null,
     ...(qty !== null || hadQuantity ? { quantity: qty } : {}),
+    // il link si scrive solo se c'è (o per toglierlo): senza la colonna le voci semplici si salvano come prima
+    ...(url || hadUrl ? { url: url || null } : {}),
   }
 }
 

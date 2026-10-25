@@ -139,3 +139,19 @@ describe('salvataggio di una voce con quantità', () => {
     expect(patchOf(e)).toMatchObject({ quantity: null, quantity_done: null, done: true })
   })
 })
+
+import { cleanUrl } from './planningData'
+describe('link delle voci', () => {
+  it('aggiunge https e scarta ciò che non è web', () => {
+    expect(cleanUrl('amazon.it/dp/B0')).toBe('https://amazon.it/dp/B0')
+    expect(cleanUrl(' https://a.b/c ')).toBe('https://a.b/c')
+    expect(cleanUrl('javascript:alert(1)')).toBe('')
+    expect(cleanUrl('')).toBe('')
+  })
+  it('scrive la colonna solo se serve', () => {
+    const base = { text: 'x', kind: 'todo' as const, travelerId: null, dueDate: '' }
+    expect('url' in checklistColumns(base)).toBe(false)
+    expect(checklistColumns({ ...base, url: 'a.it' }).url).toBe('https://a.it/')
+    expect(checklistColumns(base, false, true).url).toBeNull()
+  })
+})
