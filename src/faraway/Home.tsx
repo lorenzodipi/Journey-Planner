@@ -475,11 +475,23 @@ export function ValutaPiccola({ base, local, rate, baseName, localName }: { base
 }
 
 /** Riepilogo spese (componente Riepilogo): «Speso in …» con budget, poi saldo e persone o le varianti. */
-export function Riepilogo({ dove, speso, currency, limit, onSetBudget, second }: { dove: string; speso: number; currency: string; limit?: number; onSetBudget?: () => void; second: ReactNode }) {
+export function Riepilogo({ dove, speso, currency, limit, onSetBudget, onOpenBudget, second }: { dove: string; speso: number; currency: string; limit?: number; onSetBudget?: () => void; onOpenBudget?: () => void; second: ReactNode }) {
   const pct = limit ? Math.round((speso / limit) * 100) : 0
+  const open = limit && onOpenBudget ? onOpenBudget : undefined
   return (
     <div className="k-Riepilogo" style={{ display: 'grid', gap: 15 }}>
-      <div className="hero">
+      <div
+        className={cx('hero', open && 'fa-tap')}
+        {...(open
+          ? {
+              role: 'link',
+              tabIndex: 0,
+              'aria-label': `Speso ${formatMoney(speso, currency)}: apri il budget`,
+              onClick: open,
+              onKeyDown: (e: React.KeyboardEvent) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), open()),
+            }
+          : {})}
+      >
         <Simbolo />
         <span className="l">Speso in {dove}</span>
         <span className="big">{formatMoney(speso, currency)}</span>
@@ -536,8 +548,8 @@ export function AvatarStack({ people, tint = 'var(--tinta-acqua)', max = 4 }: { 
 }
 
 /** Seconda riga del Riepilogo in gruppo: saldo + persone, oppure «Siete in pari». */
-export function SaldoPersone({ saldo, currency, people }: { saldo: number | null; currency: string; people: { name: string; n: number }[] }) {
-  if (saldo === null || Math.abs(saldo) < 0.005)
+export function SaldoPersone({ saldo, currency, people, inPari }: { saldo: number | null; currency: string; people: { name: string; n: number }[]; inPari?: boolean }) {
+  if (inPari ?? (saldo === null || Math.abs(saldo) < 0.005))
     return (
       <div className="card b wide">
         <span className="ok">
@@ -552,15 +564,16 @@ export function SaldoPersone({ saldo, currency, people }: { saldo: number | null
         <AvatarStack people={people} />
       </div>
     )
-  const pay = saldo < 0
+  const s = saldo ?? 0
+  const pay = s < -0.004
   return (
     <div className="two">
       <div className="card a">
-        <span className={cx('badge', pay && 'pay')}>{pay ? 'Da pagare' : 'Da incassare'}</span>
+        <span className={cx('badge', pay && 'pay')}>{pay ? 'Da pagare' : Math.abs(s) < 0.005 ? 'In pari' : 'Da incassare'}</span>
         <span className="l" style={{ marginTop: 'var(--space-sm)' }}>
           Il tuo saldo
         </span>
-        <span className="v">{`${pay ? '−' : '+'}${formatMoney(Math.abs(saldo), currency)}`}</span>
+        <span className="v">{`${pay ? '−' : Math.abs(s) < 0.005 ? '' : '+'}${formatMoney(Math.abs(s), currency)}`}</span>
       </div>
       <div className="card b">
         <span className="l">Persone</span>

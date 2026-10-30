@@ -24,6 +24,9 @@ export interface StayRow {
   booked: boolean
   paid: boolean
   notes: string | null
+  // dalla migrazione 0019
+  paid_by?: string | null
+  for_travelers?: string[] | null
 }
 
 export interface TransportRow {
@@ -47,6 +50,9 @@ export interface TransportRow {
   bought: boolean
   ref_code: string | null
   notes: string | null
+  // dalla migrazione 0019
+  paid_by?: string | null
+  for_travelers?: string[] | null
 }
 
 export interface FlightRow {
@@ -60,6 +66,9 @@ export interface FlightRow {
   scope: Scope
   paid: boolean
   notes: string | null
+  // dalla migrazione 0019
+  paid_by?: string | null
+  for_travelers?: string[] | null
 }
 
 export interface FlightLegRow {
@@ -102,6 +111,8 @@ export function mapStays(rows: StayRow[], tripId: string): Stay[] {
       booked: r.booked,
       paid: r.paid,
       notes: r.notes ?? undefined,
+      paidBy: r.paid_by ?? undefined,
+      forTravelers: r.for_travelers?.length ? r.for_travelers : undefined,
     }))
     .sort((a, b) => a.checkIn.localeCompare(b.checkIn) || a.name.localeCompare(b.name, 'it'))
 }
@@ -129,6 +140,8 @@ export function mapTransports(rows: TransportRow[], tripId: string): Transport[]
       bought: r.bought,
       refCode: r.ref_code ?? undefined,
       notes: r.notes ?? undefined,
+      paidBy: r.paid_by ?? undefined,
+      forTravelers: r.for_travelers?.length ? r.for_travelers : undefined,
     }))
     .sort((a, b) => (a.departAt ?? '9999').localeCompare(b.departAt ?? '9999') || a.from.localeCompare(b.from, 'it'))
 }
@@ -146,6 +159,8 @@ export function mapFlights(rows: FlightRow[], legs: FlightLegRow[], tripId: stri
       scope: r.scope,
       paid: r.paid,
       notes: r.notes ?? undefined,
+      paidBy: r.paid_by ?? undefined,
+      forTravelers: r.for_travelers?.length ? r.for_travelers : undefined,
       legs: legs
         .filter((l) => l.flight_id === r.id)
         .sort((a, b) => a.seq - b.seq)

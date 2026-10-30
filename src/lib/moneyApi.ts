@@ -36,6 +36,16 @@ async function syncBudgetShares(tripId: string, itemId: string, input: BudgetInp
 
 // ---------- categorie di spesa ----------
 
+const MIGRATION_0019 = "Manca la migrazione 0019 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0019_spese_previsto_paganti.sql)."
+
+/** Previsto della categoria (0019): la crea se è una categoria base non ancora usata; `null` lo toglie. */
+export async function setExpenseCategoryPlanned(tripId: string, label: string, planned: number | null, known: Category[]): Promise<void> {
+  const id = await resolveExpenseCategory(tripId, label, known)
+  if (!id) return
+  const { error } = await client().from('expense_categories').update({ planned }).eq('id', id)
+  if (error) throw /planned/i.test(error.message) ? new Error(MIGRATION_0019) : error
+}
+
 const MIGRATION_0008 = 'Manca la migrazione 0008 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0008_expense_categories.sql).'
 const needs0008 = (error: { message: string }) => (/expense_categories|category_id/i.test(error.message) ? new Error(MIGRATION_0008) : error)
 

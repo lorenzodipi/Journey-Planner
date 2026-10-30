@@ -84,6 +84,8 @@ interface CategoryRow {
   label: string
   color: string | null
   position: number
+  /** solo categorie di spesa, dalla migrazione 0019 */
+  planned?: number | string | null
 }
 interface PlaceRow {
   id: string
@@ -179,7 +181,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
   const expenseCategories: Category[] = extras.expenseCategories
     .filter((c) => c.trip_id === row.id)
     .sort((a, b) => a.position - b.position || a.label.localeCompare(b.label, 'it'))
-    .map((c) => ({ id: c.id, label: c.label, color: c.color ?? undefined }))
+    .map((c) => ({ id: c.id, label: c.label, color: c.color ?? undefined, ...(c.planned != null && Number(c.planned) >= 0 ? { planned: Number(c.planned) } : {}) }))
   const expenseCategoryLabel = new Map(expenseCategories.map((c) => [c.id, c.label]))
 
   const places: Place[] = extras.places
@@ -462,6 +464,12 @@ export async function createTrip(input: TripInput, people: TripPeople): Promise<
     throw e
   }
   return id
+}
+
+/** Imposta o toglie il budget del viaggio (0013). */
+export async function setTripBudgetLimit(id: string, limit: number | null): Promise<void> {
+  const { error } = await client().from('trips').update({ budget_limit: limit }).eq('id', id)
+  if (error) throw /budget_limit/i.test(error.message) ? new Error("Manca la migrazione 0013 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0013_trip_budget_limit.sql).") : error
 }
 
 /** Aggiorna i dati del viaggio e riallinea i giorni alle nuove date senza perdere nulla. */

@@ -25,6 +25,8 @@ export interface Category {
   id: string
   label: string
   color?: string
+  /** Solo categorie di spesa: il previsto scritto a mano, nella valuta di casa (0019). */
+  planned?: number
 }
 
 export interface Place {

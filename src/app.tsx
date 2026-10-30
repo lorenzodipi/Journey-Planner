@@ -6,7 +6,9 @@ import { useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
 import { Alloggi } from './pages/Alloggi'
 import { Altro } from './pages/Altro'
-import { Budget } from './pages/Budget'
+import { BudgetPage } from './pages/spese/BudgetPage'
+import { Dettaglio } from './pages/spese/Dettaglio'
+import { SpesePage } from './pages/spese/SpesePage'
 import { Checklist } from './pages/Checklist'
 import { Prenotazioni } from './pages/Prenotazioni'
 import { Giorni } from './pages/Giorni'
@@ -18,7 +20,6 @@ import { Luoghi } from './pages/Luoghi'
 import { Oggi } from './pages/Oggi'
 import { Trasporti } from './pages/Trasporti'
 import { PrimoViaggio } from './pages/PrimoViaggio'
-import { Spese } from './pages/Spese'
 import { BottomNav } from './ui/BottomNav'
 import { PullToRefresh } from './ui/PullToRefresh'
 import { OutboxBanner } from './ui/OutboxBanner'
@@ -43,8 +44,6 @@ function legacy<P extends object>(Page: ComponentType<P>) {
     )
   }
 }
-const OldBudget = legacy(Budget)
-const OldSpese = legacy(Spese)
 const OldAltro = legacy(Altro)
 const OldAlloggi = legacy(Alloggi)
 const OldTrasporti = legacy(Trasporti)
@@ -128,8 +127,9 @@ export function App() {
           <Route path="/mappa">
             <Redirect to="/luoghi?vista=mappa" replace />
           </Route>
-          <Route path="/spese" component={OldBudget} />
-          <Route path="/spese/dettaglio" component={OldSpese} />
+          <Route path="/spese" component={SpesePage} />
+          <Route path="/spese/budget" component={BudgetPage} />
+          <Route path="/spese/dettaglio" component={Dettaglio} />
           <Route path="/altro/budget">
             <Redirect to="/spese" replace />
           </Route>

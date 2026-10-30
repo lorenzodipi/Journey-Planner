@@ -35,6 +35,9 @@ export interface BookingRow {
   currency?: string | null
   scope?: Scope | null
   payer_ids?: string[] | null
+  // dalla migrazione 0019
+  paid_by?: string | null
+  for_travelers?: string[] | null
 }
 
 export function mapChecklist(rows: ChecklistRow[], tripId: string): ChecklistItem[] {
@@ -73,6 +76,8 @@ export function mapBookings(rows: BookingRow[], tripId: string): Booking[] {
       currency: r.currency?.trim() || undefined,
       scope: r.scope ?? undefined,
       payerIds: r.payer_ids ?? undefined,
+      paidBy: r.paid_by ?? undefined,
+      forTravelers: r.for_travelers?.length ? r.for_travelers : undefined,
     }))
     .sort((a, b) => (a.validFrom ?? '9999').localeCompare(b.validFrom ?? '9999') || a.title.localeCompare(b.title, 'it'))
 }

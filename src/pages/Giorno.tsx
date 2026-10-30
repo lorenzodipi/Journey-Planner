@@ -17,7 +17,7 @@ import { useDaySegments } from '../state/daySegments'
 import { useHere } from '../state/here'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
-import type { DayItem, ItemStatus } from '../types'
+import type { DayItem, Expense, ItemStatus } from '../types'
 import { DaySheet, type DaySheetState } from '../ui/DaySheet'
 import { DayMapPanel } from '../ui/DayMapPanel'
 import { PulsanteIcona, Pulsante, Pillola, Sezione } from '../faraway/base'
@@ -28,6 +28,8 @@ import { BarraIndietro, Schermata } from '../faraway/shell'
 import { Vuoto } from '../faraway/Stati'
 import { linkedExpense, TappeLista } from '../faraway/Tappe'
 import { SpostaSheet } from './giorno/SpostaSheet'
+import { SpesaSheet } from './spese/SpesaSheet'
+import { iconaSpesa } from '../lib/ricevuta'
 import { TappaSheet } from './giorno/TappaSheet'
 
 const wdm = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -42,6 +44,7 @@ export function Giorno({ params }: { params: { id: string } }) {
   const search = useSearch()
   const [sheet, setSheet] = useState<Sheet>(null)
   const [legacy, setLegacy] = useState<DaySheetState>(null)
+  const [spesa, setSpesa] = useState<Expense | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
   const [highlight, setHighlight] = useState<string | null>(null)
   const [ask, confirmNode] = useConferma()
@@ -269,11 +272,11 @@ export function Giorno({ params }: { params: { id: string } }) {
             {expenses.map((e) => (
               <Riga
                 key={e.id}
-                icon={e.source?.kind === 'day_item' ? 'i-sez-ticket' : 'i-sez-budget'}
+                icon={iconaSpesa(e)}
                 title={e.label}
                 sub={[e.paidBy ? `Pagata da ${payer.get(e.paidBy) ?? '—'}` : null, e.category].filter(Boolean).join(' · ')}
                 end={<span className="amt">{formatMoney(e.amount, e.currency)}</span>}
-                onPress={() => setLegacy({ kind: 'edit-expense', expense: e })}
+                onPress={() => setSpesa(e)}
               />
             ))}
           </div>
@@ -332,6 +335,7 @@ export function Giorno({ params }: { params: { id: string } }) {
       {confirmNode}
       <div className="legacy">
         <DaySheet trip={trip} state={legacy} onChange={setLegacy} />
+        {spesa ? <SpesaSheet key={spesa.id} trip={trip} expense={spesa} open onClose={() => setSpesa(null)} /> : null}
       </div>
     </Schermata>
   )

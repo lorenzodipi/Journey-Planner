@@ -111,6 +111,8 @@ interface TripsValue {
   createExpenseCategory: (tripId: string, label: string) => Result
   renameExpenseCategory: (tripId: string, id: string, label: string) => Result
   setExpenseCategoryDeleted: (id: string, deleted: boolean) => Result
+  setExpenseCategoryPlanned: (tripId: string, label: string, planned: number | null) => Result
+  setTripBudgetLimit: (tripId: string, limit: number | null) => Result
   updateBudgetItem: (tripId: string, item: BudgetItem, input: BudgetInput) => Result
   setBudgetSharePaid: (shareId: string, paid: boolean) => Result
   setBudgetItemDeleted: (id: string, deleted: boolean) => Result
@@ -549,6 +551,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
     createExpenseCategory: (tripId, label) => run(() => money.createExpenseCategory(tripId, label, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['money', 'expenseCategories']),
     renameExpenseCategory: (tripId, id, label) => run(() => money.renameExpenseCategory(id, label, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['money', 'expenseCategories']),
     setExpenseCategoryDeleted: (id, deleted) => run(() => money.setExpenseCategoryDeleted(id, deleted), ['money', 'expenseCategories']),
+    setExpenseCategoryPlanned: (tripId, label, planned) => run(() => money.setExpenseCategoryPlanned(tripId, label, planned, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['expenseCategories']),
+    setTripBudgetLimit: (tripId, limit) => run(() => api.setTripBudgetLimit(tripId, limit), ['trips']),
     setBudgetSharePaid: (shareId, paid) => run(() => money.setBudgetSharePaid(shareId, paid), ['money']),
     setBudgetItemDeleted: (id, deleted) => run(() => money.setBudgetItemDeleted(id, deleted), ['money']),
     createExpense: (tripId, input) => {

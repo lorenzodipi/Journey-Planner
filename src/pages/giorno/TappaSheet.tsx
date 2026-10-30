@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react'
 import { formatDuration, parseDuration } from '../../lib/duration'
 import { formatMoney, parseAmount, round2, tripCurrencies } from '../../lib/money'
 import type { ItemInput } from '../../lib/tripApi'
+import { categoriaDaTappa } from '../../lib/ricevuta'
 import { durata } from '../../lib/tappa'
 import { useTrips } from '../../state/trip'
 import { useMe } from '../../state/me'
@@ -95,7 +96,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
     }
     let message = item ? await t.updateItem(item.id, input) : await t.createItem(trip.id, day.id, input)
     if (!message && item && (amount || linked)) {
-      const catLabel = trip.categories.find((c) => c.id === categoryId)?.label ?? ''
+      const catLabel = linked?.category || categoriaDaTappa(trip.categories.find((c) => c.id === categoryId)?.label ?? '')
       message = await t.saveItemCost(trip.id, item.id, amount ? { amount, currency, paidBy, travelerIds: who, category: catLabel, notes: linked?.notes } : null)
     }
     setBusy(false)

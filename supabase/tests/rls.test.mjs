@@ -55,6 +55,8 @@ await runMigration('0017_tappe_stati.sql')
 await runMigration('0017_tappe_stati.sql') // si può rilanciare
 await runMigration('0018_luoghi_orari.sql')
 await runMigration('0018_luoghi_orari.sql') // si può rilanciare
+await runMigration('0019_spese_previsto_paganti.sql')
+await runMigration('0019_spese_previsto_paganti.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -69,6 +71,8 @@ const st = (await db.query(`select status from day_items where title = 'Vecchia 
 check('0017 porta le tappe fatte allo stato «done»', st === 'done', String(st))
 const col = (await db.query(`select data_type from information_schema.columns where table_name = 'places' and column_name = 'opening_spec'`)).rows[0]?.data_type
 check('0018 aggiunge gli orari strutturati ai luoghi', col === 'jsonb', String(col))
+const cols19 = (await db.query(`select table_name, column_name from information_schema.columns where column_name in ('planned', 'paid_by', 'for_travelers') and table_name in ('expense_categories', 'stays', 'flights', 'transports', 'bookings')`)).rows.length
+check('0019 aggiunge previsto per categoria e «pagato da / per chi»', cols19 === 9, String(cols19))
 }
 {
 const legacyCats = (await db.query(`select label from expense_categories where trip_id=$1 order by label`, [legacyTrip])).rows.map((r) => r.label)

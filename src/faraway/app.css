@@ -122,3 +122,13 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-foto{position:relative;width:44px;height:44px;border-radius:50%;overflow:hidden;flex:none;display:block}
 .fa-foto svg,.k-Luoghi .fa-foto .ic{display:block;width:44px;height:44px}
 .fa-foto img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.k-Riepilogo .hero.fa-tap{cursor:pointer}
+
+/* Ricevuta (#34): categorie toccabili per il previsto */
+.k-Ricevuta .fa-rcat .cat{all:unset;box-sizing:border-box;display:grid;grid-template-columns:32px minmax(0,1fr);gap:var(--space-md);align-items:start;width:100%;text-align:left;cursor:pointer;border-radius:8px}
+.k-Ricevuta .fa-rcat .cat:focus-visible{outline:3px solid var(--focus);outline-offset:4px}
+.k-Ricevuta .cat svg.ic,.k-Ricevuta .cat .ic{width:32px;height:32px}
+.k-Ricevuta .fa-rcat-ed{display:grid;gap:12px;margin:12px 0 0 44px}
+.k-Ricevuta .fa-rcat-ed .acts{display:flex;gap:8px;flex-wrap:wrap;margin:0}
+.k-Ricevuta .fa-rcat-ed .fa-btn{width:auto}
+.k-Ricevuta .ok svg{flex:none}

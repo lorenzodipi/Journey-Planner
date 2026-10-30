@@ -15,7 +15,7 @@ export const BOOKING_BUDGET_CATEGORY: Record<BookingType, string> = {
   flight: 'Voli',
   hotel: 'Alloggi',
   train: 'Trasporti',
-  ticket: 'Biglietti',
+  ticket: 'Attività',
   insurance: 'Assicurazione',
   esim: 'eSIM / SIM',
   other: 'Altro',
