@@ -72,7 +72,7 @@ export async function updateBooking(booking: Booking, tripId: string, input: Boo
     uploaded = await uploadBookingFile(tripId, input.file)
     filePath = uploaded
   } else if (input.removeFile) filePath = null
-  const { error } = await db.from('bookings').update({ file_path: filePath, ...bookingColumns(input, timeZone, booking.cost != null) }).eq('id', booking.id)
+  const { error } = await db.from('bookings').update({ file_path: filePath, ...bookingColumns(input, timeZone, booking.cost != null, booking) }).eq('id', booking.id)
   if (error) {
     if (uploaded) await removeBookingFile(uploaded).catch(() => undefined)
     throw (input.cost !== null || booking.cost != null) && missingCostColumns(error) ? new Error(MIGRATION_0010) : error

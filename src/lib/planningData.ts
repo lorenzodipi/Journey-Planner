@@ -38,6 +38,10 @@ export interface BookingRow {
   // dalla migrazione 0019
   paid_by?: string | null
   for_travelers?: string[] | null
+  // dalla migrazione 0025
+  detail?: string | null
+  party_size?: number | null
+  place?: string | null
 }
 
 export function mapChecklist(rows: ChecklistRow[], tripId: string): ChecklistItem[] {
@@ -92,6 +96,9 @@ export function mapBookings(rows: BookingRow[], tripId: string): Booking[] {
       payerIds: r.payer_ids ?? undefined,
       paidBy: r.paid_by ?? undefined,
       forTravelers: r.for_travelers?.length ? r.for_travelers : undefined,
+      detail: r.detail?.trim() || undefined,
+      partySize: r.party_size && r.party_size > 0 ? r.party_size : undefined,
+      place: r.place?.trim() || undefined,
     }))
     .sort((a, b) => (a.validFrom ?? '9999').localeCompare(b.validFrom ?? '9999') || a.title.localeCompare(b.title, 'it'))
 }
@@ -158,6 +165,13 @@ export interface BookingInput {
   file: File | null
   /** togliere il file attuale senza sostituirlo */
   removeFile: boolean
+  /** ora della prenotazione "HH:MM" (con `validFrom`); vuota = tutto il giorno */
+  time?: string
+  paidBy?: string
+  forTravelers?: string[]
+  detail?: string
+  partySize?: number | null
+  place?: string
 }
 
 const orNull = (s: string) => s.trim() || null
@@ -179,14 +193,31 @@ export function safeUrl(raw: string): string | null {
  * Colonne da salvare. Il costo viaggia solo quando serve (c'è un costo, o c'era e va tolto): così le prenotazioni
  * senza costo si salvano anche se la migrazione 0010 non è ancora stata eseguita.
  */
-export function bookingColumns(i: BookingInput, timeZone: string, hadCost = false) {
+/** Colonne delle migrazioni 0019/0025: solo se servono (o se c'erano), così senza migrazione il salvataggio funziona come prima. */
+export function bookingExtras(i: BookingInput, old?: Booking) {
+  const out: Record<string, unknown> = {}
+  const put = (key: string, value: unknown, had: unknown) => {
+    const empty = value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)
+    if (!empty) out[key] = value
+    else if (had !== undefined && had !== null && !(Array.isArray(had) && had.length === 0)) out[key] = Array.isArray(value) ? [] : null
+  }
+  put('paid_by', i.paidBy, old?.paidBy)
+  put('for_travelers', i.forTravelers, old?.forTravelers)
+  put('detail', i.detail?.trim(), old?.detail)
+  put('party_size', i.partySize ?? undefined, old?.partySize)
+  put('place', i.place?.trim(), old?.place)
+  return out
+}
+
+export function bookingColumns(i: BookingInput, timeZone: string, hadCost = false, old?: Booking) {
   const hasCost = i.cost != null
   return {
+    ...bookingExtras(i, old),
     type: i.type,
     title: i.title.trim(),
     confirmation_code: orNull(i.code),
     url: safeUrl(i.url),
-    valid_from: i.validFrom ? zonedToInstant(i.validFrom, '00:00', timeZone) : null,
+    valid_from: i.validFrom ? zonedToInstant(i.validFrom, i.time || '00:00', timeZone) : null,
     valid_to: i.validTo ? zonedToInstant(i.validTo, '23:59', timeZone) : null,
     keep_offline: i.keepOffline,
     notes: orNull(i.notes),

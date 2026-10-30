@@ -254,7 +254,7 @@ export interface ChecklistItem {
   position: number
 }
 
-export type BookingType = 'flight' | 'hotel' | 'train' | 'ticket' | 'insurance' | 'esim' | 'other'
+export type BookingType = 'flight' | 'hotel' | 'train' | 'ticket' | 'insurance' | 'esim' | 'other' | 'restaurant' | 'rental' | 'activity'
 
 export interface Booking {
   id: string
@@ -277,6 +277,10 @@ export interface Booking {
   paidBy?: string
   /** Per chi è (#34), vuoto = tutti. */
   forTravelers?: string[]
+  /** dalla migrazione 0025 */
+  detail?: string
+  partySize?: number
+  place?: string
 }
 
 /** Codice del biglietto (#38): immagine del QR / codice a barre di un trasporto, volo o prenotazione, per passeggero. */
