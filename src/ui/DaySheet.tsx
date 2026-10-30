@@ -1,12 +1,11 @@
 import { dateAddDays } from '../lib/dates'
 import { showToast } from '../state/toast'
 import { useTrips } from '../state/trip'
-import type { Booking, ChecklistItem, Day, DayItem, Expense, Flight, Stay, Transport, Trip } from '../types'
+import type { Booking, ChecklistItem, Day, DayItem, Expense, Stay, Transport, Trip } from '../types'
 import { BookingForm } from './BookingForm'
 import { ChecklistItemForm } from './ChecklistItemForm'
 import { DayForm } from './DayForm'
 import { ExpenseForm } from './ExpenseForm'
-import { FlightForm } from './FlightForm'
 import { ItemForm } from './ItemForm'
 import { PlaceSheet, type PlaceSheetState } from './PlaceSheet'
 import { Sheet } from './Sheet'
@@ -21,7 +20,6 @@ export type DaySheetState =
   | { kind: 'edit-stay'; stay: Stay }
   | { kind: 'new-transport'; day: Day }
   | { kind: 'edit-transport'; transport: Transport }
-  | { kind: 'edit-flight'; flight: Flight }
   | { kind: 'new-expense'; day: Day }
   | { kind: 'edit-expense'; expense: Expense }
   | { kind: 'edit-booking'; booking: Booking }
@@ -37,7 +35,6 @@ const TITLES = {
   'edit-stay': 'Modifica alloggio',
   'new-transport': 'Nuovo trasporto',
   'edit-transport': 'Modifica trasporto',
-  'edit-flight': 'Modifica volo',
   'new-expense': 'Nuova spesa',
   'edit-expense': 'Modifica spesa',
   'edit-booking': 'Modifica prenotazione',
@@ -127,16 +124,6 @@ export function DaySheet({
             initial={state.transport}
             onSubmit={(i) => t.updateTransport(trip.id, state.transport.id, i)}
             onDelete={() => gone('Trasporto', () => t.setTransportDeleted(state.transport.id, true), () => t.setTransportDeleted(state.transport.id, false))}
-            onDone={close}
-          />
-        )}
-        {state?.kind === 'edit-flight' && (
-          <FlightForm
-            key={state.flight.id}
-            trip={trip}
-            initial={state.flight}
-            onSubmit={(i) => t.updateFlight(trip.id, state.flight, i)}
-            onDelete={() => gone('Volo', () => t.setFlightDeleted(state.flight.id, true), () => t.setFlightDeleted(state.flight.id, false))}
             onDone={close}
           />
         )}

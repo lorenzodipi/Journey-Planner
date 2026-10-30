@@ -27,13 +27,16 @@ const sections = [
     text: (t: Trip) => (t.stays.length ? `${plural(t.stays.length, 'soggiorno', 'soggiorni')} · ${plural(nightsOf(t), 'notte', 'notti')}` : 'Hotel, check-in e check-out, costi'),
   },
   {
-    href: '/altro/trasporti',
-    title: 'Trasporti e voli',
+    href: '/altro/voli',
+    title: 'Voli',
     icon: 'i-tra-plane',
-    text: (t: Trip) =>
-      t.flights.length + t.transports.length
-        ? `${plural(t.flights.length, 'volo', 'voli')} · ${plural(t.transports.length, 'trasporto', 'trasporti')}`
-        : 'Treni, pass, voli con scali e fusi orari',
+    text: (t: Trip) => (t.flights.length ? `${plural(t.flights.length, 'volo', 'voli')} · ${plural(t.flights.reduce((n, f) => n + f.legs.length, 0), 'tratta', 'tratte')}` : 'Carte d\'imbarco, scali e fusi orari'),
+  },
+  {
+    href: '/altro/trasporti',
+    title: 'Trasporti',
+    icon: 'i-tra-train',
+    text: (t: Trip) => (t.transports.length ? plural(t.transports.length, 'trasporto', 'trasporti') : 'Treni, pass, bus e taxi'),
   },
   {
     href: '/altro/budget',

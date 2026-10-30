@@ -9,6 +9,7 @@ import { Altro } from './pages/Altro'
 import { BudgetPage } from './pages/spese/BudgetPage'
 import { Dettaglio } from './pages/spese/Dettaglio'
 import { SpesePage } from './pages/spese/SpesePage'
+import { VoliPage } from './pages/voli/VoliPage'
 import { Checklist } from './pages/Checklist'
 import { Prenotazioni } from './pages/Prenotazioni'
 import { Giorni } from './pages/Giorni'
@@ -121,6 +122,7 @@ export function App() {
           </Route>
           <Route path="/altro" component={OldAltro} />
           <Route path="/altro/alloggi" component={OldAlloggi} />
+          <Route path="/altro/voli" component={VoliPage} />
           <Route path="/altro/trasporti" component={OldTrasporti} />
           <Route path="/altro/checklist" component={OldChecklist} />
           <Route path="/altro/prenotazioni" component={OldPrenotazioni} />

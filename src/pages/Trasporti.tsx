@@ -1,15 +1,12 @@
 import { useState } from 'react'
-import { formatDay, parseYmd } from '../lib/dates'
-import { dateInZone, dayOffset, formatInZone, layover, totalTravelTime } from '../lib/flights'
-import { formatDuration } from '../lib/duration'
+import { parseYmd } from '../lib/dates'
 import { earliestFirst, formatWhen, transportWhen, whenKey } from '../lib/logistics'
 import { formatMoney } from '../lib/money'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
-import type { Flight, Transport, TransportMode } from '../types'
+import type { Transport, TransportMode } from '../types'
 import { ART } from '../ui/art'
 import { CheckG, ChevronRightG, ClockG, PlusG } from '../ui/glyphs'
-import { FlightForm } from '../ui/FlightForm'
 import { MapsPill } from '../ui/MapsPill'
 import { EmptyState, PageHeader } from '../ui/PageHeader'
 import { Sheet } from '../ui/Sheet'
@@ -19,7 +16,6 @@ import { MODE_LABEL, TransportForm } from '../ui/TransportForm'
 type SheetState =
   | { kind: 'choose' }
   | { kind: 'new-flight' }
-  | { kind: 'edit-flight'; flight: Flight }
   | { kind: 'new-transport' }
   | { kind: 'edit-transport'; transport: Transport }
   | null
@@ -67,49 +63,35 @@ export function Trasporti() {
   const close = () => setSheet(null)
 
   const title =
-    sheet?.kind === 'choose' ? 'Nuovo trasporto' : sheet?.kind === 'new-flight' ? 'Nuovo volo' : sheet?.kind === 'edit-flight' ? 'Modifica volo' : sheet?.kind === 'new-transport' ? 'Nuovo trasporto' : 'Modifica trasporto'
+    sheet?.kind === 'choose' ? 'Nuovo trasporto' : sheet?.kind === 'new-transport' ? 'Nuovo trasporto' : 'Modifica trasporto'
 
   // voli in alto e gli altri trasporti sotto; in ogni gruppo in ordine di data e ora, il primo in alto
-  const flights = earliestFirst(trip.flights, (f) => f.legs[0]?.departAt ?? '')
   const transports = earliestFirst(trip.transports, (x) => whenKey(transportWhen(x, trip.timezone, trip.days).depart))
-  const count = trip.transports.length + trip.flights.length
+  const count = trip.transports.length
   const subtitle =
     count === 0
-      ? 'Voli, treni e spostamenti'
-      : [flights.length ? `${flights.length} ${flights.length === 1 ? 'volo' : 'voli'}` : '', transports.length ? `${transports.length} ${transports.length === 1 ? 'trasporto' : 'trasporti'}` : ''].filter(Boolean).join(' · ')
+      ? 'Treni, pass e spostamenti'
+      : `${transports.length} ${transports.length === 1 ? 'trasporto' : 'trasporti'}`
 
   return (
     <main className="screen">
       <PageHeader
-        title="Trasporti e voli"
+        title="Trasporti"
         subtitle={subtitle}
         back={{ href: '/altro', label: 'Altro' }}
         actions={
-          <button type="button" className="rbtn" aria-label="Aggiungi trasporto" onClick={() => setSheet({ kind: 'choose' })}>
+          <button type="button" className="rbtn" aria-label="Aggiungi trasporto" onClick={() => setSheet({ kind: 'new-transport' })}>
             <PlusG />
           </button>
         }
       />
 
-      {count === 0 && <EmptyState title="Nessun trasporto" text="Voli con scali, treni, pass metro, bus e taxi: orari, costo e se il biglietto è già comprato." art={ART.partenza} />}
-
-      {flights.length > 0 && (
-        <section aria-label="Voli">
-          <h2 className="h-md" style={{ marginBottom: '10px' }}>
-            Voli
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {flights.map((f) => (
-              <FlightTicket key={f.id} flight={f} onEdit={() => setSheet({ kind: 'edit-flight', flight: f })} />
-            ))}
-          </div>
-        </section>
-      )}
+      {count === 0 && <EmptyState title="Nessun trasporto" text="Treni, pass metro, bus e taxi: orari, costo e se il biglietto è già comprato." art={ART.partenza} />}
 
       {transports.length > 0 && (
         <section aria-label="Treni e pass">
           <h2 className="h-md" style={{ marginBottom: '10px' }}>
-            {flights.length > 0 ? 'Treni e pass' : 'Trasporti'}
+            Trasporti
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {transports.map((x) => {
@@ -194,22 +176,6 @@ export function Trasporti() {
             ))}
           </div>
         )}
-        {sheet?.kind === 'new-flight' && <FlightForm trip={trip} onSubmit={(i) => t.createFlight(trip.id, i)} onDone={close} />}
-        {sheet?.kind === 'edit-flight' && (
-          <FlightForm
-            key={sheet.flight.id}
-            trip={trip}
-            initial={sheet.flight}
-            onSubmit={(i) => t.updateFlight(trip.id, sheet.flight, i)}
-            onDelete={async () => {
-              const id = sheet.flight.id
-              const message = await t.setFlightDeleted(id, true)
-              if (!message) showToast('Volo eliminato', { label: 'Annulla', run: () => void t.setFlightDeleted(id, false) })
-              return message
-            }}
-            onDone={close}
-          />
-        )}
         {sheet?.kind === 'new-transport' && <TransportForm trip={trip} onSubmit={(i) => t.createTransport(trip.id, i)} onDone={close} />}
         {sheet?.kind === 'edit-transport' && (
           <TransportForm
@@ -228,80 +194,5 @@ export function Trasporti() {
         )}
       </Sheet>
     </main>
-  )
-}
-
-/** Biglietto aereo: rotta da prima a ultima tratta, durata complessiva e scali. */
-function FlightTicket({ flight, onEdit }: { flight: Flight; onEdit: () => void }) {
-  const legs = flight.legs
-  const first = legs[0]
-  const last = legs[legs.length - 1]
-  const times = legs.map((l) => ({ depart: l.departAt, arrive: l.arriveAt }))
-  const stops = legs.slice(1).map((l, i) => ({ at: l.from, min: layover(times[i], times[i + 1]) }))
-  const off = first && last ? dayOffset({ depart: first.departAt, arrive: last.arriveAt }, first.fromTz, last.toTz) : 0
-  const total = legs.length ? totalTravelTime(times) : 0
-  const mins = (m: number) => formatDuration(Math.max(0, m))
-  const third = stops.length === 1 ? { k: `Scalo · ${stops[0].at}`, v: mins(stops[0].min) } : stops.length > 1 ? { k: `${stops.length} scali`, v: mins(stops.reduce((a, s) => a + s.min, 0)) } : flight.cost != null ? { k: flight.scope === 'per_person' ? 'A persona' : 'Totale', v: formatMoney(flight.cost, flight.currency) } : { k: 'Compagnia', v: flight.airline || '—' }
-  const numbers = legs.map((l) => l.flightNumber).filter(Boolean) as string[]
-  return (
-    <article className="tk t-azzurro" aria-label={`Modifica ${flight.title}`} {...activate(onEdit)}>
-      <div className="top">
-        <div className="hd">
-          <span className="kind">
-            <Ic name="i-tra-plane" size={32} />
-            {flight.title}
-          </span>
-          <span className="okp">
-            {flight.paid ? <CheckG size={14} sw={3} /> : <ClockG size={14} sw={2.4} />}
-            {flight.paid ? 'Acquistato' : 'Non acquistato'}
-          </span>
-        </div>
-        {first && last && (
-          <div className="route">
-            <div className="pt">
-              <b>{first.from}</b>
-              <span>{numbers[0] ?? ' '}</span>
-              <span className="tm">{formatInZone(first.departAt, first.fromTz)}</span>
-            </div>
-            <div className="mid">
-              <Ic name="i-tra-plane" size={28} />
-              <span className="dur">{legs.length} {legs.length === 1 ? 'volo' : 'voli'}</span>
-            </div>
-            <div className="pt r">
-              <b>{last.to}</b>
-              <span>{numbers.length > 1 ? numbers[numbers.length - 1] : ' '}</span>
-              <span className="tm">
-                {formatInZone(last.arriveAt, last.toTz)}
-                {off !== 0 && ` ${off > 0 ? `+${off}` : off}`}
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="bot">
-        {first && (
-          <div className="f3">
-            <div>
-              <span className="k">Data</span>
-              <b>{formatDay(dateInZone(first.departAt, first.fromTz))}</b>
-            </div>
-            <div>
-              <span className="k">Durata</span>
-              <b>{mins(total)}</b>
-            </div>
-            <div>
-              <span className="k">{third.k}</span>
-              <b>{third.v}</b>
-            </div>
-          </div>
-        )}
-        <div className="bars" aria-hidden="true" />
-        {flight.notes && <p className="ad" style={{ whiteSpace: 'pre-line' }}>{flight.notes}</p>}
-        <div className="row2">
-          <span className="code">{flight.bookingRef ? `PNR · ${flight.bookingRef}` : flight.airline || 'Volo'}</span>
-          {first && <MapsPill href={mapsFor(`Aeroporto ${first.from}`)} label={`Aeroporto ${first.from}`} text={`Apri ${first.from}`} kind="sm" />}
-        </div>
-      </div>
-    </article>
   )
 }

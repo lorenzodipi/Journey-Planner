@@ -147,6 +147,13 @@ export interface FlightLeg {
   cabin?: string
   seats?: string
   notes?: string
+  /** dalla migrazione 0021 */
+  terminal?: string
+  gate?: string
+  /** ora locale dell'imbarco, «HH:MM» */
+  boardingTime?: string
+  /** posto di ciascun passeggero (id viaggiatore → «14A») */
+  seatsBy?: Record<string, string>
 }
 
 export interface Flight {
@@ -164,6 +171,11 @@ export interface Flight {
   paidBy?: string
   /** Per chi è (#34), vuoto = tutti. */
   forTravelers?: string[]
+  /** dalla migrazione 0021 */
+  baggage?: string
+  policy?: string
+  /** apertura del check-in online (istante ISO) */
+  checkinAt?: string
 }
 
 export interface BudgetShare {

@@ -121,8 +121,8 @@ export async function createFlight(tripId: string, input: FlightInput): Promise<
  */
 export async function updateFlight(old: Flight, tripId: string, input: FlightInput): Promise<void> {
   const db = client()
-  const legs = legColumns(input.legs)
-  const head = await db.from('flights').update(flightColumns(input)).eq('id', old.id)
+  const legs = legColumns(input.legs, old.legs.some((l) => l.terminal || l.gate || l.boardingTime || l.seatsBy))
+  const head = await db.from('flights').update(flightColumns(input, old)).eq('id', old.id)
   if (head.error) throw head.error
   const del = await db.from('flight_legs').delete().eq('flight_id', old.id)
   if (del.error) throw del.error
@@ -144,6 +144,7 @@ export async function updateFlight(old: Flight, tripId: string, input: FlightInp
         cabin: l.cabin ?? null,
         seats: l.seats ?? null,
         notes: l.notes ?? null,
+        ...(l.terminal || l.gate || l.boardingTime || l.seatsBy ? { terminal: l.terminal ?? null, gate: l.gate ?? null, boarding_time: l.boardingTime ?? null, seats_by: l.seatsBy ?? null } : {}),
       })),
     )
     throw res.error
