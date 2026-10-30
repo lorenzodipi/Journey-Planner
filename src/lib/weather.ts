@@ -14,6 +14,8 @@ export interface HourWeather {
   wind?: number // km/h
   windDir?: number // gradi, da dove soffia
   hum?: number // umidità, %
+  /** precipitazione prevista nell'ora, mm */
+  mm?: number
 }
 
 export interface DayWeather {
@@ -60,6 +62,7 @@ interface ForecastJson {
     wind_speed_10m?: (number | null)[]
     wind_direction_10m?: (number | null)[]
     relative_humidity_2m?: (number | null)[]
+    precipitation?: (number | null)[]
   }
 }
 
@@ -84,6 +87,8 @@ function parseHours(json: ForecastJson): Map<string, HourWeather[]> {
     if (wind != null) hour.wind = wind
     if (windDir != null) hour.windDir = windDir
     if (hum != null) hour.hum = hum
+    const mm = h.precipitation?.[i]
+    if (typeof mm === 'number') hour.mm = Math.round(mm * 10) / 10
     const list = out.get(date) ?? []
     list.push(hour)
     out.set(date, list)
@@ -115,7 +120,7 @@ export function forecastUrl(lat: number, lng: number, timeZone: string): string 
     latitude: lat.toFixed(3),
     longitude: lng.toFixed(3),
     daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max',
-    hourly: 'temperature_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m,relative_humidity_2m',
+    hourly: 'temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_direction_10m,relative_humidity_2m',
     timezone: timeZone,
     forecast_days: String(FORECAST_DAYS),
   })

@@ -100,6 +100,10 @@ export interface Stay {
   booked: boolean
   paid: boolean
   notes?: string
+  /** Chi l'ha pagato (#34): serve alla spesa automatica. */
+  paidBy?: string
+  /** Per chi è (#34), vuoto = tutti. */
+  forTravelers?: string[]
 }
 
 export interface Transport {
@@ -122,6 +126,10 @@ export interface Transport {
   bought: boolean
   refCode?: string
   notes?: string
+  /** Chi l'ha pagato (#34): serve alla spesa automatica. */
+  paidBy?: string
+  /** Per chi è (#34), vuoto = tutti. */
+  forTravelers?: string[]
 }
 
 export interface FlightLeg {
@@ -150,6 +158,10 @@ export interface Flight {
   paid: boolean
   notes?: string
   legs: FlightLeg[]
+  /** Chi l'ha pagato (#34): serve alla spesa automatica. */
+  paidBy?: string
+  /** Per chi è (#34), vuoto = tutti. */
+  forTravelers?: string[]
 }
 
 export interface BudgetShare {
@@ -234,6 +246,10 @@ export interface Booking {
   scope?: Scope
   /** Chi lo ha pagato; vuoto = tutti i viaggiatori. */
   payerIds?: string[]
+  /** Chi l'ha pagato (#34): serve alla spesa automatica. */
+  paidBy?: string
+  /** Per chi è (#34), vuoto = tutti. */
+  forTravelers?: string[]
 }
 
 export interface Trip {

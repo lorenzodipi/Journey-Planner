@@ -24,3 +24,16 @@ export function timezoneForAirport(code: string): string | undefined {
 }
 
 export const isIata = (code: string) => /^[A-Za-z]{3}$/.test(code.trim())
+
+/** Città degli stessi aeroporti, per i testi («Voli · Milano, Dubai, Osaka»). Per gli altri resta il codice. */
+export const AIRPORT_CITY: Record<string, string> = {
+  MXP: 'Milano', LIN: 'Milano', BGY: 'Bergamo', FCO: 'Roma', CIA: 'Roma', VCE: 'Venezia', BLQ: 'Bologna', NAP: 'Napoli', PSA: 'Pisa', TRN: 'Torino',
+  LHR: 'Londra', LGW: 'Londra', CDG: 'Parigi', ORY: 'Parigi', FRA: 'Francoforte', MUC: 'Monaco', AMS: 'Amsterdam', MAD: 'Madrid', BCN: 'Barcellona',
+  ZRH: 'Zurigo', VIE: 'Vienna', IST: 'Istanbul', DOH: 'Doha', DXB: 'Dubai', AUH: 'Abu Dhabi', HEL: 'Helsinki', KEF: 'Reykjavík',
+  PEK: 'Pechino', PKX: 'Pechino', PVG: 'Shanghai', SHA: 'Shanghai', CAN: 'Canton', CTU: 'Chengdu', HKG: 'Hong Kong', TPE: 'Taipei',
+  ICN: 'Seul', GMP: 'Seul', SIN: 'Singapore', BKK: 'Bangkok', HND: 'Tokyo', NRT: 'Tokyo', KIX: 'Osaka', ITM: 'Osaka', NGO: 'Nagoya',
+  FUK: 'Fukuoka', CTS: 'Sapporo', OKA: 'Okinawa', JFK: 'New York', EWR: 'New York', BOS: 'Boston', ATL: 'Atlanta', ORD: 'Chicago',
+  DFW: 'Dallas', LAX: 'Los Angeles', SFO: 'San Francisco', SEA: 'Seattle', YYZ: 'Toronto', SYD: 'Sydney', MEL: 'Melbourne',
+}
+
+export const airportCity = (code: string): string => AIRPORT_CITY[code.trim().toUpperCase()] ?? code.trim().toUpperCase()

@@ -1,7 +1,7 @@
 // Giorno (mock Fa-09…Fa-15, issue #32): mappa con «Percorso migliore», tappe con stati e spostamenti,
 // card aperta in linea, fogli Aggiungi / Modifica / Sposta / Elimina; sotto le tappe Alloggio, Spese e
 // Prenotazioni del giorno, e i giorni vicini.
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation, useSearch } from 'wouter'
 import { expenseBase, fxOf } from '../lib/budget'
 import { parseYmd } from '../lib/dates'
@@ -11,9 +11,9 @@ import { formatMoney, round2 } from '../lib/money'
 import { mapsLinkFor, parseMapsUrl } from '../lib/mapsUrl'
 import { planRoute } from '../lib/routeOrder'
 import { minutesOfDay } from '../lib/sun'
-import { fase, riepilogoPercorso, stimaSpostamento, type Spostamento } from '../lib/tappa'
+import { fase, riepilogoPercorso, stimaSpostamento } from '../lib/tappa'
 import { tripToday } from '../lib/today'
-import { useDayRoute } from '../state/dayRoute'
+import { useDaySegments } from '../state/daySegments'
 import { useHere } from '../state/here'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
@@ -49,7 +49,7 @@ export function Giorno({ params }: { params: { id: string } }) {
 
   const index = trip.days.findIndex((d) => d.id === params.id)
   const day = trip.days[index]
-  const route = useDayRoute(trip, day ?? { id: '', date: '', city: '', items: [] })
+  const { route, stopById, segments } = useDaySegments(trip, day)
 
   // da Giorni, su un giorno libero: «Aggiungi tappa» già aperto
   useEffect(() => {
@@ -70,20 +70,6 @@ export function Giorno({ params }: { params: { id: string } }) {
       window.removeEventListener('fa:close-card', close)
     }
   }, [openId])
-
-  const stopById = useMemo(() => new Map(route.stops.map((s) => [s.id, s])), [route.stops])
-
-  // spostamento stimato che porta a ciascuna tappa (solo se entrambe hanno una posizione)
-  const segments = useMemo(() => {
-    const m = new Map<string, Spostamento>()
-    if (!day) return m
-    for (let i = 1; i < day.items.length; i++) {
-      const a = stopById.get(day.items[i - 1].id)
-      const b = stopById.get(day.items[i].id)
-      if (a && b) m.set(day.items[i].id, stimaSpostamento(a, b, route.transports))
-    }
-    return m
-  }, [day, stopById, route.transports])
 
   if (!day) {
     return (

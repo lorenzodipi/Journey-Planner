@@ -69,3 +69,9 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .jp-hit[data-state=now] .jp-num{background:var(--azzurro-solid);color:var(--on-azzurro-solid);box-shadow:0 0 0 3px var(--surface-card),0 0 0 5px var(--azzurro-ink);transform:scale(1.2)}
 /* nel tema scuro «Elimina» resta leggibile */
 [data-theme=dark] .k-Tappa .fa-btn.del{color:#FF9AA5!important}
+/* ValutaPiccola: il campo attivo è un vero input, l'altro un pulsante per scrivere in quella valuta */
+.k-ValutaPiccola .fd{width:100%;box-sizing:border-box;text-align:left;font:inherit;color:inherit;cursor:pointer;display:block}
+.k-ValutaPiccola .fd .fl2{display:block}
+.k-ValutaPiccola .fv2{min-width:0}
+.k-ValutaPiccola .fv2 input.n{border:0;background:none;outline:none;padding:0;margin:0;width:0;flex:1;min-width:0;font:inherit;color:inherit;letter-spacing:inherit}
+.k-ValutaPiccola .fd.act:focus-within{outline:3px solid var(--focus);outline-offset:2px}
