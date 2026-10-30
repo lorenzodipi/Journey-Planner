@@ -275,6 +275,18 @@ export interface Booking {
   forTravelers?: string[]
 }
 
+/** Codice del biglietto (#38): immagine del QR / codice a barre di un trasporto, volo o prenotazione, per passeggero. */
+export type TicketKind = 'transport' | 'flight' | 'booking'
+export interface TicketCode {
+  id: string
+  kind: TicketKind
+  refId: string
+  /** Di chi è il biglietto; assente = vale per tutti. */
+  travelerId?: string
+  /** Nel bucket privato «bookings». */
+  filePath: string
+}
+
 /** Un paese del viaggio (#35): fuso, valuta e cambio valgono per i giorni dell'intervallo. */
 export interface TripCountry {
   id: string
@@ -317,6 +329,7 @@ export interface Trip {
   expenses: Expense[]
   checklist: ChecklistItem[]
   bookings: Booking[]
+  ticketCodes?: TicketCode[]
   /** Unità di valuta base per 1 unità della valuta locale (es. 0,0056 EUR per 1 JPY). */
   fxRate?: number
   /** Cambi delle valute extra del viaggio: unità di valuta base per 1 unità di ciascuna (es. { KRW: 0.00065 }). */

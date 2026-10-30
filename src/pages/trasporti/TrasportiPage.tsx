@@ -1,6 +1,6 @@
 // Pagina Trasporti (mock Fa-40, Fa-41, #37): biglietti orizzontali raggruppati per data, aperti in linea uno alla volta, FAB «+ Trasporto».
 import { useMemo, useState } from 'react'
-import { perData } from '../../lib/trasporti'
+import { nomeTrasporto, perData } from '../../lib/trasporti'
 import { showToast } from '../../state/toast'
 import { useTrip, useTrips } from '../../state/trip'
 import type { Transport } from '../../types'
@@ -9,6 +9,7 @@ import { useConferma } from '../../faraway/Foglio'
 import { useUnaAperta } from '../../faraway/Righe'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
+import { CodiceBiglietto } from '../../faraway/CodiceBiglietto'
 import { TrasportoSheet } from './TrasportoSheet'
 
 export function TrasportiPage() {
@@ -17,6 +18,7 @@ export function TrasportiPage() {
   const [ask, confirmNode] = useConferma()
   const open = useUnaAperta()
   const [sheet, setSheet] = useState<{ transport?: Transport; focus?: 'prezzo' } | null>(null)
+  const [codice, setCodice] = useState<Transport | null>(null)
   const gruppi = useMemo(() => perData(trip), [trip])
 
   async function elimina(x: Transport) {
@@ -33,6 +35,7 @@ export function TrasportiPage() {
       overlay={
         <>
           {sheet ? <TrasportoSheet key={sheet.transport?.id ?? 'new'} trip={trip} transport={sheet.transport} focus={sheet.focus} open onClose={() => setSheet(null)} /> : null}
+          {codice ? <CodiceBiglietto key={codice.id} trip={trip} kind="transport" refId={codice.id} title={`${nomeTrasporto(codice)}${codice.title ? ` · ${codice.from} → ${codice.to}` : ''}`} detail={codice.refCode} travelerIds={codice.forTravelers} open onClose={() => setCodice(null)} /> : null}
           {confirmNode}
         </>
       }
@@ -46,7 +49,7 @@ export function TrasportiPage() {
             <h2 className="fa-h3">{g.title}</h2>
           </div>
           {g.items.map((x) => (
-            <CartaTrasporto key={x.id} trip={trip} transport={x} open={open.isOpen(x.id)} onToggle={() => open.toggle(x.id)} onEdit={(focus) => setSheet({ transport: x, focus })} onDelete={() => void elimina(x)} />
+            <CartaTrasporto key={x.id} trip={trip} transport={x} open={open.isOpen(x.id)} onToggle={() => open.toggle(x.id)} onEdit={(focus) => setSheet({ transport: x, focus })} onDelete={() => void elimina(x)} onCode={() => setCodice(x)} />
           ))}
         </section>
       ))}

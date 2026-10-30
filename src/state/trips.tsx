@@ -24,7 +24,7 @@ import type { BookingInput, ChecklistInput } from '../lib/planningData'
 import type { BudgetInput, ExpenseInput } from '../lib/moneyData'
 import type { FlightInput, StayInput, TransportInput } from '../lib/logistics'
 import type { InvitedInput, ItemInput, PlaceInput, TravelerInput, TripInput, TripPeople } from '../lib/tripApi'
-import type { Booking, BudgetItem, ChecklistItem, Expense, Flight, ItemStatus, PlaceStatus, Trip } from '../types'
+import type { Booking, BudgetItem, ChecklistItem, Expense, Flight, ItemStatus, PlaceStatus, Trip, TicketCode, TicketKind } from '../types'
 import { schema } from '../lib/schema'
 
 export type TripsStatus = 'loading' | 'ready' | 'error'
@@ -139,6 +139,9 @@ interface TripsValue {
   createBooking: (tripId: string, input: BookingInput) => Result
   updateBooking: (tripId: string, booking: Booking, input: BookingInput) => Result
   setBookingDeleted: (id: string, deleted: boolean) => Result
+  /** Codice del biglietto (#38): salva o sostituisce l'immagine per un passeggero. */
+  saveTicketCode: (tripId: string, kind: TicketKind, refId: string, travelerId: string | null, file: File, old?: TicketCode) => Result
+  removeTicketCode: (code: TicketCode) => Result
 }
 
 /** Tabelle del viaggio di cui si ascoltano le modifiche degli altri (devono avere `trip_id`, tranne `trips`). */
@@ -566,6 +569,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
       return run(() => logistics.updateTransport(id, input, trip?.timezone ?? 'UTC', trip?.days ?? [], trip?.transports.find((x) => x.id === id)), ['logistics'])
     },
     setTransportBought: (id, bought) => run(() => logistics.setTransportBought(id, bought), ['logistics']),
+    saveTicketCode: (tripId, kind, refId, travelerId, file, old) => run(() => planning.saveTicketCode(tripId, kind, refId, travelerId, file, old), ['planning']),
+    removeTicketCode: (code) => run(() => planning.removeTicketCode(code), ['planning']),
     setTransportDeleted: (id, deleted) => run(() => logistics.setTransportDeleted(id, deleted), ['logistics']),
     createFlight: (tripId, input) => run(() => logistics.createFlight(tripId, input), ['logistics']),
     updateFlight: (tripId, flight, input) => run(() => logistics.updateFlight(flight, tripId, input), ['logistics']),

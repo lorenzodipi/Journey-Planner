@@ -1,4 +1,4 @@
-import type { Booking, BookingType, ChecklistItem, ChecklistKind, Scope } from '../types'
+import type { Booking, BookingType, ChecklistItem, ChecklistKind, Scope, TicketCode, TicketKind } from '../types'
 import { zonedToInstant } from './zoned'
 
 // Checklist e prenotazioni: righe del database <-> tipi dell'app, e colonne da salvare.
@@ -56,6 +56,20 @@ export function mapChecklist(rows: ChecklistRow[], tripId: string): ChecklistIte
       position: r.position,
     }))
     .sort((a, b) => a.position - b.position)
+}
+
+export interface TicketCodeRow {
+  id: string
+  trip_id: string
+  kind: TicketKind
+  ref_id: string
+  traveler_id: string | null
+  file_path: string
+}
+
+export function mapTicketCodes(rows: TicketCodeRow[] | undefined, tripId: string): TicketCode[] | undefined {
+  const mine = (rows ?? []).filter((r) => r.trip_id === tripId)
+  return mine.length ? mine.map((r) => ({ id: r.id, kind: r.kind, refId: r.ref_id, travelerId: r.traveler_id ?? undefined, filePath: r.file_path })) : undefined
 }
 
 export function mapBookings(rows: BookingRow[], tripId: string): Booking[] {

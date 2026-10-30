@@ -6,8 +6,8 @@ import { client } from './db'
 import { queryLogistics } from './logisticsApi'
 import { queryMoney } from './moneyApi'
 import { queryPlanning } from './planningApi'
-import { mapBookings, mapChecklist } from './planningData'
-import type { BookingRow, ChecklistRow } from './planningData'
+import { mapBookings, mapChecklist, mapTicketCodes } from './planningData'
+import type { BookingRow, ChecklistRow, TicketCodeRow } from './planningData'
 import { mapBudget, mapExpenses } from './moneyData'
 import type { BudgetItemRow, BudgetShareRow, ExpenseRow, ExpenseShareRow } from './moneyData'
 import { mapFlights, mapStays, mapTransports } from './logistics'
@@ -158,6 +158,7 @@ interface Extras {
   expenseShares: ExpenseShareRow[]
   checklist: ChecklistRow[]
   bookings: BookingRow[]
+  ticketCodes?: TicketCodeRow[]
 }
 
 interface TripRow {
@@ -306,6 +307,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     expenses: mapExpenses(extras.expenses, extras.expenseShares, row.id, expenseCategoryLabel),
     checklist: mapChecklist(extras.checklist, row.id),
     bookings: mapBookings(extras.bookings, row.id),
+    ...(mapTicketCodes(extras.ticketCodes, row.id) ? { ticketCodes: mapTicketCodes(extras.ticketCodes, row.id) } : {}),
     fxRate: row.fx_rate == null ? undefined : Number(row.fx_rate),
     fxRates,
     budgetLimit: row.budget_limit != null && Number(row.budget_limit) > 0 ? Number(row.budget_limit) : undefined,
@@ -346,6 +348,7 @@ export function scopeOfTable(table: string): Scope | null {
       return 'money'
     case 'checklist_items':
     case 'bookings':
+    case 'ticket_codes':
       return 'planning'
     default:
       return null
@@ -404,7 +407,7 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
   for (const r of results) if (r?.error) throw r.error
   const [stays, transports, flights, legs] = logisticsR ?? []
   const [budgetItems, budgetShares, expenses, expenseShares] = moneyR ?? []
-  const [checklist, bookings] = planningR ?? []
+  const [checklist, bookings, ticketCodes] = planningR ?? []
   const old = prev?.extras
   const extras: Extras = {
     places: keep(places, old?.places as PlaceRow[]),
@@ -421,6 +424,7 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
     expenseShares: keep(expenseShares, old?.expenseShares as ExpenseShareRow[]),
     checklist: keep(checklist, old?.checklist as ChecklistRow[]),
     bookings: keep(bookings, old?.bookings as BookingRow[]),
+    ticketCodes: keep(ticketCodes, old?.ticketCodes as TicketCodeRow[]),
   }
   const rows = keep(trips, prev?.trips as TripRow[])
   // paesi dei viaggi (0020): senza la tabella l'app usa il modello di prima

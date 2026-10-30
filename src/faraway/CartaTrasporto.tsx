@@ -26,9 +26,11 @@ interface Props {
   onToggle: () => void
   onEdit: (focus?: 'prezzo') => void
   onDelete: () => void
+  /** «Mostra il codice» (#38): senza codice salvato porta a «Nessun codice associato». */
+  onCode: () => void
 }
 
-export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onDelete }: Props) {
+export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onDelete, onCode }: Props) {
   const w = transportWhen(t, trip.timezone, trip.days)
   const dur = durataTrasporto(t)
   const prezzo = prezzoDi(t, trip.travelers.length)
@@ -129,6 +131,9 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
                   Aggiungi prezzo
                 </Pulsante>
               ) : null}
+              <Pulsante size="sm" color="secondary" iconLeading="qr" onPress={onCode}>
+                Mostra il codice
+              </Pulsante>
               <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => onEdit()}>
                 Modifica
               </Pulsante>

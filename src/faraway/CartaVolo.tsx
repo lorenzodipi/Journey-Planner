@@ -8,6 +8,7 @@ import { durataLunga, fasciaScali, riepilogoVolo } from '../lib/voli'
 import { discOf, initials } from '../state/me'
 import type { Flight, FlightLeg, Trip } from '../types'
 import { Avatars, Pulsante } from './base'
+import { cx } from './cx'
 import { Sv } from './icons'
 
 const PLANE = 'M482.3 192c34.2 0 93.7 29 93.7 64c0 36-59.5 64-93.7 64l-116.6 0L265.2 495.9c-5.7 10-16.3 16.1-27.8 16.1l-56.2 0c-10.6 0-18.3-10.2-15.4-20.4l49-171.6L112 320 68.8 377.6c-3 4-7.8 6.4-12.8 6.4l-42 0c-7.8 0-14-6.3-14-14c0-1.3 .2-2.6 .5-3.9L32 256 .5 145.9c-.4-1.3-.5-2.6-.5-3.9c0-7.8 6.3-14 14-14l42 0c5 0 9.8 2.4 12.8 6.4L112 192l102.9 0-49-171.6C162.9 10.2 170.6 0 181.2 0l56.2 0c11.5 0 22.1 6.2 27.8 16.1L365.7 192l116.6 0z'
@@ -18,6 +19,8 @@ interface Props {
   open: boolean
   onToggle: () => void
   onEdit: () => void
+  /** «Mostra il codice» (#38): compare solo se il volo ha un codice salvato. */
+  onCode?: () => void
   onDelete: () => void
 }
 
@@ -30,7 +33,7 @@ function postoDi(leg: FlightLeg, trip: Trip, people: string[]): string {
   return leg.seats?.trim() || '—'
 }
 
-export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete }: Props) {
+export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCode }: Props) {
   const r = riepilogoVolo(flight)
   const scalo = fasciaScali(r.scali)
   const people = flight.forTravelers?.length ? flight.forTravelers : trip.travelers.map((p) => p.id)
@@ -143,7 +146,7 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete }: Pr
               )
             })}
             {flight.bookingRef ? (
-              <div className="bc nobar">
+              <div className={cx('bc', !onCode && 'nobar')}>
                 <span className="lb">Prenotazione</span>
                 <span className="cd">{flight.bookingRef}</span>
               </div>
@@ -158,6 +161,11 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete }: Pr
               <Pulsante size="sm" color="secondary" iconLeading="pin" href={maps} target="_blank">
                 Apri il terminal in Maps
               </Pulsante>
+              {onCode ? (
+                <Pulsante size="sm" color="secondary" iconLeading="qr" onPress={onCode}>
+                  Mostra il codice
+                </Pulsante>
+              ) : null}
               <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
                 Modifica
               </Pulsante>

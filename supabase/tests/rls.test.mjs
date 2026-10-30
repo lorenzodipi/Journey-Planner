@@ -63,6 +63,8 @@ await runMigration('0021_voli_carta.sql')
 await runMigration('0021_voli_carta.sql') // si può rilanciare
 await runMigration('0022_trasporti_biglietto.sql')
 await runMigration('0022_trasporti_biglietto.sql') // si può rilanciare
+await runMigration('0023_ticket_codes.sql')
+await runMigration('0023_ticket_codes.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -384,6 +386,18 @@ await asUser(A)
   await asUser(C)
   check('0020 un non membro non vede i paesi', (await db.query(`select 1 from trip_countries where trip_id=$1`, [t8])).rows.length === 0)
   await throws('0020 un non membro non crea paesi', () => db.query(`insert into trip_countries (trip_id,name,timezone,start_date,end_date) values ($1,'Intruso','UTC','2026-12-01','2026-12-02')`, [t8]))
+  await asUser(A)
+}
+
+// codici dei biglietti (0023): RLS come le altre tabelle
+await asUser(A)
+{
+  const ok = (await db.query(`insert into ticket_codes (trip_id,kind,ref_id,file_path) values ($1,'transport',gen_random_uuid(),$2) returning id`, [t8, `${t8}/qr.png`])).rows[0].id
+  check('0023 il proprietario salva un codice', !!ok)
+  await throws('0023 tipo di voce sconosciuto rifiutato', () => db.query(`insert into ticket_codes (trip_id,kind,ref_id,file_path) values ($1,'altro',gen_random_uuid(),'x')`, [t8]))
+  await asUser(C)
+  check('0023 un non membro non vede i codici', (await db.query(`select 1 from ticket_codes where trip_id=$1`, [t8])).rows.length === 0)
+  await throws('0023 un non membro non salva codici', () => db.query(`insert into ticket_codes (trip_id,kind,ref_id,file_path) values ($1,'flight',gen_random_uuid(),'x')`, [t8]))
   await asUser(A)
 }
 

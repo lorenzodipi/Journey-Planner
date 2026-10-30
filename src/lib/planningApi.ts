@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Booking, ChecklistItem } from '../types'
+import type { Booking, ChecklistItem, TicketCode, TicketKind } from '../types'
 import { cacheBookingFile, removeBookingFile, uploadBookingFile } from './bookingFiles'
 import { client } from './db'
 import { bookingColumns, checklistColumns, type BookingInput, type ChecklistInput } from './planningData'
@@ -11,6 +11,8 @@ export function queryPlanning(db: SupabaseClient) {
   return Promise.all([
     db.from('checklist_items').select('*').is('deleted_at', null),
     db.from('bookings').select('*').is('deleted_at', null),
+    // prima della migrazione 0023 la tabella non esiste: l'app funziona lo stesso, senza codici
+    db.from('ticket_codes').select('*').then((r) => (r.error && /ticket_codes|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: [], error: null } : r)),
   ])
 }
 
@@ -84,4 +86,28 @@ export async function setBookingDeleted(id: string, deleted: boolean): Promise<v
   // il file resta nello Storage: l'eliminazione si può annullare
   const { error } = await client().from('bookings').update({ deleted_at: deleted ? now() : null }).eq('id', id)
   if (error) throw error
+}
+
+// ---------- codici dei biglietti (#38) ----------
+
+const MIGRATION_0023 = "Manca la migrazione 0023 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0023_ticket_codes.sql). Senza, i codici dei biglietti non si possono salvare."
+
+/** Salva (o sostituisce) l'immagine del codice di una voce per un passeggero; la copia resta sempre sul telefono. */
+export async function saveTicketCode(tripId: string, kind: TicketKind, refId: string, travelerId: string | null, file: File, old?: TicketCode): Promise<void> {
+  const db = client()
+  const filePath = await uploadBookingFile(tripId, file)
+  const row = { file_path: filePath }
+  const res = old ? await db.from('ticket_codes').update(row).eq('id', old.id) : await db.from('ticket_codes').insert({ trip_id: tripId, kind, ref_id: refId, traveler_id: travelerId, ...row })
+  if (res.error) {
+    await removeBookingFile(filePath).catch(() => undefined)
+    throw /ticket_codes|schema cache|does not exist/i.test(res.error.message) ? new Error(MIGRATION_0023) : res.error
+  }
+  await cacheBookingFile(filePath).catch(() => undefined)
+  if (old) await removeBookingFile(old.filePath).catch(() => undefined)
+}
+
+export async function removeTicketCode(code: TicketCode): Promise<void> {
+  const { error } = await client().from('ticket_codes').delete().eq('id', code.id)
+  if (error) throw error
+  await removeBookingFile(code.filePath).catch(() => undefined)
 }

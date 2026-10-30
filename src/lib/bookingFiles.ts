@@ -126,7 +126,10 @@ export async function syncOfflineFiles(trips: Trip[]): Promise<void> {
     const store = await getStore()
     if (!store) return
     const wanted = new Set<string>()
-    for (const t of trips) for (const b of t.bookings) if (b.keepOffline && b.filePath) wanted.add(b.filePath)
+    for (const t of trips) {
+      for (const b of t.bookings) if (b.keepOffline && b.filePath) wanted.add(b.filePath)
+      for (const c of t.ticketCodes ?? []) wanted.add(c.filePath) // i codici dei biglietti sono sempre sul telefono (#38)
+    }
     for (const path of wanted) {
       if (!(await store.has(path))) await cacheBookingFile(path).catch(() => undefined)
     }
@@ -139,6 +142,17 @@ export async function syncOfflineFiles(trips: Trip[]): Promise<void> {
 /** Dopo l'uscita dall'account i file non devono restare sul dispositivo. */
 export function clearBookingCache(): void {
   void getStore().then((s) => s?.clear()).catch(() => undefined)
+}
+
+/** Immagine del file come indirizzo da mostrare: dalla copia locale se c'è (anche in modalità aereo), altrimenti da un link temporaneo. */
+export async function imageUrl(path: string): Promise<string> {
+  const cached = await (await getStore())?.get(path)
+  if (cached) return URL.createObjectURL(cached)
+  if (!navigator.onLine) throw new Error('Sei offline e questo codice non è salvato sul telefono.')
+  const url = await signedUrl(path)
+  // si tiene anche una copia, così la prossima volta si apre senza rete
+  void cacheBookingFile(path).catch(() => undefined)
+  return url
 }
 
 /** Apre il file: dalla copia locale se c'è, altrimenti con un link temporaneo.
