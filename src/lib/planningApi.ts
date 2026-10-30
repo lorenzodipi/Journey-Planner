@@ -12,6 +12,8 @@ export function queryPlanning(db: SupabaseClient) {
     db.from('checklist_items').select('*').is('deleted_at', null),
     db.from('bookings').select('*').is('deleted_at', null),
     // prima della migrazione 0023 la tabella non esiste: l'app funziona lo stesso, senza codici
+    // prima della migrazione 0026 niente spunte personali: `data: null` dice all'app di usare le colonne di prima
+    db.from('checklist_checks').select('*').then((r) => (r.error && /checklist_checks|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: null, error: null } : r)),
     db.from('ticket_codes').select('*').then((r) => (r.error && /ticket_codes|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: [], error: null } : r)),
   ])
 }
@@ -110,4 +112,27 @@ export async function removeTicketCode(code: TicketCode): Promise<void> {
   const { error } = await client().from('ticket_codes').delete().eq('id', code.id)
   if (error) throw error
   await removeBookingFile(code.filePath).catch(() => undefined)
+}
+
+/** Copia le voci comuni e la mia lista privata di un altro viaggio: testo, descrizione, quantità, unità e categoria, senza spunte (LIST-009). */
+export async function duplicateChecklist(tripId: string, from: ChecklistItem[], existing: ChecklistItem[], ownerId: string | undefined, v2: boolean): Promise<void> {
+  const key = (i: ChecklistItem) => `${i.private ? 'p' : 'c'}:${(i.category ?? '').toLowerCase()}:${i.text.trim().toLowerCase()}`
+  const have = new Set(existing.map(key))
+  let pos = Math.max(0, ...existing.map((i) => i.position))
+  const rows = from
+    .filter((i) => !have.has(key(i)) && (!i.private || !!ownerId))
+    .map((i) => {
+      pos += 1000
+      return {
+        trip_id: tripId,
+        kind: i.kind,
+        text: i.text,
+        position: pos,
+        ...(i.quantity ? { quantity: i.quantity } : {}),
+        ...(v2 ? { description: i.description ?? null, unit: i.unit ?? null, category: i.category ?? null, owner_id: i.private ? ownerId : null } : {}),
+      }
+    })
+  if (rows.length === 0) return
+  const { error } = await client().from('checklist_items').insert(rows)
+  if (error) throw error
 }

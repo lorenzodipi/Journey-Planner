@@ -91,3 +91,53 @@ export function templateToAdd(existing: ChecklistItem[]): { kind: ChecklistKind;
   }
   return out
 }
+
+// ---------- checklist personale (#41, FRD LIST-001…012) ----------
+
+export const BASE_CATEGORIES = ['Documenti', 'Valigia', 'Salute', 'Tecnologia', 'Altro'] as const
+
+/** Le categorie di prima restano: Documenti → docs, Valigia → packing, il resto → todo. */
+export function kindOfCategory(category: string): ChecklistKind {
+  const k = category.trim().toLowerCase()
+  return k === 'documenti' ? 'docs' : k === 'valigia' ? 'packing' : 'todo'
+}
+
+export const categoryOf = (i: Pick<ChecklistItem, 'category' | 'kind'>): string => i.category?.trim() || (i.kind === 'docs' ? 'Documenti' : i.kind === 'packing' ? 'Valigia' : 'Altro')
+
+/** Le cinque predefinite, poi quelle personalizzate che compaiono nelle voci (in ordine alfabetico). */
+export function categoriesFor(items: Pick<ChecklistItem, 'category' | 'kind'>[]): string[] {
+  const base = BASE_CATEGORIES as readonly string[]
+  const custom = [...new Set(items.map(categoryOf))].filter((c) => !base.some((b) => b.toLowerCase() === c.toLowerCase()))
+  return [...base, ...custom.sort((a, b) => a.localeCompare(b, 'it'))]
+}
+
+export type ListaChecklist = 'all' | 'mine'
+
+/** «Tutti» = lista comune; «Solo mie» = la mia lista privata. */
+export const inLista = (i: Pick<ChecklistItem, 'private'>, lista: ListaChecklist) => (lista === 'mine' ? !!i.private : !i.private)
+
+export interface SezioneChecklist {
+  category: string
+  items: ChecklistItem[]
+  done: number
+}
+
+/** Sezioni per categoria (predefinite nell'ordine, poi le personalizzate), con quante voci ho già a posto. */
+export function sezioni(items: ChecklistItem[]): SezioneChecklist[] {
+  return categoriesFor(items)
+    .map((category) => {
+      const list = items.filter((i) => categoryOf(i).toLowerCase() === category.toLowerCase()).sort((a, b) => a.position - b.position)
+      return { category, items: list, done: list.filter((i) => i.done).length }
+    })
+    .filter((s) => s.items.length > 0)
+}
+
+/** «Checklist · 9 di 23»: le mie spunte sulle voci comuni più le voci della mia lista privata. */
+export function mioAvanzamento(items: Pick<ChecklistItem, 'done'>[]): { done: number; total: number } {
+  return progress(items)
+}
+
+/** «2 di 4»: quanti viaggiatori hanno spuntato una voce comune (io compreso). */
+export function spunteDi(i: Pick<ChecklistItem, 'done' | 'others'>, viaggiatori: number): { done: number; total: number } {
+  return { done: (i.done ? 1 : 0) + (i.others ?? []).filter((o) => o.done).length, total: viaggiatori }
+}

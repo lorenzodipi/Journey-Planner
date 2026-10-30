@@ -10,7 +10,7 @@ import { BudgetPage } from './pages/spese/BudgetPage'
 import { Dettaglio } from './pages/spese/Dettaglio'
 import { SpesePage } from './pages/spese/SpesePage'
 import { VoliPage } from './pages/voli/VoliPage'
-import { Checklist } from './pages/Checklist'
+import { ChecklistPage } from './pages/checklist/ChecklistPage'
 import { PrenotazioniPage } from './pages/prenotazioni/PrenotazioniPage'
 import { Giorni } from './pages/Giorni'
 import { Giorno } from './pages/Giorno'
@@ -49,7 +49,6 @@ function legacy<P extends object>(Page: ComponentType<P>) {
   }
 }
 const OldAltro = legacy(Altro)
-const OldChecklist = legacy(Checklist)
 const OldImpostazioni = legacy(Impostazioni)
 const OldAccount = legacy(Account)
 
@@ -121,7 +120,7 @@ export function App() {
           <Route path="/altro/alloggi" component={AlloggiPage} />
           <Route path="/altro/voli" component={VoliPage} />
           <Route path="/altro/trasporti" component={TrasportiPage} />
-          <Route path="/altro/checklist" component={OldChecklist} />
+          <Route path="/altro/checklist" component={ChecklistPage} />
           <Route path="/altro/prenotazioni" component={PrenotazioniPage} />
           <Route path="/altro/impostazioni" component={OldImpostazioni} />
           <Route path="/altro/account" component={OldAccount} />

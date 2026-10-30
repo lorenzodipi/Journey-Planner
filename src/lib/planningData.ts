@@ -16,6 +16,19 @@ export interface ChecklistRow {
   // dalla migrazione 0016
   url?: string | null
   position: number
+  // dalla migrazione 0026
+  owner_id?: string | null
+  description?: string | null
+  unit?: string | null
+  category?: string | null
+}
+
+export interface CheckRow {
+  item_id: string
+  trip_id: string
+  traveler_id: string
+  done: boolean
+  quantity_done: number | null
 }
 
 export interface BookingRow {
@@ -44,21 +57,44 @@ export interface BookingRow {
   place?: string | null
 }
 
-export function mapChecklist(rows: ChecklistRow[], tripId: string): ChecklistItem[] {
+const BASE_CATEGORY: Record<ChecklistKind, string> = { docs: 'Documenti', packing: 'Valigia', todo: 'Altro' }
+
+/**
+ * Voci visibili a me. Con la migrazione 0026 (`checks` presente) la spunta di una voce comune è la MIA riga di
+ * `checklist_checks` e le altre righe sono le spunte degli altri; senza, valgono `done` / `quantity_done` della voce.
+ */
+export function mapChecklist(rows: ChecklistRow[], tripId: string, checks?: CheckRow[] | null, myTravelerId?: string): ChecklistItem[] {
+  const byItem = new Map<string, CheckRow[]>()
+  for (const c of checks ?? []) byItem.set(c.item_id, [...(byItem.get(c.item_id) ?? []), c])
   return rows
     .filter((r) => r.trip_id === tripId)
-    .map((r) => ({
-      id: r.id,
-      kind: r.kind,
-      text: r.text,
-      done: r.done,
-      travelerId: r.traveler_id ?? undefined,
-      dueDate: r.due_date ?? undefined,
-      quantity: r.quantity && r.quantity > 1 ? r.quantity : undefined,
-      quantityDone: r.quantity && r.quantity > 1 && r.quantity_done && r.quantity_done > 0 && r.quantity_done < r.quantity ? r.quantity_done : undefined,
-      url: r.url?.trim() || undefined,
-      position: r.position,
-    }))
+    .map((r) => {
+      const quantity = r.quantity && r.quantity > 1 ? r.quantity : undefined
+      const priv = !!r.owner_id
+      const list = byItem.get(r.id) ?? []
+      const mine = checks && !priv && myTravelerId ? list.find((c) => c.traveler_id === myTravelerId) : undefined
+      const useChecks = !!checks && !priv && !!myTravelerId
+      const done = useChecks ? !!mine?.done : r.done
+      const qd = useChecks ? (mine?.quantity_done ?? undefined) : (r.quantity_done ?? undefined)
+      const others = checks && !priv ? list.filter((c) => c.traveler_id !== myTravelerId).map((c) => ({ travelerId: c.traveler_id, done: c.done, ...(c.quantity_done ? { quantityDone: c.quantity_done } : {}) })) : undefined
+      return {
+        id: r.id,
+        kind: r.kind,
+        text: r.text,
+        done,
+        travelerId: r.traveler_id ?? undefined,
+        dueDate: r.due_date ?? undefined,
+        quantity,
+        quantityDone: quantity && qd && qd > 0 && qd < quantity ? qd : undefined,
+        url: r.url?.trim() || undefined,
+        position: r.position,
+        description: r.description?.trim() || undefined,
+        unit: r.unit?.trim() || undefined,
+        category: r.category?.trim() || BASE_CATEGORY[r.kind],
+        ...(priv ? { private: true } : {}),
+        ...(others ? { others } : {}),
+      } satisfies ChecklistItem
+    })
     .sort((a, b) => a.position - b.position)
 }
 
@@ -112,6 +148,12 @@ export interface ChecklistInput {
   quantity?: number
   /** Link facoltativo; vuoto = nessuno. */
   url?: string
+  /** Con la migrazione 0026: descrizione, unità, categoria e proprietario (vuoto = voce comune). */
+  v2?: boolean
+  description?: string
+  unit?: string
+  category?: string
+  ownerId?: string
 }
 
 /** Rende utilizzabile un link scritto a mano: aggiunge https:// se manca, vuoto se non è un indirizzo web. */
@@ -142,6 +184,8 @@ export function checklistColumns(i: ChecklistInput, hadQuantity = false, hadUrl 
     ...(qty !== null || hadQuantity ? { quantity: qty } : {}),
     // il link si scrive solo se c'è (o per toglierlo): senza la colonna le voci semplici si salvano come prima
     ...(url || hadUrl ? { url: url || null } : {}),
+    // colonne della migrazione 0026: solo se il database le ha
+    ...(i.v2 ? { description: i.description?.trim() || null, unit: i.unit?.trim() || null, category: i.category?.trim() || null, owner_id: i.ownerId ?? null } : {}),
   }
 }
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ChecklistItem } from '../types'
 import { checklistEntry } from './outboxLocal'
 import { checklistColumns, mapChecklist } from './planningData'
+import * as ck from './checklist'
 import { countChange, doneCount, parseQuantity, progress, TEMPLATE, templateToAdd, visibleItems } from './checklist'
 
 const item = (over: Partial<ChecklistItem>): ChecklistItem => ({ id: 'x', kind: 'todo', text: 't', done: false, position: 1000, ...over })
@@ -153,5 +154,31 @@ describe('link delle voci', () => {
     expect('url' in checklistColumns(base)).toBe(false)
     expect(checklistColumns({ ...base, url: 'a.it' }).url).toBe('https://a.it/')
     expect(checklistColumns(base, false, true).url).toBeNull()
+  })
+})
+
+describe('checklist personale (#41)', () => {
+  const mk = (id: string, category: string | undefined, over: Partial<ChecklistItem> = {}): ChecklistItem => ({ id, kind: 'todo', text: id, done: false, position: 1000, category, ...over })
+  it('categorie: le cinque predefinite, poi le personalizzate in uso', () => {
+    expect(ck.categoriesFor([mk('a', 'Valigia'), mk('b', 'Regali'), mk('c', 'viaggio in auto'), mk('d', undefined)])).toEqual(['Documenti', 'Valigia', 'Salute', 'Tecnologia', 'Altro', 'Regali', 'viaggio in auto'])
+    expect(ck.kindOfCategory('Documenti')).toBe('docs')
+    expect(ck.kindOfCategory('valigia')).toBe('packing')
+    expect(ck.kindOfCategory('Regali')).toBe('todo')
+  })
+  it('le voci di prima prendono la categoria dal tipo', () => {
+    expect(ck.categoryOf({ kind: 'docs' })).toBe('Documenti')
+    expect(ck.categoryOf({ kind: 'packing' })).toBe('Valigia')
+    expect(ck.categoryOf({ kind: 'todo' })).toBe('Altro')
+  })
+  it('Tutti = comuni, Solo mie = private; sezioni con il conteggio delle mie spunte', () => {
+    const items = [mk('a', 'Valigia', { done: true }), mk('b', 'Valigia'), mk('c', 'Salute', { private: true })]
+    expect(items.filter((i) => ck.inLista(i, 'all')).map((i) => i.id)).toEqual(['a', 'b'])
+    expect(items.filter((i) => ck.inLista(i, 'mine')).map((i) => i.id)).toEqual(['c'])
+    expect(ck.sezioni(items).map((s) => [s.category, s.items.length, s.done])).toEqual([['Valigia', 2, 1], ['Salute', 1, 0]])
+    expect(ck.mioAvanzamento(items)).toEqual({ done: 1, total: 3 })
+  })
+  it('«2 di 4»: la mia spunta più quelle degli altri', () => {
+    expect(ck.spunteDi(mk('a', 'Valigia', { done: true, others: [{ travelerId: 'x', done: true }, { travelerId: 'y', done: false }] }), 4)).toEqual({ done: 2, total: 4 })
+    expect(ck.spunteDi(mk('a', 'Valigia'), 2)).toEqual({ done: 0, total: 2 })
   })
 })

@@ -7,7 +7,7 @@ import { queryLogistics } from './logisticsApi'
 import { queryMoney } from './moneyApi'
 import { queryPlanning } from './planningApi'
 import { mapBookings, mapChecklist, mapTicketCodes } from './planningData'
-import type { BookingRow, ChecklistRow, TicketCodeRow } from './planningData'
+import type { BookingRow, CheckRow, ChecklistRow, TicketCodeRow } from './planningData'
 import { mapBudget, mapExpenses } from './moneyData'
 import type { BudgetItemRow, BudgetShareRow, ExpenseRow, ExpenseShareRow } from './moneyData'
 import { mapFlights, mapStays, mapTransports } from './logistics'
@@ -159,6 +159,7 @@ interface Extras {
   checklist: ChecklistRow[]
   bookings: BookingRow[]
   ticketCodes?: TicketCodeRow[]
+  checks?: CheckRow[] | null
 }
 
 interface TripRow {
@@ -264,6 +265,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
       items: itemsByDay.get(d.id) ?? [],
     }))
 
+  const myTravelerId = myId ? travelers.find((t) => t.userId === myId)?.id : undefined
   const fxRates = Object.keys(cleanRates(row.fx_rates)).length > 0 ? cleanRates(row.fx_rates) : undefined
   const countries: TripCountry[] | undefined =
     row.trip_countries && row.trip_countries.length > 0
@@ -305,7 +307,9 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     flights: mapFlights(extras.flights, extras.legs, row.id),
     budget: mapBudget(extras.budgetItems, extras.budgetShares, row.id, expenseCategoryLabel),
     expenses: mapExpenses(extras.expenses, extras.expenseShares, row.id, expenseCategoryLabel),
-    checklist: mapChecklist(extras.checklist, row.id),
+    checklist: mapChecklist(extras.checklist, row.id, extras.checks, myTravelerId),
+    ...(extras.checks ? { checklistV2: true } : {}),
+    ...(myTravelerId ? { myTravelerId } : {}),
     bookings: mapBookings(extras.bookings, row.id),
     ...(mapTicketCodes(extras.ticketCodes, row.id) ? { ticketCodes: mapTicketCodes(extras.ticketCodes, row.id) } : {}),
     fxRate: row.fx_rate == null ? undefined : Number(row.fx_rate),
@@ -349,6 +353,7 @@ export function scopeOfTable(table: string): Scope | null {
     case 'checklist_items':
     case 'bookings':
     case 'ticket_codes':
+    case 'checklist_checks':
       return 'planning'
     default:
       return null
@@ -407,7 +412,7 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
   for (const r of results) if (r?.error) throw r.error
   const [stays, transports, flights, legs] = logisticsR ?? []
   const [budgetItems, budgetShares, expenses, expenseShares] = moneyR ?? []
-  const [checklist, bookings, ticketCodes] = planningR ?? []
+  const [checklist, bookings, checks, ticketCodes] = planningR ?? []
   const old = prev?.extras
   const extras: Extras = {
     places: keep(places, old?.places as PlaceRow[]),
@@ -425,6 +430,7 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
     checklist: keep(checklist, old?.checklist as ChecklistRow[]),
     bookings: keep(bookings, old?.bookings as BookingRow[]),
     ticketCodes: keep(ticketCodes, old?.ticketCodes as TicketCodeRow[]),
+    checks: keep(checks, old?.checks as CheckRow[] | null),
   }
   const rows = keep(trips, prev?.trips as TripRow[])
   // paesi dei viaggi (0020): senza la tabella l'app usa il modello di prima

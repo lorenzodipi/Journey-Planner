@@ -136,6 +136,8 @@ interface TripsValue {
   /** Più voci insieme: una sola richiesta. */
   setChecklistManyDeleted: (ids: string[], deleted: boolean) => Result
   addChecklistTemplate: (tripId: string) => Result
+  /** Copia le voci comuni e la mia lista privata di un altro viaggio, senza spunte (LIST-009). */
+  duplicateChecklist: (tripId: string, fromTripId: string) => Result
   createBooking: (tripId: string, input: BookingInput) => Result
   updateBooking: (tripId: string, booking: Booking, input: BookingInput) => Result
   setBookingDeleted: (id: string, deleted: boolean) => Result
@@ -164,6 +166,17 @@ const WATCHED_TABLES = [
   'checklist_items',
   'bookings',
 ] as const
+
+/**
+ * Scritture per la spunta o i pezzi di una voce. Voce comune con la migrazione 0026: la MIA riga di `checklist_checks`
+ * (nessuno spunta per conto di altri); altrimenti le colonne della voce, come prima.
+ */
+function checkOps(trip: Trip, item: ChecklistItem, check: { done: boolean; quantity_done: number | null | undefined }, legacy: Record<string, unknown>): Op[] {
+  if (trip.checklistV2 && trip.myTravelerId && !item.private) {
+    return [{ k: 'upsert', table: 'checklist_checks', onConflict: 'item_id,traveler_id', row: { item_id: item.id, trip_id: trip.id, traveler_id: trip.myTravelerId, done: check.done, quantity_done: check.quantity_done ?? null } }]
+  }
+  return [{ k: 'update', table: 'checklist_items', id: item.id, patch: legacy }]
+}
 
 const DEMO_MESSAGE = 'Anteprima demo: collega Supabase per salvare le modifiche.'
 const demoResult: Result = Promise.resolve(DEMO_MESSAGE)
@@ -614,13 +627,24 @@ export function TripProvider({ children }: { children: ReactNode }) {
       const e = checklistEntry(trip.id, input, existing.position, existing)
       return queued(e.label, e.ops, e.local)
     },
-    setChecklistDone: (id, done) =>
-      queued('Checklist', [{ k: 'update', table: 'checklist_items', id, patch: { done } }], { t: 'checklist.done', id, done }),
+    setChecklistDone: (id, done) => {
+      const trip = trips.find((x) => x.checklist.some((c) => c.id === id))
+      const item = trip?.checklist.find((c) => c.id === id)
+      const ops: Op[] = trip && item ? checkOps(trip, item, { done, quantity_done: done ? ((item.quantity ?? 1) > 1 ? item.quantity : null) : null }, { done }) : [{ k: 'update', table: 'checklist_items', id, patch: { done } }]
+      return queued('Checklist', ops, { t: 'checklist.done', id, done })
+    },
     setChecklistCount: (id, count) => {
-      const item = trips.flatMap((x) => x.checklist).find((c) => c.id === id)
-      if (!item) return Promise.resolve('Voce non trovata.')
+      const trip = trips.find((x) => x.checklist.some((c) => c.id === id))
+      const item = trip?.checklist.find((c) => c.id === id)
+      if (!trip || !item) return Promise.resolve('Voce non trovata.')
       const c = countChange(item, count)
-      return queued('Checklist', [{ k: 'update', table: 'checklist_items', id, patch: c.patch }], { t: 'checklist.count', id, count: c.count, done: c.done })
+      return queued('Checklist', checkOps(trip, item, { done: c.done, quantity_done: c.patch.quantity_done }, c.patch), { t: 'checklist.count', id, count: c.count, done: c.done })
+    },
+    duplicateChecklist: (tripId, fromTripId) => {
+      const from = trips.find((x) => x.id === fromTripId)
+      const to = trips.find((x) => x.id === tripId)
+      if (!from || !to) return Promise.resolve('Viaggio non trovato.')
+      return run(() => planning.duplicateChecklist(tripId, from.checklist, to.checklist, to.checklistV2 ? auth.session?.user.id : undefined, !!to.checklistV2), ['planning'])
     },
     setChecklistDeleted: (id, deleted) =>
       queued('Checklist', [{ k: 'update', table: 'checklist_items', id, patch: deletedPatch(deleted) }], { t: 'checklist.deleted', id, deleted }),

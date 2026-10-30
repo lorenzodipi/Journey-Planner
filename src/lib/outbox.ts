@@ -6,7 +6,7 @@ import type { Category, ChecklistItem, Expense, PlaceStatus, ItemStatus } from '
 // upsert): se un invio va a metà e riparte, non nascono duplicati. Vale l'ultima scrittura.
 
 export type Op =
-  | { k: 'upsert'; table: string; row: Record<string, unknown> }
+  | { k: 'upsert'; table: string; row: Record<string, unknown>; /** colonne di conflitto, se non è `id` */ onConflict?: string }
   | { k: 'update'; table: string; id: string; patch: Record<string, unknown> }
   /** Stessa modifica su più righe, in una sola richiesta (es. eliminare 100 voci selezionate). */
   | { k: 'updateMany'; table: string; ids: string[]; patch: Record<string, unknown> }

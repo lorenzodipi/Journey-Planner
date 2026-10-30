@@ -11,7 +11,7 @@ export async function execOp(op: Op): Promise<void> {
   const fail = (error: { message: string; code?: string }, status: number) => Object.assign(new Error(error.message), { code: error.code, status })
 
   if (op.k === 'upsert') {
-    const { error, status } = await db.from(op.table).upsert(op.row, { onConflict: 'id' })
+    const { error, status } = await db.from(op.table).upsert(op.row, { onConflict: op.onConflict ?? 'id' })
     if (error) throw fail(error, status)
     return
   }

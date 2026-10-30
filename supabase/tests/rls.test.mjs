@@ -69,6 +69,8 @@ await runMigration('0024_alloggi_biglietto.sql')
 await runMigration('0024_alloggi_biglietto.sql') // si può rilanciare
 await runMigration('0025_prenotazioni_tipi.sql')
 await runMigration('0025_prenotazioni_tipi.sql') // si può rilanciare
+await runMigration('0026_checklist_personale.sql')
+await runMigration('0026_checklist_personale.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -402,6 +404,33 @@ await asUser(A)
   await asUser(C)
   check('0023 un non membro non vede i codici', (await db.query(`select 1 from ticket_codes where trip_id=$1`, [t8])).rows.length === 0)
   await throws('0023 un non membro non salva codici', () => db.query(`insert into ticket_codes (trip_id,kind,ref_id,file_path) values ($1,'flight',gen_random_uuid(),'x')`, [t8]))
+  await asUser(A)
+}
+
+// checklist personale (0026): liste private, spunte personali, nessuna spunta per conto di altri
+await asUser(null, 'postgres')
+{
+  const tc = (await db.query(`insert into trips (title, owner_id) values ('Checklist', $1) returning id`, [A])).rows[0].id
+  await db.query(`insert into trip_members (trip_id,user_id,role) values ($1,$2,'editor') on conflict do nothing`, [tc, B])
+  const ta = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'Anna',$2) returning id`, [tc, A])).rows[0].id
+  const tb = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'Bruno',$2) returning id`, [tc, B])).rows[0].id
+  const common = (await db.query(`insert into checklist_items (trip_id,text) values ($1,'Passaporti') returning id`, [tc])).rows[0].id
+  await asUser(A)
+  const priv = (await db.query(`insert into checklist_items (trip_id,text,owner_id) values ($1,'Segreto di Anna',$2) returning id`, [tc, A])).rows[0].id
+  check('0026 A vede la sua voce privata', (await db.query(`select 1 from checklist_items where id=$1`, [priv])).rows.length === 1)
+  await db.query(`insert into checklist_checks (item_id,trip_id,traveler_id,done) values ($1,$2,$3,true)`, [priv, tc, ta])
+  await asUser(B)
+  check('0026 B non vede la voce privata di A', (await db.query(`select 1 from checklist_items where id=$1`, [priv])).rows.length === 0)
+  check('0026 B non vede le spunte della voce privata di A', (await db.query(`select 1 from checklist_checks where item_id=$1`, [priv])).rows.length === 0)
+  check('0026 B vede la voce comune', (await db.query(`select 1 from checklist_items where id=$1`, [common])).rows.length === 1)
+  await throws('0026 B non crea voci private a nome di A', () => db.query(`insert into checklist_items (trip_id,text,owner_id) values ($1,'Falsa',$2)`, [tc, A]))
+  await db.query(`insert into checklist_checks (item_id,trip_id,traveler_id,done) values ($1,$2,$3,true)`, [common, tc, tb])
+  check('0026 B spunta la voce comune per sé', (await db.query(`select 1 from checklist_checks where item_id=$1 and traveler_id=$2`, [common, tb])).rows.length === 1)
+  await throws('0026 B non spunta per conto di A', () => db.query(`insert into checklist_checks (item_id,trip_id,traveler_id,done) values ($1,$2,$3,true)`, [common, tc, ta]))
+  await asUser(A)
+  check('0026 A vede la spunta di B sulla voce comune', (await db.query(`select 1 from checklist_checks where item_id=$1 and traveler_id=$2`, [common, tb])).rows.length === 1)
+  await asUser(C)
+  check('0026 un non membro non vede voci né spunte', (await db.query(`select 1 from checklist_items where trip_id=$1`, [tc])).rows.length === 0 && (await db.query(`select 1 from checklist_checks where trip_id=$1`, [tc])).rows.length === 0)
   await asUser(A)
 }
 

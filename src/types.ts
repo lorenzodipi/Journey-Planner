@@ -252,6 +252,15 @@ export interface ChecklistItem {
   /** Link facoltativo (es. la pagina di un prodotto da comprare). */
   url?: string
   position: number
+  /** dalla migrazione 0026 */
+  description?: string
+  unit?: string
+  /** «Documenti», «Valigia», «Salute», «Tecnologia», «Altro» o una categoria personalizzata */
+  category?: string
+  /** voce della mia lista privata (la vedo solo io) */
+  private?: boolean
+  /** spunte degli altri viaggiatori sulle voci comuni; `done` / `quantityDone` sono sempre le MIE */
+  others?: { travelerId: string; done: boolean; quantityDone?: number }[]
 }
 
 export type BookingType = 'flight' | 'hotel' | 'train' | 'ticket' | 'insurance' | 'esim' | 'other' | 'restaurant' | 'rental' | 'activity'
@@ -338,6 +347,10 @@ export interface Trip {
   checklist: ChecklistItem[]
   bookings: Booking[]
   ticketCodes?: TicketCode[]
+  /** vero se il database ha la migrazione 0026 (spunte personali e liste private) */
+  checklistV2?: boolean
+  /** il mio viaggiatore (collegato al mio account) */
+  myTravelerId?: string
   /** Unità di valuta base per 1 unità della valuta locale (es. 0,0056 EUR per 1 JPY). */
   fxRate?: number
   /** Cambi delle valute extra del viaggio: unità di valuta base per 1 unità di ciascuna (es. { KRW: 0.00065 }). */

@@ -84,7 +84,7 @@ function useLeMieCose(trip: Trip, me: string | undefined) {
   const mine = trip.checklist.filter((c) => !c.travelerId || c.travelerId === me).sort((a, b) => a.position - b.position)
   const done = mine.filter((c) => c.done).length
   const todo = mine.filter((c) => !c.done)
-  const items: VoceHome[] = todo.slice(0, 4).map((c) => ({ id: c.id, text: c.text, done: c.done, tag: c.travelerId ? 'Solo io' : 'Tutti', tagAll: !c.travelerId }))
+  const items: VoceHome[] = todo.slice(0, 4).map((c) => ({ id: c.id, text: c.text, done: c.done, tag: c.private || c.travelerId ? 'Solo io' : 'Tutti', tagAll: !c.private && !c.travelerId }))
   return (
     <ChecklistHome
       done={done}

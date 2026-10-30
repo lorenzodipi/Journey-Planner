@@ -141,6 +141,14 @@ export function checklistEntry(
     quantityDone: quantity && count > 0 && count < quantity ? count : undefined,
     url: cols.url ?? undefined,
     position: existing?.position ?? position,
+    ...(input.v2
+      ? {
+          description: input.description?.trim() || undefined,
+          unit: input.unit?.trim() || undefined,
+          category: input.category?.trim() || undefined,
+          ...(input.ownerId ? { private: true } : { others: existing?.others ?? [] }),
+        }
+      : {}),
   }
   // la colonna dei pezzi si scrive solo per le voci con quantità (o per azzerarla)
   const extra = quantity ? { quantity_done: count, done } : hadQuantity ? { quantity_done: null, done: item.done } : {}
