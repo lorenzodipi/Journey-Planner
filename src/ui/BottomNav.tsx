@@ -4,8 +4,8 @@ import { Ic } from './Sprite'
 const tabs = [
   { href: '/', label: 'Oggi', icon: 'i-nav-today' },
   { href: '/giorni', label: 'Giorni', icon: 'i-nav-calendar' },
-  { href: '/mappa', label: 'Mappa', icon: 'i-nav-map' },
   { href: '/luoghi', label: 'Luoghi', icon: 'i-nav-pin' },
+  { href: '/spese', label: 'Spese', icon: 'i-sez-budget' },
   { href: '/altro', label: 'Altro', icon: 'i-nav-sections' },
 ]
 

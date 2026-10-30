@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import '../fw-spese.css'
 import { doneCount, progress, visibleItems } from '../lib/checklist'
 import { daysBetween, formatShort } from '../lib/dates'
 import { tripToday } from '../lib/today'

@@ -1,0 +1,6 @@
+/* CSS delle schermate prima del redesign Faraway, valido solo dentro .legacy: sparisce quando tutte le pagine sono rifatte (#26). */
+:where(.legacy) .fld .fld-act{background:none;border:0;padding:8px 0 8px 8px;font:600 14px/20px var(--font-sans);letter-spacing:0;color:var(--azzurro-ink);flex-shrink:0}
+:where(.legacy) .btn[disabled]{opacity:.5}
+:where(.legacy) .chip.dash{background:none;box-shadow:inset 0 0 0 1.5px var(--border-strong)}
+:where(.legacy) .fld .av{flex-shrink:0}
+:where(.legacy) .fld.person{gap:12px;justify-content:flex-start}

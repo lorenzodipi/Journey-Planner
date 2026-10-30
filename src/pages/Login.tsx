@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useAuth } from '../lib/auth'
 import { ART } from '../ui/art'
 import { FormError } from '../ui/Field'
-import '../fw-altro.css'
 
 export function Login() {
   const auth = useAuth()

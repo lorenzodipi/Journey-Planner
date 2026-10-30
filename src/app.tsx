@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect } from 'react'
-import { Route, Router, Switch, useLocation } from 'wouter'
+import { Redirect, Route, Router, Switch, useLocation } from 'wouter'
+import type { ComponentType } from 'react'
 import { useHashLocation } from 'wouter/use-hash-location'
 import { useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
@@ -14,7 +15,6 @@ import { Account } from './pages/Account'
 import { Impostazioni } from './pages/Impostazioni'
 import { Login } from './pages/Login'
 import { Luoghi } from './pages/Luoghi'
-import { Mappa } from './pages/Mappa'
 import { Oggi } from './pages/Oggi'
 import { Trasporti } from './pages/Trasporti'
 import { PrimoViaggio } from './pages/PrimoViaggio'
@@ -25,6 +25,30 @@ import { OutboxBanner } from './ui/OutboxBanner'
 import { ToastHost } from './ui/ToastHost'
 import { EmptyState } from './ui/PageHeader'
 import { Sprite } from './ui/Sprite'
+
+/** Pagine non ancora rifatte col design system Faraway: CSS di prima e barra di prima (#26). */
+function legacy<P extends object>(Page: ComponentType<P>) {
+  return function Legacy(props: P) {
+    return (
+      <div className="legacy">
+        <Page {...props} />
+        <BottomNav />
+      </div>
+    )
+  }
+}
+const OldOggi = legacy(Oggi)
+const OldGiorno = legacy(Giorno)
+const OldLuoghi = legacy(Luoghi)
+const OldBudget = legacy(Budget)
+const OldSpese = legacy(Spese)
+const OldAltro = legacy(Altro)
+const OldAlloggi = legacy(Alloggi)
+const OldTrasporti = legacy(Trasporti)
+const OldChecklist = legacy(Checklist)
+const OldPrenotazioni = legacy(Prenotazioni)
+const OldImpostazioni = legacy(Impostazioni)
+const OldAccount = legacy(Account)
 
 /** Ogni cambio di pagina riparte dall'alto (altrimenti resta la posizione della pagina precedente). */
 function ScrollToTop() {
@@ -94,28 +118,35 @@ export function App() {
         )}
         <OutboxBanner />
         <Switch>
-          <Route path="/" component={Oggi} />
+          <Route path="/" component={OldOggi} />
           <Route path="/giorni" component={Giorni} />
-          <Route path="/giorni/:id" component={Giorno} />
-          <Route path="/mappa" component={Mappa} />
-          <Route path="/luoghi" component={Luoghi} />
-          <Route path="/altro" component={Altro} />
-          <Route path="/altro/alloggi" component={Alloggi} />
-          <Route path="/altro/trasporti" component={Trasporti} />
-          <Route path="/altro/budget" component={Budget} />
-          <Route path="/altro/spese" component={Spese} />
-          <Route path="/altro/checklist" component={Checklist} />
-          <Route path="/altro/prenotazioni" component={Prenotazioni} />
-          <Route path="/altro/impostazioni" component={Impostazioni} />
-          <Route path="/altro/account" component={Account} />
+          <Route path="/giorni/:id" component={OldGiorno} />
+          <Route path="/luoghi" component={OldLuoghi} />
+          <Route path="/mappa">
+            <Redirect to="/luoghi?vista=mappa" replace />
+          </Route>
+          <Route path="/spese" component={OldBudget} />
+          <Route path="/spese/dettaglio" component={OldSpese} />
+          <Route path="/altro/budget">
+            <Redirect to="/spese" replace />
+          </Route>
+          <Route path="/altro/spese">
+            <Redirect to="/spese/dettaglio" replace />
+          </Route>
+          <Route path="/altro" component={OldAltro} />
+          <Route path="/altro/alloggi" component={OldAlloggi} />
+          <Route path="/altro/trasporti" component={OldTrasporti} />
+          <Route path="/altro/checklist" component={OldChecklist} />
+          <Route path="/altro/prenotazioni" component={OldPrenotazioni} />
+          <Route path="/altro/impostazioni" component={OldImpostazioni} />
+          <Route path="/altro/account" component={OldAccount} />
           <Route>
-            <main className="screen">
+            <main className="screen legacy">
               <EmptyState title="Pagina non trovata" text="Torna alla scheda Oggi dalla barra in basso." />
             </main>
           </Route>
         </Switch>
       </div>
-      <BottomNav />
       <PullToRefresh />
       <ToastHost />
     </Router>

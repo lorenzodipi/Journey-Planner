@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'wouter'
-import '../fw-spese.css'
 import { budgetLines, expenseBase, fxOf, involvesTraveler, logisticsLines, summarizeLines, type Line } from '../lib/budget'
 import { formatDay } from '../lib/dates'
 import { dateInZone } from '../lib/flights'

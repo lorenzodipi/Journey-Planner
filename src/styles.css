@@ -1,7 +1,13 @@
 @import "tailwindcss";
 
 @import "./fonts/fonts.css";
-@import "./faraway.css";
+@import "./legacy/faraway.css";
+@import "./legacy/fw-altro.css";
+@import "./legacy/fw-giorni.css";
+@import "./legacy/fw-luoghi.css";
+@import "./legacy/fw-spese.css";
+@import "./faraway/faraway.css";
+@import "./faraway/app.css";
 
 /* ---------------------------------------------------------------------------
    Design token: «Faraway Azzurro» (Design System v3), chiaro e scuro.

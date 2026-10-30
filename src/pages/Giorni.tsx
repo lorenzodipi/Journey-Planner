@@ -1,202 +1,135 @@
+// Giorni (mock Fa-08, issue #31): riga meteo per città, gruppi per città/viaggio/rientro,
+// calendarietti del componente SelettoreGiorni (passato grigio, oggi, futuro, libero).
 import { useMemo, useState } from 'react'
-import '../fw-giorni.css'
-import { Link } from 'wouter'
+import { useLocation } from 'wouter'
+import { groupDays, type DayCell } from '../lib/dayGroups'
 import { parseYmd } from '../lib/dates'
-import { formatDuration, totalDuration } from '../lib/duration'
-import { mapsLinkFor } from '../lib/mapsUrl'
-import { eventsForDay, tripToday } from '../lib/today'
+import { tripToday } from '../lib/today'
 import { useTrip } from '../state/trip'
-import type { Day, Trip } from '../types'
-import { ART } from '../ui/art'
-import { CloseG, SearchG } from '../ui/glyphs'
-import { MapsPill } from '../ui/MapsPill'
-import { EmptyState, PageHeader } from '../ui/PageHeader'
+import { nowWeather, tripCities, useCityForecasts } from '../state/cityForecast'
 import { Ic } from '../ui/Sprite'
+import { PulsanteIcona } from '../faraway/base'
+import { cx } from '../faraway/cx'
+import { BarraGrande, Schermata } from '../faraway/shell'
+import { Wx, wxKind } from '../faraway/Wx'
+import { Sv } from '../faraway/icons'
+import { Vuoto } from '../faraway/Stati'
 
-const wd = new Intl.DateTimeFormat('it-IT', { weekday: 'short' })
-const mon = new Intl.DateTimeFormat('it-IT', { month: 'short' })
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace('.', '')
+const wk = new Intl.DateTimeFormat('it-IT', { weekday: 'short' })
+const mo = new Intl.DateTimeFormat('it-IT', { month: 'short' })
 const dm = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short' })
-const wdm = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
-const clean = (s: string) => s.replace('.', '')
 
-type Filter = 'all' | 'planned' | 'free'
-
-/** Il giorno ha qualcosa da sistemare: un biglietto non acquistato o un alloggio da prenotare. */
-function needsAttention(trip: Trip, day: Day): boolean {
-  if (eventsForDay(trip, day.date).some((e) => e.flag && !e.flag.ok)) return true
-  if (trip.flights.some((f) => !f.paid && f.legs.some((l) => l.departAt.slice(0, 10) === day.date))) return true
-  return trip.stays.some((s) => !s.booked && s.checkIn === day.date)
+function hourIn(timeZone: string): number {
+  return Number(new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hourCycle: 'h23', timeZone }).format(new Date()))
 }
 
-interface Entry {
-  day: Day
-  title: string
-  meta: string
-  planned: boolean
-  warn: boolean
-  today: boolean
+function Calendarietto({ cell, onOpen }: { cell: DayCell; onOpen: () => void }) {
+  const d = parseYmd(cell.day.date)
+  const w = cap(wk.format(d))
+  const m = cap(mo.format(d))
+  return (
+    <button type="button" className={cx('cl', cell.state !== 'future' && cell.state)} aria-label={`${w} ${d.getDate()} ${m}, ${cell.label}, ${cell.status}`} onClick={onOpen}>
+      <span className="mo">{m}</span>
+      <i className="rg1" />
+      <i className="rg2" />
+      <span className="bd">
+        <span className="nm">{d.getDate()}</span>
+        <span className="wk">{w}</span>
+        <span className="c1">{cell.label}</span>
+        <span className="c2">
+          <Ic name={cell.statusIcon} size={14} />
+          {cell.status}
+        </span>
+      </span>
+    </button>
+  )
 }
-
-function describe(trip: Trip, day: Day, today: string): Entry {
-  const events = eventsForDay(trip, day.date)
-  const n = day.items.length
-  const done = day.items.filter((i) => i.done).length
-  const firstItem = day.items.find((i) => i.time) ?? day.items[0]
-  const planned = n > 0 || events.some((e) => e.kind !== 'stay') || Boolean(day.title)
-  const title = day.title || firstItem?.title || events.find((e) => e.kind !== 'stay')?.title || ''
-  let meta = ''
-  if (n > 0) {
-    const mins = totalDuration(day.items, trip.places)
-    const parts = [`${n} ${n === 1 ? 'tappa' : 'tappe'}`]
-    if (done > 0) parts.push(`${done} ${done === 1 ? 'fatta' : 'fatte'}`)
-    else if (mins > 0) parts.push(formatDuration(mins))
-    meta = parts.join(' · ')
-  } else if (events.length > 0) {
-    const e = events.find((x) => x.kind !== 'stay') ?? events[0]
-    meta = [e.sub, e.time].filter(Boolean).join(' · ')
-  }
-  return { day, title, meta, planned, warn: needsAttention(trip, day), today: day.date === today }
-}
-
-/** Giorni consecutivi nella stessa città, uno sotto l'altro come nel calendario del mock. */
-function groupByCity(entries: Entry[]): { city: string; entries: Entry[] }[] {
-  const out: { city: string; entries: Entry[] }[] = []
-  for (const e of entries) {
-    const last = out[out.length - 1]
-    if (last && last.city === (e.day.city || '')) last.entries.push(e)
-    else out.push({ city: e.day.city || '', entries: [e] })
-  }
-  return out
-}
-
-function rangeLabel(first: string, last: string, count: number): string {
-  const a = parseYmd(first)
-  const b = parseYmd(last)
-  const days = `${count} ${count === 1 ? 'giorno' : 'giorni'}`
-  if (count === 1) return `${clean(wdm.format(a))} · ${days}`
-  if (a.getMonth() === b.getMonth()) return `${a.getDate()}–${clean(dm.format(b))} · ${days}`
-  return `${clean(dm.format(a))} – ${clean(dm.format(b))} · ${days}`
-}
-
-const CITY_ICONS = ['district', 'nature', 'temple', 'castle', 'night', 'food'] as const
 
 export function Giorni() {
   const trip = useTrip()
+  const [, navigate] = useLocation()
   const today = tripToday(trip)
-  const [filter, setFilter] = useState<Filter>('all')
   const [searching, setSearching] = useState(false)
   const [query, setQuery] = useState('')
+  const cities = useMemo(() => tripCities(trip), [trip])
+  const forecasts = useCityForecasts(trip, cities)
+  const groups = useMemo(() => groupDays(trip, today), [trip, today])
 
-  const entries = useMemo(() => trip.days.map((d) => describe(trip, d, today)), [trip, today])
-  const planned = entries.filter((e) => e.planned).length
   const q = query.trim().toLowerCase()
-  const shown = entries.filter((e) => {
-    if (filter === 'planned' && !e.planned) return false
-    if (filter === 'free' && e.planned) return false
-    if (!q) return true
-    const hay = [e.day.city, e.title, e.day.title, ...e.day.items.map((i) => i.title)].join(' ').toLowerCase()
-    return hay.includes(q)
-  })
-  const groups = groupByCity(shown)
-  const subtitle = trip.days.length > 0 ? `${clean(dm.format(parseYmd(trip.days[0].date)))} – ${clean(dm.format(parseYmd(trip.days[trip.days.length - 1].date)))} · ${trip.days.length} ${trip.days.length === 1 ? 'giorno' : 'giorni'}` : undefined
+  const shown = q
+    ? groups
+        .map((g) => ({ ...g, cells: g.cells.filter((c) => [g.title, c.label, c.day.city, c.day.title, ...c.day.items.map((i) => i.title)].join(' ').toLowerCase().includes(q)) }))
+        .filter((g) => g.cells.length > 0)
+    : groups
+
+  const first = trip.days[0]?.date
+  const last = trip.days[trip.days.length - 1]?.date
+  const people = trip.travelers.length
+  const sub = first && last ? [`${dm.format(parseYmd(first)).replace('.', '')} – ${dm.format(parseYmd(last)).replace('.', '')}`, `${trip.days.length} ${trip.days.length === 1 ? 'giorno' : 'giorni'}`, people > 1 ? `${people} persone` : null].filter(Boolean).join(' · ') : undefined
+
+  const hour = hourIn(trip.timezone)
+  // temperatura attuale di ogni città; fuori dal periodo di previsione la riga non compare
+  const weather = cities.map((c) => ({ city: c, w: nowWeather(forecasts.get(c), today, hour) })).filter((x) => x.w)
+
+  const open = (cell: DayCell) => navigate(`/giorni/${cell.day.id}${cell.state === 'free' ? '?aggiungi=1' : ''}`)
 
   return (
-    <main className="screen">
-      <PageHeader
-        title="Giorni"
-        subtitle={subtitle}
-        actions={
-          <button type="button" className="rbtn" aria-label={searching ? 'Chiudi la ricerca' : 'Cerca nei giorni'} aria-expanded={searching} onClick={() => (setSearching(!searching), setQuery(''))}>
-            {searching ? <CloseG /> : <SearchG />}
-          </button>
-        }
-      />
-
-      {searching && (
-        <div className="card" style={{ padding: '0 16px', display: 'flex', alignItems: 'center', gap: '10px', minHeight: '52px' }}>
-          <SearchG />
-          <input
-            type="search"
-            // eslint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.currentTarget.value)}
-            placeholder="Città, tappa o titolo"
-            aria-label="Cerca nei giorni"
-            style={{ flex: 1, minWidth: 0, height: '48px', border: 0, background: 'transparent', color: 'var(--ink)', font: '500 16px/24px var(--font-sans)', outline: 'none' }}
-          />
+    <Schermata
+      gap={15}
+      bar={
+        <BarraGrande
+          title={trip.title}
+          sub={sub}
+          actions={<PulsanteIcona icon={searching ? 'close' : 'search'} label={searching ? 'Chiudi la ricerca' : 'Cerca nei giorni'} expanded={searching} onPress={() => (setSearching(!searching), setQuery(''))} />}
+        />
+      }
+    >
+      {searching ? (
+        <div className="fa-fld">
+          <label htmlFor="cerca-giorni" className="sr-only">
+            Cerca nei giorni
+          </label>
+          <span className="fa-in">
+            <Sv name="search" size={20} />
+            <input id="cerca-giorni" type="search" autoFocus value={query} onChange={(e) => setQuery(e.currentTarget.value)} placeholder="Città, tappa o titolo" enterKeyHint="search" />
+          </span>
         </div>
-      )}
+      ) : null}
 
-      {trip.days.length > 0 && (
-        <div className="chips" role="group" aria-label="Filtra i giorni">
-          <button type="button" className={`chip${filter === 'all' ? ' on' : ''}`} aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>
-            Tutti <span className="n">{entries.length}</span>
-          </button>
-          <button type="button" className={`chip${filter === 'planned' ? ' on' : ''}`} aria-pressed={filter === 'planned'} onClick={() => setFilter('planned')}>
-            Pianificati <span className="n">{planned}</span>
-          </button>
-          <button type="button" className={`chip${filter === 'free' ? ' on' : ''}`} aria-pressed={filter === 'free'} onClick={() => setFilter('free')}>
-            Da pianificare <span className="n">{entries.length - planned}</span>
-          </button>
+      {weather.length > 0 && !q ? (
+        <div className="k-Meteo">
+          <ul className="chips" role="list" tabIndex={0} aria-label="Meteo delle città, scorri in orizzontale">
+            {weather.map(({ city, w }) => (
+              <li className="chip" key={city} aria-label={`${city}, ${w!.t} gradi`}>
+                <Wx kind={wxKind(w!.code)} size={24} />
+                <span>
+                  <b>{city}</b> {w!.t}°
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
-      )}
+      ) : null}
 
-      {trip.days.length === 0 && (
-        <EmptyState art={ART.calendario} title="Nessun giorno" text="Imposta le date del viaggio da Altro → Modifica viaggio: i giorni si creano da soli." />
-      )}
-      {trip.days.length > 0 && shown.length === 0 && <EmptyState art={ART.calendario} title="Nessun giorno trovato" text="Prova con un altro filtro o un'altra ricerca." />}
+      {trip.days.length === 0 ? <Vuoto art="calendario" title="Nessun giorno" text="Imposta le date del viaggio da Altro → Modifica viaggio: i giorni si creano da soli." /> : null}
+      {trip.days.length > 0 && shown.length === 0 ? <Vuoto art="calendario" title="Nessun giorno trovato" text="Prova con un'altra città o tappa." /> : null}
 
-      {groups.map((g, gi) => {
-        const first = g.entries[0].day
-        const last = g.entries[g.entries.length - 1].day
-        const onlyTravel = g.entries.every((e) => e.day.items.length === 0 && eventsForDay(trip, e.day.date).some((x) => x.kind === 'flight'))
-        const icon = onlyTravel ? 'airport' : CITY_ICONS[gi % CITY_ICONS.length]
-        const label = g.city || 'Da definire'
-        return (
-          <section aria-label={label} key={`${gi}-${first.id}`}>
-            <div className="cityh" style={{ marginBottom: '8px' }}>
-              <Ic name={`i-cat-${icon}`} size={44} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <h2 className="h-sm">{label}</h2>
-                <p className="b-sm muted">{rangeLabel(first.date, last.date, g.entries.length)}</p>
-              </div>
-              {g.city && <MapsPill kind="sm" href={mapsLinkFor({ lat: null, lng: null, name: g.city, city: trip.destination })} label={g.city} />}
+      {shown.map((g, gi) => (
+        <section key={`${gi}-${g.cells[0].day.id}`} style={{ display: 'grid', gap: 12 }} aria-label={g.title}>
+          <div className="fa-sech">
+            <h2 className="fa-h3">{g.title}</h2>
+            <span className="fa-c">{g.meta}</span>
+          </div>
+          <div className="k-SelettoreGiorni">
+            <div className="grid">
+              {g.cells.map((c) => (
+                <Calendarietto key={c.day.id} cell={c} onOpen={() => open(c)} />
+              ))}
             </div>
-            <div className="calg">
-              {g.entries.map((e) => {
-                const d = parseYmd(e.day.date)
-                const free = e.title === '' && e.meta === ''
-                const title = free ? 'Giorno libero' : e.title
-                const meta = free ? 'Da pianificare' : e.meta
-                return (
-                  <Link
-                    key={e.day.id}
-                    href={`/giorni/${e.day.id}`}
-                    className={`cal${e.today ? ' today' : ''}${free ? ' empty' : ''}`}
-                    aria-label={`${clean(wd.format(d))} ${d.getDate()} ${clean(mon.format(d))}: ${title}${e.warn ? ', da sistemare' : ''}`}
-                  >
-                    <span className="ch">
-                      <b>{clean(wd.format(d))}</b>
-                      <span>{e.today ? 'Oggi' : clean(mon.format(d))}</span>
-                    </span>
-                    <span className="cbd">
-                      <b className="cn num">{d.getDate()}</b>
-                      <span className="ctt">{title}</span>
-                      <span className="cm">{meta}</span>
-                      {e.warn && (
-                        <span className="sp warn" style={{ marginTop: '6px' }}>
-                          Da sistemare
-                        </span>
-                      )}
-                    </span>
-                  </Link>
-                )
-              })}
-            </div>
-          </section>
-        )
-      })}
-    </main>
+          </div>
+        </section>
+      ))}
+    </Schermata>
   )
 }

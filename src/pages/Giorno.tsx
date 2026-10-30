@@ -1,7 +1,6 @@
 import { Fragment, type ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'wouter'
-import '../fw-giorni.css'
 import { expenseBase, fxOf } from '../lib/budget'
 import { categoryIcon } from '../lib/categoryIcon'
 import { doneCount } from '../lib/checklist'

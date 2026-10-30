@@ -20,7 +20,12 @@ export function goBack(): boolean {
     top.close()
     return true
   }
-  // 2) altrimenti torna alla pagina precedente; se non ce n'è, va a "Oggi"
+  // 2) poi una card aperta in linea si richiude
+  if (document.documentElement.hasAttribute('data-card-open')) {
+    window.dispatchEvent(new Event('fa:close-card'))
+    return true
+  }
+  // 3) altrimenti torna alla pagina precedente; se non ce n'è, va a "Oggi"
   if (!isHome()) {
     const before = location.hash
     history.back()

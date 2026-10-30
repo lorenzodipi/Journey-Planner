@@ -1,4 +1,3 @@
-import '../fw-luoghi.css'
 import { useMemo, useRef, useState } from 'react'
 import { formatDuration } from '../lib/duration'
 import { mapsLinkFor } from '../lib/mapsUrl'

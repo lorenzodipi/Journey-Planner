@@ -1,4 +1,3 @@
-import '../fw-luoghi.css'
 import { useEffect, useMemo, useState } from 'react'
 import { formatShort } from '../lib/dates'
 import { formatDuration, itemDuration } from '../lib/duration'
