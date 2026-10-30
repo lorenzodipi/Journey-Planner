@@ -6,7 +6,8 @@ import { Interruttore, Pulsante, Segmenti } from '../../faraway/base'
 import { Sv } from '../../faraway/icons'
 import { Riga } from '../../faraway/Righe'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
-import { attivaNotifica } from '../../lib/notifiche'
+import { attivaNotifica, statoPermesso } from '../../lib/notificheDevice'
+import { useConferma } from '../../faraway/Foglio'
 import { showToast } from '../../state/toast'
 
 const TEMI: { value: ThemePref; label: string }[] = [
@@ -21,16 +22,22 @@ export function ImpostazioniPage() {
   const [notif, setNotif] = useNotifichePrefs()
   const build = typeof __BUILD_TIME__ === 'string' ? __BUILD_TIME__ : ''
   const lingua = LINGUE[0]
+  const [ask, confirmNode] = useConferma()
 
   async function cambia(tipo: (typeof NOTIFICHE_TESTI)[number]['tipo'], on: boolean) {
     if (!on) return setNotif(tipo, false)
+    // il permesso si chiede solo la prima volta, dopo aver spiegato perché
+    if ((await statoPermesso()) === 'prompt') {
+      const ok = await ask({ title: 'Vuoi ricevere gli avvisi?', message: 'Per avvisarti prima di una tappa o quando piove, il telefono ti chiede il permesso di mostrare le notifiche. Gli avvisi restano su questo telefono.', confirm: 'Continua', cancel: 'Non ora', destructive: false })
+      if (!ok) return
+    }
     const r = await attivaNotifica()
     if (r.ok) setNotif(tipo, true)
     else showToast(r.motivo)
   }
 
   return (
-    <Schermata bar={<BarraIndietro title="Impostazioni" back="/altro" />}>
+    <Schermata bar={<BarraIndietro title="Impostazioni" back="/altro" />} overlay={confirmNode}>
       <h2 className="fa-h3" style={{ margin: 0 }}>Aspetto</h2>
       <Segmenti label="Aspetto dell'app" value={tema} options={TEMI} onChange={setTema} />
       <p className="fa-m" style={{ margin: 0 }}>Con Automatico segue il tema del telefono.</p>

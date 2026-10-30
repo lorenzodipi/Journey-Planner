@@ -67,6 +67,15 @@ export function Giorno({ params }: { params: { id: string } }) {
     }
   }, [day?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // da una notifica o da un link: la tappa indicata si apre da sola
+  useEffect(() => {
+    const id = new URLSearchParams(search).get('tappa')
+    if (day && id && day.items.some((i) => i.id === id)) {
+      setOpenId(id)
+      navigate(`/giorni/${day.id}`, { replace: true })
+    }
+  }, [day?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // l'indietro di Android chiude prima la card aperta
   useEffect(() => {
     if (!openId) return

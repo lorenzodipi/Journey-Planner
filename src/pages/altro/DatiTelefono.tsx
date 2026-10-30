@@ -41,6 +41,7 @@ export function DatiTelefono() {
       message: `Cancello la copia salvata sul telefono (dati, meteo, biglietti offline) e la riscarico. Serve la connessione.${t.pending > 0 ? ' Le modifiche da inviare restano in coda.' : ''}`,
       confirm: 'Scarica di nuovo',
       cancel: 'Annulla',
+      destructive: false,
     })
     if (!ok) return
     clearSnapshot()

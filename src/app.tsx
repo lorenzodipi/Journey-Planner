@@ -5,6 +5,7 @@ import { navigate as hashNavigate, useHashLocation } from 'wouter/use-hash-locat
 import { useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
 import { AlloggiPage } from './pages/alloggi/AlloggiPage'
+import { NotificheHost } from './state/NotificheHost'
 import { ViaggiPage } from './pages/viaggi/ViaggiPage'
 import { ViaggiatoriPage } from './pages/altro/ViaggiatoriPage'
 import { AltroPage } from './pages/altro/AltroPage'
@@ -142,6 +143,7 @@ export function App() {
           </Route>
         </Switch>
       </div>
+      <NotificheHost trip={trip} />
       <PullToRefresh />
       <ToastHost />
     </Router>
