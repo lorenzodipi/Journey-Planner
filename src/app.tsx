@@ -1,10 +1,11 @@
-import { useEffect, useLayoutEffect } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { Redirect, Route, Router, Switch, useLocation } from 'wouter'
 import type { ComponentType, ReactNode } from 'react'
 import { navigate as hashNavigate, useHashLocation } from 'wouter/use-hash-location'
 import { useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
 import { AlloggiPage } from './pages/alloggi/AlloggiPage'
+import { ViaggiPage } from './pages/viaggi/ViaggiPage'
 import { AltroPage } from './pages/altro/AltroPage'
 import { DatiTelefono } from './pages/altro/DatiTelefono'
 import { BudgetPage } from './pages/spese/BudgetPage'
@@ -68,7 +69,14 @@ function ScrollToTop() {
 
 export function App() {
   const auth = useAuth()
-  const { active: trip, status, refresh } = useTrips()
+  const { active: trip, trips, status, refresh } = useTrips()
+  const [scelto, setScelto] = useState(() => {
+    try {
+      return sessionStorage.getItem('jp.viaggio.scelto') === '1'
+    } catch {
+      return false
+    }
+  })
 
   // avvio, errore e caricamento con gli stati del design system (#25, #49)
   const saved = loadSnapshot()
@@ -86,6 +94,19 @@ export function App() {
   if (status === 'error') return screen(<SchermataErrore title={title} onRetry={() => void refresh()} />)
 
   if (!trip) return <PrimoViaggio />
+
+  // dopo l'accesso, con più di un viaggio, si sceglie quale aprire (#43)
+  if (auth.status === 'signed-in' && trips.length > 1 && !scelto) {
+    const fatto = () => {
+      try {
+        sessionStorage.setItem('jp.viaggio.scelto', '1')
+      } catch {
+        // ignorato
+      }
+      setScelto(true)
+    }
+    return screen(<ViaggiPage scelta onChosen={fatto} />)
+  }
 
   return (
     <Router hook={useHashLoc}>
@@ -113,6 +134,9 @@ export function App() {
           </Route>
           <Route path="/altro/spese">
             <Redirect to="/spese/dettaglio" replace />
+          </Route>
+          <Route path="/viaggi">
+            <ViaggiPage />
           </Route>
           <Route path="/altro" component={AltroPage} />
           <Route path="/altro/dati" component={DatiTelefono} />
