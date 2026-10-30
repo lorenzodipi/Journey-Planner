@@ -12,6 +12,9 @@ export function queryMoney(db: SupabaseClient) {
     db.from('budget_item_shares').select('*').is('deleted_at', null),
     db.from('expenses').select('*').is('deleted_at', null),
     db.from('expense_shares').select('*').is('deleted_at', null),
+    // prima della migrazione 0028 queste tabelle non esistono: l'app funziona lo stesso (un solo pagante, nessuna ricevuta)
+    db.from('expense_payers').select('*').then((r) => (r.error && /expense_payers|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: [], error: null } : r)),
+    db.from('expense_files').select('*').order('created_at').then((r) => (r.error && /expense_files|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: [], error: null } : r)),
   ])
 }
 
@@ -32,6 +35,16 @@ async function syncBudgetShares(tripId: string, itemId: string, input: BudgetInp
   if (input.travelerIds.length > 0) del = del.not('traveler_id', 'in', `(${input.travelerIds.join(',')})`)
   const res = await del
   if (res.error) throw res.error
+}
+
+// ---------- ricevute (#50) ----------
+
+/** Toglie una ricevuta: il file dal bucket privato e la riga. Serve la rete. */
+export async function deleteExpenseFile(id: string, path: string): Promise<void> {
+  const { removeBookingFile } = await import('./bookingFiles')
+  await removeBookingFile(path)
+  const { error } = await client().from('expense_files').delete().eq('id', id)
+  if (error) throw error
 }
 
 // ---------- categorie di spesa ----------
@@ -81,6 +94,12 @@ export async function renameExpenseCategory(id: string, label: string, known: Ca
   if (known.some((c) => c.id !== id && c.label.toLowerCase() === clean.toLowerCase())) throw new Error(`Esiste già una categoria «${clean}».`)
   const { error } = await client().from('expense_categories').update({ label: clean }).eq('id', id)
   if (error) throw needs0008(error)
+}
+
+/** Archivia (o riattiva) una categoria: resta sulle spese vecchie ma non si propone più (0028). */
+export async function setExpenseCategoryArchived(id: string, archived: boolean): Promise<void> {
+  const { error } = await client().from('expense_categories').update({ archived_at: archived ? now() : null }).eq('id', id)
+  if (error) throw /archived_at/i.test(error.message) ? new Error("Manca la migrazione 0028 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0028_spese_avanzate.sql).") : needs0008(error)
 }
 
 export async function setExpenseCategoryDeleted(id: string, deleted: boolean): Promise<void> {
@@ -163,13 +182,18 @@ export async function setTripFxRates(tripId: string, rate: number | null, extra:
  * valuta (es. AED) un ripiego gratuito senza chiave (currency-api via jsDelivr). Se anche questo manca: errore, e il tasso si scrive a mano.
  */
 export async function fetchFxRate(local: string, base: string): Promise<number> {
-  if (local.toUpperCase() === base.toUpperCase()) return 1
+  return (await fetchFxQuote(local, base)).rate
+}
+
+/** Come `fetchFxRate`, ma dice anche da dove viene il tasso e a che ora è stato letto (si salva sulla spesa, #50). */
+export async function fetchFxQuote(local: string, base: string): Promise<{ rate: number; source: string; at: string }> {
+  if (local.toUpperCase() === base.toUpperCase()) return { rate: 1, source: 'Valuta del viaggio', at: new Date().toISOString() }
   try {
     const res = await fetch(`https://api.frankfurter.dev/v1/latest?base=${encodeURIComponent(local)}&symbols=${encodeURIComponent(base)}`)
     if (res.ok) {
       const json = (await res.json()) as { rates?: Record<string, number> }
       const rate = json.rates?.[base]
-      if (rate && rate > 0) return rate
+      if (rate && rate > 0) return { rate, source: 'BCE', at: new Date().toISOString() }
     }
   } catch {
     // rete assente o servizio fermo: si prova il ripiego
@@ -181,5 +205,5 @@ export async function fetchFxRate(local: string, base: string): Promise<number> 
   const table = json[low]
   const rate = typeof table === 'object' ? table[base.toLowerCase()] : undefined
   if (!rate || !(rate > 0)) throw new Error(`Nessun tasso ${local}→${base} disponibile. Scrivilo a mano.`)
-  return rate
+  return { rate, source: 'Servizio dei cambi', at: new Date().toISOString() }
 }

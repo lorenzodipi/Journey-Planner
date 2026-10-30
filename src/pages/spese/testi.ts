@@ -25,9 +25,10 @@ export function perChi(e: Pick<SpesaVista, 'shares'>, travelers: readonly Travel
 }
 
 /** «Pagata da te» / «Pagata da Marta» (vuoto se non si sa). */
-export function pagataDa(e: Pick<SpesaVista, 'paidBy'>, travelers: readonly Traveler[], me: string | undefined, maiuscola = true): string {
-  if (!e.paidBy) return ''
-  const who = e.paidBy === me ? 'te' : nome(travelers, e.paidBy)
+export function pagataDa(e: Pick<SpesaVista, 'paidBy' | 'payers'>, travelers: readonly Traveler[], me: string | undefined, maiuscola = true): string {
+  const many = e.payers && e.payers.length > 1 ? e.payers.map((p) => p.travelerId) : null
+  if (!many && !e.paidBy) return ''
+  const who = many ? elenco(many.map((id) => (id === me ? 'te' : nome(travelers, id)))) : e.paidBy === me ? 'te' : nome(travelers, e.paidBy as string)
   return `${maiuscola ? 'Pagata' : 'pagata'} da ${who}`
 }
 

@@ -73,6 +73,8 @@ await runMigration('0026_checklist_personale.sql')
 await runMigration('0026_checklist_personale.sql') // si può rilanciare
 await runMigration('0027_inviti.sql')
 await runMigration('0027_inviti.sql') // si può rilanciare
+await runMigration('0028_spese_avanzate.sql')
+await runMigration('0028_spese_avanzate.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -372,6 +374,7 @@ await db.query(`insert into expenses (trip_id,label,amount,currency,category_id)
 check('spesa collegata alla sua categoria', (await db.query(`select 1 from expenses e join expense_categories c on c.id=e.category_id where e.label='Ramen di prova'`)).rows.length === 1)
 await db.query(`update expense_categories set label='Mangiare' where id=$1`, [ec])
 check('rinominare la categoria cambia il nome per tutte le sue spese', (await db.query(`select c.label from expenses e join expense_categories c on c.id=e.category_id where e.label='Ramen di prova'`)).rows[0].label === 'Mangiare')
+await db.query(`update expenses set category_id=null where category_id=$1`, [ec]) // dalla 0028 una categoria usata non si elimina
 await db.query(`update expense_categories set deleted_at=now() where id=$1`, [ec])
 await db.query(`insert into expense_categories (trip_id,label) values ($1,'Mangiare')`, [t])
 check('dopo l\'eliminazione si può ricreare lo stesso nome', true)
@@ -433,6 +436,60 @@ await asUser(null, 'postgres')
   check('0026 A vede la spunta di B sulla voce comune', (await db.query(`select 1 from checklist_checks where item_id=$1 and traveler_id=$2`, [common, tb])).rows.length === 1)
   await asUser(C)
   check('0026 un non membro non vede voci né spunte', (await db.query(`select 1 from checklist_items where trip_id=$1`, [tc])).rows.length === 0 && (await db.query(`select 1 from checklist_checks where trip_id=$1`, [tc])).rows.length === 0)
+  await asUser(A)
+}
+
+// spese avanzate (0028): modifica solo di chi ha creato o pagato, più paganti, ricevute, categorie protette
+await asUser(null, 'postgres')
+{
+  const ts = (await db.query(`insert into trips (title, owner_id) values ('Spese', $1) returning id`, [A])).rows[0].id
+  await db.query(`insert into trip_members (trip_id,user_id,role) values ($1,$2,'editor') on conflict do nothing`, [ts, B])
+  const ta = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'A',$2) returning id`, [ts, A])).rows[0].id
+  const tb = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'B',$2) returning id`, [ts, B])).rows[0].id
+  await asUser(A)
+  const e1 = (await db.query(`insert into expenses (trip_id,label,amount,currency,paid_by,spent_at) values ($1,'Cena',100,'EUR',$2,now()) returning id, created_by`, [ts, ta])).rows[0]
+  check('0028 la spesa registra chi l\'ha creata', e1.created_by === A)
+  await db.query(`insert into expense_shares (trip_id,expense_id,traveler_id,weight,percent) values ($1,$2,$3,1,60),($1,$2,$4,1,40)`, [ts, e1.id, ta, tb])
+  await db.query(`update expenses set split_mode='percent' where id=$1`, [e1.id])
+  await throws('0028 modalità di divisione sconosciuta rifiutata', () => db.query(`update expenses set split_mode='boh' where id=$1`, [e1.id]))
+  await throws('0028 percentuale oltre 100 rifiutata', () => db.query(`update expense_shares set percent=120 where expense_id=$1 and traveler_id=$2`, [e1.id, ta]))
+  await asUser(B)
+  check('0028 B vede la spesa di A', (await db.query(`select 1 from expenses where id=$1`, [e1.id])).rows.length === 1)
+  await db.query(`update expenses set label='Cena sushi' where id=$1`, [e1.id])
+  check('0028 B (non creatore né pagante) non modifica', (await db.query(`select label from expenses where id=$1`, [e1.id])).rows[0].label === 'Cena')
+  await db.query(`delete from expenses where id=$1`, [e1.id])
+  check('0028 B non elimina la spesa di A', (await db.query(`select 1 from expenses where id=$1`, [e1.id])).rows.length === 1)
+  await throws('0028 B non cambia le quote di A', () => db.query(`insert into expense_shares (trip_id,expense_id,traveler_id,weight) values ($1,$2,$3,1)`, [ts, e1.id, tb]))
+  // B diventa pagante (secondo pagante): ora può modificare
+  await asUser(A)
+  await db.query(`insert into expense_payers (trip_id,expense_id,traveler_id,amount) values ($1,$2,$3,60),($1,$2,$4,40)`, [ts, e1.id, ta, tb])
+  await throws('0028 pagante doppio rifiutato', () => db.query(`insert into expense_payers (trip_id,expense_id,traveler_id,amount) values ($1,$2,$3,5)`, [ts, e1.id, tb]))
+  await throws('0028 versamento negativo rifiutato', () => db.query(`update expense_payers set amount=-5 where expense_id=$1 and traveler_id=$2`, [e1.id, tb]))
+  await asUser(B)
+  await db.query(`update expenses set label='Cena sushi' where id=$1`, [e1.id])
+  check('0028 B, pagante, modifica la spesa', (await db.query(`select label from expenses where id=$1`, [e1.id])).rows[0].label === 'Cena sushi')
+  await db.query(`insert into expense_files (trip_id,expense_id,file_path,file_name) values ($1,$2,$3,'scontrino.jpg')`, [ts, e1.id, `${ts}/spese/${e1.id}/scontrino.jpg`])
+  check('0028 il pagante allega una ricevuta', (await db.query(`select 1 from expense_files where expense_id=$1`, [e1.id])).rows.length === 1)
+  // spesa vecchia senza autore: la modificano tutti i partecipanti
+  await asUser(null, 'postgres')
+  const old = (await db.query(`insert into expenses (trip_id,label,amount,currency,spent_at,created_by) values ($1,'Vecchia',10,'EUR',now(),null) returning id`, [ts])).rows[0].id
+  await asUser(B)
+  await db.query(`update expenses set label='Vecchia 2' where id=$1`, [old])
+  check('0028 una spesa senza autore resta modificabile da tutti', (await db.query(`select label from expenses where id=$1`, [old])).rows[0].label === 'Vecchia 2')
+  // un estraneo non vede né scrive
+  await asUser(C)
+  check('0028 un non membro non vede paganti né ricevute', (await db.query(`select 1 from expense_payers where trip_id=$1`, [ts])).rows.length === 0 && (await db.query(`select 1 from expense_files where trip_id=$1`, [ts])).rows.length === 0)
+  await throws('0028 un non membro non crea paganti', () => db.query(`insert into expense_payers (trip_id,expense_id,traveler_id,amount) values ($1,$2,$3,1)`, [ts, e1.id, ta]))
+  // categorie: protette finché usate
+  await asUser(A)
+  const cat = (await db.query(`insert into expense_categories (trip_id,label) values ($1,'Cibo') returning id`, [ts])).rows[0].id
+  await db.query(`update expenses set category_id=$1 where id=$2`, [cat, e1.id])
+  await throws('0028 una categoria usata non si elimina', () => db.query(`update expense_categories set deleted_at=now() where id=$1`, [cat]))
+  await db.query(`update expense_categories set archived_at=now() where id=$1`, [cat])
+  check('0028 una categoria usata si archivia', (await db.query(`select archived_at from expense_categories where id=$1`, [cat])).rows[0].archived_at !== null)
+  await db.query(`update expenses set category_id=null where id=$1`, [e1.id])
+  await db.query(`update expense_categories set deleted_at=now() where id=$1`, [cat])
+  check('0028 la categoria libera si elimina', (await db.query(`select deleted_at from expense_categories where id=$1`, [cat])).rows[0].deleted_at !== null)
   await asUser(A)
 }
 

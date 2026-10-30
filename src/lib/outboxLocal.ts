@@ -1,4 +1,4 @@
-import type { Category, ChecklistItem, Expense, Trip } from '../types'
+import type { Category, ChecklistItem, Expense, ExpenseShare, Trip } from '../types'
 import { doneCount } from './checklist'
 import { checklistColumns, type ChecklistInput } from './planningData'
 import { expenseColumns, type ExpenseInput } from './moneyData'
@@ -86,7 +86,12 @@ export function expenseEntry(
 ): { ops: Op[]; local: Local; label: string } {
   const id = existing?.id ?? input.id ?? newId()
   const { category, isNew } = pickExpenseCategory(trip.expenseCategories, input.category)
-  const cols = expenseColumns(input, trip.timezone, trip.days, category?.id ?? null)
+  // le colonne della 0028 si scrivono se servono o se il database le ha già (la spesa letta le porta)
+  const hasNew = existing?.splitMode !== undefined || existing?.fxManual !== undefined
+  const cols = expenseColumns(input, trip.timezone, trip.days, category?.id ?? null, hasNew)
+  const mode = input.splitMode ?? 'equal'
+  const shareList: ExpenseShare[] = input.shares && input.shares.length > 0 ? input.shares : input.travelerIds.map((travelerId) => ({ travelerId, weight: 1 }))
+  const payers = (input.payers ?? []).filter((p) => p.amount > 0)
   const expense: Expense = {
     id,
     label: cols.label,
@@ -99,7 +104,15 @@ export function expenseEntry(
     spentAt: cols.spent_at,
     dayId: cols.day_id ?? undefined,
     notes: cols.notes ?? undefined,
-    shares: input.travelerIds.map((travelerId) => ({ travelerId, weight: 1 })),
+    shares: shareList.map((s) => ({ travelerId: s.travelerId, weight: 1, ...(mode === 'percent' ? { percent: s.percent } : {}), ...(mode === 'fixed' ? { amount: s.amount } : {}) })),
+    ...(payers.length > 1 ? { payers } : {}),
+    ...('split_mode' in cols ? { splitMode: mode } : existing?.splitMode ? { splitMode: mode } : {}),
+    ...(existing?.createdBy ? { createdBy: existing.createdBy } : {}),
+    ...((existing?.files?.length ?? 0) + (input.newFiles?.length ?? 0) > 0 ? { files: [...(existing?.files ?? []), ...(input.newFiles ?? [])] } : {}),
+    ...(input.fxSource ? { fxSource: input.fxSource } : {}),
+    ...(input.fxAt ? { fxAt: input.fxAt } : {}),
+    ...(input.fxManual !== undefined ? { fxManual: input.fxManual } : {}),
+    ...(input.fxSetBy ? { fxSetBy: input.fxSetBy } : {}),
     ...(input.source ? { source: input.source } : {}),
   }
   const write: Op = existing
@@ -111,8 +124,17 @@ export function expenseEntry(
       ? [{ k: 'upsert', table: 'expense_categories', row: { id: category.id, trip_id: trip.id, label: category.label, position: (trip.expenseCategories.length + 1) * 1000 } }]
       : []
   return {
-    ops: [...createCategory, write, { k: 'expenseShares', tripId: trip.id, expenseId: id, travelerIds: input.travelerIds }],
-    local: { t: 'expense.save', tripId: trip.id, expense, ...(isNew && category ? { category } : {}) },
+    ops: [
+      ...createCategory,
+      // una categoria archiviata che si torna a usare si riattiva
+      ...(category?.archived ? [{ k: 'update', table: 'expense_categories', id: category.id, patch: { archived_at: null } } as Op] : []),
+      write,
+      { k: 'expenseShares', tripId: trip.id, expenseId: id, travelerIds: shareList.map((s) => s.travelerId), ...(mode !== 'equal' ? { detail: shareList.map((s) => ({ travelerId: s.travelerId, weight: 1, ...(mode === 'percent' ? { percent: s.percent ?? 0 } : { amount: s.amount ?? 0 }) })) } : {}) },
+      ...(input.newFiles ?? []).map((f): Op => ({ k: 'upsert', table: 'expense_files', row: { id: f.id, trip_id: trip.id, expense_id: id, file_path: f.path, file_name: f.name ?? null, mime_type: f.mimeType ?? null } })),
+      // più paganti: una riga per pagante; con uno solo si cancellano le righe rimaste (solo se ce n'erano)
+      ...(payers.length > 1 || existing?.payers?.length ? [{ k: 'expensePayers', tripId: trip.id, expenseId: id, payers: payers.length > 1 ? payers.map((x) => ({ travelerId: x.travelerId, amount: x.amount })) : [] } as Op] : []),
+    ],
+    local: { t: 'expense.save', tripId: trip.id, expense, ...(isNew && category ? { category } : category?.archived ? { category: { ...category, archived: false } } : {}) },
     label: `Spesa «${expense.label}»`,
   }
 }

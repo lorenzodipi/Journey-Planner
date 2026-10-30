@@ -5,6 +5,8 @@ import { useMemo, useState } from 'react'
 import { useLocation } from 'wouter'
 import { dateInZone } from '../../lib/flights'
 import { formatMoney, round2 } from '../../lib/money'
+import { expenseBalance, payersOf, puoModificareSpesa, SPLIT_LABEL } from '../../lib/ripartizione'
+import { expenseOwed, expensePaid } from '../../lib/budget'
 import { CATEGORIE_BASE, catKey, categoriaDi, iconaSpesa } from '../../lib/ricevuta'
 import { beneficiari, expenseBase, riassunto, sezioneSpesa, type SpesaVista } from '../../lib/spese'
 import { tripToday } from '../../lib/today'
@@ -155,6 +157,13 @@ export function Dettaglio() {
               const src = sorgente(e, trip)
               const day = e.source?.kind === 'day_item' ? trip.days.findIndex((d) => d.items.some((i) => i.id === e.source?.id)) : -1
               const payer = pagataDa(e, trip.travelers, me?.id)
+              const mio = puoModificareSpesa(e, me?.userId, me?.id)
+              const owed = e.splitMode && e.splitMode !== 'equal' ? expenseOwed(e, trip.travelers, r.fx) : null
+              const multi = (e.payers?.length ?? 0) > 1
+              const paid = multi ? expensePaid(e, r.fx) : null
+              const pays = paid ?? (amount !== null ? payersOf(e).slice(0, 1).map((x) => ({ travelerId: x.travelerId, amount })) : [])
+              const saldo = me && amount !== null && pays.length > 0 ? expenseBalance(pays, owed ?? expenseOwed(e, trip.travelers, r.fx) ?? []).find((b) => b.travelerId === me.id) : undefined
+              const nm = (id: string) => (id === me?.id ? 'Tu' : (trip.travelers.find((p) => p.id === id)?.name.split(/\s+/)[0] ?? '—'))
               const attesa = coda && t.pendingIds.has(e.id)
               const importo = amount === null ? formatMoney(e.amount, e.currency) : formatMoney(amount, cur)
               return (
@@ -196,7 +205,17 @@ export function Dettaglio() {
                       <div className="kv">
                         <Sv name="user" size={20} />
                         <div>
-                          {who.length > 1 ? (
+                          {who.length > 1 && owed ? (
+                            <>
+                              <div className="t">Diviso {inQuanti(who.length)} · {SPLIT_LABEL[e.splitMode ?? 'equal'].toLowerCase()}</div>
+                              {owed.map((o, k) => (
+                                <div key={o.travelerId} className="s">
+                                  {nm(o.travelerId)}: {formatMoney(o.amount, cur)}
+                                  {e.splitMode === 'percent' && e.shares[k]?.percent !== undefined ? ` (${String(e.shares[k].percent).replace('.', ',')}%)` : ''}
+                                </div>
+                              ))}
+                            </>
+                          ) : who.length > 1 ? (
                             <>
                               <div className="t">Diviso {inQuanti(who.length)}</div>
                               {amount !== null ? <div className="s">{formatMoney(round2(amount / who.length), cur)} a testa</div> : null}
@@ -206,6 +225,30 @@ export function Dettaglio() {
                           )}
                         </div>
                       </div>
+                      {multi && paid ? (
+                        <div className="kv">
+                          <Sv name="user" size={20} />
+                          <div>
+                            <div className="t">Chi ha pagato</div>
+                            {paid.map((p) => (
+                              <div key={p.travelerId} className="s">
+                                {nm(p.travelerId)}: {formatMoney(p.amount, cur)}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+                      {saldo && Math.abs(saldo.net) >= 0.005 ? (
+                        <div className="kv">
+                          <Sv name="info" size={20} />
+                          <div>
+                            <div className="t">{saldo.net > 0 ? `Devi ricevere ${formatMoney(saldo.net, cur)}` : `Devi dare ${formatMoney(-saldo.net, cur)}`}</div>
+                            <div className="s">
+                              Hai versato {formatMoney(saldo.paid, cur)}, la tua parte è {formatMoney(saldo.owed, cur)}
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
                       {e.currency !== cur ? (
                         <div className="kv">
                           <Sv name="globe" size={20} />
@@ -237,6 +280,8 @@ export function Dettaglio() {
                             <Sv name="pencil" size={18} />
                             {src.label}
                           </button>
+                        ) : !mio ? (
+                          <span className="fa-help" style={{ flex: 1 }}>Solo chi l'ha creata o pagata può modificarla.</span>
                         ) : (
                           <>
                             <button type="button" className="fa-btn sm out" onClick={() => setSheet({ expense: e })}>

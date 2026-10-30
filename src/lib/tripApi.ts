@@ -9,7 +9,7 @@ import { queryPlanning } from './planningApi'
 import { mapBookings, mapChecklist, mapTicketCodes } from './planningData'
 import type { BookingRow, CheckRow, ChecklistRow, TicketCodeRow } from './planningData'
 import { mapBudget, mapExpenses } from './moneyData'
-import type { BudgetItemRow, BudgetShareRow, ExpenseRow, ExpenseShareRow } from './moneyData'
+import type { BudgetItemRow, BudgetShareRow, ExpenseFileRow, ExpensePayerRow, ExpenseRow, ExpenseShareRow } from './moneyData'
 import { mapFlights, mapStays, mapTransports } from './logistics'
 import type { FlightLegRow, FlightRow, StayRow, TransportRow } from './logistics'
 import { cleanRates } from './money'
@@ -114,6 +114,8 @@ interface CategoryRow {
   position: number
   /** solo categorie di spesa, dalla migrazione 0019 */
   planned?: number | string | null
+  /** dalla migrazione 0028 */
+  archived_at?: string | null
 }
 interface PlaceRow {
   id: string
@@ -166,6 +168,8 @@ interface Extras {
   budgetShares: BudgetShareRow[]
   expenses: ExpenseRow[]
   expenseShares: ExpenseShareRow[]
+  expensePayers?: ExpensePayerRow[]
+  expenseFiles?: ExpenseFileRow[]
   checklist: ChecklistRow[]
   bookings: BookingRow[]
   ticketCodes?: TicketCodeRow[]
@@ -215,7 +219,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
   const expenseCategories: Category[] = extras.expenseCategories
     .filter((c) => c.trip_id === row.id)
     .sort((a, b) => a.position - b.position || a.label.localeCompare(b.label, 'it'))
-    .map((c) => ({ id: c.id, label: c.label, color: c.color ?? undefined, ...(c.planned != null && Number(c.planned) >= 0 ? { planned: Number(c.planned) } : {}) }))
+    .map((c) => ({ id: c.id, label: c.label, color: c.color ?? undefined, ...(c.planned != null && Number(c.planned) >= 0 ? { planned: Number(c.planned) } : {}), ...(c.archived_at ? { archived: true } : {}) }))
   const expenseCategoryLabel = new Map(expenseCategories.map((c) => [c.id, c.label]))
 
   const places: Place[] = extras.places
@@ -319,7 +323,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     transports: mapTransports(extras.transports, row.id),
     flights: mapFlights(extras.flights, extras.legs, row.id),
     budget: mapBudget(extras.budgetItems, extras.budgetShares, row.id, expenseCategoryLabel),
-    expenses: mapExpenses(extras.expenses, extras.expenseShares, row.id, expenseCategoryLabel),
+    expenses: mapExpenses(extras.expenses, extras.expenseShares, row.id, expenseCategoryLabel, extras.expensePayers, extras.expenseFiles),
     checklist: mapChecklist(extras.checklist, row.id, extras.checks, myTravelerId),
     ...(extras.checks ? { checklistV2: true } : {}),
     ...(myTravelerId ? { myTravelerId } : {}),
@@ -363,6 +367,8 @@ export function scopeOfTable(table: string): Scope | null {
     case 'budget_item_shares':
     case 'expenses':
     case 'expense_shares':
+    case 'expense_payers':
+    case 'expense_files':
       return 'money'
     case 'checklist_items':
     case 'bookings':
@@ -378,7 +384,7 @@ export function scopeOfTable(table: string): Scope | null {
 export function scopeOfOps(ops: readonly Op[]): Scope[] | undefined {
   const set = new Set<Scope>()
   for (const op of ops) {
-    const scope = op.k === 'expenseShares' ? 'money' : scopeOfTable(op.table)
+    const scope = (op.k === 'expenseShares' || op.k === 'expensePayers') ? 'money' : scopeOfTable(op.table)
     if (!scope) return undefined
     set.add(scope)
   }
@@ -425,7 +431,7 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
   const results = [trips, places, categories, expenseCategories, items, ...(logisticsR ?? []), ...(moneyR ?? []), ...(planningR ?? [])]
   for (const r of results) if (r?.error) throw r.error
   const [stays, transports, flights, legs] = logisticsR ?? []
-  const [budgetItems, budgetShares, expenses, expenseShares] = moneyR ?? []
+  const [budgetItems, budgetShares, expenses, expenseShares, expensePayers, expenseFiles] = moneyR ?? []
   const [checklist, bookings, checks, ticketCodes] = planningR ?? []
   const old = prev?.extras
   const extras: Extras = {
@@ -441,6 +447,8 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
     budgetShares: keep(budgetShares, old?.budgetShares as BudgetShareRow[]),
     expenses: keep(expenses, old?.expenses as ExpenseRow[]),
     expenseShares: keep(expenseShares, old?.expenseShares as ExpenseShareRow[]),
+    expensePayers: keep(expensePayers, old?.expensePayers as ExpensePayerRow[]),
+    expenseFiles: keep(expenseFiles, old?.expenseFiles as ExpenseFileRow[]),
     checklist: keep(checklist, old?.checklist as ChecklistRow[]),
     bookings: keep(bookings, old?.bookings as BookingRow[]),
     ticketCodes: keep(ticketCodes, old?.ticketCodes as TicketCodeRow[]),

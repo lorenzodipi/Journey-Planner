@@ -1,23 +1,26 @@
 // Fogli «Nuova spesa» e «Modifica spesa» (mock Fa-30, #34): nome, importo con il convertitore (si scrive in una
 // valuta e si legge l'altra), «Pagata da» obbligatorio, «Dividi in parti uguali» o le persone, categoria a pillole.
 // Di base: pagata da me, divisa tra tutti, nella valuta del paese.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { dateInZone } from '../../lib/flights'
+import { removeBookingFile } from '../../lib/bookingFiles'
 import { decimalsOf } from '../../lib/fx'
+import { fetchFxQuote } from '../../lib/moneyApi'
+import { checkPayers, checkSplit } from '../../lib/ripartizione'
 import { currencyName, formatMoney, parseAmount, rateFor, round2, tripCurrencies } from '../../lib/money'
 import type { ExpenseInput } from '../../lib/moneyData'
 import { CATEGORIE_BASE, catKey } from '../../lib/ricevuta'
 import { valutaDelGiorno } from '../../lib/paesi'
 import { tripToday } from '../../lib/today'
-import { useMe, discOf, initials } from '../../state/me'
+import { useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
-import type { Expense, Trip } from '../../types'
-import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
-import { cx } from '../../faraway/cx'
+import type { Expense, ExpenseFile, SplitMode, Trip } from '../../types'
+import { Campo, Chip, Pulsante } from '../../faraway/base'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { inQuanti } from './testi'
+import { CambioRiga, defaultVals, DivisioneEditor, PagantiEditor, payersFromRows, RicevuteEditor, sharesFrom, type PayRow } from './SpesaAvanzata'
 
 const sym = (cur: string) => {
   try {
@@ -103,19 +106,74 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
   const [paidBy, setPaidBy] = useState(expense ? (expense.paidBy ?? '') : (me?.id ?? (trip.travelers.length === 1 ? trip.travelers[0].id : '')))
   const all = trip.travelers.map((p) => p.id)
   const shared = expense ? expense.shares.filter((s) => s.weight > 0).map((s) => s.travelerId) : []
-  const [equal, setEqual] = useState(!expense || shared.length === 0 || all.every((id) => shared.includes(id)))
+  const num = (n: number) => String(n).replace('.', ',')
+  const [mode, setMode] = useState<SplitMode>(expense?.splitMode ?? 'equal')
   const [who, setWho] = useState<string[]>(shared.length > 0 ? shared : all)
+  const [vals, setVals] = useState<Record<string, string>>(() =>
+    expense && expense.splitMode && expense.splitMode !== 'equal'
+      ? Object.fromEntries(expense.shares.map((x) => [x.travelerId, num(expense.splitMode === 'percent' ? (x.percent ?? 0) : (x.amount ?? 0))]))
+      : {},
+  )
+  // più paganti: `null` = una persona sola (quella di «Pagata da»)
+  const [payRows, setPayRows] = useState<PayRow[] | null>(() =>
+    expense?.payers && expense.payers.length > 1 ? expense.payers.map((p) => ({ id: p.travelerId, text: num(p.amount) })) : null,
+  )
+  // cambio scritto sulla spesa: tasso, da dove viene, quando, se a mano
+  const [fx, setFx] = useState<{ rate?: number; source?: string; at?: string; manual?: boolean; setBy?: string }>(() =>
+    expense?.fxRate ? { rate: expense.fxRate, source: expense.fxSource, at: expense.fxAt, manual: expense.fxManual, setBy: expense.fxSetBy } : {},
+  )
+  const [fxBusy, setFxBusy] = useState(false)
+  const [spesaId] = useState(() => expense?.id ?? crypto.randomUUID())
+  const [added, setAdded] = useState<ExpenseFile[]>([])
+  const [gone, setGone] = useState<string[]>([])
   const [category, setCategory] = useState(expense?.category?.trim() || cat0 || 'Cibo')
   const [newCat, setNewCat] = useState(false)
   const [errors, setErrors] = useState<{ label?: string; amount?: string; paidBy?: string; who?: string; form?: string }>({})
   const [busy, setBusy] = useState(false)
 
-  const rate = other ? rateFor(trip, other) : undefined
+  const tripRate = other ? rateFor(trip, other) : undefined
+  const rate = fx.rate ?? tripRate
   const amount = leggi(text)
   const inBase = amount === null ? null : side === base ? amount : rate ? round2(amount * rate) : null
-  const people = equal ? all : who
+  const people = who
   const each = inBase !== null && people.length > 0 ? round2(inBase / people.length) : null
-  const personali = trip.expenseCategories.map((c) => c.label).filter((l) => !CATEGORIE_BASE.some((b) => catKey(b.label) === catKey(l)))
+
+  // spesa nuova in valuta estera: leggo il cambio del giorno (BCE) e lo scrivo sulla spesa; senza rete vale quello del viaggio
+  useEffect(() => {
+    if (!open || !other || expense?.fxRate || !navigator.onLine) return
+    let cancelled = false
+    void fetchFxQuote(other, base)
+      .then((q) => !cancelled && setFx((cur) => (cur.manual ? cur : { rate: Math.round(q.rate * 1e6) / 1e6, source: q.source, at: q.at })))
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [open, other, base, expense?.fxRate])
+
+  async function refreshFx() {
+    if (!other) return
+    setFxBusy(true)
+    try {
+      const q = await fetchFxQuote(other, base)
+      setFx({ rate: Math.round(q.rate * 1e6) / 1e6, source: q.source, at: q.at })
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Non riesco a leggere il cambio.')
+    } finally {
+      setFxBusy(false)
+    }
+  }
+
+  async function removeFile(f: ExpenseFile) {
+    if (added.some((a) => a.id === f.id)) {
+      setAdded((cur) => cur.filter((a) => a.id !== f.id))
+      await removeBookingFile(f.path).catch(() => undefined)
+      return
+    }
+    const m = await t.removeExpenseFile(f.id, f.path)
+    if (m) showToast(m)
+    else setGone((cur) => [...cur, f.id])
+  }
+  const personali = trip.expenseCategories.filter((c) => !c.archived || catKey(c.label) === catKey(category)).map((c) => c.label).filter((l) => !CATEGORIE_BASE.some((b) => catKey(b.label) === catKey(l)))
   const scelte = ['Cibo', 'Trasporti', 'Alloggi', 'Attività', 'Voli', ...personali, 'Altro']
 
   async function submit(e: { preventDefault(): void }) {
@@ -123,20 +181,32 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
     const err: typeof errors = {}
     if (!label.trim()) err.label = 'Scrivi il nome della spesa.'
     if (amount === null || !(amount > 0)) err.amount = "L'importo non è chiaro: scrivi per esempio 12,50."
-    if (!paidBy) err.paidBy = 'Manca chi ha pagato. Scegli una persona.'
-    if (!equal && who.length === 0) err.who = 'Scegli almeno una persona.'
+    const payers = payRows ? payersFromRows(payRows) : []
+    if (payRows) {
+      if (payRows.some((r) => !r.id)) err.paidBy = 'Scegli chi è il pagante che hai aggiunto, oppure toglilo.'
+      else if (amount !== null && !checkPayers(amount, payers, side).ok) err.paidBy = checkPayers(amount, payers, side).message
+    } else if (!paidBy) err.paidBy = 'Manca chi ha pagato. Scegli una persona.'
+    if (who.length === 0) err.who = 'Scegli almeno una persona.'
+    else if (amount !== null && !checkSplit(mode, amount, sharesFrom(mode, who, vals), side).ok) err.who = checkSplit(mode, amount, sharesFrom(mode, who, vals), side).message
     setErrors(err)
     if (Object.keys(err).length > 0) return
     setBusy(true)
-    const id = expense?.id ?? crypto.randomUUID()
+    const useRate = fx.rate ?? (expense && !expense.fxRate ? undefined : tripRate)
+    const id = spesaId
     const input: ExpenseInput = {
       ...(expense ? {} : { id }),
       label: label.trim(),
       category: category.trim() || 'Altro',
       amount: amount as number,
       currency: side,
-      fxRate: null,
-      paidBy,
+      // il cambio resta scritto sulla spesa: i totali di ieri non cambiano se domani il cambio si muove
+      fxRate: side !== base && useRate ? useRate : null,
+      ...(side !== base && useRate ? { fxSource: fx.rate ? fx.source : 'Cambio del viaggio', fxAt: fx.rate ? fx.at : undefined, fxManual: !!fx.manual, ...(fx.manual ? { fxSetBy: fx.setBy ?? me?.userId } : {}) } : {}),
+      paidBy: payRows ? (payers[0]?.travelerId ?? paidBy) : paidBy,
+      ...(payRows ? { payers } : {}),
+      splitMode: mode,
+      shares: sharesFrom(mode, who, vals),
+      ...(added.length > 0 ? { newFiles: added } : {}),
       spentDate: expense ? dateInZone(expense.spentAt, trip.timezone) : tripToday(trip),
       notes: expense?.notes ?? '',
       travelerIds: people,
@@ -153,8 +223,6 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
     }
     onClose()
   }
-
-  const toggleWho = (id: string) => setWho((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]))
 
   return (
     <Foglio
@@ -181,7 +249,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
               ))}
             </div>
           ) : null}
-          <Importo base={base} other={other} rate={rate} side={side} text={text} label="Importo" onText={setText} onSide={(c, v) => (setSide(c), setText(v))} />
+          <Importo base={base} other={other} rate={rate} side={side} text={text} label="Importo" onText={setText} onSide={(c, v) => (setSide(c), setText(v), mode === 'fixed' && setVals(defaultVals('fixed', who, leggi(v))))} />
           {errors.amount ? (
             <span className="fa-help bad" role="alert">
               <Sv name="err" size={16} />
@@ -189,43 +257,29 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
             </span>
           ) : null}
         </div>
-        <div className="fa-fld" role="group" aria-label="Pagata da">
-          Pagata da
-          <div className="fa-chips wrap">
-            {trip.travelers.map((p) => (
-              <Chip key={p.id} on={paidBy === p.id} onPress={() => setPaidBy(p.id)} icon={<span className={cx('fa-av', `r${discOf(trip, p.id)}`)} style={{ width: 24, height: 24, fontSize: 11 }} aria-hidden="true">{initials(p.name)}</span>}>
-                {p.name.split(/\s+/)[0]}
-              </Chip>
-            ))}
-          </div>
-          {errors.paidBy ? (
-            <span className="fa-help bad" role="alert">
-              <Sv name="err" size={16} />
-              {errors.paidBy}
-            </span>
-          ) : null}
-        </div>
+        {other && side !== base && rate ? (
+          <CambioRiga base={base} other={other} rate={rate} source={fx.rate ? fx.source : (expense?.fxRate ? expense.fxSource : 'Cambio del viaggio')} at={fx.at} manual={fx.manual} setBy={trip.travelers.find((p) => p.userId === fx.setBy)?.name} busy={fxBusy} onRefresh={() => void refreshFx()} onManual={(r) => setFx({ rate: r, source: 'A mano', at: new Date().toISOString(), manual: true, setBy: me?.userId })} />
+        ) : null}
+        <PagantiEditor trip={trip} total={amount} currency={side} rows={payRows} onRows={setPayRows} single={paidBy} onSingle={setPaidBy} error={errors.paidBy} />
         {trip.travelers.length > 1 ? (
-          <div style={{ display: 'grid', gap: 8 }}>
-            <Interruttore label="Dividi in parti uguali" isSelected={equal} onChange={setEqual} />
-            {!equal ? (
-              <div className="fa-chips wrap" role="group" aria-label="Per chi">
-                {trip.travelers.map((p) => (
-                  <Chip key={p.id} on={who.includes(p.id)} onPress={() => toggleWho(p.id)}>
-                    {p.name.split(/\s+/)[0]}
-                  </Chip>
-                ))}
-              </div>
-            ) : null}
-            {errors.who ? (
-              <span className="fa-help bad" role="alert">
-                <Sv name="err" size={16} />
-                {errors.who}
-              </span>
-            ) : each !== null && people.length > 0 ? (
-              <span className="fa-help ok">{people.length === 1 ? `Solo ${people[0] === me?.id ? 'tua' : `di ${trip.travelers.find((p) => p.id === people[0])?.name.split(/\s+/)[0]}`}: ${formatMoney(each, base)}` : `Diviso ${inQuanti(people.length)}: ${formatMoney(each, base)} a testa`}</span>
-            ) : null}
-          </div>
+          <DivisioneEditor
+            trip={trip}
+            mode={mode}
+            onMode={setMode}
+            who={who}
+            onWho={setWho}
+            vals={vals}
+            onVals={setVals}
+            total={amount}
+            currency={side}
+            hint={mode === 'equal' && each !== null && people.length > 0 ? (people.length === 1 ? `Solo ${people[0] === me?.id ? 'tua' : `di ${trip.travelers.find((p) => p.id === people[0])?.name.split(/\s+/)[0]}`}: ${formatMoney(each, base)}` : `Diviso ${inQuanti(people.length)}: ${formatMoney(each, base)} a testa`) : undefined}
+          />
+        ) : null}
+        {errors.who && trip.travelers.length > 1 ? (
+          <span className="fa-help bad" role="alert">
+            <Sv name="err" size={16} />
+            {errors.who}
+          </span>
         ) : null}
         <div className="fa-fld" role="group" aria-label="Categoria">
           Categoria
@@ -246,6 +300,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
           </div>
           {newCat ? <Campo label="Nuova categoria" hideLabel value={category} onChange={setCategory} placeholder="es. Souvenir" maxLength={40} autoFocus /> : null}
         </div>
+        <RicevuteEditor trip={trip} expenseId={spesaId} files={(expense?.files ?? []).filter((f) => !gone.includes(f.id))} added={added} onAdded={setAdded} onRemove={(f) => void removeFile(f)} />
         {errors.form ? (
           <span className="fa-help bad" role="alert">
             <Sv name="err" size={16} />

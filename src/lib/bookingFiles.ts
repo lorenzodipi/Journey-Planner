@@ -24,8 +24,9 @@ export function checkFile(file: File): string | null {
   return null
 }
 
-export async function uploadBookingFile(tripId: string, file: File): Promise<string> {
-  const path = `${tripId}/${crypto.randomUUID()}-${safeFileName(file.name)}`
+/** `folder`: sottocartella dentro il viaggio (es. `spese/<id spesa>` per le ricevute); la prima parte resta sempre l'id del viaggio. */
+export async function uploadBookingFile(tripId: string, file: File, folder = ''): Promise<string> {
+  const path = `${tripId}/${folder ? `${folder}/` : ''}${crypto.randomUUID()}-${safeFileName(file.name)}`
   const { error } = await client().storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false })
   if (error) throw error
   return path

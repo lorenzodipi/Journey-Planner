@@ -62,12 +62,12 @@ export function beneficiari(e: Pick<Expense, 'shares'>, travelers: readonly Pick
  * Sezione del Dettaglio spese (decisione di Lorenzo): «tutti» = divisa tra tutti i partecipanti;
  * «mie» = pagata da me o divisa con alcune persone tra cui io; `null` = non mi riguarda (non si vede).
  */
-export function sezioneSpesa(e: Pick<Expense, 'shares' | 'paidBy'>, travelers: readonly Pick<Traveler, 'id'>[], me: string | undefined): 'tutti' | 'mie' | null {
+export function sezioneSpesa(e: Pick<Expense, 'shares' | 'paidBy' | 'payers'>, travelers: readonly Pick<Traveler, 'id'>[], me: string | undefined): 'tutti' | 'mie' | null {
   const who = beneficiari(e, travelers)
   const all = travelers.length > 0 && travelers.every((t) => who.includes(t.id))
   if (all) return 'tutti'
   if (!me) return null
-  if (who.includes(me) || e.paidBy === me) return 'mie'
+  if (who.includes(me) || e.paidBy === me || e.payers?.some((p) => p.travelerId === me)) return 'mie'
   return null
 }
 

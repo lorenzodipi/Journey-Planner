@@ -752,11 +752,24 @@ export function buildSteps(trip: Trip, tripId: string, newId: () => string): Res
     currency: e.currency,
     fx_rate: nul(e.fxRate),
     paid_by: to(e.paidBy),
+    ...(e.splitMode && e.splitMode !== 'equal' ? { split_mode: e.splitMode } : {}),
     spent_at: e.spentAt,
     notes: nul(e.notes),
   }))
   const expenseShares = trip.expenses.flatMap((e) =>
-    e.shares.map((s) => ({ id: newId(), trip_id: tripId, expense_id: to(e.id), traveler_id: to(s.travelerId), weight: s.weight })),
+    e.shares.map((s) => ({
+      id: newId(),
+      trip_id: tripId,
+      expense_id: to(e.id),
+      traveler_id: to(s.travelerId),
+      weight: s.weight,
+      ...(s.percent !== undefined ? { percent: s.percent } : {}),
+      ...(s.amount !== undefined ? { amount: s.amount } : {}),
+    })),
+  )
+  // più paganti (0028): solo se la spesa ne ha, così un ripristino su un database senza la migrazione funziona come prima
+  const expensePayers = trip.expenses.flatMap((e) =>
+    (e.payers ?? []).map((p) => ({ trip_id: tripId, expense_id: to(e.id), traveler_id: to(p.travelerId), amount: p.amount })),
   )
 
   // la colonna quantity si scrive solo se serve (il file può arrivare da un database senza la colonna)
@@ -810,6 +823,7 @@ export function buildSteps(trip: Trip, tripId: string, newId: () => string): Res
     { table: 'budget_item_shares', rows: budgetShares },
     { table: 'expenses', rows: expenses },
     { table: 'expense_shares', rows: expenseShares },
+    { table: 'expense_payers', rows: expensePayers },
     { table: 'checklist_items', rows: checklist },
     { table: 'bookings', rows: bookings },
   ]

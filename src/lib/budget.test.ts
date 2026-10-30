@@ -111,6 +111,41 @@ describe('spese', () => {
     expect(s.unconverted).toEqual(['USD'])
   })
 
+  it('più paganti: ognuno versa la sua parte, il saldo torna', () => {
+    const s = summarizeExpenses(
+      [exp({ id: '1', amount: 100, payers: [{ travelerId: 't1', amount: 70 }, { travelerId: 't2', amount: 30 }] })],
+      travelers,
+      fx,
+    )
+    expect(s.balances.map((b) => [b.paid, b.owed, b.net])).toEqual([[70, 50, 20], [30, 50, -20]])
+    expect(s.transfers).toEqual([{ from: 't2', to: 't1', amount: 20 }])
+  })
+
+  it('più paganti in yen: i versamenti seguono il cambio e non perdono centesimi', () => {
+    const s = summarizeExpenses(
+      [exp({ id: '1', amount: 3333, currency: 'JPY', payers: [{ travelerId: 't1', amount: 1111 }, { travelerId: 't2', amount: 2222 }] })],
+      travelers,
+      fx,
+    )
+    expect(s.balances[0].paid + s.balances[1].paid).toBeCloseTo(16.67, 10)
+  })
+
+  it('percentuali e importi fissi decidono la quota di ciascuno', () => {
+    const pct = exp({ amount: 100, paidBy: 't1', splitMode: 'percent', shares: [{ travelerId: 't1', weight: 1, percent: 25 }, { travelerId: 't2', weight: 1, percent: 75 }] })
+    expect(expenseOwed(pct, travelers, fx)!.map((o) => o.amount)).toEqual([25, 75])
+    const fixed = exp({ amount: 100, paidBy: 't1', splitMode: 'fixed', shares: [{ travelerId: 't1', weight: 1, amount: 10 }, { travelerId: 't2', weight: 1, amount: 90 }] })
+    expect(expenseOwed(fixed, travelers, fx)!.map((o) => o.amount)).toEqual([10, 90])
+    expect(summarizeExpenses([fixed], travelers, fx).transfers).toEqual([{ from: 't2', to: 't1', amount: 90 }])
+    // in yen: la quota segue il cambio e la somma resta esatta
+    const yen = exp({ amount: 1000, currency: 'JPY', paidBy: 't1', splitMode: 'percent', shares: [{ travelerId: 't1', weight: 1, percent: 33.33 }, { travelerId: 't2', weight: 1, percent: 66.67 }] })
+    const owed = expenseOwed(yen, travelers, fx)!
+    expect(owed.reduce((n, o) => n + o.amount, 0)).toBeCloseTo(5, 10)
+  })
+
+  it('chi ha versato una parte è coinvolto nella spesa', () => {
+    expect(involvesTraveler({ paidBy: undefined, payers: [{ travelerId: 't2', amount: 5 }], shares: [{ travelerId: 't1', weight: 1 }] }, 't2')).toBe(true)
+  })
+
   it('spesa senza pagante: conta nel totale ma non nei bonifici', () => {
     const s = summarizeExpenses([exp({ amount: 50 })], travelers, fx)
     expect(s.total).toBe(50)

@@ -68,9 +68,23 @@ export function SpesePage() {
   }
   async function onDelete(c: RigaCategoria) {
     if (!c.id) return
+    if (c.nSpese > 0) {
+      // una categoria in uso non si elimina: si archivia (resta sulle spese già fatte, non si propone più)
+      const archivia = await ask({
+        title: `«${c.label}» è usata da ${c.nSpese} ${c.nSpese === 1 ? 'spesa' : 'spese'}`,
+        message: 'Non si può eliminare finché è in uso. Spostale prima in un’altra categoria, oppure archivia questa: resta sulle spese già fatte ma non si propone più.',
+        confirm: 'Archivia la categoria',
+        cancel: 'Lascia stare',
+        destructive: false,
+      })
+      if (!archivia) return
+      const m = await t.setExpenseCategoryArchived(c.id, true)
+      showToast(m ?? 'Categoria archiviata', m ? undefined : { label: 'Annulla', run: () => void t.setExpenseCategoryArchived(c.id as string, false) })
+      return
+    }
     const ok = await ask({
       title: `Eliminare «${c.label}»?`,
-      message: c.nSpese > 0 ? `Le sue ${c.nSpese} spese restano e passano in Altro.` : 'Non ha spese: sparisce dalla ricevuta.',
+      message: 'Non ha spese: sparisce dalla ricevuta.',
       confirm: 'Elimina la categoria',
       cancel: 'Tieni la categoria',
       destructive: true,

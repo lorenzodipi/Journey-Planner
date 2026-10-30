@@ -28,9 +28,34 @@ export async function execOp(op: Op): Promise<void> {
     }
     return
   }
+  if (op.k === 'expensePayers') {
+    const missing = (e: { message: string }) => /expense_payers|schema cache|does not exist/i.test(e.message)
+    if (op.payers.length > 0) {
+      const rows = op.payers.map((p) => ({ trip_id: op.tripId, expense_id: op.expenseId, traveler_id: p.travelerId, amount: p.amount }))
+      const up = await db.from('expense_payers').upsert(rows, { onConflict: 'expense_id,traveler_id' })
+      if (up.error) throw fail(up.error, up.status)
+    }
+    let del = db.from('expense_payers').delete().eq('expense_id', op.expenseId)
+    if (op.payers.length > 0) del = del.not('traveler_id', 'in', `(${op.payers.map((p) => p.travelerId).join(',')})`)
+    const res = await del
+    // senza la migrazione non c'è nulla da togliere
+    if (res.error && !(op.payers.length === 0 && missing(res.error))) throw fail(res.error, res.status)
+    return
+  }
   // quote di una spesa: aggiunge/aggiorna le scelte e toglie le altre
   if (op.travelerIds.length > 0) {
-    const rows = op.travelerIds.map((id) => ({ trip_id: op.tripId, expense_id: op.expenseId, traveler_id: id, weight: 1, deleted_at: null }))
+    const rows = op.travelerIds.map((id) => {
+      const d = op.detail?.find((x) => x.travelerId === id)
+      return {
+        trip_id: op.tripId,
+        expense_id: op.expenseId,
+        traveler_id: id,
+        weight: d?.weight ?? 1,
+        deleted_at: null,
+        ...(d && d.percent !== undefined ? { percent: d.percent } : {}),
+        ...(d && d.amount !== undefined ? { amount: d.amount } : {}),
+      }
+    })
     const up = await db.from('expense_shares').upsert(rows, { onConflict: 'expense_id,traveler_id' })
     if (up.error) throw fail(up.error, up.status)
   }

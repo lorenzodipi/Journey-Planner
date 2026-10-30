@@ -52,6 +52,8 @@ export interface Category {
   color?: string
   /** Solo categorie di spesa: il previsto scritto a mano, nella valuta di casa (0019). */
   planned?: number
+  /** Categoria archiviata (0028): resta sulle spese già fatte ma non si propone più. */
+  archived?: boolean
 }
 
 export interface Place {
@@ -239,6 +241,27 @@ export interface BudgetItem {
 export interface ExpenseShare {
   travelerId: string
   weight: number
+  /** Divisione per percentuali (0028): quota in %, con due decimali. */
+  percent?: number
+  /** Divisione per importi fissi (0028): quota nella valuta della spesa. */
+  amount?: number
+}
+
+/** Come si divide una spesa (0028): parti uguali, percentuali (somma 100) o importi fissi (somma = totale). */
+export type SplitMode = 'equal' | 'percent' | 'fixed'
+
+/** Un versamento: chi ha pagato e quanto, nella valuta della spesa. */
+export interface ExpensePayer {
+  travelerId: string
+  amount: number
+}
+
+/** Ricevuta di una spesa (foto o PDF nel bucket privato). */
+export interface ExpenseFile {
+  id: string
+  path: string
+  name?: string
+  mimeType?: string
 }
 
 export interface Expense {
@@ -255,6 +278,18 @@ export interface Expense {
   dayId?: string
   notes?: string
   shares: ExpenseShare[] // tra chi si divide (vuoto = tutti in parti uguali)
+  /** Più paganti (0028). Vuoto: ha pagato `paidBy` per l'intero importo. */
+  payers?: ExpensePayer[]
+  splitMode?: SplitMode
+  /** Chi ha creato la spesa (account); vuoto per le spese vecchie. */
+  createdBy?: string
+  /** Da dove viene il cambio («BCE»), quando è stato letto e se l'ha scritto qualcuno a mano. */
+  fxSource?: string
+  fxAt?: string
+  fxManual?: boolean
+  /** Account di chi ha scritto il cambio a mano. */
+  fxSetBy?: string
+  files?: ExpenseFile[]
   /** Spesa nata da un'altra voce (tappa con costo, alloggio, volo, trasporto, prenotazione pagati). */
   source?: { kind: ExpenseSourceKind; id: string }
 }

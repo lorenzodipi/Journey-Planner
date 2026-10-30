@@ -10,7 +10,16 @@ export type Op =
   | { k: 'update'; table: string; id: string; patch: Record<string, unknown> }
   /** Stessa modifica su più righe, in una sola richiesta (es. eliminare 100 voci selezionate). */
   | { k: 'updateMany'; table: string; ids: string[]; patch: Record<string, unknown> }
-  | { k: 'expenseShares'; tripId: string; expenseId: string; travelerIds: string[] }
+  | {
+      k: 'expenseShares'
+      tripId: string
+      expenseId: string
+      travelerIds: string[]
+      /** Divisione dettagliata (0028): con percentuali o importi fissi si scrivono anche questi campi. */
+      detail?: { travelerId: string; weight: number; percent?: number; amount?: number }[]
+    }
+  /** Paganti della spesa (0028). Un solo pagante = nessuna riga (vale `paid_by`). */
+  | { k: 'expensePayers'; tripId: string; expenseId: string; payers: { travelerId: string; amount: number }[] }
 
 /** Come la modifica appare nell'app prima dell'invio. */
 export type Local =

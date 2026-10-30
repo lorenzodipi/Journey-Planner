@@ -1,6 +1,7 @@
 import type { Booking, BudgetItem, Expense, Scope, Trip, Traveler } from '../types'
 import { BOOKING_BUDGET_CATEGORY } from './bookingMeta'
 import { formatMoney, round2 } from './money'
+import { payersOf, scaleTo, splitAmounts } from './ripartizione'
 
 // Calcoli di budget e spese. Tutto è derivato dai dati: nessun totale si digita a mano.
 // Le valute: la valuta base del viaggio (es. EUR), la valuta locale (es. JPY) con un tasso
@@ -305,14 +306,26 @@ export function expensesByCurrency(
   )
 }
 
-/** Quota di ciascun viaggiatore nella valuta base, in proporzione ai pesi (senza quote: parti uguali tra tutti). */
+/**
+ * Quota di ciascun viaggiatore nella valuta base. Parti uguali: in proporzione ai pesi (senza quote: tutti);
+ * percentuali e importi fissi (0028): come scritti sulla spesa, il resto dei centesimi alla prima persona.
+ */
 export function expenseOwed(
-  e: Pick<Expense, 'amount' | 'currency' | 'fxRate' | 'shares'>,
+  e: Pick<Expense, 'amount' | 'currency' | 'fxRate' | 'shares'> & { splitMode?: Expense['splitMode'] },
   travelers: readonly Pick<Traveler, 'id'>[],
   fx: FxContext,
 ): { travelerId: string; amount: number }[] | null {
   const total = expenseBase(e, fx)
   if (total === null) return null
+  const mode = e.splitMode ?? 'equal'
+  if (mode !== 'equal' && e.shares.length > 0) {
+    const parts = splitAmounts(e.amount, mode, e.shares)
+    return scaleTo(
+      e.shares.map((s, i) => ({ travelerId: s.travelerId, amount: parts[i] })),
+      e.amount,
+      total,
+    )
+  }
   const shares = e.shares.length > 0 ? e.shares : travelers.map((t) => ({ travelerId: t.id, weight: 1 }))
   const weights = shares.map((s) => (s.weight > 0 ? s.weight : 0))
   const sum = weights.reduce((a, b) => a + b, 0)
@@ -324,6 +337,17 @@ export function expenseOwed(
     given = round2(given + amount)
     return { travelerId: s.travelerId, amount }
   })
+}
+
+/** Quanto ha versato ciascun pagante, nella valuta base (uno solo: l'intero importo). */
+export function expensePaid(
+  e: Pick<Expense, 'amount' | 'currency' | 'fxRate' | 'paidBy' | 'payers'>,
+  fx: FxContext,
+): { travelerId: string; amount: number }[] | null {
+  const base = expenseBase(e, fx)
+  if (base === null) return null
+  const payers = payersOf(e)
+  return payers.length === 1 ? [{ travelerId: payers[0].travelerId, amount: base }] : scaleTo(payers, e.amount, base)
 }
 
 export interface Balance {
@@ -377,16 +401,17 @@ export function summarizeExpenses(expenses: Expense[], travelers: readonly Pick<
   for (const e of expenses) {
     const owed = expenseOwed(e, travelers, fx)
     const base = expenseBase(e, fx)
-    if (owed === null || base === null) {
+    const payments = expensePaid(e, fx)
+    if (owed === null || base === null || payments === null) {
       unconverted.add(e.currency)
       continue
     }
     total += base
     for (const o of owed) {
       spent.set(o.travelerId, round2((spent.get(o.travelerId) ?? 0) + o.amount))
-      if (e.paidBy) owedForBalance.set(o.travelerId, round2((owedForBalance.get(o.travelerId) ?? 0) + o.amount))
+      if (payments.length > 0) owedForBalance.set(o.travelerId, round2((owedForBalance.get(o.travelerId) ?? 0) + o.amount))
     }
-    if (e.paidBy) paid.set(e.paidBy, round2((paid.get(e.paidBy) ?? 0) + base))
+    for (const p of payments) paid.set(p.travelerId, round2((paid.get(p.travelerId) ?? 0) + p.amount))
   }
   const balances = travelers.map((t) => {
     const p = paid.get(t.id) ?? 0
@@ -405,8 +430,9 @@ export function summarizeExpenses(expenses: Expense[], travelers: readonly Pick<
 // ---------- vista per persona (tab in Spese) ----------
 
 /** La spesa riguarda questa persona: l'ha pagata o ne ha una quota (senza quote = tutti). */
-export function involvesTraveler(e: Pick<Expense, 'paidBy' | 'shares'>, travelerId: string): boolean {
+export function involvesTraveler(e: Pick<Expense, 'paidBy' | 'shares'> & { payers?: Expense['payers'] }, travelerId: string): boolean {
   if (e.paidBy === travelerId) return true
+  if (e.payers?.some((p) => p.travelerId === travelerId && p.amount > 0)) return true
   if (e.shares.length === 0) return true
   return e.shares.some((s) => s.travelerId === travelerId && s.weight > 0)
 }
@@ -417,7 +443,7 @@ export function expensesOf(expenses: Expense[], travelerId: 'all' | string): Exp
 
 /** Quota di una spesa a carico di una persona (nella valuta base), o null se manca il cambio. */
 export function shareOf(
-  e: Pick<Expense, 'amount' | 'currency' | 'fxRate' | 'shares'>,
+  e: Pick<Expense, 'amount' | 'currency' | 'fxRate' | 'shares'> & { splitMode?: Expense['splitMode'] },
   travelers: readonly Pick<Traveler, 'id'>[],
   travelerId: string,
   fx: FxContext,
