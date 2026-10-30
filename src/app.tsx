@@ -5,7 +5,8 @@ import { navigate as hashNavigate, useHashLocation } from 'wouter/use-hash-locat
 import { useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
 import { AlloggiPage } from './pages/alloggi/AlloggiPage'
-import { Altro } from './pages/Altro'
+import { AltroPage } from './pages/altro/AltroPage'
+import { DatiTelefono } from './pages/altro/DatiTelefono'
 import { BudgetPage } from './pages/spese/BudgetPage'
 import { Dettaglio } from './pages/spese/Dettaglio'
 import { SpesePage } from './pages/spese/SpesePage'
@@ -15,7 +16,6 @@ import { PrenotazioniPage } from './pages/prenotazioni/PrenotazioniPage'
 import { Giorni } from './pages/Giorni'
 import { Giorno } from './pages/Giorno'
 import { Account } from './pages/Account'
-import { Impostazioni } from './pages/Impostazioni'
 import { Login } from './pages/Login'
 import { Luoghi } from './pages/Luoghi'
 import { Oggi } from './pages/Oggi'
@@ -48,8 +48,6 @@ function legacy<P extends object>(Page: ComponentType<P>) {
     )
   }
 }
-const OldAltro = legacy(Altro)
-const OldImpostazioni = legacy(Impostazioni)
 const OldAccount = legacy(Account)
 
 /** Ogni cambio di pagina riparte dall'alto (altrimenti resta la posizione della pagina precedente). */
@@ -116,13 +114,14 @@ export function App() {
           <Route path="/altro/spese">
             <Redirect to="/spese/dettaglio" replace />
           </Route>
-          <Route path="/altro" component={OldAltro} />
+          <Route path="/altro" component={AltroPage} />
+          <Route path="/altro/dati" component={DatiTelefono} />
           <Route path="/altro/alloggi" component={AlloggiPage} />
           <Route path="/altro/voli" component={VoliPage} />
           <Route path="/altro/trasporti" component={TrasportiPage} />
           <Route path="/altro/checklist" component={ChecklistPage} />
           <Route path="/altro/prenotazioni" component={PrenotazioniPage} />
-          <Route path="/altro/impostazioni" component={OldImpostazioni} />
+          <Route path="/altro/impostazioni" component={OldAccount} />
           <Route path="/altro/account" component={OldAccount} />
           <Route>
             <main className="screen legacy">
