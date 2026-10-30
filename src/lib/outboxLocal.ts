@@ -84,7 +84,7 @@ export function expenseEntry(
   input: ExpenseInput,
   existing?: Expense,
 ): { ops: Op[]; local: Local; label: string } {
-  const id = existing?.id ?? newId()
+  const id = existing?.id ?? input.id ?? newId()
   const { category, isNew } = pickExpenseCategory(trip.expenseCategories, input.category)
   const cols = expenseColumns(input, trip.timezone, trip.days, category?.id ?? null)
   const expense: Expense = {

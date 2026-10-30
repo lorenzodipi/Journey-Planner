@@ -1,11 +1,11 @@
-import { useAuth } from '../lib/auth'
+import { lastUid, useAuth } from '../lib/auth'
 import type { Traveler, Trip } from '../types'
 
 /** Il viaggiatore collegato all'account di chi usa l'app (in demo: il primo). */
 export function useMe(trip: Pick<Trip, 'travelers'> | null | undefined): Traveler | undefined {
   const auth = useAuth()
   if (!trip) return undefined
-  const uid = auth.session?.user.id
+  const uid = auth.session?.user.id ?? (auth.status === 'saved' ? lastUid() : undefined)
   if (auth.status === 'demo') return trip.travelers[0]
   return uid ? trip.travelers.find((p) => p.userId === uid) : undefined
 }

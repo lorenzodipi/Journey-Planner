@@ -125,7 +125,9 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
     setErrors(err)
     if (Object.keys(err).length > 0) return
     setBusy(true)
+    const id = expense?.id ?? crypto.randomUUID()
     const input: ExpenseInput = {
+      ...(expense ? {} : { id }),
       label: label.trim(),
       category: category.trim() || 'Altro',
       amount: amount as number,
@@ -140,7 +142,12 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
     const message = expense ? await t.updateExpense(trip.id, expense, input) : await t.createExpense(trip.id, input)
     setBusy(false)
     if (message) return setErrors({ form: message })
-    showToast(expense ? 'Spesa aggiornata' : 'Spesa salvata')
+    if (expense) showToast('Spesa aggiornata')
+    else {
+      const offline = !navigator.onLine || t.stale
+      const quanti = people.length > 1 ? ` ${inQuanti(people.length)}` : ''
+      showToast(offline ? 'Spesa registrata. La invio quando c’è rete.' : `Spesa registrata: ${formatMoney(amount as number, side)}${quanti}.`, { label: 'Annulla', run: () => void t.setExpenseDeleted(id, true) })
+    }
     onClose()
   }
 

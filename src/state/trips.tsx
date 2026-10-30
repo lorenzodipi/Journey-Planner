@@ -43,6 +43,9 @@ export interface ItemCost {
 /** Ogni azione restituisce `null` se è andata bene, altrimenti il messaggio d'errore da mostrare. */
 type Result = Promise<string | null>
 
+/** Tempo limite del primo caricamento dei viaggi (#25). */
+export const LOAD_TIMEOUT_MS = 15_000
+
 interface TripsValue {
   status: TripsStatus
   trips: Trip[]
@@ -52,6 +55,8 @@ interface TripsValue {
   error: string | null
   /** modifiche fatte senza rete (o non ancora partite) */
   pending: number
+  /** id delle righe con modifiche non ancora inviate (voci «In attesa», #49) */
+  pendingIds: ReadonlySet<string>
   /** modifiche rifiutate dal server, da scartare */
   failed: Entry[]
   dismissFailed: (id: string) => void
@@ -165,7 +170,8 @@ const TripsContext = createContext<TripsValue | null>(null)
 export function TripProvider({ children }: { children: ReactNode }) {
   const auth = useAuth()
   const demo = auth.status === 'demo'
-  const signedIn = auth.status === 'signed-in'
+  // con i dati salvati (servizio irraggiungibile) si lavora come da dentro: le modifiche restano in coda
+  const signedIn = auth.status === 'signed-in' || auth.status === 'saved'
 
   const [serverTrips, setTrips] = useState<Trip[]>(demo ? [demoTrip] : [])
   const [queue, setQueueState] = useState<Entry[]>(() => (demo ? [] : loadQueue()))
@@ -187,7 +193,12 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const load = useCallback(async (only?: api.Scope[]): Promise<boolean> => {
     if (demo) return false
     try {
-      const fresh = await api.fetchTrips(only)
+      // senza dati sul telefono non si aspetta all'infinito (#25): dopo il tempo limite compare l'errore
+      let timer: ReturnType<typeof setTimeout> | undefined
+      const limit = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('timeout')), hasData.current ? 30_000 : LOAD_TIMEOUT_MS)
+      })
+      const fresh = await Promise.race([api.fetchTrips(only), limit]).finally(() => clearTimeout(timer))
       hasData.current = true
       setTrips(fresh)
       setStale(false)
@@ -344,6 +355,19 @@ export function TripProvider({ children }: { children: ReactNode }) {
   }
 
   const unsent = queue.filter((e) => !e.error && !e.sent).length
+  const pendingIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const e of queue) {
+      if (e.error || e.sent) continue
+      for (const op of e.ops) {
+        if (op.k === 'upsert' && typeof op.row.id === 'string') ids.add(op.row.id)
+        else if (op.k === 'update') ids.add(op.id)
+        else if (op.k === 'updateMany') op.ids.forEach((id) => ids.add(id))
+        else if (op.k === 'expenseShares') ids.add(op.expenseId)
+      }
+    }
+    return ids
+  }, [queue])
   const failed = queue.filter((e) => e.error)
 
   // riprova ogni tanto finché ci sono modifiche da inviare, e quando l'app torna in primo piano
@@ -392,6 +416,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     stale,
     error,
     pending: unsent,
+    pendingIds,
     failed,
     dismissFailed: (id) => commit(queueRef.current.filter((e) => e.id !== id)),
     setActive,

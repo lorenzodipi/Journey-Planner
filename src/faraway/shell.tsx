@@ -6,6 +6,7 @@ import { Link, useLocation } from 'wouter'
 import { cx } from './cx'
 import { Sv, TAB_PATHS } from './icons'
 import { PulsanteIcona } from './base'
+import { PillolaOffline, StatoRete } from './Rete'
 
 const TABS = [
   { href: '/', label: 'Oggi' },
@@ -106,10 +107,12 @@ interface ScreenProps {
   className?: string
   /** Contenuto senza il <main> con i margini (es. la Mappa a tutto schermo). */
   bare?: boolean
+  /** Banner delle modifiche in coda in cima e «Sei offline» in fondo (#49); `pill: false` senza la pillola. */
+  rete?: boolean | { pill: false }
 }
 
 /** Una schermata dell'app: la «cornice del telefono» del mock è la pagina intera. */
-export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, overlay, className, bare }: ScreenProps) {
+export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, overlay, className, bare, rete = true }: ScreenProps) {
   useEffect(() => {
     const root = document.documentElement
     if (tabs) root.removeAttribute('data-no-tabs')
@@ -123,7 +126,9 @@ export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, ove
         children
       ) : (
         <main className="fa-main" style={{ ...(gap ? { gap } : null), ...mainStyle }}>
+          {rete ? <StatoRete /> : null}
           {children}
+          {rete === true ? <PillolaOffline /> : null}
         </main>
       )}
       {tabs ? <BarraSchede /> : null}

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect } from 'react'
 import { Redirect, Route, Router, Switch, useLocation } from 'wouter'
-import type { ComponentType } from 'react'
+import type { ComponentType, ReactNode } from 'react'
 import { navigate as hashNavigate, useHashLocation } from 'wouter/use-hash-location'
 import { useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
@@ -26,6 +26,8 @@ import { OutboxBanner } from './ui/OutboxBanner'
 import { ToastHost } from './ui/ToastHost'
 import { EmptyState } from './ui/PageHeader'
 import { Sprite } from './ui/Sprite'
+import { loadActiveId, loadSnapshot } from './lib/cache'
+import { SchermataCaricamento, SchermataErrore } from './faraway/Rete'
 
 // La query delle rotte (?vista=mappa) sta in location.search: wouter la lascia alla pagina dopo se il
 // nuovo indirizzo non ha «?». Qui ogni cambio di pagina la riscrive (vuota se non c'è).
@@ -38,6 +40,7 @@ function legacy<P extends object>(Page: ComponentType<P>) {
   return function Legacy(props: P) {
     return (
       <div className="legacy">
+        <OutboxBanner />
         <Page {...props} />
         <BottomNav />
       </div>
@@ -70,41 +73,22 @@ function ScrollToTop() {
 
 export function App() {
   const auth = useAuth()
-  const { active: trip, status, error, refresh } = useTrips()
+  const { active: trip, status, refresh } = useTrips()
 
-  if (auth.status === 'loading') {
-    return (
-      <div className="grid min-h-dvh place-items-center text-muted" role="status">
-        Caricamento…
-      </div>
-    )
-  }
-
+  // avvio, errore e caricamento con gli stati del design system (#25, #49)
+  const saved = loadSnapshot()
+  const title = (saved?.trips.find((t) => t.id === loadActiveId()) ?? saved?.trips[0])?.title ?? 'Faraway'
+  const screen = (node: ReactNode) => (
+    <Router hook={useHashLoc}>
+      <Sprite />
+      {node}
+    </Router>
+  )
+  if (auth.status === 'loading') return screen(<SchermataCaricamento title={title} />)
+  if (auth.status === 'unreachable') return screen(<SchermataErrore title={title} onRetry={auth.retry} onSaved={saved ? auth.useSaved : undefined} />)
   if (auth.status === 'signed-out') return <Login />
-
-  if (status === 'loading') {
-    return (
-      <div className="grid min-h-dvh place-items-center text-muted" role="status">
-        Carico i tuoi viaggi…
-      </div>
-    )
-  }
-
-  if (status === 'error') {
-    return (
-      <main className="mx-auto grid min-h-dvh max-w-sm place-content-center gap-4 px-6 text-center">
-        <h1 className="font-display text-2xl font-extrabold">Non riesco a caricare i viaggi</h1>
-        <p role="alert" className="text-sm text-muted">{error}</p>
-        <button
-          type="button"
-          onClick={() => void refresh()}
-          className="min-h-[52px] rounded-full bg-accent px-6 font-extrabold text-accent-ink"
-        >
-          Riprova
-        </button>
-      </main>
-    )
-  }
+  if (status === 'loading') return screen(<SchermataCaricamento title={title} />)
+  if (status === 'error') return screen(<SchermataErrore title={title} onRetry={() => void refresh()} />)
 
   if (!trip) return <PrimoViaggio />
 
@@ -118,7 +102,6 @@ export function App() {
             Anteprima demo · dati fittizi
           </p>
         )}
-        <OutboxBanner />
         <Switch>
           <Route path="/" component={Oggi} />
           <Route path="/giorni" component={Giorni} />

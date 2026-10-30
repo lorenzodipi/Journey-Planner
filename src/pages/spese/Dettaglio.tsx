@@ -9,6 +9,7 @@ import { CATEGORIE_BASE, catKey, categoriaDi, iconaSpesa } from '../../lib/ricev
 import { beneficiari, expenseBase, riassunto, sezioneSpesa, type SpesaVista } from '../../lib/spese'
 import { tripToday } from '../../lib/today'
 import { useMe } from '../../state/me'
+import { useOnline } from '../../state/online'
 import { showToast } from '../../state/toast'
 import { useTrip, useTrips } from '../../state/trip'
 import { Ic } from '../../ui/Sprite'
@@ -40,6 +41,9 @@ export function Dettaglio() {
   const r = riassunto(trip, me?.id)
   const today = tripToday(trip)
   const cur = trip.baseCurrency
+  const online = useOnline()
+  // senza rete e con modifiche in coda: «In attesa di invio» o «Salvata» (#49, Fa-50)
+  const coda = t.pending > 0 && (!online || t.stale)
 
   const inVista = useMemo(() => r.spese.filter((e) => (gruppo ? sezioneSpesa(e, trip.travelers, me?.id) === vista : true)), [r.spese, gruppo, vista, trip.travelers, me?.id])
   const cats = useMemo(() => {
@@ -151,6 +155,8 @@ export function Dettaglio() {
               const src = sorgente(e, trip)
               const day = e.source?.kind === 'day_item' ? trip.days.findIndex((d) => d.items.some((i) => i.id === e.source?.id)) : -1
               const payer = pagataDa(e, trip.travelers, me?.id)
+              const attesa = coda && t.pendingIds.has(e.id)
+              const importo = amount === null ? formatMoney(e.amount, e.currency) : formatMoney(amount, cur)
               return (
                 <div key={e.id} className={cx('fa-xr', isOpen && 'open')}>
                   <button type="button" className="fa-row" aria-expanded={isOpen} onClick={() => open.toggle(e.id)}>
@@ -160,11 +166,20 @@ export function Dettaglio() {
                         {e.label}
                       </span>
                       <span className="s" style={{ display: 'block' }}>
-                        {rigaSpesa(e, trip, me?.id)}
+                        {coda ? `${attesa ? 'In attesa di invio' : 'Salvata'} · ${importo}` : rigaSpesa(e, trip, me?.id)}
                       </span>
                     </span>
                     <span className="end">
-                      <span className="amt">{amount === null ? formatMoney(e.amount, e.currency) : formatMoney(amount, cur)}</span>
+                      {coda ? (
+                        attesa ? (
+                          <span className="fa-wait">
+                            <Sv name="clock" size={16} />
+                            In attesa
+                          </span>
+                        ) : null
+                      ) : (
+                        <span className="amt">{importo}</span>
+                      )}
                       <Sv name="chev" size={20} className="chev" />
                     </span>
                   </button>

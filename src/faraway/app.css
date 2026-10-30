@@ -132,3 +132,9 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .k-Ricevuta .fa-rcat-ed .acts{display:flex;gap:8px;flex-wrap:wrap;margin:0}
 .k-Ricevuta .fa-rcat-ed .fa-btn{width:auto}
 .k-Ricevuta .ok svg{flex:none}
+
+/* Stati di sistema (#25, #49) */
+.fa-errcard{border:1.5px solid var(--danger)}
+.fa-errcard .ei{color:var(--danger)}
+.fa-sending{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:60;display:inline-flex;align-items:center;gap:6px;margin:0;padding:6px 12px;border-radius:9999px;background:var(--surface-card);color:var(--ink);box-shadow:var(--shadow-card);font:600 13px/18px var(--font-sans);white-space:nowrap}
+.fa-wait{display:inline-flex;align-items:center;gap:4px;color:var(--azzurro-ink);font:600 13px/18px var(--font-sans);white-space:nowrap}

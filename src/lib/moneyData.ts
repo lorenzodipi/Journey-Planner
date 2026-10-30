@@ -130,6 +130,8 @@ export function budgetColumns(i: BudgetInput, categoryId: string | null) {
 }
 
 export interface ExpenseInput {
+  /** Id scelto da chi crea (per «Annulla» subito dopo); di solito lo genera l'app. */
+  id?: string
   label: string
   category: string
   amount: number
