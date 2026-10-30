@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'preact/hooks'
+import { useEffect, useRef } from 'react'
 import { daysBetween, formatShort } from '../lib/dates'
 import type { DaySun } from '../lib/sun'
 import { FORECAST_DAYS, forecastAvailableFrom, inForecastRange, rainWindow, weatherLabel, weatherSymbol, windFrom, type HourWeather } from '../lib/weather'
@@ -59,9 +59,9 @@ export function WeatherCard({ forecast, date, today, city, sun, nowMin }: Props)
     else if (forecast.error) text = `${forecast.error} Riprova più tardi.`
     else text = 'Previsioni non disponibili per questo giorno.'
     return (
-      <section class="card" aria-label="Meteo del giorno">
-        <h2 class="b-bold">Meteo</h2>
-        <p class="b-sm muted" style={{ marginTop: '4px' }}>
+      <section className="card" aria-label="Meteo del giorno">
+        <h2 className="b-bold">Meteo</h2>
+        <p className="b-sm muted" style={{ marginTop: '4px' }}>
           {text}
         </p>
       </section>
@@ -82,14 +82,14 @@ export function WeatherCard({ forecast, date, today, city, sun, nowMin }: Props)
   const cells = hasSlider ? cellsFor(hours, sun, nowHour) : []
 
   return (
-    <section class="card" aria-label="Meteo del giorno">
-      <div class="tr">
+    <section className="card" aria-label="Meteo del giorno">
+      <div className="tr">
         <div>
-          <p style={{ font: '500 40px/44px var(--font-display)', letterSpacing: '-.02em' }} class="num">
+          <p style={{ font: '500 40px/44px var(--font-display)', letterSpacing: '-.02em' }} className="num">
             {big}°
           </p>
-          <p class="b-bold">{headline}</p>
-          <p class="b-sm muted num">
+          <p className="b-bold">{headline}</p>
+          <p className="b-sm muted num">
             Minima {day.min}° · massima {day.max}°
           </p>
         </div>
@@ -98,30 +98,30 @@ export function WeatherCard({ forecast, date, today, city, sun, nowMin }: Props)
 
       {cells.length > 0 && (
         <>
-          <div class="sec-h" style={{ margin: '16px 0 0' }}>
-            <h2 class="b-bold">Ora per ora</h2>
-            <span class="cap muted">
+          <div className="sec-h" style={{ margin: '16px 0 0' }}>
+            <h2 className="b-bold">Ora per ora</h2>
+            <span className="cap muted">
               {city}
               {forecast.savedAt ? ` · aggiornato alle ${hhmm(forecast.savedAt)}` : ''}
             </span>
           </div>
-          <div class="wsl" ref={slider} role="group" aria-label="Meteo ora per ora, scorri in orizzontale" tabIndex={0}>
+          <div className="wsl" ref={slider} role="group" aria-label="Meteo ora per ora, scorri in orizzontale" tabIndex={0}>
             {cells.map((c) =>
               'event' in c ? (
-                <div class="wc ev" key={c.event}>
-                  <span class="tm">{clock(c.min)}</span>
+                <div className="wc ev" key={c.event}>
+                  <span className="tm">{clock(c.min)}</span>
                   <Ic name={c.event === 'sunrise' ? 'i-nav-sunrise' : 'i-nav-sunset'} size={28} />
-                  <span class="tp">{c.event === 'sunrise' ? 'Alba' : 'Tramonto'}</span>
+                  <span className="tp">{c.event === 'sunrise' ? 'Alba' : 'Tramonto'}</span>
                 </div>
               ) : (
-                <div class={`wc${c.now ? ' now' : ''}`} key={c.hour.h}>
-                  <span class="tm">{c.now ? 'Ora' : clock(c.min)}</span>
+                <div className={`wc${c.now ? ' now' : ''}`} key={c.hour.h}>
+                  <span className="tm">{c.now ? 'Ora' : clock(c.min)}</span>
                   <Ic name={weatherSymbol(c.hour.code)} size={28} />
-                  <b class="tp">{c.hour.t}°</b>
-                  <span class="col">
+                  <b className="tp">{c.hour.t}°</b>
+                  <span className="col">
                     <i style={{ height: `${colHeight(c.hour.t)}px` }} />
                   </span>
-                  <span class={`pr${(c.hour.rain ?? 0) >= 60 ? ' hi' : ''}`}>{c.hour.rain ?? 0}%</span>
+                  <span className={`pr${(c.hour.rain ?? 0) >= 60 ? ' hi' : ''}`}>{c.hour.rain ?? 0}%</span>
                 </div>
               ),
             )}
@@ -130,38 +130,38 @@ export function WeatherCard({ forecast, date, today, city, sun, nowMin }: Props)
       )}
 
       {ref && (
-        <div class="wdet">
+        <div className="wdet">
           {ref.feels != null && (
             <div>
-              <p class="cap muted">Percepita</p>
-              <p class="b-bold num">{ref.feels}°</p>
+              <p className="cap muted">Percepita</p>
+              <p className="b-bold num">{ref.feels}°</p>
             </div>
           )}
           {ref.wind != null && (
             <div>
-              <p class="cap muted">Vento</p>
-              <p class="b-bold num">
+              <p className="cap muted">Vento</p>
+              <p className="b-bold num">
                 {ref.wind} km/h{ref.windDir != null ? ` da ${windFrom(ref.windDir)}` : ''}
               </p>
             </div>
           )}
           {ref.hum != null && (
             <div>
-              <p class="cap muted">Umidità</p>
-              <p class="b-bold num">{ref.hum}%</p>
+              <p className="cap muted">Umidità</p>
+              <p className="b-bold num">{ref.hum}%</p>
             </div>
           )}
           {wettest?.rain != null && (
             <div>
-              <p class="cap muted">Pioggia, al massimo</p>
-              <p class="b-bold num">
+              <p className="cap muted">Pioggia, al massimo</p>
+              <p className="b-bold num">
                 {wettest.rain}% alle {clock(wettest.h * 60)}
               </p>
             </div>
           )}
         </div>
       )}
-      {!ref && day.rainPct != null && <p class="b-sm muted num">Probabilità di pioggia {day.rainPct}%</p>}
+      {!ref && day.rainPct != null && <p className="b-sm muted num">Probabilità di pioggia {day.rainPct}%</p>}
     </section>
   )
 }

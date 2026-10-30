@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'preact/hooks'
-import { Link } from 'wouter-preact'
+import { useMemo, useState } from 'react'
+import { Link } from 'wouter'
 import '../fw-spese.css'
 import { budgetLines, expenseBase, fxOf, involvesTraveler, logisticsLines, summarizeLines, type Line } from '../lib/budget'
 import { formatDay } from '../lib/dates'
@@ -164,9 +164,9 @@ export function Spese() {
     )
 
   const chip = (label: string, on: boolean, onClick: () => void, n?: number) => (
-    <button type="button" class={`chip${on ? ' on' : ''}`} aria-pressed={on} onClick={onClick}>
+    <button type="button" className={`chip${on ? ' on' : ''}`} aria-pressed={on} onClick={onClick}>
       {label}
-      {n !== undefined && <> <span class="n">{n}</span></>}
+      {n !== undefined && <> <span className="n">{n}</span></>}
     </button>
   )
   const pick = (s: Status) => () => {
@@ -175,46 +175,46 @@ export function Spese() {
   }
 
   return (
-    <main class="screen">
+    <main className="screen">
       <PageHeader
         title="Dettaglio spese"
         subtitle={`${rows.length} ${rows.length === 1 ? 'spesa' : 'spese'} · ${trip.title}`}
         back={{ href: '/altro/budget', label: 'Spese' }}
         actions={
-          <button type="button" class="rbtn" aria-label="Cerca una spesa" aria-pressed={searching} onClick={() => { setSearching((v) => !v); setQ('') }}>
+          <button type="button" className="rbtn" aria-label="Cerca una spesa" aria-pressed={searching} onClick={() => { setSearching((v) => !v); setQ('') }}>
             <SearchG />
           </button>
         }
       />
-      {searching && <input class="fs-search" type="search" autoFocus placeholder="Cerca una spesa" aria-label="Cerca una spesa" value={q} onInput={(e) => setQ(e.currentTarget.value)} />}
+      {searching && <input className="fs-search" type="search" autoFocus placeholder="Cerca una spesa" aria-label="Cerca una spesa" value={q} onChange={(e) => setQ(e.currentTarget.value)} />}
 
       {rows.length > 0 && (
         <>
-          <div class="st3">
-            <div class="stx" style={{ background: 'var(--tinta-menta)' }}>
+          <div className="st3">
+            <div className="stx" style={{ background: 'var(--tinta-menta)' }}>
               <p>Pagato</p>
               <p>{formatMoney(paidTotal, base)}</p>
             </div>
-            <div class="stx" style={{ background: 'var(--tinta-limone)' }}>
+            <div className="stx" style={{ background: 'var(--tinta-limone)' }}>
               <p>Da pagare</p>
               <p>{formatMoney(dueTotal, base)}</p>
             </div>
-            <div class="stx" style={{ background: 'var(--tinta-azzurro)' }}>
+            <div className="stx" style={{ background: 'var(--tinta-azzurro)' }}>
               <p>Previsto</p>
               <p>{formatMoney(plannedTotal, base)}</p>
             </div>
           </div>
 
-          <div class="chips fs-chips" role="group" aria-label="Filtra le spese">
+          <div className="chips fs-chips" role="group" aria-label="Filtra le spese">
             {chip('Tutte', status === 'all' && filterId === 'all', pick('all'), byPerson.length)}
             {chip('Pagate', status === 'paid', pick('paid'), nPaid)}
             {chip('Da pagare', status === 'due', pick('due'), nDue)}
             {trip.travelers.length > 1 && trip.travelers.map((p) => chip(p.name, filterId === p.id, () => setWho(filterId === p.id ? 'all' : p.id)))}
           </div>
 
-          <div class="seg" role="tablist" aria-label="Ordina">
+          <div className="seg" role="tablist" aria-label="Ordina">
             {(['date', 'amount'] as const).map((o) => (
-              <span key={o} class={order === o ? 'on' : ''} role="tab" tabIndex={0} aria-selected={order === o} onClick={() => setOrder(o)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setOrder(o)}>
+              <span key={o} className={order === o ? 'on' : ''} role="tab" tabIndex={0} aria-selected={order === o} onClick={() => setOrder(o)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setOrder(o)}>
                 {o === 'date' ? 'Per data' : 'Per importo'}
               </span>
             ))}
@@ -233,39 +233,39 @@ export function Spese() {
             const head = (
               <>
                 <Ic name={r.icon} size={44} />
-                <div class="grow">
-                  <p class="ttl">{r.title}</p>
-                  <p class="b-sm num">{r.sub}</p>
+                <div className="grow">
+                  <p className="ttl">{r.title}</p>
+                  <p className="b-sm num">{r.sub}</p>
                 </div>
-                <span class="amt">{r.amount}</span>
+                <span className="amt">{r.amount}</span>
               </>
             )
             return (
-              <article class="exp" key={r.key} aria-label={r.title}>
+              <article className="exp" key={r.key} aria-label={r.title}>
                 {r.expense ? (
-                  <button type="button" class="top2" aria-label={`Modifica ${r.title}`} onClick={() => setSheet({ kind: 'edit', expense: r.expense as Expense })}>
+                  <button type="button" className="top2" aria-label={`Modifica ${r.title}`} onClick={() => setSheet({ kind: 'edit', expense: r.expense as Expense })}>
                     {head}
                   </button>
                 ) : (
-                  <Link href={r.href ?? '/altro/budget'} class="top2" aria-label={`Apri ${r.title}`}>
+                  <Link href={r.href ?? '/altro/budget'} className="top2" aria-label={`Apri ${r.title}`}>
                     {head}
                   </Link>
                 )}
-                <div class="foot">
-                  <div class="l">
-                    <span class={`sp ${r.paid ? 'ok' : 'warn'}`}>
+                <div className="foot">
+                  <div className="l">
+                    <span className={`sp ${r.paid ? 'ok' : 'warn'}`}>
                       <CheckG size={14} sw={3} />
                       {r.paid ? 'Pagato' : 'Da pagare'}
                     </span>
                     {payer ? (
-                      <span class="who">
-                        <span class="av" style={{ background: payer.color }} aria-hidden="true">
+                      <span className="who">
+                        <span className="av" style={{ background: payer.color }} aria-hidden="true">
                           {payer.name.slice(0, 1).toUpperCase()}
                         </span>
                         {payer.name}
                       </span>
                     ) : trip.travelers.length > 1 ? (
-                      <span class="who">Tutti</span>
+                      <span className="who">Tutti</span>
                     ) : null}
                   </div>
                   {r.maps && <MapsPill kind="sm" href={r.maps} label={r.title} text="Maps" />}
@@ -276,8 +276,8 @@ export function Spese() {
         </div>
       )}
 
-      <div class="cta">
-        <button type="button" class="btn block" onClick={() => setSheet({ kind: 'new' })}>
+      <div className="cta">
+        <button type="button" className="btn block" onClick={() => setSheet({ kind: 'new' })}>
           <PlusG />
           Registra spesa
         </button>

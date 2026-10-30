@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 import { cacheFresh, findPhoto, photoKey, readCache, writeCache, type PlacePhoto } from '../lib/placePhoto'
 import type { Place } from '../types'
 

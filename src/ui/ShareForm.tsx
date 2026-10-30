@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import { FormError, PrimaryButton, TextField } from './Field'
 
 interface Props {
@@ -12,7 +12,7 @@ export function ShareForm({ onSubmit, onDone }: Props) {
   const [busy, setBusy] = useState(false)
   const [added, setAdded] = useState<string | null>(null)
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError('Scrivi un indirizzo email valido.')
     setBusy(true)
@@ -25,14 +25,14 @@ export function ShareForm({ onSubmit, onDone }: Props) {
 
   if (added) {
     return (
-      <div class="space-y-4">
-        <p class="rounded-2xl bg-accent-soft px-4 py-3 text-sm text-accent">
+      <div className="space-y-4">
+        <p className="rounded-2xl bg-accent-soft px-4 py-3 text-sm text-accent">
           Fatto: <strong>{added}</strong> ora può vedere e modificare il viaggio.
         </p>
         <button
           type="button"
           onClick={onDone}
-          class="min-h-12 w-full rounded-full bg-accent px-6 font-extrabold text-accent-ink"
+          className="min-h-12 w-full rounded-full bg-accent px-6 font-extrabold text-accent-ink"
         >
           Ok
         </button>
@@ -41,9 +41,9 @@ export function ShareForm({ onSubmit, onDone }: Props) {
   }
 
   return (
-    <form class="space-y-4" onSubmit={submit} noValidate>
-      <TextField label="Email della persona" value={email} onInput={setEmail} autoComplete="off" />
-      <p class="text-xs text-muted">
+    <form className="space-y-4" onSubmit={submit} noValidate>
+      <TextField label="Email della persona" value={email} onChange={setEmail} autoComplete="off" />
+      <p className="text-xs text-muted">
         L'utente deve già esistere in Supabase (Authentication → Users). Avrà il ruolo «modifica»: può cambiare tutto tranne
         eliminare il viaggio.
       </p>

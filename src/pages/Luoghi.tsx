@@ -1,5 +1,5 @@
 import '../fw-luoghi.css'
-import { useMemo, useRef, useState } from 'preact/hooks'
+import { useMemo, useRef, useState } from 'react'
 import { formatDuration } from '../lib/duration'
 import { mapsLinkFor } from '../lib/mapsUrl'
 import { countActive, filterPlaces, toggleValue } from '../lib/placeFilter'
@@ -25,28 +25,28 @@ import { useHideNav } from '../ui/useHideNav'
 function StatusSp({ place, dayNo, now }: { place: Place; dayNo: number | undefined; now: boolean }) {
   if (place.status === 'done')
     return (
-      <span class="sp vi">
+      <span className="sp vi">
         <CheckG size={14} sw={3} />
         Fatto
       </span>
     )
   if (place.status === 'skipped')
     return (
-      <span class="sp bad">
+      <span className="sp bad">
         <CloseG size={14} sw={2.6} />
         Saltato
       </span>
     )
   if (now)
     return (
-      <span class="sp now">
+      <span className="sp now">
         <ClockG size={14} sw={2.4} />
         Ora
       </span>
     )
   const text = dayNo != null ? `Giorno ${dayNo}` : place.status === 'planned' ? 'Pianificato' : 'Idea'
   return (
-    <span class="sp idle">
+    <span className="sp idle">
       <MinusG size={14} sw={2.6} />
       {text}
     </span>
@@ -145,7 +145,7 @@ export function Luoghi() {
       title={chosen.length === 0 ? 'Tocca i luoghi' : chosen.length === 1 ? '1 selezionato' : `${chosen.length} selezionati`}
       subtitle="tocca i luoghi per sceglierli"
       actions={
-        <button type="button" class="btn soft sm" onClick={stopSelecting}>
+        <button type="button" className="btn soft sm" onClick={stopSelecting}>
           Annulla
         </button>
       }
@@ -156,14 +156,14 @@ export function Luoghi() {
       subtitle={subtitle}
       actions={
         <>
-          <button type="button" class="rbtn" aria-label="Cerca un luogo" aria-pressed={searchOpen} onClick={toggleSearch}>
+          <button type="button" className="rbtn" aria-label="Cerca un luogo" aria-pressed={searchOpen} onClick={toggleSearch}>
             <SearchG />
           </button>
-          <button type="button" class={`rbtn${activeFilters > 0 ? ' pri' : ''}`} aria-label={activeFilters > 0 ? `Filtra, ${activeFilters} attivi` : 'Filtra'} onClick={() => setFilterOpen(true)}>
+          <button type="button" className={`rbtn${activeFilters > 0 ? ' pri' : ''}`} aria-label={activeFilters > 0 ? `Filtra, ${activeFilters} attivi` : 'Filtra'} onClick={() => setFilterOpen(true)}>
             <FilterG />
           </button>
           {visible.length > 0 && (
-            <button type="button" class="rbtn" aria-label="Seleziona luoghi" onClick={() => setSelecting(true)}>
+            <button type="button" className="rbtn" aria-label="Seleziona luoghi" onClick={() => setSelecting(true)}>
               <CheckG />
             </button>
           )}
@@ -173,13 +173,13 @@ export function Luoghi() {
   )
 
   return (
-    <main class="screen">
+    <main className="screen">
       {header}
 
       {!selecting && searchOpen && trip.places.length > 0 && (
-        <label class="fld srch">
+        <label className="fld srch">
           <SearchG />
-          <input ref={searchRef} type="search" value={text} placeholder="Cerca un luogo" aria-label="Cerca nei tuoi luoghi" onInput={(e) => setText(e.currentTarget.value)} />
+          <input ref={searchRef} type="search" value={text} placeholder="Cerca un luogo" aria-label="Cerca nei tuoi luoghi" onChange={(e) => setText(e.currentTarget.value)} />
         </label>
       )}
 
@@ -188,27 +188,27 @@ export function Luoghi() {
       {trip.places.length > 0 && (
         <>
           {cities.length > 1 && (
-            <div class="chips scroll" role="group" aria-label="Città">
-              <button type="button" class={`chip${filters.cities.length === 0 ? ' on' : ''}`} aria-pressed={filters.cities.length === 0} onClick={() => setFilters({ ...filters, cities: [] })}>
-                Tutti <span class="n">{trip.places.length}</span>
+            <div className="chips scroll" role="group" aria-label="Città">
+              <button type="button" className={`chip${filters.cities.length === 0 ? ' on' : ''}`} aria-pressed={filters.cities.length === 0} onClick={() => setFilters({ ...filters, cities: [] })}>
+                Tutti <span className="n">{trip.places.length}</span>
               </button>
               {cities.map(([c, n]) => (
-                <button type="button" key={c} class={`chip${filters.cities.includes(c) ? ' on' : ''}`} aria-pressed={filters.cities.includes(c)} onClick={() => setFilters({ ...filters, cities: pickOne(filters.cities, c) })}>
-                  {c} <span class="n">{n}</span>
+                <button type="button" key={c} className={`chip${filters.cities.includes(c) ? ' on' : ''}`} aria-pressed={filters.cities.includes(c)} onClick={() => setFilters({ ...filters, cities: pickOne(filters.cities, c) })}>
+                  {c} <span className="n">{n}</span>
                 </button>
               ))}
             </div>
           )}
           {cats.length > 0 && (
-            <div class="chips scroll" role="group" aria-label="Categorie">
-              <button type="button" class={`chip${filters.categories.length === 0 ? ' on' : ''}`} aria-pressed={filters.categories.length === 0} onClick={() => setFilters({ ...filters, categories: [] })}>
+            <div className="chips scroll" role="group" aria-label="Categorie">
+              <button type="button" className={`chip${filters.categories.length === 0 ? ' on' : ''}`} aria-pressed={filters.categories.length === 0} onClick={() => setFilters({ ...filters, categories: [] })}>
                 Tutte
               </button>
               {cats.map((c) => (
                 <button
                   type="button"
                   key={c || 'none'}
-                  class={`chip${filters.categories.includes(c) ? ' on' : ''}`}
+                  className={`chip${filters.categories.includes(c) ? ' on' : ''}`}
                   aria-pressed={filters.categories.includes(c)}
                   onClick={() => setFilters({ ...filters, categories: pickOne(filters.categories, c) })}
                 >
@@ -218,21 +218,21 @@ export function Luoghi() {
             </div>
           )}
           {(filters.statuses.length > 0 || !isDefaultView(view)) && (
-            <div class="chips scroll" aria-label="Filtri attivi">
+            <div className="chips scroll" aria-label="Filtri attivi">
               {filters.statuses.map((s) => (
-                <button type="button" key={s} class="chip on" aria-label={`Togli filtro stato ${s}`} onClick={() => setFilters({ ...filters, statuses: toggleValue(filters.statuses, s) })}>
+                <button type="button" key={s} className="chip on" aria-label={`Togli filtro stato ${s}`} onClick={() => setFilters({ ...filters, statuses: toggleValue(filters.statuses, s) })}>
                   {{ idea: 'Idea', planned: 'Pianificato', done: 'Fatto', skipped: 'Saltato' }[s]}
                   <CloseG size={14} sw={2.6} />
                 </button>
               ))}
               {view.groupBy !== DEFAULT_VIEW.groupBy && (
-                <button type="button" class="chip on" aria-label="Togli il raggruppamento" onClick={() => setView({ ...view, groupBy: DEFAULT_VIEW.groupBy })}>
+                <button type="button" className="chip on" aria-label="Togli il raggruppamento" onClick={() => setView({ ...view, groupBy: DEFAULT_VIEW.groupBy })}>
                   Raggruppa: {GROUP_LABEL[view.groupBy]}
                   <CloseG size={14} sw={2.6} />
                 </button>
               )}
               {view.sortBy !== DEFAULT_VIEW.sortBy && (
-                <button type="button" class="chip on" aria-label="Togli l'ordinamento" onClick={() => setView({ ...view, sortBy: DEFAULT_VIEW.sortBy })}>
+                <button type="button" className="chip on" aria-label="Togli l'ordinamento" onClick={() => setView({ ...view, sortBy: DEFAULT_VIEW.sortBy })}>
                   Ordina: {SORT_LABEL[view.sortBy]}
                   <CloseG size={14} sw={2.6} />
                 </button>
@@ -248,18 +248,18 @@ export function Luoghi() {
       {trip.places.length > 0 && visible.length === 0 && <EmptyState title="Nessun risultato" text="Prova a togliere qualche filtro o a cambiare la ricerca." art={ART.vuotoLuoghi} />}
 
       {selecting && visible.length > 0 && (
-        <div class="rows">
+        <div className="rows">
           <button
             type="button"
-            class="selall"
+            className="selall"
             role="checkbox"
             aria-checked={allSelected ? true : chosen.length > 0 ? 'mixed' : false}
             aria-label={allSelected ? `Deseleziona tutti i ${visible.length} luoghi` : `Seleziona tutti i ${visible.length} luoghi`}
             onClick={() => setSel(allSelected ? new Set() : new Set(visible.map((p) => p.id)))}
           >
-            <span class={`cb${chosen.length > 0 ? ' on' : ''}`}>{allSelected ? <CheckG size={16} sw={3} /> : chosen.length > 0 ? <MinusG size={16} sw={3} /> : null}</span>
-            <span class="grow">{allSelected ? 'Deseleziona tutti' : 'Seleziona tutti'}</span>
-            <span class="b-bold num">
+            <span className={`cb${chosen.length > 0 ? ' on' : ''}`}>{allSelected ? <CheckG size={16} sw={3} /> : chosen.length > 0 ? <MinusG size={16} sw={3} /> : null}</span>
+            <span className="grow">{allSelected ? 'Deseleziona tutti' : 'Seleziona tutti'}</span>
+            <span className="b-bold num">
               {chosen.length} su {visible.length}
             </span>
           </button>
@@ -267,36 +267,36 @@ export function Luoghi() {
       )}
 
       {groups.length > 0 && (
-        <div class="lst">
+        <div className="lst">
           {groups.map((g) => (
             <section key={g.key} aria-label={g.title || 'Luoghi'}>
               {g.title && (
-                <div class="sec-t">
-                  <h2 class="h-md">{g.title}</h2>
-                  <span class="b-bold num">{g.places.length}</span>
+                <div className="sec-t">
+                  <h2 className="h-md">{g.title}</h2>
+                  <span className="b-bold num">{g.places.length}</span>
                 </div>
               )}
-              <div class="rows">
+              <div className="rows">
                 {g.places.map((p) => {
                   const picked = selecting && sel.has(p.id)
                   const di = dayIndexOf(p.id)
                   const meta = [p.category, p.visitMinutes ? formatDuration(p.visitMinutes) : ''].filter(Boolean).join(' · ') || p.city
                   const open = () => (selecting ? toggleSel(p.id) : setSheet({ kind: 'detail', placeId: p.id }))
                   return (
-                    <div class={`prow${picked ? ' cur' : ''}`} key={p.id}>
+                    <div className={`prow${picked ? ' cur' : ''}`} key={p.id}>
                       {selecting ? (
-                        <button type="button" class="hit" role="checkbox" aria-checked={picked} aria-label={`Seleziona: ${p.name}`} onClick={() => toggleSel(p.id)}>
-                          <span class={`cb${picked ? ' on' : ''}`}>{picked && <CheckG size={16} sw={3} />}</span>
+                        <button type="button" className="hit" role="checkbox" aria-checked={picked} aria-label={`Seleziona: ${p.name}`} onClick={() => toggleSel(p.id)}>
+                          <span className={`cb${picked ? ' on' : ''}`}>{picked && <CheckG size={16} sw={3} />}</span>
                         </button>
                       ) : (
                         <CatIc category={p.category} />
                       )}
-                      <button type="button" class="grow" onClick={open} aria-label={selecting ? `Seleziona: ${p.name}` : `Apri ${p.name}`}>
-                        <span class="pt2">{p.name}</span>
-                        <span class="pm">{meta}</span>
-                        <span class="pills">
+                      <button type="button" className="grow" onClick={open} aria-label={selecting ? `Seleziona: ${p.name}` : `Apri ${p.name}`}>
+                        <span className="pt2">{p.name}</span>
+                        <span className="pm">{meta}</span>
+                        <span className="pills">
                           <StatusSp place={p} dayNo={di != null ? di + 1 : undefined} now={nowPlaceId === p.id} />
-                          {(p.lat == null || p.lng == null) && <span class="sp warn">Non sulla mappa</span>}
+                          {(p.lat == null || p.lng == null) && <span className="sp warn">Non sulla mappa</span>}
                         </span>
                       </button>
                       {!selecting && <MapsPill kind="btn" href={mapsLinkFor(p)} label={p.name} />}
@@ -310,8 +310,8 @@ export function Luoghi() {
       )}
 
       {!selecting && (
-        <div class="cta">
-          <button type="button" class="btn block" onClick={() => setSheet({ kind: 'new' })}>
+        <div className="cta">
+          <button type="button" className="btn block" onClick={() => setSheet({ kind: 'new' })}>
             <PlusG />
             Aggiungi luogo
           </button>
@@ -320,8 +320,8 @@ export function Luoghi() {
       {delDialog}
 
       {selecting && (
-        <div class="selbar">
-          <button type="button" class="btn del block" disabled={chosen.length === 0} onClick={() => void deleteChosen()}>
+        <div className="selbar">
+          <button type="button" className="btn del block" disabled={chosen.length === 0} onClick={() => void deleteChosen()}>
             <TrashG />
             {chosen.length === 0 ? 'Elimina' : chosen.length === 1 ? 'Elimina 1 luogo' : `Elimina ${chosen.length} luoghi`}
           </button>

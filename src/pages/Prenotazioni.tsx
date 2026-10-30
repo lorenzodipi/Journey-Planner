@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useState } from 'react'
 import { BOOKING_LABEL } from '../lib/bookingMeta'
 import { isFileCached, openBookingFile } from '../lib/bookingFiles'
 import { formatDay, formatShort, parseYmd } from '../lib/dates'
@@ -61,7 +61,7 @@ const activate = (fn: () => void) => ({
     }
   },
 })
-const stop = (e: Event) => e.stopPropagation()
+const stop = (e: { stopPropagation(): void }) => e.stopPropagation()
 
 export function Prenotazioni() {
   const trip = useTrip()
@@ -139,19 +139,19 @@ export function Prenotazioni() {
     const offline = b.filePath ? cached.has(b.filePath) : false
     if (!link && !b.filePath && !b.code) return null
     return (
-      <div class="below" onClick={stop} onKeyDown={stop} style={{ gap: '8px', flexWrap: 'wrap' }}>
+      <div className="below" onClick={stop} onKeyDown={stop} style={{ gap: '8px', flexWrap: 'wrap' }}>
         {b.code && (
-          <button type="button" class="btn soft sm" onClick={() => void copy(b.code as string)} aria-label={`Copia il codice ${b.code}`}>
+          <button type="button" className="btn soft sm" onClick={() => void copy(b.code as string)} aria-label={`Copia il codice ${b.code}`}>
             Copia codice
           </button>
         )}
         {link && (
-          <a class="btn soft sm" href={link} target="_blank" rel="noopener noreferrer">
+          <a className="btn soft sm" href={link} target="_blank" rel="noopener noreferrer">
             Apri link
           </a>
         )}
         {b.filePath && (
-          <button type="button" class="btn soft sm" onClick={() => void open(b)}>
+          <button type="button" className="btn soft sm" onClick={() => void open(b)}>
             {offline ? 'Apri file · offline' : 'Apri file'}
           </button>
         )}
@@ -162,13 +162,13 @@ export function Prenotazioni() {
   const headDate = head ? dateOf(head.validFrom) : null
 
   return (
-    <main class="screen">
+    <main className="screen">
       <PageHeader
         title="Prenotazioni"
         subtitle="Biglietti, tavoli e documenti"
         back={{ href: '/altro', label: 'Altro' }}
         actions={
-          <button type="button" class="rbtn" aria-label="Aggiungi prenotazione" onClick={() => setSheet({ kind: 'new' })}>
+          <button type="button" className="rbtn" aria-label="Aggiungi prenotazione" onClick={() => setSheet({ kind: 'new' })}>
             <PlusG />
           </button>
         }
@@ -178,7 +178,7 @@ export function Prenotazioni() {
         <EmptyState title="Nessuna prenotazione" text="Aggiungi codici di conferma, link e il PDF dei biglietti: quelli marcati offline si aprono anche senza rete." art={ART.vuotoViaggi} />
       ) : (
         <>
-          <div class="chips" role="group" aria-label="Filtra le prenotazioni">
+          <div className="chips" role="group" aria-label="Filtra le prenotazioni">
             {(
               [
                 ['all', 'Tutte'],
@@ -186,12 +186,12 @@ export function Prenotazioni() {
                 ['wait', 'In attesa'],
               ] as const
             ).map(([k, label]) => (
-              <button type="button" key={k} class={`chip${filter === k ? ' on' : ''}`} aria-pressed={filter === k} onClick={() => setFilter(k)}>
+              <button type="button" key={k} className={`chip${filter === k ? ' on' : ''}`} aria-pressed={filter === k} onClick={() => setFilter(k)}>
                 {label}
                 {k === 'all' && (
                   <>
                     {' '}
-                    <span class="n">{trip.bookings.length}</span>
+                    <span className="n">{trip.bookings.length}</span>
                   </>
                 )}
               </button>
@@ -201,41 +201,41 @@ export function Prenotazioni() {
           {list.length === 0 && <EmptyState title="Nessuna prenotazione qui" text="Cambia filtro per vederle tutte." />}
 
           {head && (
-            <article class={`tk ${TINT[head.type]}`} aria-label={`Modifica ${head.title}`} {...activate(() => setSheet({ kind: 'edit', booking: head }))}>
-              <div class="top">
-                <div class="hd">
-                  <span class="kind">
+            <article className={`tk ${TINT[head.type]}`} aria-label={`Modifica ${head.title}`} {...activate(() => setSheet({ kind: 'edit', booking: head }))}>
+              <div className="top">
+                <div className="hd">
+                  <span className="kind">
                     <Ic name={ICON[head.type]} size={32} />
                     {KIND[head.type]}
                   </span>
-                  <span class="okp">
+                  <span className="okp">
                     {status(head).ok ? <CheckG size={14} sw={3} /> : <ClockG size={14} sw={2.4} />}
                     {status(head).ok ? 'Confermata' : 'In attesa'}
                   </span>
                 </div>
                 <div>
-                  <p class="nm">{head.title}</p>
-                  <p class="ad">{[BOOKING_LABEL[head.type], firstLine(head)].filter(Boolean).join(' · ')}</p>
+                  <p className="nm">{head.title}</p>
+                  <p className="ad">{[BOOKING_LABEL[head.type], firstLine(head)].filter(Boolean).join(' · ')}</p>
                 </div>
               </div>
-              <div class="bot">
-                <div class="f3">
+              <div className="bot">
+                <div className="f3">
                   <div>
-                    <span class="k">Data</span>
+                    <span className="k">Data</span>
                     <b style={{ whiteSpace: 'nowrap' }}>{headDate ? formatDay(headDate) : '—'}</b>
                   </div>
                   <div>
-                    <span class="k">Ora</span>
+                    <span className="k">Ora</span>
                     <b>{timeOf(head.validFrom) ?? '—'}</b>
                   </div>
                   <div>
-                    <span class="k">{costText(head) ? 'Costo' : 'Allegati'}</span>
+                    <span className="k">{costText(head) ? 'Costo' : 'Allegati'}</span>
                     <b>{costText(head) ?? (head.filePath ? 'File' : head.url ? 'Link' : '—')}</b>
                   </div>
                 </div>
-                <div class="bars" aria-hidden="true" />
-                <div class="row2">
-                  <span class="code">{head.code ? `N. ${head.code}` : 'Senza codice'}</span>
+                <div className="bars" aria-hidden="true" />
+                <div className="row2">
+                  <span className="code">{head.code ? `N. ${head.code}` : 'Senza codice'}</span>
                   {extrasInline(head, cached, copy, open)}
                 </div>
               </div>
@@ -252,20 +252,20 @@ export function Prenotazioni() {
                 const r = range(b)
                 const sub = [firstLine(b) ?? BOOKING_LABEL[b.type], !day && r, costText(b)].filter(Boolean).join(' · ')
                 return (
-                  <div class="tkwrap" key={b.id}>
-                    <article class={`ct ${TINT[b.type]}`} aria-label={`Modifica ${b.title}`} {...activate(() => setSheet({ kind: 'edit', booking: b }))}>
-                      <div class="cl">
+                  <div className="tkwrap" key={b.id}>
+                    <article className={`ct ${TINT[b.type]}`} aria-label={`Modifica ${b.title}`} {...activate(() => setSheet({ kind: 'edit', booking: b }))}>
+                      <div className="cl">
                         <Ic name={ICON[b.type]} size={40} />
                         <div style={{ minWidth: 0 }}>
-                          <p class="rt">{b.title}</p>
-                          <p class="m">{sub}</p>
-                          <span class={`sp ${st.ok ? 'ok' : 'warn'}`}>
+                          <p className="rt">{b.title}</p>
+                          <p className="m">{sub}</p>
+                          <span className={`sp ${st.ok ? 'ok' : 'warn'}`}>
                             {st.ok ? <CheckG size={14} sw={3} /> : <ClockG size={14} sw={2.4} />}
                             {st.text}
                           </span>
                         </div>
                       </div>
-                      <div class="cr2">
+                      <div className="cr2">
                         {day ? (
                           <>
                             <b>{day.n}</b>
@@ -315,17 +315,17 @@ function extrasInline(b: Booking, cached: Set<string>, copy: (c: string) => Prom
   return (
     <span style={{ display: 'inline-flex', gap: '8px' }} onClick={stop} onKeyDown={stop}>
       {b.code && (
-        <button type="button" class="btn soft sm" onClick={() => void copy(b.code as string)} aria-label={`Copia il codice ${b.code}`}>
+        <button type="button" className="btn soft sm" onClick={() => void copy(b.code as string)} aria-label={`Copia il codice ${b.code}`}>
           Copia
         </button>
       )}
       {link && (
-        <a class="btn soft sm" href={link} target="_blank" rel="noopener noreferrer">
+        <a className="btn soft sm" href={link} target="_blank" rel="noopener noreferrer">
           Link
         </a>
       )}
       {b.filePath && (
-        <button type="button" class="btn soft sm" onClick={() => void open(b)}>
+        <button type="button" className="btn soft sm" onClick={() => void open(b)}>
           {offline ? 'File · offline' : 'File'}
         </button>
       )}

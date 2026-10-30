@@ -7,11 +7,11 @@ export function ToastHost() {
   return (
     <div
       role="status"
-      class="toast-host"
+      className="toast-host"
       style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}
     >
-      <div class={`toast${action ? ' has-act' : ''}`}>
-        <span class="toast-t">{toast.message}</span>
+      <div className={`toast${action ? ' has-act' : ''}`}>
+        <span className="toast-t">{toast.message}</span>
         {action && (
           <button
             type="button"
@@ -19,7 +19,7 @@ export function ToastHost() {
               action.run()
               dismissToast()
             }}
-            class="toast-b"
+            className="toast-b"
           >
             {action.label}
           </button>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 import { formatDuration, parseDuration } from '../lib/duration'
 import { DurationField } from './DurationField'
 import { searchPlaces, type GeoResult } from '../lib/geocode'
@@ -100,7 +100,7 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
     }
   }
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     if (!name.trim()) return setError('Scrivi il nome del luogo.')
     const latN = toNumber(lat)
@@ -135,55 +135,55 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
   }
 
   return (
-    <form class="space-y-4" onSubmit={submit} noValidate>
-      <section class="space-y-2 rounded-2xl bg-bg p-3">
-        <label class="block">
-          <span class="mb-1 block text-sm font-extrabold">Cerca su OpenStreetMap</span>
-          <div class="flex gap-2">
+    <form className="space-y-4" onSubmit={submit} noValidate>
+      <section className="space-y-2 rounded-2xl bg-bg p-3">
+        <label className="block">
+          <span className="mb-1 block text-sm font-extrabold">Cerca su OpenStreetMap</span>
+          <div className="flex gap-2">
             <input
               type="search"
               value={query}
               placeholder="Es. Senso-ji Tokyo"
-              onInput={(e) => setQuery(e.currentTarget.value)}
+              onChange={(e) => setQuery(e.currentTarget.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault()
                   void search()
                 }
               }}
-              class="min-h-12 min-w-0 flex-1 rounded-xl border-[1.5px] border-line bg-surface px-4"
+              className="min-h-12 min-w-0 flex-1 rounded-xl border-[1.5px] border-line bg-surface px-4"
             />
             <button
               type="button"
               onClick={() => void search()}
               disabled={searching || !query.trim()}
-              class="min-h-12 shrink-0 rounded-full bg-accent px-5 font-extrabold text-accent-ink disabled:opacity-50"
+              className="min-h-12 shrink-0 rounded-full bg-accent px-5 font-extrabold text-accent-ink disabled:opacity-50"
             >
               {searching ? '…' : 'Cerca'}
             </button>
           </div>
         </label>
-        {searchError && <p class="text-sm text-danger">{searchError}</p>}
-        {results && results.length === 0 && <p class="text-sm text-muted">Nessun risultato: prova con un altro nome.</p>}
+        {searchError && <p className="text-sm text-danger">{searchError}</p>}
+        {results && results.length === 0 && <p className="text-sm text-muted">Nessun risultato: prova con un altro nome.</p>}
         {results && results.length > 0 && (
-          <ul class="divide-y divide-hairline overflow-hidden rounded-[20px] border border-hairline bg-surface">
+          <ul className="divide-y divide-hairline overflow-hidden rounded-[20px] border border-hairline bg-surface">
             {results.map((r) => (
               <li>
-                <button type="button" onClick={() => pick(r)} class="block min-h-12 w-full px-4 py-2 text-left">
-                  <span class="block truncate font-extrabold">{r.name}</span>
-                  <span class="block truncate text-xs text-muted">{r.address}</span>
+                <button type="button" onClick={() => pick(r)} className="block min-h-12 w-full px-4 py-2 text-left">
+                  <span className="block truncate font-extrabold">{r.name}</span>
+                  <span className="block truncate text-xs text-muted">{r.address}</span>
                 </button>
               </li>
             ))}
           </ul>
         )}
-        <TextField label="…oppure incolla un link di Google Maps" value={mapsUrl} onInput={onLink} placeholder="https://www.google.com/maps/…" />
-        {linkHint && <p class="text-xs text-muted">{linkHint}</p>}
+        <TextField label="…oppure incolla un link di Google Maps" value={mapsUrl} onChange={onLink} placeholder="https://www.google.com/maps/…" />
+        {linkHint && <p className="text-xs text-muted">{linkHint}</p>}
       </section>
 
-      <TextField label="Nome" value={name} onInput={setName} maxLength={120} />
-      <TextField label="Nome in lingua locale (da mostrare a un tassista)" value={nameLocal} onInput={setNameLocal} maxLength={120} />
-      <div class="grid grid-cols-2 gap-3">
+      <TextField label="Nome" value={name} onChange={setName} maxLength={120} />
+      <TextField label="Nome in lingua locale (da mostrare a un tassista)" value={nameLocal} onChange={setNameLocal} maxLength={120} />
+      <div className="grid grid-cols-2 gap-3">
         <Select
           label="Città"
           value={city}
@@ -203,14 +203,14 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
       </div>
 
       <fieldset>
-        <legend class="mb-1 block text-sm font-extrabold">Stato</legend>
-        <div class="flex flex-wrap gap-2">
+        <legend className="mb-1 block text-sm font-extrabold">Stato</legend>
+        <div className="flex flex-wrap gap-2">
           {STATUSES.map((s) => (
             <button
               type="button"
               aria-pressed={status === s}
               onClick={() => setStatus(s)}
-              class={`chip${status === s ? ' on' : ''}`}
+              className={`chip${status === s ? ' on' : ''}`}
             >
               {STATUS_LABEL[s]}
             </button>
@@ -218,21 +218,21 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
         </div>
       </fieldset>
 
-      <DurationField label="Quanto ci si ferma" value={visit} onInput={setVisit} />
+      <DurationField label="Quanto ci si ferma" value={visit} onChange={setVisit} />
 
-      <TextArea label="Note" value={notes} onInput={setNotes} placeholder="Consigli, orari migliori, cosa ordinare…" />
+      <TextArea label="Note" value={notes} onChange={setNotes} placeholder="Consigli, orari migliori, cosa ordinare…" />
 
-      <details class="rounded-[20px] border border-hairline px-4 py-1">
-        <summary class="min-h-11 cursor-pointer list-none py-3 text-sm font-extrabold">Indirizzo, orari e coordinate</summary>
-        <div class="space-y-4 pb-4">
-          <TextField label="Indirizzo" value={address} onInput={setAddress} />
-          <TextField label="Orari di apertura" value={openingHours} onInput={setOpeningHours} placeholder="9:00–17:00, chiuso il lunedì" />
-          <div class="grid grid-cols-2 gap-3">
-            <TextField label="Latitudine" value={lat} onInput={setLat} autoComplete="off" />
-            <TextField label="Longitudine" value={lng} onInput={setLng} autoComplete="off" />
+      <details className="rounded-[20px] border border-hairline px-4 py-1">
+        <summary className="min-h-11 cursor-pointer list-none py-3 text-sm font-extrabold">Indirizzo, orari e coordinate</summary>
+        <div className="space-y-4 pb-4">
+          <TextField label="Indirizzo" value={address} onChange={setAddress} />
+          <TextField label="Orari di apertura" value={openingHours} onChange={setOpeningHours} placeholder="9:00–17:00, chiuso il lunedì" />
+          <div className="grid grid-cols-2 gap-3">
+            <TextField label="Latitudine" value={lat} onChange={setLat} autoComplete="off" />
+            <TextField label="Longitudine" value={lng} onChange={setLng} autoComplete="off" />
           </div>
           {showMap ? (
-            <div class="space-y-1">
+            <div className="space-y-1">
               {Picker ? (
                 <Picker
                   lat={toNumber(lat)}
@@ -244,15 +244,15 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
                   }}
                 />
               ) : (
-                <p class="grid h-56 place-items-center rounded-2xl bg-bg text-sm text-muted">Carico la mappa…</p>
+                <p className="grid h-56 place-items-center rounded-2xl bg-bg text-sm text-muted">Carico la mappa…</p>
               )}
-              <p class="text-xs text-muted">Trascina il pin o tocca la mappa per correggere la posizione.</p>
+              <p className="text-xs text-muted">Trascina il pin o tocca la mappa per correggere la posizione.</p>
             </div>
           ) : (
             <button
               type="button"
               onClick={() => setShowMap(true)}
-              class="min-h-11 rounded-full border-2 border-line px-4 text-sm font-extrabold"
+              className="min-h-11 rounded-full border-2 border-line px-4 text-sm font-extrabold"
             >
               Aggiusta il pin sulla mappa
             </button>

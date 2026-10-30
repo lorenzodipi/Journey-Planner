@@ -1,5 +1,5 @@
-import { useState } from 'preact/hooks'
-import { Link } from 'wouter-preact'
+import { useState } from 'react'
+import { Link } from 'wouter'
 import { baseToLocal, examples, fieldText, formatRateNumber, localPerBase, localToBase } from '../lib/fx'
 import { currencySymbol, extraCurrencies, formatMoney, parseAmount } from '../lib/money'
 import type { Trip } from '../types'
@@ -31,24 +31,24 @@ export function FxCard({ trip, onEdit }: Props) {
 
   const editLabel = rate ? 'Modifica' : 'Imposta'
   const header = (
-    <div class="flex items-center gap-3">
-      <SwapIcon size={24} class="shrink-0 text-pale" />
-      <div class="min-w-0 flex-1">
-        <p class="text-[13px] text-muted">Cambio</p>
+    <div className="flex items-center gap-3">
+      <SwapIcon size={24} className="shrink-0 text-pale" />
+      <div className="min-w-0 flex-1">
+        <p className="text-[13px] text-muted">Cambio</p>
         {rate ? (
-          <p class="font-display text-[22px] font-extrabold leading-tight tracking-[-0.5px]">
+          <p className="font-display text-[22px] font-extrabold leading-tight tracking-[-0.5px]">
             1 {currencySymbol(base)} = {formatRateNumber(localPerBase(rate))} {currencySymbol(local)}
           </p>
         ) : (
-          <p class="font-extrabold">Imposta il cambio {base} ↔ {local}</p>
+          <p className="font-extrabold">Imposta il cambio {base} ↔ {local}</p>
         )}
       </div>
       {onEdit ? (
-        <button type="button" onClick={onEdit} class="min-h-11 px-1 text-sm font-extrabold text-pale">
+        <button type="button" onClick={onEdit} className="min-h-11 px-1 text-sm font-extrabold text-pale">
           {editLabel}
         </button>
       ) : (
-        <Link href="/altro/budget" class="inline-flex min-h-11 items-center px-1 text-sm font-extrabold text-pale">
+        <Link href="/altro/budget" className="inline-flex min-h-11 items-center px-1 text-sm font-extrabold text-pale">
           {editLabel}
         </Link>
       )}
@@ -63,52 +63,52 @@ export function FxCard({ trip, onEdit }: Props) {
   const ex = examples(rate, local, [10, 100])
 
   return (
-    <Card class="px-4 py-3.5">
+    <Card className="px-4 py-3.5">
       {header}
-      <ul class="mt-2 flex border-t border-hairline text-sm" aria-label={`Esempi di cambio da ${base} a ${local}`}>
+      <ul className="mt-2 flex border-t border-hairline text-sm" aria-label={`Esempi di cambio da ${base} a ${local}`}>
         {ex.map((x, i) => (
-          <li class={`flex min-h-11 flex-1 items-center justify-between ${i === 0 ? 'border-r-2 border-dashed border-line pr-3' : 'pl-3'}`}>
-            <span class="text-muted">{formatMoney(x.base, base)}</span>
-            <span class="font-extrabold">{formatMoney(x.local, local)}</span>
+          <li className={`flex min-h-11 flex-1 items-center justify-between ${i === 0 ? 'border-r-2 border-dashed border-line pr-3' : 'pl-3'}`}>
+            <span className="text-muted">{formatMoney(x.base, base)}</span>
+            <span className="font-extrabold">{formatMoney(x.local, local)}</span>
           </li>
         ))}
       </ul>
 
-      <div class="mt-1.5 rounded-xl bg-bg px-3 py-2.5">
-        <p class="mb-2 text-sm font-extrabold">Calcola un importo</p>
-        <div class="grid grid-cols-2 gap-2.5">
-          <label class="block">
-            <span class="mb-1 block text-xs text-muted">{base}</span>
+      <div className="mt-1.5 rounded-xl bg-bg px-3 py-2.5">
+        <p className="mb-2 text-sm font-extrabold">Calcola un importo</p>
+        <div className="grid grid-cols-2 gap-2.5">
+          <label className="block">
+            <span className="mb-1 block text-xs text-muted">{base}</span>
             <input
               type="text"
               inputMode="decimal"
               value={baseText}
               placeholder="0"
               aria-label={`Importo in ${base}`}
-              onInput={(e) => {
+              onChange={(e) => {
                 setSide('base')
                 setRaw(e.currentTarget.value)
               }}
-              class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-3.5 text-base"
+              className="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-3.5 text-base"
             />
           </label>
-          <label class="block">
-            <span class="mb-1 block text-xs text-muted">{local}</span>
+          <label className="block">
+            <span className="mb-1 block text-xs text-muted">{local}</span>
             <input
               type="text"
               inputMode="decimal"
               value={localText}
               placeholder="0"
               aria-label={`Importo in ${local}`}
-              onInput={(e) => {
+              onChange={(e) => {
                 setSide('local')
                 setRaw(e.currentTarget.value)
               }}
-              class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-3.5 text-base"
+              className="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-3.5 text-base"
             />
           </label>
         </div>
-        {raw.trim() !== '' && typed === null && <p class="mt-2 text-xs text-danger">Scrivi un numero (es. 1200 o 12,50).</p>}
+        {raw.trim() !== '' && typed === null && <p className="mt-2 text-xs text-danger">Scrivi un numero (es. 1200 o 12,50).</p>}
       </div>
     </Card>
   )
@@ -140,40 +140,40 @@ function MultiFxCard({ trip, onEdit, extras, picked, onPick, side, setSide, raw,
   const baseText = side === 'base' ? raw : typed === null || !rate ? '' : fieldText(localToBase(typed, rate, base))
   const otherText = side === 'local' ? raw : typed === null || !rate ? '' : fieldText(baseToLocal(typed, rate, code))
   const edit = onEdit ? (
-    <button type="button" onClick={onEdit} class="min-h-11 px-1 text-sm font-extrabold text-pale">
+    <button type="button" onClick={onEdit} className="min-h-11 px-1 text-sm font-extrabold text-pale">
       Modifica
     </button>
   ) : (
-    <Link href="/altro/budget" class="inline-flex min-h-11 items-center px-1 text-sm font-extrabold text-pale">
+    <Link href="/altro/budget" className="inline-flex min-h-11 items-center px-1 text-sm font-extrabold text-pale">
       Modifica
     </Link>
   )
   return (
-    <Card class="px-4 py-3.5">
-      <div class="flex items-center gap-3">
-        <SwapIcon size={24} class="shrink-0 text-pale" />
-        <div class="min-w-0 flex-1">
-          <p class="text-[13px] text-muted">Cambi</p>
-          <p class="font-extrabold">Valuta base: {base}</p>
+    <Card className="px-4 py-3.5">
+      <div className="flex items-center gap-3">
+        <SwapIcon size={24} className="shrink-0 text-pale" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] text-muted">Cambi</p>
+          <p className="font-extrabold">Valuta base: {base}</p>
         </div>
         {edit}
       </div>
-      <ul class="mt-1">
+      <ul className="mt-1">
         {rows.map((r, i) => (
-          <li key={r.code} class={`flex min-h-12 items-center gap-3 ${i > 0 ? 'border-t border-hairline' : ''}`}>
-            <span class="w-7 shrink-0 text-center text-xl">{currencySymbol(r.code)}</span>
-            <span class="min-w-0 flex-1 font-display text-[19px] font-extrabold leading-tight tracking-[-0.5px]">
+          <li key={r.code} className={`flex min-h-12 items-center gap-3 ${i > 0 ? 'border-t border-hairline' : ''}`}>
+            <span className="w-7 shrink-0 text-center text-xl">{currencySymbol(r.code)}</span>
+            <span className="min-w-0 flex-1 font-display text-[19px] font-extrabold leading-tight tracking-[-0.5px]">
               {r.rate ? `1 ${currencySymbol(base)} = ${formatRateNumber(localPerBase(r.rate))} ${currencySymbol(r.code)}` : `Manca il cambio ${r.code}`}
             </span>
-            {r.isLocal && <span class="rounded-md border-2 border-line px-1.5 text-xs font-extrabold leading-snug text-pale">locale</span>}
+            {r.isLocal && <span className="rounded-md border-2 border-line px-1.5 text-xs font-extrabold leading-snug text-pale">locale</span>}
           </li>
         ))}
       </ul>
 
       {rate && (
-        <div class="mt-1.5 rounded-xl bg-bg px-3 py-2.5">
-          <p class="mb-2 text-sm font-extrabold">Calcola un importo</p>
-          <div class="mb-2.5 flex flex-wrap gap-2" role="radiogroup" aria-label="Valuta da convertire">
+        <div className="mt-1.5 rounded-xl bg-bg px-3 py-2.5">
+          <p className="mb-2 text-sm font-extrabold">Calcola un importo</p>
+          <div className="mb-2.5 flex flex-wrap gap-2" role="radiogroup" aria-label="Valuta da convertire">
             {rows.map((r) => (
               <button
                 key={r.code}
@@ -181,45 +181,45 @@ function MultiFxCard({ trip, onEdit, extras, picked, onPick, side, setSide, raw,
                 role="radio"
                 aria-checked={r.code === code}
                 onClick={() => onPick(r.code)}
-                class={`chip${r.code === code ? ' on' : ''}`}
+                className={`chip${r.code === code ? ' on' : ''}`}
               >
                 {currencySymbol(r.code)} {r.code}
               </button>
             ))}
           </div>
-          <div class="grid grid-cols-2 gap-2.5">
-            <label class="block">
-              <span class="mb-1 block text-xs text-muted">{base}</span>
+          <div className="grid grid-cols-2 gap-2.5">
+            <label className="block">
+              <span className="mb-1 block text-xs text-muted">{base}</span>
               <input
                 type="text"
                 inputMode="decimal"
                 value={baseText}
                 placeholder="0"
                 aria-label={`Importo in ${base}`}
-                onInput={(e) => {
+                onChange={(e) => {
                   setSide('base')
                   setRaw(e.currentTarget.value)
                 }}
-                class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-3.5 text-base"
+                className="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-3.5 text-base"
               />
             </label>
-            <label class="block">
-              <span class="mb-1 block text-xs text-muted">{code}</span>
+            <label className="block">
+              <span className="mb-1 block text-xs text-muted">{code}</span>
               <input
                 type="text"
                 inputMode="decimal"
                 value={otherText}
                 placeholder="0"
                 aria-label={`Importo in ${code}`}
-                onInput={(e) => {
+                onChange={(e) => {
                   setSide('local')
                   setRaw(e.currentTarget.value)
                 }}
-                class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-3.5 text-base"
+                className="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-3.5 text-base"
               />
             </label>
           </div>
-          {raw.trim() !== '' && typed === null && <p class="mt-2 text-xs text-danger">Scrivi un numero (es. 1200 o 12,50).</p>}
+          {raw.trim() !== '' && typed === null && <p className="mt-2 text-xs text-danger">Scrivi un numero (es. 1200 o 12,50).</p>}
         </div>
       )}
     </Card>

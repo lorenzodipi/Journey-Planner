@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import { currencyName, parseRate } from '../lib/money'
 import { fetchFxRate } from '../lib/moneyApi'
 import { useTrips } from '../state/trips'
@@ -46,7 +46,7 @@ export function AddCurrencySheet({ open, trip, onClose, onAdded }: Props) {
     }
   }
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     if (!/^[A-Z]{3}$/.test(upper)) return setError('La valuta è un codice di 3 lettere (es. KRW).')
     if (upper === trip.baseCurrency || upper === trip.localCurrency) return setError(`${upper} c'è già tra le valute del viaggio: sceglila dal menu.`)
@@ -62,11 +62,11 @@ export function AddCurrencySheet({ open, trip, onClose, onAdded }: Props) {
 
   return (
     <Sheet open={open} title="Aggiungi valuta" onClose={close}>
-      <form class="space-y-4" onSubmit={submit} noValidate>
-        <p class="text-sm text-muted">Il cambio vale per tutto il viaggio: una voce può comunque averne uno suo.</p>
-        <TextField label="Codice della valuta (3 lettere)" value={code} onInput={(v) => setCode(v.toUpperCase())} maxLength={3} autoComplete="off" placeholder="KRW" />
-        {name && <p class="-mt-2 text-xs text-muted">{name}</p>}
-        <TextField label={`1 ${upper || '…'} = ? ${trip.baseCurrency}`} value={rate} onInput={setRate} inputMode="decimal" placeholder="0,00065" />
+      <form className="space-y-4" onSubmit={submit} noValidate>
+        <p className="text-sm text-muted">Il cambio vale per tutto il viaggio: una voce può comunque averne uno suo.</p>
+        <TextField label="Codice della valuta (3 lettere)" value={code} onChange={(v) => setCode(v.toUpperCase())} maxLength={3} autoComplete="off" placeholder="KRW" />
+        {name && <p className="-mt-2 text-xs text-muted">{name}</p>}
+        <TextField label={`1 ${upper || '…'} = ? ${trip.baseCurrency}`} value={rate} onChange={setRate} inputMode="decimal" placeholder="0,00065" />
         <SecondaryButton onClick={() => void fetchRate()}>{loading ? 'Leggo il cambio…' : 'Prendi il cambio di oggi (BCE)'}</SecondaryButton>
         <FormError message={error} />
         <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : 'Aggiungi valuta'}</PrimaryButton>

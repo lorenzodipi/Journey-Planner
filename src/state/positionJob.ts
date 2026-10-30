@@ -1,7 +1,7 @@
 // Lavoro in background: cerca la posizione dei luoghi senza coordinate. Vive fuori dalle pagine, così
 // continua se si cambia schermata (si ferma solo chiudendo l'app) e più schermate ne mostrano lo stato.
 
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 import { findPositions, type Searchable, type Searcher } from '../lib/findPositions'
 import { searchPlaces } from '../lib/geocode'
 import type { Trip } from '../types'

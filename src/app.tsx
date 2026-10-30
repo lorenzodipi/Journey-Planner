@@ -1,6 +1,6 @@
-import { useEffect, useLayoutEffect } from 'preact/hooks'
-import { Route, Router, Switch, useLocation } from 'wouter-preact'
-import { useHashLocation } from 'wouter-preact/use-hash-location'
+import { useEffect, useLayoutEffect } from 'react'
+import { Route, Router, Switch, useLocation } from 'wouter'
+import { useHashLocation } from 'wouter/use-hash-location'
 import { useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
 import { Alloggi } from './pages/Alloggi'
@@ -48,7 +48,7 @@ export function App() {
 
   if (auth.status === 'loading') {
     return (
-      <div class="grid min-h-dvh place-items-center text-muted" role="status">
+      <div className="grid min-h-dvh place-items-center text-muted" role="status">
         Caricamento…
       </div>
     )
@@ -58,7 +58,7 @@ export function App() {
 
   if (status === 'loading') {
     return (
-      <div class="grid min-h-dvh place-items-center text-muted" role="status">
+      <div className="grid min-h-dvh place-items-center text-muted" role="status">
         Carico i tuoi viaggi…
       </div>
     )
@@ -66,13 +66,13 @@ export function App() {
 
   if (status === 'error') {
     return (
-      <main class="mx-auto grid min-h-dvh max-w-sm place-content-center gap-4 px-6 text-center">
-        <h1 class="font-display text-2xl font-extrabold">Non riesco a caricare i viaggi</h1>
-        <p role="alert" class="text-sm text-muted">{error}</p>
+      <main className="mx-auto grid min-h-dvh max-w-sm place-content-center gap-4 px-6 text-center">
+        <h1 className="font-display text-2xl font-extrabold">Non riesco a caricare i viaggi</h1>
+        <p role="alert" className="text-sm text-muted">{error}</p>
         <button
           type="button"
           onClick={() => void refresh()}
-          class="min-h-[52px] rounded-full bg-accent px-6 font-extrabold text-accent-ink"
+          className="min-h-[52px] rounded-full bg-accent px-6 font-extrabold text-accent-ink"
         >
           Riprova
         </button>
@@ -88,7 +88,7 @@ export function App() {
       <Sprite />
       <div>
         {auth.status === 'demo' && (
-          <p class="cap" style={{ textAlign: 'center', padding: 'calc(4px + env(safe-area-inset-top)) 16px 4px', background: 'var(--azzurro-soft)', color: 'var(--azzurro-ink)', fontWeight: 600 }}>
+          <p className="cap" style={{ textAlign: 'center', padding: 'calc(4px + env(safe-area-inset-top)) 16px 4px', background: 'var(--azzurro-soft)', color: 'var(--azzurro-ink)', fontWeight: 600 }}>
             Anteprima demo · dati fittizi
           </p>
         )}
@@ -109,7 +109,7 @@ export function App() {
           <Route path="/altro/impostazioni" component={Impostazioni} />
           <Route path="/altro/account" component={Account} />
           <Route>
-            <main class="screen">
+            <main className="screen">
               <EmptyState title="Pagina non trovata" text="Torna alla scheda Oggi dalla barra in basso." />
             </main>
           </Route>

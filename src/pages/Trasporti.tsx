@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import { formatDay, parseYmd } from '../lib/dates'
 import { dateInZone, dayOffset, formatInZone, layover, totalTravelTime } from '../lib/flights'
 import { formatDuration } from '../lib/duration'
@@ -79,13 +79,13 @@ export function Trasporti() {
       : [flights.length ? `${flights.length} ${flights.length === 1 ? 'volo' : 'voli'}` : '', transports.length ? `${transports.length} ${transports.length === 1 ? 'trasporto' : 'trasporti'}` : ''].filter(Boolean).join(' · ')
 
   return (
-    <main class="screen">
+    <main className="screen">
       <PageHeader
         title="Trasporti e voli"
         subtitle={subtitle}
         back={{ href: '/altro', label: 'Altro' }}
         actions={
-          <button type="button" class="rbtn" aria-label="Aggiungi trasporto" onClick={() => setSheet({ kind: 'choose' })}>
+          <button type="button" className="rbtn" aria-label="Aggiungi trasporto" onClick={() => setSheet({ kind: 'choose' })}>
             <PlusG />
           </button>
         }
@@ -95,7 +95,7 @@ export function Trasporti() {
 
       {flights.length > 0 && (
         <section aria-label="Voli">
-          <h2 class="h-md" style={{ marginBottom: '10px' }}>
+          <h2 className="h-md" style={{ marginBottom: '10px' }}>
             Voli
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -108,7 +108,7 @@ export function Trasporti() {
 
       {transports.length > 0 && (
         <section aria-label="Treni e pass">
-          <h2 class="h-md" style={{ marginBottom: '10px' }}>
+          <h2 className="h-md" style={{ marginBottom: '10px' }}>
             {flights.length > 0 ? 'Treni e pass' : 'Trasporti'}
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -121,29 +121,29 @@ export function Trasporti() {
               const sub = [depart ? formatWhen(depart, trip.timezone) : MODE_LABEL[x.mode], x.cost != null ? `${costText}${x.scope === 'per_person' ? ' a persona' : ''}` : '', x.refCode && `Cod. ${x.refCode}`].filter(Boolean).join(' · ')
               const label = `${x.from} → ${x.to}`
               return (
-                <div class="tkwrap" key={x.id}>
-                  <article class={`ct ${MODE_TINT[x.mode]}`} aria-label={`Modifica ${label}`} {...activate(() => setSheet({ kind: 'edit-transport', transport: x }))}>
-                    <div class="cl">
+                <div className="tkwrap" key={x.id}>
+                  <article className={`ct ${MODE_TINT[x.mode]}`} aria-label={`Modifica ${label}`} {...activate(() => setSheet({ kind: 'edit-transport', transport: x }))}>
+                    <div className="cl">
                       <Ic name={MODE_ICON[x.mode]} size={40} />
                       <div style={{ minWidth: 0 }}>
-                        <p class="rt">
+                        <p className="rt">
                           {MODE_LABEL[x.mode]} {label}
                         </p>
-                        <p class="m">{sub}</p>
+                        <p className="m">{sub}</p>
                         {x.bought ? (
-                          <span class="sp ok">
+                          <span className="sp ok">
                             <CheckG size={14} sw={3} />
                             Acquistato
                           </span>
                         ) : (
-                          <span class="sp warn">
+                          <span className="sp warn">
                             <ClockG size={14} sw={2.4} />
                             Da acquistare
                           </span>
                         )}
                       </div>
                     </div>
-                    <div class="cr2">
+                    <div className="cr2">
                       {day ? (
                         <>
                           <b>{day.n}</b>
@@ -159,7 +159,7 @@ export function Trasporti() {
                       )}
                     </div>
                   </article>
-                  <div class="below">
+                  <div className="below">
                     <MapsPill href={mapsFor(x.from)} label={x.from} text="Punto di partenza" kind="sm" />
                   </div>
                 </div>
@@ -172,20 +172,20 @@ export function Trasporti() {
       <Sheet open={sheet !== null} title={title} onClose={close}>
         {sheet?.kind === 'choose' && (
           <div style={{ display: 'grid', gap: '12px' }} role="group" aria-label="Che tipo di trasporto">
-            <p class="b-sm muted">Che cosa aggiungi?</p>
+            <p className="b-sm muted">Che cosa aggiungi?</p>
             {(
               [
                 { kind: 'new-flight', label: 'Volo', hint: 'Con scali, orari e fusi orari', icon: 'i-tra-plane' },
                 { kind: 'new-transport', label: 'Altro trasporto', hint: 'Treno, bus, metro, taxi, traghetto…', icon: 'i-tra-train' },
               ] as const
             ).map((o) => (
-              <button type="button" key={o.kind} onClick={() => setSheet({ kind: o.kind })} class="card row" style={{ minHeight: '72px', textAlign: 'left', width: '100%' }}>
+              <button type="button" key={o.kind} onClick={() => setSheet({ kind: o.kind })} className="card row" style={{ minHeight: '72px', textAlign: 'left', width: '100%' }}>
                 <Ic name={o.icon} size={44} />
-                <span class="grow">
-                  <span class="tt" style={{ display: 'block', fontWeight: 700 }}>
+                <span className="grow">
+                  <span className="tt" style={{ display: 'block', fontWeight: 700 }}>
                     {o.label}
                   </span>
-                  <span class="mm" style={{ display: 'block' }}>
+                  <span className="mm" style={{ display: 'block' }}>
                     {o.hint}
                   </span>
                 </span>
@@ -244,33 +244,33 @@ function FlightTicket({ flight, onEdit }: { flight: Flight; onEdit: () => void }
   const third = stops.length === 1 ? { k: `Scalo · ${stops[0].at}`, v: mins(stops[0].min) } : stops.length > 1 ? { k: `${stops.length} scali`, v: mins(stops.reduce((a, s) => a + s.min, 0)) } : flight.cost != null ? { k: flight.scope === 'per_person' ? 'A persona' : 'Totale', v: formatMoney(flight.cost, flight.currency) } : { k: 'Compagnia', v: flight.airline || '—' }
   const numbers = legs.map((l) => l.flightNumber).filter(Boolean) as string[]
   return (
-    <article class="tk t-azzurro" aria-label={`Modifica ${flight.title}`} {...activate(onEdit)}>
-      <div class="top">
-        <div class="hd">
-          <span class="kind">
+    <article className="tk t-azzurro" aria-label={`Modifica ${flight.title}`} {...activate(onEdit)}>
+      <div className="top">
+        <div className="hd">
+          <span className="kind">
             <Ic name="i-tra-plane" size={32} />
             {flight.title}
           </span>
-          <span class="okp">
+          <span className="okp">
             {flight.paid ? <CheckG size={14} sw={3} /> : <ClockG size={14} sw={2.4} />}
             {flight.paid ? 'Acquistato' : 'Non acquistato'}
           </span>
         </div>
         {first && last && (
-          <div class="route">
-            <div class="pt">
+          <div className="route">
+            <div className="pt">
               <b>{first.from}</b>
               <span>{numbers[0] ?? ' '}</span>
-              <span class="tm">{formatInZone(first.departAt, first.fromTz)}</span>
+              <span className="tm">{formatInZone(first.departAt, first.fromTz)}</span>
             </div>
-            <div class="mid">
+            <div className="mid">
               <Ic name="i-tra-plane" size={28} />
-              <span class="dur">{legs.length} {legs.length === 1 ? 'volo' : 'voli'}</span>
+              <span className="dur">{legs.length} {legs.length === 1 ? 'volo' : 'voli'}</span>
             </div>
-            <div class="pt r">
+            <div className="pt r">
               <b>{last.to}</b>
               <span>{numbers.length > 1 ? numbers[numbers.length - 1] : ' '}</span>
-              <span class="tm">
+              <span className="tm">
                 {formatInZone(last.arriveAt, last.toTz)}
                 {off !== 0 && ` ${off > 0 ? `+${off}` : off}`}
               </span>
@@ -278,27 +278,27 @@ function FlightTicket({ flight, onEdit }: { flight: Flight; onEdit: () => void }
           </div>
         )}
       </div>
-      <div class="bot">
+      <div className="bot">
         {first && (
-          <div class="f3">
+          <div className="f3">
             <div>
-              <span class="k">Data</span>
+              <span className="k">Data</span>
               <b>{formatDay(dateInZone(first.departAt, first.fromTz))}</b>
             </div>
             <div>
-              <span class="k">Durata</span>
+              <span className="k">Durata</span>
               <b>{mins(total)}</b>
             </div>
             <div>
-              <span class="k">{third.k}</span>
+              <span className="k">{third.k}</span>
               <b>{third.v}</b>
             </div>
           </div>
         )}
-        <div class="bars" aria-hidden="true" />
-        {flight.notes && <p class="ad" style={{ whiteSpace: 'pre-line' }}>{flight.notes}</p>}
-        <div class="row2">
-          <span class="code">{flight.bookingRef ? `PNR · ${flight.bookingRef}` : flight.airline || 'Volo'}</span>
+        <div className="bars" aria-hidden="true" />
+        {flight.notes && <p className="ad" style={{ whiteSpace: 'pre-line' }}>{flight.notes}</p>}
+        <div className="row2">
+          <span className="code">{flight.bookingRef ? `PNR · ${flight.bookingRef}` : flight.airline || 'Volo'}</span>
           {first && <MapsPill href={mapsFor(`Aeroporto ${first.from}`)} label={`Aeroporto ${first.from}`} text={`Apri ${first.from}`} kind="sm" />}
         </div>
       </div>

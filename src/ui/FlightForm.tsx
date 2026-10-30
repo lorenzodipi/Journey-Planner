@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import { useConfirm } from './ConfirmDialog'
 import { isIata, timezoneForAirport } from '../lib/airports'
 import { defaultDepartureTz } from '../lib/origin'
@@ -72,7 +72,7 @@ export function FlightForm({ trip, initial, onSubmit, onDelete, onDone }: Props)
     setLegs([...legs, next])
   }
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     if (!title.trim()) return setError('Dai un nome al volo (es. Andata).')
     const amount = parseAmount(cost)
@@ -117,54 +117,54 @@ export function FlightForm({ trip, initial, onSubmit, onDelete, onDone }: Props)
   const tzOptions = timezoneOptions(trip.timezone)
 
   return (
-    <form class="space-y-4" onSubmit={submit} noValidate>
-      <TextField label="Nome del volo" value={title} onInput={setTitle} placeholder="Andata" maxLength={60} />
-      <div class="grid grid-cols-2 gap-3">
-        <TextField label="Compagnia" value={airline} onInput={setAirline} />
-        <TextField label="Codice prenotazione" value={bookingRef} onInput={setBookingRef} autoComplete="off" />
+    <form className="space-y-4" onSubmit={submit} noValidate>
+      <TextField label="Nome del volo" value={title} onChange={setTitle} placeholder="Andata" maxLength={60} />
+      <div className="grid grid-cols-2 gap-3">
+        <TextField label="Compagnia" value={airline} onChange={setAirline} />
+        <TextField label="Codice prenotazione" value={bookingRef} onChange={setBookingRef} autoComplete="off" />
       </div>
 
-      <div class="space-y-3">
+      <div className="space-y-3">
         {legs.map((l, i) => (
-          <fieldset key={l.key} class="space-y-3 rounded-[20px] border border-hairline p-3">
-            <legend class="px-1 text-sm font-extrabold">Tratta {i + 1}</legend>
-            <div class="grid grid-cols-3 gap-3">
-              <TextField label="Da" value={l.from} onInput={(v) => setAirport(l, 'from', v)} placeholder="MXP" autoComplete="off" />
-              <TextField label="A" value={l.to} onInput={(v) => setAirport(l, 'to', v)} placeholder="PEK" autoComplete="off" />
-              <TextField label="N. volo" value={l.flightNumber} onInput={(v) => patchLeg(l.key, { flightNumber: v.toUpperCase() })} autoComplete="off" />
+          <fieldset key={l.key} className="space-y-3 rounded-[20px] border border-hairline p-3">
+            <legend className="px-1 text-sm font-extrabold">Tratta {i + 1}</legend>
+            <div className="grid grid-cols-3 gap-3">
+              <TextField label="Da" value={l.from} onChange={(v) => setAirport(l, 'from', v)} placeholder="MXP" autoComplete="off" />
+              <TextField label="A" value={l.to} onChange={(v) => setAirport(l, 'to', v)} placeholder="PEK" autoComplete="off" />
+              <TextField label="N. volo" value={l.flightNumber} onChange={(v) => patchLeg(l.key, { flightNumber: v.toUpperCase() })} autoComplete="off" />
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <TextField
                 label="Data partenza"
                 type="date"
                 value={l.departDate}
-                onInput={(v) => patchLeg(l.key, { departDate: v, ...(v && l.arriveDate && l.arriveDate < v ? { arriveDate: v } : {}) })}
+                onChange={(v) => patchLeg(l.key, { departDate: v, ...(v && l.arriveDate && l.arriveDate < v ? { arriveDate: v } : {}) })}
               />
-              <TextField label="Ora partenza" type="time" value={l.departTime} onInput={(v) => patchLeg(l.key, { departTime: v })} />
-              <TextField label="Data arrivo" type="date" value={l.arriveDate} onInput={(v) => patchLeg(l.key, { arriveDate: v })} min={l.departDate || undefined} />
+              <TextField label="Ora partenza" type="time" value={l.departTime} onChange={(v) => patchLeg(l.key, { departTime: v })} />
+              <TextField label="Data arrivo" type="date" value={l.arriveDate} onChange={(v) => patchLeg(l.key, { arriveDate: v })} min={l.departDate || undefined} />
               <TextField
                 label="Ora arrivo"
                 type="time"
                 value={l.arriveTime}
-                onInput={(v) => patchLeg(l.key, { arriveTime: v })}
+                onChange={(v) => patchLeg(l.key, { arriveTime: v })}
                 // con fusi diversi l'ora locale d'arrivo può essere prima di quella di partenza: il limite vale solo con lo stesso fuso
                 min={l.arriveDate && l.arriveDate === l.departDate && l.fromTz === l.toTz ? l.departTime || undefined : undefined}
               />
             </div>
-            <p class="-mt-1 text-xs text-muted">Ogni orario è quello locale dell'aeroporto indicato.</p>
-            <div class="grid grid-cols-2 gap-3">
+            <p className="-mt-1 text-xs text-muted">Ogni orario è quello locale dell'aeroporto indicato.</p>
+            <div className="grid grid-cols-2 gap-3">
               <Select label="Fuso partenza" value={l.fromTz} creatable options={tzOptions} onChange={(v) => patchLeg(l.key, { fromTz: v, fromTzAuto: false })} />
               <Select label="Fuso arrivo" value={l.toTz} creatable options={tzOptions} onChange={(v) => patchLeg(l.key, { toTz: v, toTzAuto: false })} />
             </div>
-            <div class="grid grid-cols-2 gap-3">
-              <TextField label="Posti" value={l.seats} onInput={(v) => patchLeg(l.key, { seats: v })} />
-              <TextField label="Classe" value={l.cabin} onInput={(v) => patchLeg(l.key, { cabin: v })} />
+            <div className="grid grid-cols-2 gap-3">
+              <TextField label="Posti" value={l.seats} onChange={(v) => patchLeg(l.key, { seats: v })} />
+              <TextField label="Classe" value={l.cabin} onChange={(v) => patchLeg(l.key, { cabin: v })} />
             </div>
             {legs.length > 1 && (
               <button
                 type="button"
                 onClick={() => setLegs(legs.filter((x) => x.key !== l.key))}
-                class="min-h-11 text-sm font-extrabold text-danger"
+                className="min-h-11 text-sm font-extrabold text-danger"
               >
                 Rimuovi tratta
               </button>
@@ -176,7 +176,7 @@ export function FlightForm({ trip, initial, onSubmit, onDelete, onDone }: Props)
 
       <CostFields amount={cost} currency={currency} currencies={tripCurrencies(trip, initial?.currency)} scope={scope} onAmount={setCost} onCurrency={setCurrency} onScope={setScope} />
       <CheckField label="Già pagato" checked={paid} onChange={setPaid} />
-      <TextArea label="Note" value={notes} onInput={setNotes} />
+      <TextArea label="Note" value={notes} onChange={setNotes} />
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva volo' : 'Aggiungi volo'}</PrimaryButton>
       {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina volo</SecondaryButton>}

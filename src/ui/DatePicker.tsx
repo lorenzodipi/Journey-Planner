@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import { isDayBlocked, isYmd, longDay, monthBeforeMin, monthGrid, monthTitle, shiftMonth, shortDay, startMonth, WEEKDAYS } from '../lib/calendar'
 import { CalendarG, ChevronLeftG, ChevronRightG } from './glyphs'
 import { Sheet } from './Sheet'
@@ -7,7 +7,7 @@ interface Props {
   label: string
   /** «YYYY-MM-DD» oppure '' */
   value: string
-  onInput: (value: string) => void
+  onChange: (value: string) => void
   /** Primo giorno scegliibile: i giorni prima sono grigi e non si possono toccare (es. «al» non prima di «dal»). */
   min?: string
   max?: string
@@ -21,7 +21,7 @@ const todayYmd = () => new Date().toISOString().slice(0, 10)
  * Selettore di data con calendario nostro. A differenza del calendario del telefono, i giorni fuori dal
  * limite (prima di `min`, dopo `max`) non si possono proprio toccare, su qualsiasi dispositivo.
  */
-export function DatePicker({ label, value, onInput, min, max, optional = false }: Props) {
+export function DatePicker({ label, value, onChange, min, max, optional = false }: Props) {
   const [open, setOpen] = useState(false)
   const [view, setView] = useState(() => startMonth(value, min, todayYmd()))
   const today = todayYmd()
@@ -32,7 +32,7 @@ export function DatePicker({ label, value, onInput, min, max, optional = false }
   }
 
   function pick(ymd: string) {
-    onInput(ymd)
+    onChange(ymd)
     setOpen(false)
   }
 
@@ -43,46 +43,46 @@ export function DatePicker({ label, value, onInput, min, max, optional = false }
 
   return (
     <div>
-      <button type="button" aria-haspopup="dialog" aria-expanded={open} aria-label={`${label}: ${isYmd(value) ? longDay(value) : 'nessuna data'}`} onClick={show} class="fld">
+      <button type="button" aria-haspopup="dialog" aria-expanded={open} aria-label={`${label}: ${isYmd(value) ? longDay(value) : 'nessuna data'}`} onClick={show} className="fld">
         <div>
-          <span class="l">{label}</span>
-          <span class="v" style={{ display: 'block', color: isYmd(value) ? undefined : 'var(--ink-muted)' }}>
+          <span className="l">{label}</span>
+          <span className="v" style={{ display: 'block', color: isYmd(value) ? undefined : 'var(--ink-muted)' }}>
             {isYmd(value) ? shortDay(value) : 'Scegli la data'}
           </span>
         </div>
-        <span class="muted">
+        <span className="muted">
           <CalendarG size={20} />
         </span>
       </button>
 
       <Sheet open={open} title={label} onClose={() => setOpen(false)}>
-        <div class="cal-h">
-          <button type="button" aria-label="Mese precedente" disabled={backBlocked} onClick={() => setView(prev)} class="rbtn">
+        <div className="cal-h">
+          <button type="button" aria-label="Mese precedente" disabled={backBlocked} onClick={() => setView(prev)} className="rbtn">
             <ChevronLeftG size={20} />
           </button>
-          <p class="cal-t" aria-live="polite">
+          <p className="cal-t" aria-live="polite">
             {monthTitle(view.year, view.month)}
           </p>
-          <button type="button" aria-label="Mese successivo" onClick={() => setView(next)} class="rbtn">
+          <button type="button" aria-label="Mese successivo" onClick={() => setView(next)} className="rbtn">
             <ChevronRightG size={20} />
           </button>
         </div>
 
         <div role="grid" aria-label={monthTitle(view.year, view.month)}>
-          <div role="row" class="cal-wd">
+          <div role="row" className="cal-wd">
             {WEEKDAYS.map((d) => (
               <span role="columnheader">{d}</span>
             ))}
           </div>
           {weeks.map((week) => (
-            <div role="row" class="cal-wk">
+            <div role="row" className="cal-wk">
               {week.map((ymd, i) => {
                 if (!ymd) return <span role="gridcell" key={i} />
                 const blocked = isDayBlocked(ymd, min, max)
                 const on = ymd === value
                 return (
                   <span role="gridcell" key={ymd} style={{ display: 'grid', placeItems: 'center' }}>
-                    <button type="button" disabled={blocked} aria-pressed={on} aria-label={longDay(ymd)} onClick={() => pick(ymd)} class={`cal-d num${on ? ' on' : ymd === today ? ' today' : ''}`}>
+                    <button type="button" disabled={blocked} aria-pressed={on} aria-label={longDay(ymd)} onClick={() => pick(ymd)} className={`cal-d num${on ? ' on' : ymd === today ? ' today' : ''}`}>
                       {Number(ymd.slice(8))}
                     </button>
                   </span>
@@ -92,9 +92,9 @@ export function DatePicker({ label, value, onInput, min, max, optional = false }
           ))}
         </div>
 
-        {isYmd(min) && <p class="b-sm muted">Non si può scegliere prima del {shortDay(min)}.</p>}
+        {isYmd(min) && <p className="b-sm muted">Non si può scegliere prima del {shortDay(min)}.</p>}
         {optional && isYmd(value) && (
-          <button type="button" onClick={() => pick('')} class="btn soft block">
+          <button type="button" onClick={() => pick('')} className="btn soft block">
             Nessuna data
           </button>
         )}

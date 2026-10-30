@@ -1,5 +1,6 @@
-import type { ComponentChildren } from 'preact'
-import { useEffect, useRef } from 'preact/hooks'
+import type React from 'react'
+import type { ReactNode } from 'react'
+import { useEffect, useRef } from 'react'
 import { stampOpen } from './dialogStack'
 import { CloseG } from './glyphs'
 
@@ -7,7 +8,7 @@ interface Props {
   open: boolean
   title: string
   onClose: () => void
-  children: ComponentChildren
+  children: ReactNode
 }
 
 /**
@@ -34,7 +35,7 @@ export function Sheet({ open, title, onClose, children }: Props) {
 
   // Trascinando verso il basso la maniglia o il titolo (solo col dito/penna) il pannello segue il gesto
   // e si chiude se lo si porta abbastanza giù o lo si lancia; altrimenti torna su.
-  function dragStart(e: PointerEvent) {
+  function dragStart(e: React.PointerEvent<HTMLElement>) {
     if (e.pointerType === 'mouse' || !e.isPrimary) return
     if ((e.target as HTMLElement).closest('button')) return // «Chiudi» resta un normale tocco
     drag.current = { startY: e.clientY, startAt: e.timeStamp, dy: 0 }
@@ -42,14 +43,14 @@ export function Sheet({ open, title, onClose, children }: Props) {
     if (ref.current) ref.current.style.transition = 'none'
   }
 
-  function dragMove(e: PointerEvent) {
+  function dragMove(e: React.PointerEvent<HTMLElement>) {
     const d = drag.current
     if (!d || !ref.current) return
     d.dy = Math.max(0, e.clientY - d.startY)
     ref.current.style.transform = `translateY(${d.dy}px)`
   }
 
-  function dragEnd(e: PointerEvent) {
+  function dragEnd(e: React.PointerEvent<HTMLElement>) {
     const d = drag.current
     drag.current = null
     const dialog = ref.current
@@ -76,14 +77,14 @@ export function Sheet({ open, title, onClose, children }: Props) {
         // un tocco sullo sfondo oscurato chiude il pannello
         if (e.target === e.currentTarget) onClose()
       }}
-      class="fsheet sheet-dlg"
+      className="fsheet sheet-dlg"
     >
-      <div class="fsheet-in">
-        <div onPointerDown={dragStart} onPointerMove={dragMove} onPointerUp={dragEnd} onPointerCancel={dragEnd} class="fsheet-head">
-          <span aria-hidden="true" class="grab" />
-          <div class="tr">
-            <h2 class="h-md">{title}</h2>
-            <button type="button" class="rbtn" aria-label="Chiudi" onClick={onClose}>
+      <div className="fsheet-in">
+        <div onPointerDown={dragStart} onPointerMove={dragMove} onPointerUp={dragEnd} onPointerCancel={dragEnd} className="fsheet-head">
+          <span aria-hidden="true" className="grab" />
+          <div className="tr">
+            <h2 className="h-md">{title}</h2>
+            <button type="button" className="rbtn" aria-label="Chiudi" onClick={onClose}>
               <CloseG />
             </button>
           </div>

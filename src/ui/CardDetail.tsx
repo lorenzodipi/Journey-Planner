@@ -1,5 +1,5 @@
-import { useState } from 'preact/hooks'
-import type { ComponentChildren } from 'preact'
+import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { PencilIcon } from './Icons'
 
 /** Una sola card aperta alla volta: toccare quella aperta la richiude. */
@@ -9,14 +9,14 @@ export function useOpenCard(): [string | null, (id: string) => void] {
 }
 
 /** Righe etichetta/valore col tratteggio, per la parte che si apre in una card. */
-export function DetailRows({ rows }: { rows: { label: string; value: ComponentChildren }[] }) {
+export function DetailRows({ rows }: { rows: { label: string; value: ReactNode }[] }) {
   if (rows.length === 0) return null
   return (
-    <dl class="pr-3 text-sm">
+    <dl className="pr-3 text-sm">
       {rows.map((r) => (
-        <div class="flex items-baseline justify-between gap-4 border-t border-hairline py-1.5 first:border-t-0">
-          <dt class="shrink-0 text-muted">{r.label}</dt>
-          <dd class="min-w-0 text-right font-extrabold">{r.value}</dd>
+        <div className="flex items-baseline justify-between gap-4 border-t border-hairline py-1.5 first:border-t-0">
+          <dt className="shrink-0 text-muted">{r.label}</dt>
+          <dd className="min-w-0 text-right font-extrabold">{r.value}</dd>
         </div>
       ))}
     </dl>
@@ -31,25 +31,25 @@ export function CardDetail({
   editLabel,
   children,
 }: {
-  rows: { label: string; value: ComponentChildren }[]
+  rows: { label: string; value: ReactNode }[]
   note?: string
   onEdit: () => void
   editLabel: string
-  children?: ComponentChildren
+  children?: ReactNode
 }) {
   return (
-    <div class="mt-2 border-t border-hairline pt-2">
+    <div className="mt-2 border-t border-hairline pt-2">
       <DetailRows rows={rows} />
       {note && (
-        <p class="mt-1 whitespace-pre-line border-t border-hairline pr-3 pt-2 text-sm text-muted">{note}</p>
+        <p className="mt-1 whitespace-pre-line border-t border-hairline pr-3 pt-2 text-sm text-muted">{note}</p>
       )}
       {children}
-      <div class="mt-2 flex pr-2">
+      <div className="mt-2 flex pr-2">
         <button
           type="button"
           onClick={onEdit}
           aria-label={editLabel}
-          class="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-line px-4 text-sm font-extrabold"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-line px-4 text-sm font-extrabold"
         >
           <PencilIcon size={18} />
           Modifica

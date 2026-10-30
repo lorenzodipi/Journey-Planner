@@ -1,5 +1,5 @@
-import { useState } from 'preact/hooks'
-import { Link } from 'wouter-preact'
+import { useState } from 'react'
+import { Link } from 'wouter'
 import { useAuth } from '../lib/auth'
 import { loadSnapshot } from '../lib/cache'
 import { daysBetween, formatShort } from '../lib/dates'
@@ -114,25 +114,25 @@ export function Altro() {
 
   return (
     <>
-      <main class="screen">
+      <main className="screen">
         <PageHeader
           title="Altro"
           subtitle={savedTime ? `Aggiornato alle ${savedTime}` : auth.status === 'demo' ? 'Anteprima con dati fittizi' : undefined}
-          class="pad"
+          className="pad"
           actions={
-            <Link href="/altro/account" class="rbtn" aria-label="Impostazioni account">
+            <Link href="/altro/account" className="rbtn" aria-label="Impostazioni account">
               <UserG />
             </Link>
           }
         />
 
-        <section class="tinta t-azzurro pull" aria-label="Viaggio" style={{ padding: '20px' }}>
-          <LogoSym class="logo-sym" width={50} height={59} style={{ position: 'absolute', right: '20px', top: '18px' }} />
-          <p class="b-bold">Viaggio attuale</p>
-          <h2 class="d-lg" style={{ marginTop: '2px', fontSize: '36px', lineHeight: '40px' }}>
+        <section className="tinta t-azzurro pull" aria-label="Viaggio" style={{ padding: '20px' }}>
+          <LogoSym className="logo-sym" width={50} height={59} style={{ position: 'absolute', right: '20px', top: '18px' }} />
+          <p className="b-bold">Viaggio attuale</p>
+          <h2 className="d-lg" style={{ marginTop: '2px', fontSize: '36px', lineHeight: '40px' }}>
             {trip.title}
           </h2>
-          <p class="b-bold num" style={{ marginTop: '2px' }}>
+          <p className="b-bold num" style={{ marginTop: '2px' }}>
             {formatShort(trip.startDate)} – {formatShort(trip.endDate)} · {plural(trip.days.length, 'giorno', 'giorni')}
             {trip.travelers.length > 0 && ` · ${plural(trip.travelers.length, 'persona', 'persone')}`}
           </p>
@@ -140,11 +140,11 @@ export function Altro() {
             <AvatarStack people={trip.travelers} />
             <div style={{ display: 'flex', gap: '8px' }}>
               {isOwner && (
-                <button type="button" class="btn sm line" onClick={() => setSheet({ kind: 'edit-trip' })}>
+                <button type="button" className="btn sm line" onClick={() => setSheet({ kind: 'edit-trip' })}>
                   Modifica
                 </button>
               )}
-              <button type="button" class="btn sm" onClick={() => setViaggi(true)}>
+              <button type="button" className="btn sm" onClick={() => setViaggi(true)}>
                 {t.trips.length > 1 ? 'Cambia viaggio' : 'Viaggi'}
               </button>
             </div>
@@ -152,18 +152,18 @@ export function Altro() {
         </section>
 
         <section aria-label="Sezioni del viaggio">
-          <h2 class="h-md" style={{ marginBottom: '10px' }}>
+          <h2 className="h-md" style={{ marginBottom: '10px' }}>
             Il viaggio
           </h2>
-          <div class="rows">
+          <div className="rows">
             {sections.map((sec) => (
-              <Link href={sec.href} class="row" style={{ minHeight: '76px' }}>
+              <Link href={sec.href} className="row" style={{ minHeight: '76px' }}>
                 <Ic name={sec.icon} size={44} />
-                <span class="grow">
-                  <span class="tt" style={{ display: 'block', fontWeight: 700, fontSize: '17px' }}>
+                <span className="grow">
+                  <span className="tt" style={{ display: 'block', fontWeight: 700, fontSize: '17px' }}>
                     {sec.title}
                   </span>
-                  <span class="mm">{sec.text(trip)}</span>
+                  <span className="mm">{sec.text(trip)}</span>
                 </span>
                 <span>
                   <ChevronRightG />
@@ -174,36 +174,36 @@ export function Altro() {
         </section>
 
         <section aria-label="Persone">
-          <div class="sec-h" style={{ marginBottom: '10px' }}>
-            <h2 class="h-md">Viaggiatori</h2>
+          <div className="sec-h" style={{ marginBottom: '10px' }}>
+            <h2 className="h-md">Viaggiatori</h2>
             {isOwner && (
-              <button type="button" class="btn soft sm" onClick={() => setSheet({ kind: 'new-traveler' })}>
+              <button type="button" className="btn soft sm" onClick={() => setSheet({ kind: 'new-traveler' })}>
                 <PlusG size={16} />
                 Aggiungi
               </button>
             )}
           </div>
           {trip.travelers.length === 0 ? (
-            <div class="card empty">
-              <p class="b-sm muted">Nessun viaggiatore: aggiungi una persona con la sua email per assegnare costi e spese.</p>
+            <div className="card empty">
+              <p className="b-sm muted">Nessun viaggiatore: aggiungi una persona con la sua email per assegnare costi e spese.</p>
             </div>
           ) : (
-            <div class="rows">
+            <div className="rows">
               {trip.travelers.map((person, i) => (
-                <div class="row" style={{ position: 'relative' }}>
-                  <button type="button" class="row" style={{ flex: 1, padding: 0, border: 0, background: 'none', textAlign: 'left', minHeight: '52px' }} onClick={() => setSheet({ kind: 'edit-traveler', traveler: person })}>
-                    <span class="av" style={{ background: avColor(i) }} aria-hidden="true">
+                <div className="row" style={{ position: 'relative' }}>
+                  <button type="button" className="row" style={{ flex: 1, padding: 0, border: 0, background: 'none', textAlign: 'left', minHeight: '52px' }} onClick={() => setSheet({ kind: 'edit-traveler', traveler: person })}>
+                    <span className="av" style={{ background: avColor(i) }} aria-hidden="true">
                       {initialOf(person.name)}
                     </span>
-                    <span class="grow">
-                      <span class="tt" style={{ display: 'block' }}>
+                    <span className="grow">
+                      <span className="tt" style={{ display: 'block' }}>
                         {person.name}
                       </span>
-                      <span class="mm" style={person.userId ? undefined : { color: 'var(--danger)' }}>
+                      <span className="mm" style={person.userId ? undefined : { color: 'var(--danger)' }}>
                         {person.userId ? person.email : 'Senza account · da collegare'}
                       </span>
                     </span>
-                    <span class="muted">
+                    <span className="muted">
                       <ChevronRightG size={18} sw={2.2} />
                     </span>
                   </button>
@@ -214,17 +214,17 @@ export function Altro() {
         </section>
 
         <section aria-label="Generale">
-          <h2 class="h-md" style={{ marginBottom: '10px' }}>
+          <h2 className="h-md" style={{ marginBottom: '10px' }}>
             Generale
           </h2>
-          <div class="rows">
-            <Link href="/altro/account" class="row" style={{ minHeight: '76px' }}>
+          <div className="rows">
+            <Link href="/altro/account" className="row" style={{ minHeight: '76px' }}>
               <Ic name="i-sez-cloud" size={44} />
-              <span class="grow">
-                <span class="tt" style={{ display: 'block', fontWeight: 700, fontSize: '17px' }}>
+              <span className="grow">
+                <span className="tt" style={{ display: 'block', fontWeight: 700, fontSize: '17px' }}>
                   Sincronizzazione
                 </span>
-                <span class="mm">
+                <span className="mm">
                   {t.pending > 0 ? `${plural(t.pending, 'modifica', 'modifiche')} in coda` : 'Tutto aggiornato · nessuna modifica in coda'}
                 </span>
               </span>
@@ -232,13 +232,13 @@ export function Altro() {
                 <ChevronRightG />
               </span>
             </Link>
-            <button type="button" class="row" style={{ minHeight: '76px', width: '100%', border: 0, background: 'none', textAlign: 'left' }} onClick={() => setSheet({ kind: 'new-trip' })}>
+            <button type="button" className="row" style={{ minHeight: '76px', width: '100%', border: 0, background: 'none', textAlign: 'left' }} onClick={() => setSheet({ kind: 'new-trip' })}>
               <Ic name="i-tra-plane" size={44} />
-              <span class="grow">
-                <span class="tt" style={{ display: 'block', fontWeight: 700, fontSize: '17px' }}>
+              <span className="grow">
+                <span className="tt" style={{ display: 'block', fontWeight: 700, fontSize: '17px' }}>
                   Nuovo viaggio
                 </span>
-                <span class="mm">Nome, date e chi viaggia</span>
+                <span className="mm">Nome, date e chi viaggia</span>
               </span>
               <span>
                 <ChevronRightG />
@@ -252,7 +252,7 @@ export function Altro() {
         {sheet?.kind === 'new-trip' && <TripForm onSubmit={t.createTrip} onDone={close} />}
 
         {sheet?.kind === 'edit-trip' && (
-          <div class="space-y-4">
+          <div className="space-y-4">
             <TripForm trip={trip} onSubmit={(input) => t.updateTrip(trip.id, input)} onDone={close} />
             <SecondaryButton
               danger
@@ -267,13 +267,13 @@ export function Altro() {
         )}
 
         {sheet?.kind === 'delete-trip' && (
-          <div class="space-y-3">
-            <p class="text-sm text-muted">
+          <div className="space-y-3">
+            <p className="text-sm text-muted">
               «{trip.title}» sparirà dall'elenco. I dati non vengono cancellati subito dal database, quindi si possono
               ancora recuperare dalla dashboard di Supabase.
             </p>
             {deleteError && (
-              <p role="alert" class="rounded-2xl bg-danger/10 px-4 py-3 text-sm text-danger">
+              <p role="alert" className="rounded-2xl bg-danger/10 px-4 py-3 text-sm text-danger">
                 {deleteError}
               </p>
             )}
@@ -300,8 +300,8 @@ export function Altro() {
         )}
 
         {sheet?.kind === 'edit-traveler' && (
-          <div class="space-y-4">
-            {sheet.traveler.email && <p class="truncate text-sm text-muted">Account: {sheet.traveler.email}</p>}
+          <div className="space-y-4">
+            {sheet.traveler.email && <p className="truncate text-sm text-muted">Account: {sheet.traveler.email}</p>}
             <TravelerForm
               key={sheet.traveler.id}
               initial={sheet.traveler}

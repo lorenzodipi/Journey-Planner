@@ -8,7 +8,7 @@ export function PlaceDisc({ category, color, size = 40 }: { category?: string; c
   const ink = categoryInk(color)
   return (
     <span
-      class="grid shrink-0 place-items-center rounded-full"
+      className="grid shrink-0 place-items-center rounded-full"
       style={{ width: `${size}px`, height: `${size}px`, color: ink, boxShadow: `inset 0 0 0 2px ${ink}` }}
     >
       <PinGlyph category={category} size={Math.round(size * 0.46)} />
@@ -19,7 +19,7 @@ export function PlaceDisc({ category, color, size = 40 }: { category?: string; c
 /** Etichetta della categoria, con il bordo del suo colore. */
 export function CategoryTag({ label, color }: { label: string; color: string }) {
   return (
-    <span class="inline-block whitespace-nowrap rounded-full px-2.5 text-xs font-extrabold leading-[1.45rem]" style={{ boxShadow: `inset 0 0 0 1.5px ${categoryInk(color)}`, color: categoryInk(color) }}>
+    <span className="inline-block whitespace-nowrap rounded-full px-2.5 text-xs font-extrabold leading-[1.45rem]" style={{ boxShadow: `inset 0 0 0 1.5px ${categoryInk(color)}`, color: categoryInk(color) }}>
       {label}
     </span>
   )

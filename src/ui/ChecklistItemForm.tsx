@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import { useConfirm } from './ConfirmDialog'
 import { KIND_LABEL, KINDS, parseQuantity } from '../lib/checklist'
 import { cleanUrl, type ChecklistInput } from '../lib/planningData'
@@ -26,7 +26,7 @@ export function ChecklistItemForm({ trip, initial, defaults, onSubmit, onDelete,
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     if (!text.trim()) return setError('Scrivi la voce.')
     if (url.trim() && !cleanUrl(url)) return setError('Il link non sembra un indirizzo web (es. https://…).')
@@ -51,12 +51,12 @@ export function ChecklistItemForm({ trip, initial, defaults, onSubmit, onDelete,
   }
 
   return (
-    <form class="space-y-4" onSubmit={submit} noValidate>
-      <TextField label="Voce" value={text} onInput={setText} maxLength={200} />
-      <TextField label="Quantità" value={quantity} onInput={setQuantity} inputMode="numeric" maxLength={3} />
-      <TextField label="Link (facoltativo)" value={url} onInput={setUrl} inputMode="text" placeholder="https://…" maxLength={500} />
+    <form className="space-y-4" onSubmit={submit} noValidate>
+      <TextField label="Voce" value={text} onChange={setText} maxLength={200} />
+      <TextField label="Quantità" value={quantity} onChange={setQuantity} inputMode="numeric" maxLength={3} />
+      <TextField label="Link (facoltativo)" value={url} onChange={setUrl} inputMode="text" placeholder="https://…" maxLength={500} />
       {initial?.url && cleanUrl(initial.url) && (
-        <a class="btn soft block" href={cleanUrl(initial.url)} target="_blank" rel="noopener noreferrer">
+        <a className="btn soft block" href={cleanUrl(initial.url)} target="_blank" rel="noopener noreferrer">
           Apri il link
         </a>
       )}
@@ -69,7 +69,7 @@ export function ChecklistItemForm({ trip, initial, defaults, onSubmit, onDelete,
           options={[{ value: 'all', label: 'Per tutti' }, ...trip.travelers.map((t) => ({ value: t.id, label: t.name }))]}
         />
       )}
-      <TextField label="Entro il (facoltativo)" type="date" value={dueDate} onInput={setDueDate} optional />
+      <TextField label="Entro il (facoltativo)" type="date" value={dueDate} onChange={setDueDate} optional />
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva' : 'Aggiungi'}</PrimaryButton>
       {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina voce</SecondaryButton>}

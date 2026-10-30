@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import { FormError, PrimaryButton, TextField } from './Field'
 
 interface Props {
@@ -14,7 +14,7 @@ export function CategoryForm({ initial = '', submitLabel, onSubmit, onDone }: Pr
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     if (!label.trim()) return setError('Scrivi il nome della categoria (es. Souvenir).')
     setBusy(true)
@@ -26,9 +26,9 @@ export function CategoryForm({ initial = '', submitLabel, onSubmit, onDone }: Pr
   }
 
   return (
-    <form class="space-y-4" onSubmit={submit} noValidate>
-      <TextField label="Nome della categoria" value={label} onInput={setLabel} maxLength={60} autoComplete="off" />
-      <p class="text-sm text-muted">
+    <form className="space-y-4" onSubmit={submit} noValidate>
+      <TextField label="Nome della categoria" value={label} onChange={setLabel} maxLength={60} autoComplete="off" />
+      <p className="text-sm text-muted">
         Le spese e le voci con questa categoria si sommano da sole: il totale non si scrive a mano.
       </p>
       <FormError message={error} />

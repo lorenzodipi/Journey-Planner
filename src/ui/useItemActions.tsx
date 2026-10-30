@@ -1,4 +1,4 @@
-import type { ComponentChildren } from 'preact'
+import type { ReactNode } from 'react'
 import { showToast } from '../state/toast'
 import { useTrips } from '../state/trip'
 import type { DayItem } from '../types'
@@ -10,7 +10,7 @@ export function useItemActions(): {
   moveTo: (dayId: string, item: DayItem, to: number) => Promise<void>
   toggleDone: (item: DayItem) => Promise<void>
   remove: (item: DayItem) => void
-  dialog: ComponentChildren
+  dialog: ReactNode
 } {
   const t = useTrips()
   const [del, dialog] = useDeleter()

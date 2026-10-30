@@ -1,4 +1,4 @@
-import type { ComponentChildren } from 'preact'
+import type { ReactNode } from 'react'
 import { EMPTY_FILTERS, countActive, filterPlaces, toggleValue, type PlaceFilters } from '../lib/placeFilter'
 import { DEFAULT_VIEW, GROUP_LABEL, SORT_LABEL, isDefaultView, type GroupBy, type PlaceView, type SortBy } from '../lib/placeView'
 import type { PlaceStatus, Trip } from '../types'
@@ -18,11 +18,11 @@ function Group({
 }) {
   if (options.length === 0) return null
   return (
-    <fieldset class="fgroup">
+    <fieldset className="fgroup">
       <legend>{title}</legend>
-      <div class="chips">
+      <div className="chips">
         {options.map((o) => (
-          <button type="button" aria-pressed={selected.includes(o.value)} onClick={() => onToggle(o.value)} class={`chip${selected.includes(o.value) ? ' on' : ''}`}>
+          <button type="button" aria-pressed={selected.includes(o.value)} onClick={() => onToggle(o.value)} className={`chip${selected.includes(o.value) ? ' on' : ''}`}>
             {o.label}
           </button>
         ))}
@@ -44,11 +44,11 @@ function Choice<T extends string>({
   onPick: (v: T) => void
 }) {
   return (
-    <fieldset class="fgroup">
+    <fieldset className="fgroup">
       <legend>{title}</legend>
-      <div class="chips">
+      <div className="chips">
         {options.map((o) => (
-          <button type="button" role="radio" aria-checked={value === o.value} onClick={() => onPick(o.value)} class={`chip${value === o.value ? ' on' : ''}`}>
+          <button type="button" role="radio" aria-checked={value === o.value} onClick={() => onPick(o.value)} className={`chip${value === o.value ? ' on' : ''}`}>
             {o.label}
           </button>
         ))}
@@ -67,7 +67,7 @@ interface Props {
   view?: PlaceView
   onViewChange?: (v: PlaceView) => void
   /** Contenuto extra sotto i filtri (es. colori dei pin nella mappa). */
-  children?: ComponentChildren
+  children?: ReactNode
 }
 
 export function FilterSheet({ trip, open, filters, onChange, onClose, view, onViewChange, children }: Props) {
@@ -77,7 +77,7 @@ export function FilterSheet({ trip, open, filters, onChange, onClose, view, onVi
   return (
     <Sheet open={open} title={view ? 'Filtri e ordine' : 'Filtri'} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <p class="b-sm muted">Puoi sceglierne più di uno per gruppo.</p>
+        <p className="b-sm muted">Puoi sceglierne più di uno per gruppo.</p>
         <Group
           title="Città"
           options={uniqueCities(trip.places).map((c) => ({ value: c, label: c }))}
@@ -113,10 +113,10 @@ export function FilterSheet({ trip, open, filters, onChange, onClose, view, onVi
           </>
         )}
         {children}
-        <div class="acts2" style={{ marginTop: 0 }}>
+        <div className="acts2" style={{ marginTop: 0 }}>
           <button
             type="button"
-            class="btn line"
+            className="btn line"
             style={{ opacity: active === 0 && !viewChanged ? 0.4 : 1 }}
             disabled={active === 0 && !viewChanged}
             onClick={() => {
@@ -126,7 +126,7 @@ export function FilterSheet({ trip, open, filters, onChange, onClose, view, onVi
           >
             Azzera
           </button>
-          <button type="button" class="btn" onClick={onClose}>
+          <button type="button" className="btn" onClick={onClose}>
             Mostra {matching} {matching === 1 ? 'luogo' : 'luoghi'}
           </button>
         </div>

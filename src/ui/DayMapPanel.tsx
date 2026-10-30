@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 import type { DayRoute } from '../state/dayRoute'
 import { TRANSPORT_COLOR } from '../state/dayRoute'
 import type { Trip } from '../types'
@@ -38,7 +38,7 @@ export function DayMapPanel({
 
   if (stops.length === 0 && transports.length === 0) {
     return (
-      <p class="card b-sm muted">
+      <p className="card b-sm muted">
         Nessuna tappa di questo giorno ha ancora una posizione: collega le tappe a luoghi con una posizione sulla mappa, oppure imposta partenza e arrivo di un trasporto.
       </p>
     )
@@ -46,18 +46,18 @@ export function DayMapPanel({
 
   return (
     <div>
-      <div class="map" style={{ height: `${height}px`, border: '1.5px solid var(--border-strong)' }}>
+      <div className="map" style={{ height: `${height}px`, border: '1.5px solid var(--border-strong)' }}>
         {View ? (
           <View stops={stops} lines={lines} ends={ends} center={stops[0] ?? transports[0]?.from ?? center} selectedId={selectedId} onSelect={onSelect} />
         ) : (
-          <p class="b-sm muted" style={{ display: 'grid', height: '100%', placeItems: 'center', padding: '0 24px', textAlign: 'center' }} role="status">
+          <p className="b-sm muted" style={{ display: 'grid', height: '100%', placeItems: 'center', padding: '0 24px', textAlign: 'center' }} role="status">
             {loadError ? 'Non riesco a caricare la mappa: serve la connessione la prima volta.' : 'Carico la mappa…'}
           </p>
         )}
       </div>
 
       {transports.length > 0 && (
-        <ul class="b-sm" style={{ display: 'grid', gap: '6px', marginTop: '10px' }} aria-label="Trasporti sulla mappa">
+        <ul className="b-sm" style={{ display: 'grid', gap: '6px', marginTop: '10px' }} aria-label="Trasporti sulla mappa">
           {transports.map((t) => (
             <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span aria-hidden="true" style={{ width: '12px', height: '12px', flexShrink: 0, transform: 'rotate(45deg)', borderRadius: '3px', background: TRANSPORT_COLOR, marginInline: '4px' }} />
@@ -70,7 +70,7 @@ export function DayMapPanel({
       )}
 
       {missing > 0 && (
-        <p class="cap muted" style={{ marginTop: '8px' }}>
+        <p className="cap muted" style={{ marginTop: '8px' }}>
           {missing} {missing === 1 ? 'tappa non ha' : 'tappe non hanno'} una posizione e non compare sulla mappa.
         </p>
       )}

@@ -16,9 +16,9 @@ export function Sprite() {
 }
 
 /** Icona del Design System, per nome del simbolo (es. "i-nav-today", "i-cat-temple", "g-food"). */
-export function Ic({ name, size = 24, class: cls = '' }: { name: string; size?: number; class?: string }) {
+export function Ic({ name, size = 24, className: cls = '' }: { name: string; size?: number; className?: string }) {
   return (
-    <svg class={`ic ${cls}`.trim()} width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+    <svg className={`ic ${cls}`.trim()} width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
       <use href={`#${name}`} />
     </svg>
   )

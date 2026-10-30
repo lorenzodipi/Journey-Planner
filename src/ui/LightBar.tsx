@@ -29,13 +29,13 @@ const PHASES = [
   { label: 'Sera', color: 'var(--phase-evening)' },
 ]
 
-function Marker({ at, children }: { at: number; children: preact.ComponentChildren }) {
+function Marker({ at, children }: { at: number; children: React.ReactNode }) {
   return (
     <span
-      class="absolute top-1/2 z-[2] grid size-[26px] -translate-x-1/2 -translate-y-1/2 rotate-45 place-items-center rounded-[7px] border-2 border-ink bg-surface"
+      className="absolute top-1/2 z-[2] grid size-[26px] -translate-x-1/2 -translate-y-1/2 rotate-45 place-items-center rounded-[7px] border-2 border-ink bg-surface"
       style={{ left: `${at}%` }}
     >
-      <span class="-rotate-45">{children}</span>
+      <span className="-rotate-45">{children}</span>
     </span>
   )
 }
@@ -51,8 +51,8 @@ export function LightBar({ sunrise, sunset, alwaysUp, alwaysDown, nowMin = null 
     const text = alwaysUp ? 'Il sole non tramonta' : alwaysDown ? 'Il sole non sorge' : 'Alba e tramonto non disponibili'
     return (
       <div role="img" aria-label={text}>
-        <div class="h-3.5 rounded-full" style={{ background: alwaysUp ? 'var(--phase-morning)' : alwaysDown ? 'var(--phase-night)' : 'var(--line)' }} />
-        <p class="mt-2 text-sm text-muted">{text}</p>
+        <div className="h-3.5 rounded-full" style={{ background: alwaysUp ? 'var(--phase-morning)' : alwaysDown ? 'var(--phase-night)' : 'var(--line)' }} />
+        <p className="mt-2 text-sm text-muted">{text}</p>
       </div>
     )
   }
@@ -76,19 +76,19 @@ export function LightBar({ sunrise, sunset, alwaysUp, alwaysDown, nowMin = null 
       <div
         role="img"
         aria-label={`Alba ${formatMinutes(rise)}, sole più alto ${formatMinutes(noon)}, tramonto ${formatMinutes(set)}${showNow ? `. Adesso sono le ${formatMinutes(nowMin as number)}` : ''}`}
-        class="relative h-[104px]"
+        className="relative h-[104px]"
       >
         {/* linee che collegano gli orari ai rombi */}
         {[rise, set].map((m) => (
-          <span class="absolute top-6 h-[28px] w-px bg-ink/30" style={{ left: `${pct(m)}%` }} />
+          <span className="absolute top-6 h-[28px] w-px bg-ink/30" style={{ left: `${pct(m)}%` }} />
         ))}
-        <span class="absolute bottom-6 h-[26px] w-px bg-ink/30" style={{ left: `${pct(noon)}%` }} />
+        <span className="absolute bottom-6 h-[26px] w-px bg-ink/30" style={{ left: `${pct(noon)}%` }} />
 
         {/* riga unica: le fasce sono tagli di colore sulla stessa barra */}
-        <div class="absolute inset-x-0 top-1/2 z-[1] h-3.5 -translate-y-1/2 overflow-hidden rounded-full">
+        <div className="absolute inset-x-0 top-1/2 z-[1] h-3.5 -translate-y-1/2 overflow-hidden rounded-full">
           {colors.map((c, i) => (
             <span
-              class="absolute inset-y-0"
+              className="absolute inset-y-0"
               style={{ left: `${pct(cuts[i])}%`, width: `${pct(cuts[i + 1]) - pct(cuts[i])}%`, background: c }}
             />
           ))}
@@ -106,42 +106,42 @@ export function LightBar({ sunrise, sunset, alwaysUp, alwaysDown, nowMin = null 
 
         {showNow && (
           <span
-            class="absolute top-1/2 z-[3] size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-ink bg-surface"
+            className="absolute top-1/2 z-[3] size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-ink bg-surface"
             style={{ left: `${pct(nowMin as number)}%` }}
           />
         )}
 
         {/* orari */}
-        <span class="absolute top-0 -translate-x-1/2 text-base font-bold leading-5 tabular-nums" style={{ left: left(rise) }}>
+        <span className="absolute top-0 -translate-x-1/2 text-base font-bold leading-5 tabular-nums" style={{ left: left(rise) }}>
           {formatMinutes(rise)}
         </span>
-        <span class="absolute bottom-0 -translate-x-1/2 text-base font-bold leading-5 tabular-nums" style={{ left: left(noon) }}>
+        <span className="absolute bottom-0 -translate-x-1/2 text-base font-bold leading-5 tabular-nums" style={{ left: left(noon) }}>
           {formatMinutes(noon)}
         </span>
-        <span class="absolute top-0 -translate-x-1/2 text-base font-bold leading-5 tabular-nums" style={{ left: left(set) }}>
+        <span className="absolute top-0 -translate-x-1/2 text-base font-bold leading-5 tabular-nums" style={{ left: left(set) }}>
           {formatMinutes(set)}
         </span>
       </div>
 
       {/* legenda */}
-      <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-[13px]">
+      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-[13px]">
         {PHASES.map((p) => (
-          <li class="flex items-center gap-1.5">
-            <span class="size-2.5 rounded-[3px]" style={{ background: p.color }} />
+          <li className="flex items-center gap-1.5">
+            <span className="size-2.5 rounded-[3px]" style={{ background: p.color }} />
             {p.label}
           </li>
         ))}
         {showNow && (
-          <li class="flex items-center gap-1.5">
-            <span class="size-2.5 rounded-full border-[3px] border-ink bg-surface" />
+          <li className="flex items-center gap-1.5">
+            <span className="size-2.5 rounded-full border-[3px] border-ink bg-surface" />
             Adesso
           </li>
         )}
       </ul>
 
-      <p class="mt-2.5 text-sm text-muted">
+      <p className="mt-2.5 text-sm text-muted">
         {daylightLabel(rise, set)}
-        {remaining != null && <span class="font-semibold text-ink"> · ancora {duration(remaining)}</span>}
+        {remaining != null && <span className="font-semibold text-ink"> · ancora {duration(remaining)}</span>}
       </p>
     </div>
   )
@@ -152,12 +152,12 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 /** La card "luce del giorno": data e città in testa, poi la barra. Usata in Oggi e nella pagina del giorno. */
 export function LightCard({ date, city, sun, nowMin = null }: { date: string; city?: string; sun: DaySun; nowMin?: number | null }) {
   return (
-    <section class="rise rounded-[20px] border border-hairline bg-surface px-4 pb-3.5 pt-3.5">
-      <div class="flex items-baseline justify-between gap-3">
-        <h2 class="font-display text-lg font-extrabold">{cap(formatDayLong(date))}</h2>
-        {city && <span class="text-[13px] text-muted">{city}</span>}
+    <section className="rise rounded-[20px] border border-hairline bg-surface px-4 pb-3.5 pt-3.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-display text-lg font-extrabold">{cap(formatDayLong(date))}</h2>
+        {city && <span className="text-[13px] text-muted">{city}</span>}
       </div>
-      <div class="mt-1.5">
+      <div className="mt-1.5">
         <LightBar sunrise={sun.sunrise} sunset={sun.sunset} alwaysUp={sun.alwaysUp} alwaysDown={sun.alwaysDown} nowMin={nowMin} />
       </div>
     </section>

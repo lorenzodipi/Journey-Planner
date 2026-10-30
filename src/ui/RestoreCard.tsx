@@ -1,4 +1,5 @@
-import { useRef, useState } from 'preact/hooks'
+import type React from 'react'
+import { useRef, useState } from 'react'
 import { formatShort } from '../lib/dates'
 import { parseExport, summarizeTrip, type ParseOutcome, type RestorableTrip } from '../lib/restore'
 import { showToast } from '../state/toast'
@@ -35,7 +36,7 @@ function Candidate({ item, defaultTitle, onDone }: { item: RestorableTrip; defau
   const [error, setError] = useState<string | null>(null)
   const { trip, warnings } = item
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     if (busy) return
     setBusy(true)
@@ -51,28 +52,28 @@ function Candidate({ item, defaultTitle, onDone }: { item: RestorableTrip; defau
   }
 
   return (
-    <form onSubmit={submit} class="space-y-3 rounded-[20px] border border-hairline bg-bg p-4">
+    <form onSubmit={submit} className="space-y-3 rounded-[20px] border border-hairline bg-bg p-4">
       <div>
-        <p class="font-extrabold">{trip.title}</p>
-        <p class="text-sm text-muted">
+        <p className="font-extrabold">{trip.title}</p>
+        <p className="text-sm text-muted">
           {formatShort(trip.startDate)} – {formatShort(trip.endDate)}
           {trip.destination && ` · ${trip.destination}`}
         </p>
-        <p class="mt-1 text-sm text-muted">{summaryLine(trip)}</p>
+        <p className="mt-1 text-sm text-muted">{summaryLine(trip)}</p>
       </div>
       {warnings.length > 0 && (
-        <details class="rounded-2xl border-2 border-warn px-4 py-3 text-sm">
-          <summary class="min-h-6 cursor-pointer font-extrabold text-warn">
+        <details className="rounded-2xl border-2 border-warn px-4 py-3 text-sm">
+          <summary className="min-h-6 cursor-pointer font-extrabold text-warn">
             {warnings.length === 1 ? '1 avviso' : `${warnings.length} avvisi`}
           </summary>
-          <ul class="mt-2 list-disc space-y-1 pl-5">
+          <ul className="mt-2 list-disc space-y-1 pl-5">
             {warnings.map((w) => (
               <li>{w}</li>
             ))}
           </ul>
         </details>
       )}
-      <TextField label="Nome del nuovo viaggio" value={title} onInput={setTitle} maxLength={80} required />
+      <TextField label="Nome del nuovo viaggio" value={title} onChange={setTitle} maxLength={80} required />
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Ripristino in corso…' : 'Crea il viaggio'}</PrimaryButton>
     </form>
@@ -87,7 +88,7 @@ export function RestoreCard() {
   const [fileName, setFileName] = useState('')
   const [reading, setReading] = useState(false)
 
-  async function onFile(e: Event) {
+  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const el = e.currentTarget as HTMLInputElement
     const file = el.files?.[0]
     el.value = '' // permette di scegliere di nuovo lo stesso file
@@ -112,28 +113,28 @@ export function RestoreCard() {
 
   return (
     <Card>
-      <h2 class="h-sm">Ripristina da file</h2>
-      <p class="b-sm muted" style={{ marginTop: '4px' }}>
+      <h2 className="h-sm">Ripristina da file</h2>
+      <p className="b-sm muted" style={{ marginTop: '4px' }}>
         Riporta i viaggi da un file esportato: i viaggi vengono ricreati, quelli che hai già non vengono toccati.
       </p>
-      <p class="cap muted" style={{ marginTop: '4px' }}>
+      <p className="cap muted" style={{ marginTop: '4px' }}>
         Nel file non ci sono gli allegati (PDF) né gli account: i viaggiatori tornano senza account e si collegano da Altro → Viaggiatori.
       </p>
-      <input ref={input} type="file" accept=".json,application/json" class="sr-only" tabIndex={-1} onChange={(e) => void onFile(e)} aria-label="File di esportazione" />
-      <button type="button" class="btn soft block" style={{ marginTop: '12px' }} onClick={() => input.current?.click()}>
+      <input ref={input} type="file" accept=".json,application/json" className="sr-only" tabIndex={-1} onChange={(e) => void onFile(e)} aria-label="File di esportazione" />
+      <button type="button" className="btn soft block" style={{ marginTop: '12px' }} onClick={() => input.current?.click()}>
         {reading ? 'Leggo il file…' : outcome ? 'Scegli un altro file' : 'Scegli il file'}
       </button>
 
       {outcome && !outcome.ok && (
-        <div class="mt-3">
+        <div className="mt-3">
           <FormError message={outcome.error} />
         </div>
       )}
 
       {outcome?.ok && (
-        <div class="mt-3 space-y-3">
-          <p class="text-sm text-muted">
-            {fileName && <span class="font-extrabold text-ink">{fileName}</span>}
+        <div className="mt-3 space-y-3">
+          <p className="text-sm text-muted">
+            {fileName && <span className="font-extrabold text-ink">{fileName}</span>}
             {fileName && ' · '}
             {outcome.trips.length === 1 ? '1 viaggio nel file' : `${outcome.trips.length} viaggi nel file`}
           </p>
@@ -141,8 +142,8 @@ export function RestoreCard() {
             <Candidate key={item.trip.id} item={item} defaultTitle={suggest(item.trip.title)} onDone={() => setOutcome(null)} />
           ))}
           {outcome.skipped.map((s) => (
-            <p class="rounded-2xl border-2 border-warn px-4 py-3 text-sm">
-              <span class="font-extrabold">{s.title}</span> non si può ripristinare: {s.reason}.
+            <p className="rounded-2xl border-2 border-warn px-4 py-3 text-sm">
+              <span className="font-extrabold">{s.title}</span> non si può ripristinare: {s.reason}.
             </p>
           ))}
         </div>

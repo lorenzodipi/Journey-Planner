@@ -1,6 +1,6 @@
-import { Fragment, type ComponentChildren } from 'preact'
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
-import { Link } from 'wouter-preact'
+import { Fragment, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'wouter'
 import '../fw-giorni.css'
 import { expenseBase, fxOf } from '../lib/budget'
 import { categoryIcon } from '../lib/categoryIcon'
@@ -58,23 +58,23 @@ interface Pill {
 }
 
 /** Riga `.prow` di una sezione (alloggio, spostamenti, spese…): disco, titolo, dettaglio, pillole e azione a destra. */
-function InfoRow({ icon, title, meta, pills, onOpen, mapsHref, right }: { icon: string; title: string; meta?: string; pills?: Pill[]; onOpen?: () => void; mapsHref?: string; right?: ComponentChildren }) {
+function InfoRow({ icon, title, meta, pills, onOpen, mapsHref, right }: { icon: string; title: string; meta?: string; pills?: Pill[]; onOpen?: () => void; mapsHref?: string; right?: ReactNode }) {
   return (
-    <li class="prow">
+    <li className="prow">
       <Ic name={icon} size={44} />
-      <div class="grow">
+      <div className="grow">
         {onOpen ? (
-          <button type="button" class="pt2 tp-edit" onClick={onOpen} aria-label={`Modifica ${title}`}>
+          <button type="button" className="pt2 tp-edit" onClick={onOpen} aria-label={`Modifica ${title}`}>
             {title}
           </button>
         ) : (
-          <p class="pt2">{title}</p>
+          <p className="pt2">{title}</p>
         )}
-        {meta && <p class="pm">{meta}</p>}
+        {meta && <p className="pm">{meta}</p>}
         {pills && pills.length > 0 && (
           <span style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
             {pills.map((p) => (
-              <span class={`sp ${p.tone}`}>{p.text}</span>
+              <span className={`sp ${p.tone}`}>{p.text}</span>
             ))}
           </span>
         )}
@@ -84,11 +84,11 @@ function InfoRow({ icon, title, meta, pills, onOpen, mapsHref, right }: { icon: 
   )
 }
 
-function Section({ title, label, aside, children }: { title: string; label?: string; aside?: ComponentChildren; children: ComponentChildren }) {
+function Section({ title, label, aside, children }: { title: string; label?: string; aside?: ReactNode; children: ReactNode }) {
   return (
     <section aria-label={label ?? title}>
-      <div class="sec-h" style={{ marginBottom: '10px' }}>
-        <h2 class="h-md">{title}</h2>
+      <div className="sec-h" style={{ marginBottom: '10px' }}>
+        <h2 className="h-md">{title}</h2>
         {aside}
       </div>
       {children}
@@ -97,7 +97,7 @@ function Section({ title, label, aside, children }: { title: string; label?: str
 }
 
 const DotsIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <circle cx="5" cy="12" r="1.2" />
     <circle cx="12" cy="12" r="1.2" />
     <circle cx="19" cy="12" r="1.2" />
@@ -105,7 +105,7 @@ const DotsIcon = () => (
 )
 
 const allLink = (href: string, text = 'Tutti') => (
-  <Link href={href} class="b-bold" style={{ color: 'var(--azzurro-ink)' }}>
+  <Link href={href} className="b-bold" style={{ color: 'var(--azzurro-ink)' }}>
     {text}
   </Link>
 )
@@ -149,9 +149,9 @@ export function Giorno({ params }: { params: { id: string } }) {
 
   if (!day) {
     return (
-      <main class="screen">
+      <main className="screen">
         <EmptyState art={ART.calendario} title="Giorno non trovato" text="Questo giorno non esiste più: torna all'elenco e scegline un altro." />
-        <Link href="/giorni" class="btn block">
+        <Link href="/giorni" className="btn block">
           Vai ai giorni
         </Link>
       </main>
@@ -276,21 +276,21 @@ export function Giorno({ params }: { params: { id: string } }) {
       : undefined
 
   return (
-    <main class="screen">
+    <main className="screen">
       <PageHeader
         title={cap(formatDay(day.date))}
         subtitle={subtitle}
         back={{ href: '/giorni', label: 'Giorni' }}
         actions={
-          <button type="button" class="rbtn" aria-label="Modifica il giorno" onClick={() => setSheet({ kind: 'day', day })}>
+          <button type="button" className="rbtn" aria-label="Modifica il giorno" onClick={() => setSheet({ kind: 'day', day })}>
             <DotsIcon />
           </button>
         }
       />
 
       {day.notes && (
-        <section class="card" aria-label="Note del giorno">
-          <p class="b-sm" style={{ whiteSpace: 'pre-line' }}>
+        <section className="card" aria-label="Note del giorno">
+          <p className="b-sm" style={{ whiteSpace: 'pre-line' }}>
             {day.notes}
           </p>
         </section>
@@ -302,21 +302,21 @@ export function Giorno({ params }: { params: { id: string } }) {
         <section aria-label="Mappa del giorno">
           <DayMapPanel route={route} center={trip.center} selectedId={selected?.id} onSelect={onPin} />
           {selected && (
-            <div class="row card" style={{ marginTop: '12px', minHeight: '56px', padding: '6px 8px 6px 14px' }} role="status">
-              <span class="grow tt" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div className="row card" style={{ marginTop: '12px', minHeight: '56px', padding: '6px 8px 6px 14px' }} role="status">
+              <span className="grow tt" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {selected.name}
               </span>
-              <button type="button" class="btn soft sm" onClick={() => goToStop(selected.id)}>
+              <button type="button" className="btn soft sm" onClick={() => goToStop(selected.id)}>
                 Vai alla tappa
               </button>
-              <button type="button" class="rbtn sm" onClick={() => setSelectedStop(null)} aria-label="Deseleziona la tappa">
+              <button type="button" className="rbtn sm" onClick={() => setSelectedStop(null)} aria-label="Deseleziona la tappa">
                 <CloseG size={16} />
               </button>
             </div>
           )}
           {routeHref && (
             <div style={{ marginTop: '12px' }}>
-              <a class="btn block" href={routeHref} target="_blank" rel="noopener noreferrer" aria-label="Apri il percorso in Google Maps: percorso del giorno">
+              <a className="btn block" href={routeHref} target="_blank" rel="noopener noreferrer" aria-label="Apri il percorso in Google Maps: percorso del giorno">
                 <Ic name="i-nav-route" size={28} />
                 Apri il percorso in Google Maps
               </a>
@@ -331,23 +331,23 @@ export function Giorno({ params }: { params: { id: string } }) {
         <Section
           title="Tappe del giorno"
           aside={
-            <span class="b-bold num">
+            <span className="b-bold num">
               {day.items.length} {day.items.length === 1 ? 'tappa' : 'tappe'}
             </span>
           }
         >
-          <div class="tp-prog">
-            <div class="tp-pl">
+          <div className="tp-prog">
+            <div className="tp-pl">
               <b>
                 {doneTimed} di {timed.length} {timed.length === 1 ? 'tappa' : 'tappe'}
               </b>
               {upcoming && <span>Prossima: {upcoming.time}</span>}
             </div>
-            <div class="tp-pb" role="progressbar" aria-valuemin={0} aria-valuemax={timed.length} aria-valuenow={doneTimed} aria-label="Tappe fatte">
+            <div className="tp-pb" role="progressbar" aria-valuemin={0} aria-valuemax={timed.length} aria-valuenow={doneTimed} aria-label="Tappe fatte">
               <i style={{ width: `${(doneTimed / timed.length) * 100}%` }} />
             </div>
           </div>
-          <ol class="tp-steps">
+          <ol className="tp-steps">
             {timed.map((item, i) => {
               const place = placeOf(item)
               const state = stateOf(item)
@@ -361,9 +361,9 @@ export function Giorno({ params }: { params: { id: string } }) {
               return (
                 <Fragment key={item.id}>
                   {hop && (
-                    <li class={`tp-seg${stateOf(before) === 'done' ? '' : ' after'}`}>
-                      <span class="tp-rail" />
-                      <span class="tp-sg">
+                    <li className={`tp-seg${stateOf(before) === 'done' ? '' : ' after'}`}>
+                      <span className="tp-rail" />
+                      <span className="tp-sg">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                           <use href={`#${hop.symbol}`} />
                         </svg>
@@ -394,12 +394,12 @@ export function Giorno({ params }: { params: { id: string } }) {
       {loose.length > 0 && (
         <Section title="Senza orario">
           {reordering && (
-            <p class="b-sm muted" style={{ marginBottom: '10px' }}>
-              Le tappe con un orario seguono l'orario. Le altre si spostano <span class="pointer-coarse:hidden">con le frecce.</span>
-              <span class="hidden pointer-coarse:inline">trascinandole dalla maniglia a destra.</span>
+            <p className="b-sm muted" style={{ marginBottom: '10px' }}>
+              Le tappe con un orario seguono l'orario. Le altre si spostano <span className="pointer-coarse:hidden">con le frecce.</span>
+              <span className="hidden pointer-coarse:inline">trascinandole dalla maniglia a destra.</span>
             </p>
           )}
-          <ul class="rows" ref={listRef}>
+          <ul className="rows" ref={listRef}>
             {loose.map((item, i) => {
               const place = placeOf(item)
               const sym = item.kind === 'meal' ? 'i-cat-food' : place ? catSymbol(categoryIcon(place.category)) : 'i-nav-pin'
@@ -439,14 +439,14 @@ export function Giorno({ params }: { params: { id: string } }) {
             })}
           </ul>
           {(loose.length > 1 || routePlan) && (
-            <div class="tp-foot" style={{ marginTop: '12px' }}>
+            <div className="tp-foot" style={{ marginTop: '12px' }}>
               {loose.length > 1 && (
-                <button type="button" class="btn line sm" aria-pressed={reordering} onClick={() => setReordering(!reordering)}>
+                <button type="button" className="btn line sm" aria-pressed={reordering} onClick={() => setReordering(!reordering)}>
                   {reordering ? 'Fine' : 'Riordina le tappe'}
                 </button>
               )}
               {!reordering && routePlan && (
-                <button type="button" class="btn line sm" onClick={() => void optimizeRoute()}>
+                <button type="button" className="btn line sm" onClick={() => void optimizeRoute()}>
                   Ottimizza percorso
                 </button>
               )}
@@ -457,7 +457,7 @@ export function Giorno({ params }: { params: { id: string } }) {
 
       {movements.length > 0 && (
         <Section title="Spostamenti" aside={allLink('/altro/trasporti')}>
-          <ul class="rows">
+          <ul className="rows">
             {movements.map((e) => (
               <InfoRow
                 key={`${e.ref?.type}-${e.ref?.id}-${e.title}`}
@@ -475,7 +475,7 @@ export function Giorno({ params }: { params: { id: string } }) {
 
       {hasStay && (
         <Section title="Alloggio" aside={allLink('/altro/alloggi')}>
-          <ul class="rows">
+          <ul className="rows">
             {stays.checkOut.map((s) => stayRow(s, 'Check-out oggi'))}
             {stays.checkIn.filter((s) => s.id !== stays.night?.id).map((s) => stayRow(s, 'Check-in oggi'))}
             {stays.night && stayRow(stays.night, stays.night.checkIn === day.date ? 'Check-in oggi · dormi qui' : 'Dormi qui')}
@@ -484,8 +484,8 @@ export function Giorno({ params }: { params: { id: string } }) {
       )}
 
       {expenses.length > 0 && (
-        <Section title="Spese del giorno" aside={<span class="b-bold num">{formatMoney(total, trip.baseCurrency)}</span>}>
-          <ul class="rows">
+        <Section title="Spese del giorno" aside={<span className="b-bold num">{formatMoney(total, trip.baseCurrency)}</span>}>
+          <ul className="rows">
             {expenses.map((e) => {
               const inBase = expenseBase(e, fx)
               return (
@@ -497,11 +497,11 @@ export function Giorno({ params }: { params: { id: string } }) {
                   onOpen={() => setSheet({ kind: 'edit-expense', expense: e })}
                   right={
                     <span style={{ textAlign: 'right', flexShrink: 0, paddingRight: '4px' }}>
-                      <b class="b-bold num" style={{ display: 'block' }}>
+                      <b className="b-bold num" style={{ display: 'block' }}>
                         {formatMoney(e.amount, e.currency)}
                       </b>
                       {e.currency !== trip.baseCurrency && inBase !== null && (
-                        <span class="cap muted num" style={{ display: 'block' }}>
+                        <span className="cap muted num" style={{ display: 'block' }}>
                           ≈ {formatMoney(inBase, trip.baseCurrency)}
                         </span>
                       )}
@@ -516,7 +516,7 @@ export function Giorno({ params }: { params: { id: string } }) {
 
       {(bookings.length > 0 || todos.length > 0) && (
         <Section title="Prenotazioni e da fare">
-          <ul class="rows">
+          <ul className="rows">
             {bookings.map((b) => (
               <InfoRow
                 key={b.id}
@@ -528,10 +528,10 @@ export function Giorno({ params }: { params: { id: string } }) {
               />
             ))}
             {todos.map((c) => (
-              <li class="row" key={c.id}>
+              <li className="row" key={c.id}>
                 <button
                   type="button"
-                  class="hit"
+                  className="hit"
                   role="checkbox"
                   aria-checked={c.done}
                   aria-label={`${c.done ? 'Da rifare' : 'Fatto'}: ${c.text}`}
@@ -540,9 +540,9 @@ export function Giorno({ params }: { params: { id: string } }) {
                     if (message) showToast(message)
                   }}
                 >
-                  <span class={`cb${c.done ? ' on' : ''}`}>{c.done && <CheckG size={16} sw={3} />}</span>
+                  <span className={`cb${c.done ? ' on' : ''}`}>{c.done && <CheckG size={16} sw={3} />}</span>
                 </button>
-                <button type="button" class="grow tt tp-edit" onClick={() => setSheet({ kind: 'edit-checklist', item: c })} style={c.done ? { color: 'var(--ink-muted)', textDecoration: 'line-through' } : undefined}>
+                <button type="button" className="grow tt tp-edit" onClick={() => setSheet({ kind: 'edit-checklist', item: c })} style={c.done ? { color: 'var(--ink-muted)', textDecoration: 'line-through' } : undefined}>
                   {c.text}
                 </button>
                 {(c.quantity ?? 1) > 1 && (
@@ -562,33 +562,33 @@ export function Giorno({ params }: { params: { id: string } }) {
         </Section>
       )}
 
-      <div class="cta" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <button type="button" class="btn block" onClick={() => setSheet({ kind: 'new-item', day })}>
+      <div className="cta" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <button type="button" className="btn block" onClick={() => setSheet({ kind: 'new-item', day })}>
           <PlusG />
           Aggiungi tappa
         </button>
-        <div class="chips" role="group" aria-label="Aggiungi al giorno">
-          <button type="button" class="chip" onClick={() => setSheet({ kind: 'new-transport', day })}>
+        <div className="chips" role="group" aria-label="Aggiungi al giorno">
+          <button type="button" className="chip" onClick={() => setSheet({ kind: 'new-transport', day })}>
             <PlusG size={16} sw={2.6} /> Trasporto
           </button>
-          <button type="button" class="chip" onClick={() => setSheet({ kind: 'new-stay', day })}>
+          <button type="button" className="chip" onClick={() => setSheet({ kind: 'new-stay', day })}>
             <PlusG size={16} sw={2.6} /> Alloggio
           </button>
-          <button type="button" class="chip" onClick={() => setSheet({ kind: 'new-expense', day })}>
+          <button type="button" className="chip" onClick={() => setSheet({ kind: 'new-expense', day })}>
             <PlusG size={16} sw={2.6} /> Spesa
           </button>
         </div>
         {(prev || next) && (
-          <div class="dnav">
+          <div className="dnav">
             {prev ? (
-              <Link href={`/giorni/${prev.id}`} class="btn line sm" aria-label={`Giorno precedente, ${formatShort(prev.date)}`}>
+              <Link href={`/giorni/${prev.id}`} className="btn line sm" aria-label={`Giorno precedente, ${formatShort(prev.date)}`}>
                 <ChevronLeftG size={18} /> {formatShort(prev.date)}
               </Link>
             ) : (
               <span />
             )}
             {next && (
-              <Link href={`/giorni/${next.id}`} class="btn line sm" aria-label={`Giorno successivo, ${formatShort(next.date)}`}>
+              <Link href={`/giorni/${next.id}`} className="btn line sm" aria-label={`Giorno successivo, ${formatShort(next.date)}`}>
                 {formatShort(next.date)} <ChevronRightG size={18} />
               </Link>
             )}

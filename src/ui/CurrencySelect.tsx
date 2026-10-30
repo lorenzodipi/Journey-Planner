@@ -1,4 +1,4 @@
-import { useMemo } from 'preact/hooks'
+import { useMemo } from 'react'
 import { currencyOptions } from '../lib/currencies'
 import { Select } from './Select'
 

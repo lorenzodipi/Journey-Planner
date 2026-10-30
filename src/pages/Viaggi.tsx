@@ -1,4 +1,4 @@
-import { useLocation } from 'wouter-preact'
+import { useLocation } from 'wouter'
 import { useAuth } from '../lib/auth'
 import { daysBetween, formatShort } from '../lib/dates'
 import { tripToday } from '../lib/today'
@@ -35,13 +35,13 @@ export function Viaggi({ onClose, onNew }: { onClose: () => void; onNew: () => v
   let tint = 0
 
   return (
-    <main class="screen">
+    <main className="screen">
       <PageHeader
         title={greeting}
         subtitle="Quale viaggio vuoi aprire?"
         back={{ href: '/altro', label: 'Altro' }}
         actions={
-          <a class="rbtn" href="#/altro/account" aria-label="Il tuo account">
+          <a className="rbtn" href="#/altro/account" aria-label="Il tuo account">
             <UserG />
           </a>
         }
@@ -53,25 +53,25 @@ export function Viaggi({ onClose, onNew }: { onClose: () => void; onNew: () => v
           const places = cities(trip)
           if (s.over) {
             return (
-              <article class="card" aria-label={trip.title} style={{ padding: '20px' }}>
-                <div class="tr" style={{ alignItems: 'flex-start' }}>
+              <article className="card" aria-label={trip.title} style={{ padding: '20px' }}>
+                <div className="tr" style={{ alignItems: 'flex-start' }}>
                   <div>
-                    <h2 class="h-lg">{trip.title}</h2>
-                    <p class="b-bold num" style={{ marginTop: '2px' }}>
+                    <h2 className="h-lg">{trip.title}</h2>
+                    <p className="b-bold num" style={{ marginTop: '2px' }}>
                       {formatShort(trip.startDate)} – {formatShort(trip.endDate)} · {plural(trip.days.length, 'giorno', 'giorni')}
                     </p>
-                    <p class="b-sm" style={{ marginTop: '2px' }}>
+                    <p className="b-sm" style={{ marginTop: '2px' }}>
                       {[places.length ? plural(places.length, 'città', 'città') : '', people.length ? plural(people.length, 'persona', 'persone') : ''].filter(Boolean).join(' · ')}
                     </p>
                   </div>
-                  <span class="sp idle">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <span className="sp idle">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M5 12h14" />
                     </svg>
                     Concluso
                   </span>
                 </div>
-                <button type="button" class="btn soft block" style={{ marginTop: '16px', background: 'var(--surface-high)', color: 'var(--ink)' }} onClick={() => open(trip.id, '/')}>
+                <button type="button" className="btn soft block" style={{ marginTop: '16px', background: 'var(--surface-high)', color: 'var(--ink)' }} onClick={() => open(trip.id, '/')}>
                   Rivedi il riepilogo
                 </button>
               </article>
@@ -80,41 +80,41 @@ export function Viaggi({ onClose, onNew }: { onClose: () => void; onNew: () => v
           const c = TINTS[tint++ % TINTS.length]
           const when = s.live ? 'In corso' : s.toStart === 1 ? 'Domani' : `Tra ${s.toStart} giorni`
           return (
-            <article class={`trip t-${c} tinta cori`} style={{ background: `var(--tinta-${c})` }} aria-label={trip.title}>
-              <div class="trip-scene">
+            <article className={`trip t-${c} tinta cori`} style={{ background: `var(--tinta-${c})` }} aria-label={trip.title}>
+              <div className="trip-scene">
                 <img src={ART.partenza} alt="" />
-                <span class="badge now">{when}</span>
+                <span className="badge now">{when}</span>
               </div>
-              <h2 class="d-lg" style={{ marginTop: '16px', fontSize: '36px', lineHeight: '40px', position: 'relative' }}>
+              <h2 className="d-lg" style={{ marginTop: '16px', fontSize: '36px', lineHeight: '40px', position: 'relative' }}>
                 {trip.title}
               </h2>
-              <p class="b-bold num" style={{ position: 'relative', marginTop: '2px' }}>
+              <p className="b-bold num" style={{ position: 'relative', marginTop: '2px' }}>
                 {formatShort(trip.startDate)} – {formatShort(trip.endDate)} · {plural(trip.days.length, 'giorno', 'giorni')}
               </p>
               {places.length > 0 && (
-                <p class="b-sm" style={{ marginTop: '8px' }}>
+                <p className="b-sm" style={{ marginTop: '8px' }}>
                   {places.length > 1 ? `${places.slice(0, -1).join(', ')} e ${places[places.length - 1]}` : places[0]}
                 </p>
               )}
               {people.length > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
                   <AvatarStack people={people} />
-                  <span class="b-sm">{namesOf(people)}</span>
+                  <span className="b-sm">{namesOf(people)}</span>
                 </div>
               )}
-              <button type="button" class="btn block" style={{ marginTop: '20px' }} onClick={() => open(trip.id, '/')}>
+              <button type="button" className="btn block" style={{ marginTop: '20px' }} onClick={() => open(trip.id, '/')}>
                 Apri il viaggio
                 <ArrowRightG />
               </button>
             </article>
           )
         })}
-        <button type="button" class="dashbtn" onClick={onNew}>
+        <button type="button" className="dashbtn" onClick={onNew}>
           <PlusG size={22} />
           Nuovo viaggio
         </button>
       </section>
-      <p class="b-sm" style={{ textAlign: 'center' }}>
+      <p className="b-sm" style={{ textAlign: 'center' }}>
         Puoi cambiare viaggio quando vuoi da Altro.
       </p>
     </main>

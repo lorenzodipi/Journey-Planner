@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import { useConfirm } from './ConfirmDialog'
 import { formatMoney, parseAmount, amountToText, tripCurrencies } from '../lib/money'
 import { shareAmounts } from '../lib/budget'
@@ -43,7 +43,7 @@ export function BudgetItemForm({ trip, initial, defaultCategory, onSubmit, onDel
   }
   const togglePaid = (id: string) => setPaid((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     if (!label.trim()) return setError('Scrivi cosa è questo costo (es. Treno per Nikko).')
     if (value === null) return setError("Inserisci l'importo (es. 30 o 12,50).")
@@ -72,8 +72,8 @@ export function BudgetItemForm({ trip, initial, defaultCategory, onSubmit, onDel
   }
 
   return (
-    <form class="space-y-4" onSubmit={submit} noValidate>
-      <TextField label="Voce" value={label} onInput={setLabel} maxLength={120} />
+    <form className="space-y-4" onSubmit={submit} noValidate>
+      <TextField label="Voce" value={label} onChange={setLabel} maxLength={120} />
       <CategorySelect value={category} onChange={setCategory} categories={trip.expenseCategories} suggestions={SUGGESTED} />
 
       <CostFields amountLabel="Importo" amount={amount} currency={currency} currencies={tripCurrencies(trip, initial?.currency)} scope={scope} onAmount={setAmount} onCurrency={setCurrency} onScope={setScope} />
@@ -94,8 +94,8 @@ export function BudgetItemForm({ trip, initial, defaultCategory, onSubmit, onDel
             }
           />
           {payers.length > 0 && (
-            <div class="rounded-[20px] border border-hairline px-4 py-1">
-              <p class="pt-2 text-sm font-extrabold">Ha già pagato</p>
+            <div className="rounded-[20px] border border-hairline px-4 py-1">
+              <p className="pt-2 text-sm font-extrabold">Ha già pagato</p>
               {trip.travelers
                 .filter((t) => payers.includes(t.id))
                 .map((t) => (
@@ -106,8 +106,8 @@ export function BudgetItemForm({ trip, initial, defaultCategory, onSubmit, onDel
         </>
       )}
 
-      <TextField label="Da pagare entro (facoltativo)" type="date" value={dueDate} onInput={setDueDate} optional />
-      <TextArea label="Note" value={notes} onInput={setNotes} />
+      <TextField label="Da pagare entro (facoltativo)" type="date" value={dueDate} onChange={setDueDate} optional />
+      <TextArea label="Note" value={notes} onChange={setNotes} />
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva costo' : 'Aggiungi costo'}</PrimaryButton>
       {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina costo</SecondaryButton>}

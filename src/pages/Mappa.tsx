@@ -1,5 +1,5 @@
 import '../fw-luoghi.css'
-import { useEffect, useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useState } from 'react'
 import { formatShort } from '../lib/dates'
 import { formatDuration, itemDuration } from '../lib/duration'
 import { mapsLinkFor } from '../lib/mapsUrl'
@@ -41,9 +41,9 @@ function Thumb({ place, langs }: { place: Place; langs: string[] }) {
   const url = photo.status === 'ready' ? photo.photo.url : null
   const [bad, setBad] = useState<string | null>(null)
   return (
-    <span class="thumb" style={{ background: 'var(--tinta-azzurro)' }}>
+    <span className="thumb" style={{ background: 'var(--tinta-azzurro)' }}>
       <Ic name={catSymbol(categoryIcon(place.category))} size={40} />
-      {url && bad !== url && <img src={url} alt="" decoding="async" referrerpolicy="no-referrer" onError={() => setBad(url)} />}
+      {url && bad !== url && <img src={url} alt="" decoding="async" referrerPolicy="no-referrer" onError={() => setBad(url)} />}
     </span>
   )
 }
@@ -126,49 +126,49 @@ export function Mappa() {
   const info = selected ? dayInfo(trip, selected) : null
 
   return (
-    <main class="screen mapscr map-full">
-      <div class="mapbg">
+    <main className="screen mapscr map-full">
+      <div className="mapbg">
         {View ? (
           <View pins={pins} center={trip.center} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
         ) : (
-          <p class="msg" role="status">
+          <p className="msg" role="status">
             {loadError ? 'Non riesco a caricare la mappa: serve la connessione la prima volta.' : 'Carico la mappa…'}
           </p>
         )}
       </div>
 
       {/* ricerca e categorie sopra la mappa */}
-      <div class="maptop">
-        <label class="fld srch">
+      <div className="maptop">
+        <label className="fld srch">
           <SearchG />
-          <input type="search" value={text} placeholder="Cerca un luogo" aria-label="Cerca sulla mappa" onInput={(e) => setText(e.currentTarget.value)} />
+          <input type="search" value={text} placeholder="Cerca un luogo" aria-label="Cerca sulla mappa" onChange={(e) => setText(e.currentTarget.value)} />
         </label>
-        <div class="chips scroll" role="group" aria-label="Categorie">
-          <button type="button" class={`chip${filters.categories.length === 0 ? ' on' : ''}`} aria-pressed={filters.categories.length === 0} onClick={() => setFilters({ ...filters, categories: [] })}>
+        <div className="chips scroll" role="group" aria-label="Categorie">
+          <button type="button" className={`chip${filters.categories.length === 0 ? ' on' : ''}`} aria-pressed={filters.categories.length === 0} onClick={() => setFilters({ ...filters, categories: [] })}>
             Tutti
           </button>
           {cats.map((c) => (
             <button
               type="button"
               key={c.id}
-              class={`chip${onlyCat === c.label ? ' on' : ''}`}
+              className={`chip${onlyCat === c.label ? ' on' : ''}`}
               aria-pressed={onlyCat === c.label}
               onClick={() => setFilters({ ...filters, categories: onlyCat === c.label ? [] : [c.label] })}
             >
               {c.label}
             </button>
           ))}
-          <button type="button" class="rbtn sm" style={{ flexShrink: 0 }} onClick={() => setFilterOpen(true)} aria-label="Filtri e colori">
+          <button type="button" className="rbtn sm" style={{ flexShrink: 0 }} onClick={() => setFilterOpen(true)} aria-label="Filtri e colori">
             <FilterG size={18} />
           </button>
         </div>
       </div>
 
       {withCoords.length === 0 && (
-        <div class="mapnote low">
-          <div class="card">
-            <p class="b-bold">Nessun luogo con posizione</p>
-            <p class="b-sm muted" style={{ marginTop: '2px' }}>
+        <div className="mapnote low">
+          <div className="card">
+            <p className="b-bold">Nessun luogo con posizione</p>
+            <p className="b-sm muted" style={{ marginTop: '2px' }}>
               Aggiungi luoghi dalla scheda Luoghi: cercandoli per nome o incollando un link di Google Maps, compariranno qui.
             </p>
           </div>
@@ -176,35 +176,35 @@ export function Mappa() {
       )}
 
       {visible.length === 0 && withCoords.length > 0 && (
-        <div class="mapnote mid">
-          <p class="card b-sm muted" style={{ textAlign: 'center', padding: '12px 16px' }}>
+        <div className="mapnote mid">
+          <p className="card b-sm muted" style={{ textAlign: 'center', padding: '12px 16px' }}>
             Nessun luogo con questi filtri.
           </p>
         </div>
       )}
 
       {selected && (
-        <article class="card mapcard" aria-label={selected.name}>
+        <article className="card mapcard" aria-label={selected.name}>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <Thumb key={selected.id} place={selected} langs={isJapanTrip(trip) ? ['ja'] : []} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p class="b-bold" style={{ fontSize: '13px', lineHeight: '18px' }}>
+              <p className="b-bold" style={{ fontSize: '13px', lineHeight: '18px' }}>
                 {[selected.city, selected.category].filter(Boolean).join(' · ') || 'Luogo'}
               </p>
-              <h2 class="h-md">{selected.name}</h2>
+              <h2 className="h-md">{selected.name}</h2>
               {info && (
-                <p class="b-sm num" style={{ fontWeight: 600 }}>
+                <p className="b-sm num" style={{ fontWeight: 600 }}>
                   {info}
                 </p>
               )}
             </div>
           </div>
           <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-            <a class="btn" style={{ flex: 1, padding: '0 12px', whiteSpace: 'nowrap' }} href={mapsLinkFor(selected)} target="_blank" rel="noopener noreferrer" aria-label={`Apri in Google Maps: ${selected.name}`}>
+            <a className="btn" style={{ flex: 1, padding: '0 12px', whiteSpace: 'nowrap' }} href={mapsLinkFor(selected)} target="_blank" rel="noopener noreferrer" aria-label={`Apri in Google Maps: ${selected.name}`}>
               <Ic name="i-nav-pin-out" size={28} />
               Apri in Google Maps
             </a>
-            <button type="button" class="btn soft" style={{ flexShrink: 0, padding: '0 14px' }} aria-label={`Dettagli di ${selected.name}`} onClick={() => setSheet({ kind: 'detail', placeId: selected.id })}>
+            <button type="button" className="btn soft" style={{ flexShrink: 0, padding: '0 14px' }} aria-label={`Dettagli di ${selected.name}`} onClick={() => setSheet({ kind: 'detail', placeId: selected.id })}>
               Dettagli
             </button>
           </div>
@@ -213,8 +213,8 @@ export function Mappa() {
 
       <FilterSheet trip={trip} open={filterOpen} filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)}>
         <fieldset>
-          <legend class="mb-2 text-sm font-extrabold">Anello dei pin per</legend>
-          <div class="grid grid-cols-2 gap-2">
+          <legend className="mb-2 text-sm font-extrabold">Anello dei pin per</legend>
+          <div className="grid grid-cols-2 gap-2">
             {(
               [
                 ['category', 'Nessuno'],
@@ -225,24 +225,24 @@ export function Mappa() {
                 type="button"
                 aria-pressed={mode === value}
                 onClick={() => setMode(value)}
-                class={`chip${mode === value ? ' on' : ''}`}
+                className={`chip${mode === value ? ' on' : ''}`}
               >
                 {label}
               </button>
             ))}
           </div>
           {mode === 'day' && legend.length > 0 && (
-            <ul class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+            <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
               {legend.map((l) => (
-                <li class="flex min-w-0 items-center gap-2">
-                  <span aria-hidden="true" class="h-3 w-3 shrink-0 rounded-full" style={{ background: l.color }} />
-                  <span class="truncate">{l.label}</span>
+                <li className="flex min-w-0 items-center gap-2">
+                  <span aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full" style={{ background: l.color }} />
+                  <span className="truncate">{l.label}</span>
                 </li>
               ))}
             </ul>
           )}
           {missing > 0 && (
-            <p class="mt-3 text-xs text-muted">
+            <p className="mt-3 text-xs text-muted">
               {missing} {missing === 1 ? 'luogo non ha' : 'luoghi non hanno'} una posizione e non {missing === 1 ? 'compare' : 'compaiono'} sulla mappa.
             </p>
           )}

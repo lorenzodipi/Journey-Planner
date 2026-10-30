@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import { useConfirm } from './ConfirmDialog'
 import { amountToText, parseAmount, tripCurrencies } from '../lib/money'
 import type { StayInput } from '../lib/logistics'
@@ -44,7 +44,7 @@ export function StayForm({ trip, initial, defaults, onSubmit, onDelete, onDone }
 
   const cities = Array.from(new Set([...trip.days.map((d) => d.city).filter(Boolean), ...uniqueCities(trip.places)]))
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     if (!name.trim()) return setError("Scrivi il nome dell'alloggio.")
     if (!checkIn || !checkOut) return setError('Scegli le date di check-in e check-out.')
@@ -76,17 +76,17 @@ export function StayForm({ trip, initial, defaults, onSubmit, onDelete, onDone }
   }
 
   return (
-    <form class="space-y-4" onSubmit={submit} noValidate>
-      <TextField label="Nome" value={name} onInput={setName} maxLength={120} />
+    <form className="space-y-4" onSubmit={submit} noValidate>
+      <TextField label="Nome" value={name} onChange={setName} maxLength={120} />
       <Select label="Città" value={city} onChange={setCity} creatable placeholder="Scegli o scrivi" options={cities.map((c) => ({ value: c, label: c }))} />
 
-      <div class="grid grid-cols-2 gap-3">
-        <TextField label="Check-in" type="date" value={checkIn} onInput={onCheckIn} />
-        <TextField label="Check-out" type="date" value={checkOut} onInput={setCheckOut} min={checkIn || undefined} />
+      <div className="grid grid-cols-2 gap-3">
+        <TextField label="Check-in" type="date" value={checkIn} onChange={onCheckIn} />
+        <TextField label="Check-out" type="date" value={checkOut} onChange={setCheckOut} min={checkIn || undefined} />
       </div>
-      <div class="grid grid-cols-2 gap-3">
-        <TextField label="Orario check-in" value={checkInInfo} onInput={setCheckInInfo} placeholder="17:00–22:00" />
-        <TextField label="Orario check-out" value={checkOutInfo} onInput={setCheckOutInfo} placeholder="entro 10:30" />
+      <div className="grid grid-cols-2 gap-3">
+        <TextField label="Orario check-in" value={checkInInfo} onChange={setCheckInInfo} placeholder="17:00–22:00" />
+        <TextField label="Orario check-out" value={checkOutInfo} onChange={setCheckOutInfo} placeholder="entro 10:30" />
       </div>
 
       <CostFields
@@ -101,7 +101,7 @@ export function StayForm({ trip, initial, defaults, onSubmit, onDelete, onDone }
         withScope={false}
       />
 
-      <div class="grid grid-cols-2 gap-x-3">
+      <div className="grid grid-cols-2 gap-x-3">
         <CheckField label="Colazione" checked={breakfast} onChange={setBreakfast} />
         <CheckField label="Cena" checked={dinner} onChange={setDinner} />
         <CheckField label="Cucina" checked={kitchen} onChange={setKitchen} />
@@ -109,9 +109,9 @@ export function StayForm({ trip, initial, defaults, onSubmit, onDelete, onDone }
         <CheckField label="Pagato" checked={paid} onChange={setPaid} />
       </div>
 
-      <TextField label="Indirizzo" value={address} onInput={setAddress} />
-      <TextField label="Link Google Maps" value={mapsUrl} onInput={setMapsUrl} placeholder="https://maps.google.com/…" />
-      <TextArea label="Note" value={notes} onInput={setNotes} />
+      <TextField label="Indirizzo" value={address} onChange={setAddress} />
+      <TextField label="Link Google Maps" value={mapsUrl} onChange={setMapsUrl} placeholder="https://maps.google.com/…" />
+      <TextArea label="Note" value={notes} onChange={setNotes} />
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva alloggio' : 'Aggiungi alloggio'}</PrimaryButton>
       {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina alloggio</SecondaryButton>}

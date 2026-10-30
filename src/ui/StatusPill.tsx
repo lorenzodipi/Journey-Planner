@@ -15,7 +15,7 @@ export function StatusPill({ status }: { status: PlaceStatus }) {
   if (status === 'idea') return null
   const { bg, fg, Icon } = LOOK[status]
   return (
-    <span class="inline-flex items-center gap-1 rounded-full py-0.5 pl-1.5 pr-2 text-xs font-extrabold leading-snug" style={{ background: bg, color: fg }}>
+    <span className="inline-flex items-center gap-1 rounded-full py-0.5 pl-1.5 pr-2 text-xs font-extrabold leading-snug" style={{ background: bg, color: fg }}>
       <Icon size={11} />
       {STATUS_LABEL[status]}
     </span>

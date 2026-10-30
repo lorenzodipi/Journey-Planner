@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import type { InvitedInput } from '../lib/tripApi'
 import { nameFromEmail, TRAVELER_COLORS } from '../lib/tripForm'
 import { FormError, PrimaryButton, TextField } from './Field'
@@ -17,7 +17,7 @@ export function InviteForm({ defaultColor, onSubmit, onDone }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     const clean = email.trim().toLowerCase()
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) return setError('Scrivi un indirizzo email valido.')
@@ -30,25 +30,25 @@ export function InviteForm({ defaultColor, onSubmit, onDone }: Props) {
   }
 
   return (
-    <form class="space-y-4" onSubmit={submit} noValidate>
-      <TextField label="Email del suo account" value={email} onInput={setEmail} autoComplete="off" />
-      <TextField label="Nome (facoltativo)" value={name} onInput={setName} maxLength={40} autoComplete="off" />
+    <form className="space-y-4" onSubmit={submit} noValidate>
+      <TextField label="Email del suo account" value={email} onChange={setEmail} autoComplete="off" />
+      <TextField label="Nome (facoltativo)" value={name} onChange={setName} maxLength={40} autoComplete="off" />
       <fieldset>
-        <legend class="mb-2 block text-sm font-extrabold">Colore</legend>
-        <div class="flex flex-wrap gap-3">
+        <legend className="mb-2 block text-sm font-extrabold">Colore</legend>
+        <div className="flex flex-wrap gap-3">
           {TRAVELER_COLORS.map((c) => (
             <button
               type="button"
               aria-label={`Colore ${c}`}
               aria-pressed={color === c}
               onClick={() => setColor(c)}
-              class={`h-11 w-11 rounded-full border-2 ${color === c ? 'border-ink' : 'border-transparent'}`}
+              className={`h-11 w-11 rounded-full border-2 ${color === c ? 'border-ink' : 'border-transparent'}`}
               style={{ background: c }}
             />
           ))}
         </div>
       </fieldset>
-      <p class="text-xs text-muted">
+      <p className="text-xs text-muted">
         La persona deve essersi già registrata. Vedrà il viaggio e potrà modificarlo, tranne eliminarlo.
       </p>
       <FormError message={error} />

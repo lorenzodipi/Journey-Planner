@@ -19,11 +19,11 @@ export function QuantityStepper({
   onChange: (count: number) => void
 }) {
   return (
-    <div role="group" aria-label={`Pezzi a posto: ${label}`} class="qty">
+    <div role="group" aria-label={`Pezzi a posto: ${label}`} className="qty">
       <button type="button" aria-label="Un pezzo in meno" disabled={disabled || have <= 0} onClick={() => onChange(have - 1)}>
         <MinusG size={18} />
       </button>
-      <span class="num" aria-live="polite">
+      <span className="num" aria-live="polite">
         {have}/{total}
       </span>
       <button type="button" aria-label="Un pezzo in più" disabled={disabled || have >= total} onClick={() => onChange(have + 1)}>

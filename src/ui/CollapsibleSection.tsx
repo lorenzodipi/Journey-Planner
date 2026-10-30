@@ -1,4 +1,4 @@
-import type { ComponentChildren } from 'preact'
+import type { ReactNode } from 'react'
 import { ChevronDownG } from './glyphs'
 
 /**
@@ -21,17 +21,17 @@ export function CollapsibleSection({
   open: boolean
   locked?: boolean
   onToggle: () => void
-  children: ComponentChildren
+  children: ReactNode
 }) {
   const shown = open || Boolean(locked)
   const head = (
     <>
       <span style={{ minWidth: 0, flex: 1 }}>
-        <span class="h-md" style={{ display: 'block' }}>{title}</span>
-        {summary && <span class="b-sm muted" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{summary}</span>}
+        <span className="h-md" style={{ display: 'block' }}>{title}</span>
+        {summary && <span className="b-sm muted" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{summary}</span>}
       </span>
       {!locked && (
-        <span class="csec-ch" style={{ transform: shown ? 'rotate(180deg)' : undefined }}>
+        <span className="csec-ch" style={{ transform: shown ? 'rotate(180deg)' : undefined }}>
           <ChevronDownG size={20} />
         </span>
       )}
@@ -40,13 +40,13 @@ export function CollapsibleSection({
   return (
     <section aria-label={title}>
       {locked ? (
-        <div class="card csec-h">{head}</div>
+        <div className="card csec-h">{head}</div>
       ) : (
-        <button type="button" aria-expanded={shown} aria-controls={id} onClick={onToggle} class="card csec-h">
+        <button type="button" aria-expanded={shown} aria-controls={id} onClick={onToggle} className="card csec-h">
           {head}
         </button>
       )}
-      <div id={id} class="jp-collapse" data-open={shown}>
+      <div id={id} className="jp-collapse" data-open={shown}>
         <div>
           <div style={{ paddingTop: '16px' }}>{children}</div>
         </div>

@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import '../fw-spese.css'
 import { doneCount, progress, visibleItems } from '../lib/checklist'
 import { daysBetween, formatShort } from '../lib/dates'
@@ -97,10 +97,10 @@ export function Checklist() {
     const picked = selecting && sel.has(i.id)
     const on = selecting ? picked : i.done
     return (
-      <div class={`row${picked ? ' pick' : ''}${openId === i.id && !selecting ? ' open' : ''}`} key={i.id} style={{ minHeight: '56px', flexWrap: 'wrap' }}>
+      <div className={`row${picked ? ' pick' : ''}${openId === i.id && !selecting ? ' open' : ''}`} key={i.id} style={{ minHeight: '56px', flexWrap: 'wrap' }}>
         <button
           type="button"
-          class="hit"
+          className="hit"
           role="checkbox"
           aria-checked={selecting ? picked : partial ? 'mixed' : i.done}
           aria-label={selecting ? `Seleziona: ${i.text}` : `${i.done ? 'Da rifare' : multi ? 'Tutti a posto' : 'Fatto'}: ${i.text}`}
@@ -108,44 +108,44 @@ export function Checklist() {
           onClick={() => (selecting ? toggleSel(i.id) : void toggle(i))}
           style={{ border: 0, background: 'none', padding: 0 }}
         >
-          <span class={`cb${on ? ' on' : ''}${partial && !on ? ' part' : ''}`}>{on ? <CheckG size={14} sw={3.2} /> : partial ? <MinusG size={14} sw={3.2} /> : null}</span>
+          <span className={`cb${on ? ' on' : ''}${partial && !on ? ' part' : ''}`}>{on ? <CheckG size={14} sw={3.2} /> : partial ? <MinusG size={14} sw={3.2} /> : null}</span>
         </button>
-        <button type="button" class="grow edit" aria-expanded={selecting ? undefined : openId === i.id} onClick={() => (selecting ? toggleSel(i.id) : setOpenId(openId === i.id ? null : i.id))}>
-          <span class="tt" style={i.done ? { textDecoration: 'line-through', color: 'var(--ink-muted)', fontWeight: 400 } : undefined}>
+        <button type="button" className="grow edit" aria-expanded={selecting ? undefined : openId === i.id} onClick={() => (selecting ? toggleSel(i.id) : setOpenId(openId === i.id ? null : i.id))}>
+          <span className="tt" style={i.done ? { textDecoration: 'line-through', color: 'var(--ink-muted)', fontWeight: 400 } : undefined}>
             {i.text}
           </span>
           {i.dueDate && (
-            <span class="mm" style={{ display: 'block', color: late ? 'var(--danger)' : undefined }}>
+            <span className="mm" style={{ display: 'block', color: late ? 'var(--danger)' : undefined }}>
               entro {formatShort(i.dueDate)}
             </span>
           )}
           {i.url && (
-            <span class="mm" style={{ display: 'block' }}>
+            <span className="mm" style={{ display: 'block' }}>
               Con link
             </span>
           )}
         </button>
         {multi && !selecting ? (
-          <span class="stepper" role="group" aria-label={`Pezzi a posto: ${i.text}`}>
-            <button type="button" class="rbtn sm" aria-label={`Meno: ${i.text}`} disabled={pending.has(i.id) || have <= 0} onClick={() => void setCount(i, have - 1)}>
+          <span className="stepper" role="group" aria-label={`Pezzi a posto: ${i.text}`}>
+            <button type="button" className="rbtn sm" aria-label={`Meno: ${i.text}`} disabled={pending.has(i.id) || have <= 0} onClick={() => void setCount(i, have - 1)}>
               <MinusG size={16} sw={2.2} />
             </button>
-            <b class="num" aria-live="polite">
+            <b className="num" aria-live="polite">
               {have}/{i.quantity}
             </b>
-            <button type="button" class="rbtn sm" aria-label={`Più: ${i.text}`} disabled={pending.has(i.id) || have >= (i.quantity as number)} onClick={() => void setCount(i, have + 1)}>
+            <button type="button" className="rbtn sm" aria-label={`Più: ${i.text}`} disabled={pending.has(i.id) || have >= (i.quantity as number)} onClick={() => void setCount(i, have + 1)}>
               <PlusG size={16} sw={2.2} />
             </button>
           </span>
         ) : owner ? (
-          <span class="av" style={{ background: owner.color }} aria-hidden="true">
+          <span className="av" style={{ background: owner.color }} aria-hidden="true">
             {owner.name.slice(0, 1).toUpperCase()}
           </span>
         ) : (
-          many && <span class="mm">Tutti</span>
+          many && <span className="mm">Tutti</span>
         )}
         {openId === i.id && !selecting && (
-          <div class="ckd">
+          <div className="ckd">
             <dl>
               <div>
                 <dt>Elenco</dt>
@@ -158,7 +158,7 @@ export function Checklist() {
               {multi && (
                 <div>
                   <dt>Pezzi a posto</dt>
-                  <dd class="num">
+                  <dd className="num">
                     {have} su {i.quantity}
                   </dd>
                 </div>
@@ -172,13 +172,13 @@ export function Checklist() {
                 <dd>{i.done ? 'Fatto' : partial ? 'In parte' : 'Da fare'}</dd>
               </div>
             </dl>
-            <div class="ckd-a">
+            <div className="ckd-a">
               {i.url && (
-                <a class="btn soft sm" href={i.url} target="_blank" rel="noopener noreferrer">
+                <a className="btn soft sm" href={i.url} target="_blank" rel="noopener noreferrer">
                   Apri il link
                 </a>
               )}
-              <button type="button" class="btn line sm" onClick={() => setSheet({ kind: 'edit', item: i })}>
+              <button type="button" className="btn line sm" onClick={() => setSheet({ kind: 'edit', item: i })}>
                 Modifica
               </button>
             </div>
@@ -189,14 +189,14 @@ export function Checklist() {
   }
 
   return (
-    <main class="screen">
+    <main className="screen">
       <PageHeader
         title={selecting ? (chosen.length === 0 ? 'Tocca le voci' : chosen.length === 1 ? '1 selezionata' : `${chosen.length} selezionate`) : 'Checklist'}
         subtitle={selecting ? 'tocca le voci per sceglierle' : 'Documenti e valigia'}
         back={selecting ? undefined : { href: '/altro', label: 'Altro' }}
         actions={
           items.length > 0 || selecting ? (
-            <button type="button" class="rbtn" aria-label={selecting ? 'Annulla la selezione' : 'Seleziona'} onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>
+            <button type="button" className="rbtn" aria-label={selecting ? 'Annulla la selezione' : 'Seleziona'} onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>
               {selecting ? <CloseG /> : <CheckG />}
             </button>
           ) : undefined
@@ -204,19 +204,19 @@ export function Checklist() {
       />
 
       {total.total > 0 && !selecting && (
-        <section class="tinta t-lavanda cori" style={{ display: 'flex', gap: '20px', alignItems: 'center' }} aria-label="Avanzamento">
-          <div class="pring" role="progressbar" aria-label={`${total.done} di ${total.total} fatte`} aria-valuemin={0} aria-valuemax={total.total} aria-valuenow={total.done}>
+        <section className="tinta t-lavanda cori" style={{ display: 'flex', gap: '20px', alignItems: 'center' }} aria-label="Avanzamento">
+          <div className="pring" role="progressbar" aria-label={`${total.done} di ${total.total} fatte`} aria-valuemin={0} aria-valuemax={total.total} aria-valuenow={total.done}>
             <svg width="96" height="96" viewBox="0 0 96 96" aria-hidden="true">
-              <circle cx="48" cy="48" r="40" fill="none" style={{ stroke: 'var(--surface-card)' }} stroke-width="10" />
-              <circle cx="48" cy="48" r="40" fill="none" style={{ stroke: 'var(--azzurro-solid)' }} stroke-width="10" stroke-linecap="round" stroke-dasharray={`${((total.done / total.total) * 251.3).toFixed(1)} 251.3`} transform="rotate(-90 48 48)" />
+              <circle cx="48" cy="48" r="40" fill="none" style={{ stroke: 'var(--surface-card)' }} strokeWidth="10" />
+              <circle cx="48" cy="48" r="40" fill="none" style={{ stroke: 'var(--azzurro-solid)' }} strokeWidth="10" strokeLinecap="round" strokeDasharray={`${((total.done / total.total) * 251.3).toFixed(1)} 251.3`} transform="rotate(-90 48 48)" />
             </svg>
-            <div class="c num">
+            <div className="c num">
               {total.done}/{total.total}
             </div>
           </div>
           <div>
-            <h2 class="h-md">{headline}</h2>
-            <p class="b-sm mut">
+            <h2 className="h-md">{headline}</h2>
+            <p className="b-sm mut">
               {total.done} {total.done === 1 ? 'voce fatta' : 'voci fatte'} su {total.total}.
               {toStart > 0 && ` Mancano ${toStart} ${toStart === 1 ? 'giorno' : 'giorni'} alla partenza.`}
             </p>
@@ -225,12 +225,12 @@ export function Checklist() {
       )}
 
       {many && !selecting && (
-        <div class="chips fs-chips" role="group" aria-label="Per chi">
-          <button type="button" class={`chip${who === 'all' ? ' on' : ''}`} aria-pressed={who === 'all'} onClick={() => setWho('all')}>
+        <div className="chips fs-chips" role="group" aria-label="Per chi">
+          <button type="button" className={`chip${who === 'all' ? ' on' : ''}`} aria-pressed={who === 'all'} onClick={() => setWho('all')}>
             Tutte
           </button>
           {trip.travelers.map((p) => (
-            <button type="button" key={p.id} class={`chip${who === p.id ? ' on' : ''}`} aria-pressed={who === p.id} onClick={() => setWho(p.id)}>
+            <button type="button" key={p.id} className={`chip${who === p.id ? ' on' : ''}`} aria-pressed={who === p.id} onClick={() => setWho(p.id)}>
               {p.name}
             </button>
           ))}
@@ -241,7 +241,7 @@ export function Checklist() {
         trip.checklist.length === 0 ? (
           <>
             <EmptyState title="Checklist vuota" text="Aggiungi la prima voce, oppure parti da un modello con le cose che di solito servono." />
-            <button type="button" class="btn soft block" onClick={() => void addTemplate()}>
+            <button type="button" className="btn soft block" onClick={() => void addTemplate()}>
               Parti da un modello
             </button>
           </>
@@ -251,21 +251,21 @@ export function Checklist() {
       ) : (
         <>
           {selecting && (
-            <div class="rows">
-              <div class="row" style={{ minHeight: '56px' }}>
+            <div className="rows">
+              <div className="row" style={{ minHeight: '56px' }}>
                 <button
                   type="button"
-                  class="hit"
+                  className="hit"
                   role="checkbox"
                   aria-checked={allSelected ? true : chosen.length > 0 ? 'mixed' : false}
                   aria-label={allSelected ? `Deseleziona tutte le ${items.length} voci` : `Seleziona tutte le ${items.length} voci`}
                   onClick={() => setSel(allSelected ? new Set() : new Set(items.map((i) => i.id)))}
                   style={{ border: 0, background: 'none', padding: 0 }}
                 >
-                  <span class={`cb${chosen.length > 0 ? ' on' : ''}`}>{allSelected ? <CheckG size={14} sw={3.2} /> : chosen.length > 0 ? <MinusG size={14} sw={3.2} /> : null}</span>
+                  <span className={`cb${chosen.length > 0 ? ' on' : ''}`}>{allSelected ? <CheckG size={14} sw={3.2} /> : chosen.length > 0 ? <MinusG size={14} sw={3.2} /> : null}</span>
                 </button>
-                <span class="grow tt">{allSelected ? 'Deseleziona tutte' : 'Seleziona tutte'}</span>
-                <span class="mm num">
+                <span className="grow tt">{allSelected ? 'Deseleziona tutte' : 'Seleziona tutte'}</span>
+                <span className="mm num">
                   {chosen.length} su {items.length}
                 </span>
               </div>
@@ -275,25 +275,25 @@ export function Checklist() {
             ({ k, list }) =>
               list.length > 0 && (
                 <section key={k} aria-labelledby={`sez-${k}`}>
-                  <h2 class="h-sm" id={`sez-${k}`} style={{ marginBottom: '8px' }}>
+                  <h2 className="h-sm" id={`sez-${k}`} style={{ marginBottom: '8px' }}>
                     {SECTION_TITLE[k]}
                   </h2>
-                  <div class="rows">{list.map((i) => renderItem(i))}</div>
+                  <div className="rows">{list.map((i) => renderItem(i))}</div>
                 </section>
               ),
           )}
         </>
       )}
 
-      <div class="cta" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div className="cta" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {selecting ? (
-          <button type="button" class="btn danger block" disabled={chosen.length === 0} onClick={() => void deleteChosen()}>
+          <button type="button" className="btn danger block" disabled={chosen.length === 0} onClick={() => void deleteChosen()}>
             <TrashG />
             {chosen.length === 0 ? 'Elimina' : chosen.length === 1 ? 'Elimina 1 voce' : `Elimina ${chosen.length} voci`}
           </button>
         ) : (
           <>
-            <button type="button" class="btn block" onClick={() => setSheet({ kind: 'new' })}>
+            <button type="button" className="btn block" onClick={() => setSheet({ kind: 'new' })}>
               <PlusG />
               Aggiungi voce
             </button>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'preact/hooks'
+import { useMemo, useState } from 'react'
 import { CheckG, ChevronDownG, SearchG } from './glyphs'
 import { Sheet } from './Sheet'
 
@@ -63,22 +63,22 @@ export function Select({ label, value, options, onChange, placeholder = 'Scegliâ
   return (
     <div>
       {readOnly ? (
-        <div role="textbox" aria-readonly="true" aria-label={label} class="fld ro">
+        <div role="textbox" aria-readonly="true" aria-label={label} className="fld ro">
           <div>
-            <span class="l">{label}</span>
-            <span class="v" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shownLabel || placeholder}</span>
+            <span className="l">{label}</span>
+            <span className="v" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shownLabel || placeholder}</span>
           </div>
         </div>
       ) : (
-        <button type="button" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)} class="fld">
+        <button type="button" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)} className="fld">
           <div>
-            <span class="l">{label}</span>
-            <span class="v" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: shownLabel ? undefined : 'var(--ink-muted)' }}>
-              {selected?.color && <span aria-hidden="true" class="dot" style={{ background: selected.color, width: '12px', height: '12px', borderRadius: '9999px', flexShrink: 0 }} />}
+            <span className="l">{label}</span>
+            <span className="v" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: shownLabel ? undefined : 'var(--ink-muted)' }}>
+              {selected?.color && <span aria-hidden="true" className="dot" style={{ background: selected.color, width: '12px', height: '12px', borderRadius: '9999px', flexShrink: 0 }} />}
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shownLabel || placeholder}</span>
             </span>
           </div>
-          <span class="muted">
+          <span className="muted">
             <ChevronDownG size={20} />
           </span>
         </button>
@@ -86,17 +86,17 @@ export function Select({ label, value, options, onChange, placeholder = 'Scegliâ
 
       <Sheet open={open && !readOnly} title={label} onClose={close}>
         {withSearch && (
-          <label class="fld">
+          <label className="fld">
             <div>
-              <span class="l">Cerca</span>
+              <span className="l">Cerca</span>
               <input
                 type="search"
                 value={query}
-                onInput={(e) => setQuery(e.currentTarget.value)}
+                onChange={(e) => setQuery(e.currentTarget.value)}
                 placeholder="Cercaâ€¦"
                 autoComplete="off"
-                enterkeyhint="search"
-                class="v"
+                enterKeyHint="search"
+                className="v"
                 onKeyDown={(e) => {
                   // Invio non deve inviare il modulo che sta sotto
                   if (e.key === 'Enter') {
@@ -107,15 +107,15 @@ export function Select({ label, value, options, onChange, placeholder = 'Scegliâ
                 }}
               />
             </div>
-            <span class="muted">
+            <span className="muted">
               <SearchG size={20} />
             </span>
           </label>
         )}
-        <ul role="listbox" aria-label={label} class="sel-list">
+        <ul role="listbox" aria-label={label} className="sel-list">
           {canCreate && (
             <li>
-              <button type="button" role="option" aria-selected="false" onClick={() => pick(query.trim())} class="sel-opt" style={{ color: 'var(--azzurro-ink)' }}>
+              <button type="button" role="option" aria-selected="false" onClick={() => pick(query.trim())} className="sel-opt" style={{ color: 'var(--azzurro-ink)' }}>
                 {createLabel ? createLabel(query.trim()) : `Usa Â«${query.trim()}Â»`}
               </button>
             </li>
@@ -124,8 +124,8 @@ export function Select({ label, value, options, onChange, placeholder = 'Scegliâ
             const on = o.value === value
             return (
               <li>
-                <button type="button" role="option" aria-selected={on} onClick={() => pick(o.value)} class={`sel-opt${on ? ' on' : ''}`}>
-                  {o.color && <span aria-hidden="true" class="dot" style={{ background: o.color }} />}
+                <button type="button" role="option" aria-selected={on} onClick={() => pick(o.value)} className={`sel-opt${on ? ' on' : ''}`}>
+                  {o.color && <span aria-hidden="true" className="dot" style={{ background: o.color }} />}
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.label}</span>
                     {o.hint && <small style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.hint}</small>}
@@ -144,7 +144,7 @@ export function Select({ label, value, options, onChange, placeholder = 'Scegliâ
                   close()
                   extra.onPick()
                 }}
-                class="sel-opt"
+                className="sel-opt"
                 style={{ color: 'var(--azzurro-ink)' }}
               >
                 {extra.label}

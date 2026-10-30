@@ -1,5 +1,6 @@
-import type { ComponentChildren } from 'preact'
-import { useState } from 'preact/hooks'
+import type React from 'react'
+import type { ReactNode } from 'react'
+import { useState } from 'react'
 import { currencyName, extraCurrencies } from '../lib/money'
 import { useTrips } from '../state/trips'
 import { AddCurrencySheet } from './AddCurrency'
@@ -12,7 +13,7 @@ import { Select } from './Select'
 interface TextProps {
   label: string
   value: string
-  onInput: (value: string) => void
+  onChange: (value: string) => void
   type?: 'text' | 'date' | 'time'
   placeholder?: string
   list?: string
@@ -26,27 +27,27 @@ interface TextProps {
   optional?: boolean
 }
 
-export function TextField({ label, value, onInput, type = 'text', list, optional, ...rest }: TextProps) {
+export function TextField({ label, value, onChange, type = 'text', list, optional, ...rest }: TextProps) {
   // le date hanno il calendario nostro, dove i giorni oltre il limite non si possono toccare
-  if (type === 'date') return <DatePicker label={label} value={value} onInput={onInput} min={rest.min} optional={optional} />
+  if (type === 'date') return <DatePicker label={label} value={value} onChange={onChange} min={rest.min} optional={optional} />
   const common = {
     value,
-    onInput: (e: Event) => {
-      const input = e.currentTarget as HTMLInputElement
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      const input = e.currentTarget
       // un orario sotto il minimo (es. «alle» prima di «dalle») torna subito al minimo: il selettore del telefono non può bloccarlo
       if (type === 'time' && rest.min && input.value && input.value < rest.min) {
         input.value = rest.min
-        return onInput(rest.min)
+        return onChange(rest.min)
       }
-      onInput(input.value)
+      onChange(input.value)
     },
-    class: 'v',
+    className: 'v',
     ...rest,
   }
   return (
-    <label class="fld">
+    <label className="fld">
       <div>
-        <span class="l">{label}</span>
+        <span className="l">{label}</span>
         {list ? (
           <input type="text" list={list} {...common} />
         ) : type === 'time' ? (
@@ -62,19 +63,19 @@ export function TextField({ label, value, onInput, type = 'text', list, optional
 export function TextArea({
   label,
   value,
-  onInput,
+  onChange,
   placeholder,
 }: {
   label: string
   value: string
-  onInput: (value: string) => void
+  onChange: (value: string) => void
   placeholder?: string
 }) {
   return (
-    <label class="fld" style={{ alignItems: 'flex-start' }}>
+    <label className="fld" style={{ alignItems: 'flex-start' }}>
       <div>
-        <span class="l">{label}</span>
-        <textarea rows={3} value={value} placeholder={placeholder} onInput={(e) => onInput(e.currentTarget.value)} class="v" />
+        <span className="l">{label}</span>
+        <textarea rows={3} value={value} placeholder={placeholder} onChange={(e) => onChange(e.currentTarget.value)} className="v" />
       </div>
     </label>
   )
@@ -83,7 +84,7 @@ export function TextArea({
 export function FormError({ message }: { message: string | null }) {
   if (!message) return null
   return (
-    <p role="alert" class="formerr">
+    <p role="alert" className="formerr">
       {message}
     </p>
   )
@@ -94,7 +95,7 @@ export function PrimaryButton({
   busy,
   disabled,
 }: {
-  children: ComponentChildren
+  children: ReactNode
   busy?: boolean
   disabled?: boolean
 }) {
@@ -102,7 +103,7 @@ export function PrimaryButton({
     <button
       type="submit"
       disabled={busy || disabled}
-      class="btn block"
+      className="btn block"
       style={busy || disabled ? { opacity: 0.5 } : undefined}
     >
       {children}
@@ -115,7 +116,7 @@ export function SecondaryButton({
   onClick,
   danger,
 }: {
-  children: ComponentChildren
+  children: ReactNode
   onClick: () => void
   danger?: boolean
 }) {
@@ -123,7 +124,7 @@ export function SecondaryButton({
     <button
       type="button"
       onClick={onClick}
-      class={danger ? 'btn line block' : 'btn soft block'}
+      className={danger ? 'btn line block' : 'btn soft block'}
       style={danger ? { color: 'var(--danger)', boxShadow: 'inset 0 0 0 1.5px var(--danger)' } : undefined}
     >
       {children}
@@ -134,10 +135,10 @@ export function SecondaryButton({
 /** Casella da spuntare con etichetta, area di tocco ampia. */
 export function CheckField({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label class="chk">
+    <label className="chk">
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.currentTarget.checked)} />
-      <span class="cb">
-        <TickIcon size={16} stroke-width={3.4} />
+      <span className="cb">
+        <TickIcon size={16} strokeWidth={3.4} />
       </span>
       <span>{label}</span>
     </label>
@@ -157,11 +158,11 @@ export function ChipSelect<T extends string>({
   onChange: (v: T) => void
 }) {
   return (
-    <fieldset class="fgroup">
+    <fieldset className="fgroup">
       <legend>{label}</legend>
-      <div class="chips">
+      <div className="chips">
         {options.map((o) => (
-          <button type="button" aria-pressed={value === o.value} onClick={() => onChange(o.value)} class={`chip${value === o.value ? ' on' : ''}`}>
+          <button type="button" aria-pressed={value === o.value} onClick={() => onChange(o.value)} className={`chip${value === o.value ? ' on' : ''}`}>
             {o.label}
           </button>
         ))}
@@ -202,7 +203,7 @@ export function CostFields({
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
       {canAdd && trip && <AddCurrencySheet open={adding} trip={trip} onClose={() => setAdding(false)} onAdded={onCurrency} />}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 7.5rem", gap: "12px" }}>
-        <TextField label={amountLabel} value={amount} onInput={onAmount} inputMode="decimal" placeholder="0,00" />
+        <TextField label={amountLabel} value={amount} onChange={onAmount} inputMode="decimal" placeholder="0,00" />
         <Select
           label="Valuta"
           value={currency}

@@ -35,23 +35,23 @@ export function FilterBar({ filters, onChange, onOpen, label = 'Filtri', counts 
   ]
   return (
     <>
-      <div class="chips">
+      <div className="chips">
         {quick.map((q) => (
-          <button type="button" key={q.key} aria-pressed={q.on} onClick={() => onChange({ ...filters, statuses: q.set })} class={`chip${q.on ? ' on' : ''}`}>
+          <button type="button" key={q.key} aria-pressed={q.on} onClick={() => onChange({ ...filters, statuses: q.set })} className={`chip${q.on ? ' on' : ''}`}>
             {q.text}
-            {q.n != null && <span class="n num">{q.n}</span>}
+            {q.n != null && <span className="n num">{q.n}</span>}
           </button>
         ))}
-        <button type="button" onClick={onOpen} class={`chip${active > 0 && !statusOnly ? ' on' : ''}`} style={{ marginLeft: 'auto' }}>
+        <button type="button" onClick={onOpen} className={`chip${active > 0 && !statusOnly ? ' on' : ''}`} style={{ marginLeft: 'auto' }}>
           <FilterG size={18} />
           {label}
-          {active > 0 && <span class="n num">{active}</span>}
+          {active > 0 && <span className="n num">{active}</span>}
         </button>
       </div>
       {chips.length > 0 && (
-        <div class="chips">
+        <div className="chips">
           {chips.map((c) => (
-            <button type="button" key={c.key} onClick={c.remove} aria-label={`Togli filtro ${c.text}`} class="chip on">
+            <button type="button" key={c.key} onClick={c.remove} aria-label={`Togli filtro ${c.text}`} className="chip on">
               {c.text}
               <CloseG size={14} sw={2.6} />
             </button>

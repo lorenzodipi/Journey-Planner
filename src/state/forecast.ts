@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 import { daysBetween } from '../lib/dates'
 import { tripToday } from '../lib/today'
 import { FORECAST_DAYS, FORECAST_TTL_MS, fetchForecast, forecastKey, loadForecast, saveForecast, type DayWeather } from '../lib/weather'

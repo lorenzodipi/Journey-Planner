@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'preact/hooks'
+import { useEffect, useRef } from 'react'
 import { useAuth } from '../lib/auth'
 import { setupPullToRefresh } from '../lib/pullToRefresh'
 import { showToast } from '../state/toast'

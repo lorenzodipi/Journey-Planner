@@ -1,9 +1,9 @@
 // Segni a tratto del Design System v3 (stesse forme e spessori dei mock). Prendono il colore da currentColor.
-import type { ComponentChildren } from 'preact'
+import type { ReactNode } from 'react'
 
-function G({ size, sw = 2.2, children }: { size: number; sw?: number; children: ComponentChildren }) {
+function G({ size, sw = 2.2, children }: { size: number; sw?: number; children: ReactNode }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width={sw} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       {children}
     </svg>
   )
@@ -29,24 +29,24 @@ export const UserG = ({ size = 20, sw = 2.2 }: P) => <G size={size} sw={sw}><cir
 /** Spunta del nodo «fatto» nello stepper (M6.5 12.5…), piena larghezza del nodo. */
 export const NodeCheck = ({ sw = 2.6 }: { sw?: number }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M6.5 12.5l3.8 3.8 7.2-8" fill="none" stroke="currentColor" stroke-width={sw} stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M6.5 12.5l3.8 3.8 7.2-8" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
 
 /** Simbolo di Faraway (mongolfiera ad anello) sulla tinta azzurra, come nei biglietti dei mock. */
-export function LogoSym({ width = 40, height = 47, class: cls = '', style }: { width?: number; height?: number; class?: string; style?: Record<string, string | number> }) {
+export function LogoSym({ width = 40, height = 47, className: cls = '', style }: { width?: number; height?: number; className?: string; style?: Record<string, string | number> }) {
   return (
-    <svg class={`logo-sym ${cls}`.trim()} viewBox="2 2 124 146" width={width} height={height} aria-hidden="true" style={style}>
-      <path d="M50 110L58 126M78 110L70 126" stroke="var(--azzurro-solid)" stroke-width="3.4" stroke-linecap="round" fill="none" />
+    <svg className={`logo-sym ${cls}`.trim()} viewBox="2 2 124 146" width={width} height={height} aria-hidden="true" style={style}>
+      <path d="M50 110L58 126M78 110L70 126" stroke="var(--azzurro-solid)" strokeWidth="3.4" strokeLinecap="round" fill="none" />
       <rect x="53" y="125" width="22" height="16" rx="4.5" fill="var(--azzurro-solid)" />
-      <circle cx="64" cy="24" r="17" fill="var(--pomodoro)" stroke="var(--tinta-azzurro)" stroke-width="3" />
+      <circle cx="64" cy="24" r="17" fill="var(--pomodoro)" stroke="var(--tinta-azzurro)" strokeWidth="3" />
       <circle cx="64" cy="24" r="5.5" fill="var(--tinta-azzurro)" />
-      <circle cx="95.27" cy="39.06" r="17" fill="var(--arancia)" stroke="var(--tinta-azzurro)" stroke-width="3" />
-      <circle cx="103" cy="72.9" r="17" fill="var(--limone)" stroke="var(--tinta-azzurro)" stroke-width="3" />
-      <circle cx="81.36" cy="100.04" r="17" fill="var(--menta)" stroke="var(--tinta-azzurro)" stroke-width="3" />
-      <circle cx="46.64" cy="100.04" r="17" fill="var(--cielo)" stroke="var(--tinta-azzurro)" stroke-width="3" />
-      <circle cx="25" cy="72.9" r="17" fill="var(--azzurro-solid)" stroke="var(--tinta-azzurro)" stroke-width="3" />
-      <circle cx="32.73" cy="39.06" r="17" fill="var(--confetto)" stroke="var(--tinta-azzurro)" stroke-width="3" />
+      <circle cx="95.27" cy="39.06" r="17" fill="var(--arancia)" stroke="var(--tinta-azzurro)" strokeWidth="3" />
+      <circle cx="103" cy="72.9" r="17" fill="var(--limone)" stroke="var(--tinta-azzurro)" strokeWidth="3" />
+      <circle cx="81.36" cy="100.04" r="17" fill="var(--menta)" stroke="var(--tinta-azzurro)" strokeWidth="3" />
+      <circle cx="46.64" cy="100.04" r="17" fill="var(--cielo)" stroke="var(--tinta-azzurro)" strokeWidth="3" />
+      <circle cx="25" cy="72.9" r="17" fill="var(--azzurro-solid)" stroke="var(--tinta-azzurro)" strokeWidth="3" />
+      <circle cx="32.73" cy="39.06" r="17" fill="var(--confetto)" stroke="var(--tinta-azzurro)" strokeWidth="3" />
     </svg>
   )
 }
@@ -56,12 +56,12 @@ export function Ring({ value, size = 64, label, tone = 'card' }: { value: number
   const c = 2 * Math.PI * 40
   const v = Math.max(0, Math.min(1, value))
   return (
-    <div class="pring" style={{ width: `${size}px`, height: `${size}px` }}>
+    <div className="pring" style={{ width: `${size}px`, height: `${size}px` }}>
       <svg width={size} height={size} viewBox="0 0 96 96" aria-hidden="true">
-        <circle cx="48" cy="48" r="40" fill="none" style={{ stroke: tone === 'card' ? 'var(--surface-high)' : 'var(--surface-card)' }} stroke-width="12" />
-        <circle cx="48" cy="48" r="40" fill="none" style={{ stroke: 'var(--azzurro-solid)' }} stroke-width="12" stroke-linecap="round" stroke-dasharray={`${(c * v).toFixed(1)} ${c.toFixed(1)}`} transform="rotate(-90 48 48)" />
+        <circle cx="48" cy="48" r="40" fill="none" style={{ stroke: tone === 'card' ? 'var(--surface-high)' : 'var(--surface-card)' }} strokeWidth="12" />
+        <circle cx="48" cy="48" r="40" fill="none" style={{ stroke: 'var(--azzurro-solid)' }} strokeWidth="12" strokeLinecap="round" strokeDasharray={`${(c * v).toFixed(1)} ${c.toFixed(1)}`} transform="rotate(-90 48 48)" />
       </svg>
-      <div class="c num" style={{ fontSize: size >= 90 ? undefined : '16px' }}>{label}</div>
+      <div className="c num" style={{ fontSize: size >= 90 ? undefined : '16px' }}>{label}</div>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import { formatShort, parseYmd } from '../lib/dates'
 import { convert, formatMoney, rateFor } from '../lib/money'
 import { nightsOf, overlappingStays, uncoveredNights } from '../lib/stays'
@@ -49,25 +49,25 @@ export function Alloggi() {
   const count = trip.stays.length
 
   return (
-    <main class="screen">
+    <main className="screen">
       <PageHeader
         title="Alloggi"
         subtitle={count ? `${count} ${count === 1 ? 'soggiorno' : 'soggiorni'} · ${nights} ${nights === 1 ? 'notte' : 'notti'}` : 'Hotel e case prenotate'}
         back={{ href: '/altro', label: 'Altro' }}
         actions={
-          <button type="button" class="rbtn" aria-label="Aggiungi alloggio" onClick={() => setSheet({ kind: 'new' })}>
+          <button type="button" className="rbtn" aria-label="Aggiungi alloggio" onClick={() => setSheet({ kind: 'new' })}>
             <PlusG />
           </button>
         }
       />
 
       {gaps.length > 0 && (
-        <p class="card b-sm" style={{ borderStyle: 'dashed' }}>
+        <p className="card b-sm" style={{ borderStyle: 'dashed' }}>
           Notti senza alloggio: {gaps.map(formatShort).join(', ')} (ok se sei in volo o in treno di notte).
         </p>
       )}
       {overlaps.length > 0 && (
-        <p role="alert" class="card b-sm" style={{ color: 'var(--warning)', fontWeight: 700 }}>
+        <p role="alert" className="card b-sm" style={{ color: 'var(--warning)', fontWeight: 700 }}>
           Attenzione: {overlaps.map(([a, b]) => `${trip.stays[a].name} e ${trip.stays[b].name}`).join('; ')} si sovrappongono.
         </p>
       )}
@@ -75,7 +75,7 @@ export function Alloggi() {
       {count === 0 ? (
         <EmptyState title="Nessun alloggio" text="Aggiungi hotel e case con date, costo e stato di prenotazione." art={ART.vuotoViaggi} />
       ) : (
-        <ul class="stays" aria-label="Soggiorni">
+        <ul className="stays" aria-label="Soggiorni">
           {trip.stays.map((s, idx) => {
             const n = nightsOf(s)
             const href = mapsHref(s)
@@ -85,53 +85,53 @@ export function Alloggi() {
             const status = s.paid ? 'Pagato' : s.booked ? 'Prenotato · da pagare' : 'Non prenotato'
             return (
               <li key={s.id}>
-                <article class={`tk ${s.booked ? 't-azzurro' : 't-limone'} stay`} aria-label={s.name}>
-                  <div class="top">
+                <article className={`tk ${s.booked ? 't-azzurro' : 't-limone'} stay`} aria-label={s.name}>
+                  <div className="top">
                     <details open={idx === 0}>
                       <summary>
                         <Ic name="i-sez-bed-gl" size={36} />
-                        <span class="st-t">
+                        <span className="st-t">
                           <b>{s.name}</b>
                           <span>{rangeLabel(s.checkIn, s.checkOut)}</span>
                         </span>
-                        <span class="st-n">
+                        <span className="st-n">
                           <b>{n}</b> {n === 1 ? 'notte' : 'notti'}
                         </span>
-                        <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <svg className="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <path d="M6 9l6 6 6-6" />
                         </svg>
                       </summary>
-                      <div class="st-b">
-                        {sub && <p class="st-s">{sub}</p>}
-                        <div class="st-g">
+                      <div className="st-b">
+                        {sub && <p className="st-s">{sub}</p>}
+                        <div className="st-g">
                           <div>
-                            <span class="k">Check-in</span>
+                            <span className="k">Check-in</span>
                             <b>{s.checkInInfo || formatShort(s.checkIn)}</b>
                           </div>
                           <div>
-                            <span class="k">Check-out</span>
+                            <span className="k">Check-out</span>
                             <b>{s.checkOutInfo || formatShort(s.checkOut)}</b>
                           </div>
                           <div>
-                            <span class="k">{total ? 'Costo' : 'Notti'}</span>
+                            <span className="k">{total ? 'Costo' : 'Notti'}</span>
                             <b>{total ?? n}</b>
                           </div>
                         </div>
-                        {s.address && <p class="st-s">{s.address}</p>}
-                        {s.notes && <p class="st-s" style={{ whiteSpace: 'pre-line' }}>{s.notes}</p>}
+                        {s.address && <p className="st-s">{s.address}</p>}
+                        {s.notes && <p className="st-s" style={{ whiteSpace: 'pre-line' }}>{s.notes}</p>}
                         <div>
-                          <button type="button" class="btn soft sm" aria-label={`Modifica ${s.name}`} onClick={() => setSheet({ kind: 'edit', stay: s })}>
+                          <button type="button" className="btn soft sm" aria-label={`Modifica ${s.name}`} onClick={() => setSheet({ kind: 'edit', stay: s })}>
                             Modifica
                           </button>
                         </div>
                       </div>
                     </details>
                   </div>
-                  <div class="bot">
-                    <div class="st-f">
-                      <span class="st-ok">
+                  <div className="bot">
+                    <div className="st-f">
+                      <span className="st-ok">
                         {s.paid ? (
-                          <svg class="ck" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#141930" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style={okMark}>
+                          <svg className="ck" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#141930" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={okMark}>
                             <path d="M5 12.5l4.5 4.5L19 7.5" stroke="#141930" />
                           </svg>
                         ) : (

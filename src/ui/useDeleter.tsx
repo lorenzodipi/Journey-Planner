@@ -1,4 +1,4 @@
-import type { ComponentChildren } from 'preact'
+import type { ReactNode } from 'react'
 import { showToast } from '../state/toast'
 import { useConfirm } from './ConfirmDialog'
 
@@ -20,7 +20,7 @@ export interface DeleteRequest {
  * Elimina con conferma: mostra il popup, poi esegue `run` e avvisa con un messaggio (con "Annulla" se possibile).
  * Uso: `const [del, delDialog] = useDeleter()` + `{delDialog}` nel JSX + `<TrashButton onClick={() => del({...})} />`.
  */
-export function useDeleter(): [(req: DeleteRequest) => Promise<boolean>, ComponentChildren] {
+export function useDeleter(): [(req: DeleteRequest) => Promise<boolean>, ReactNode] {
   const [confirm, dialog] = useConfirm()
   async function del(req: DeleteRequest): Promise<boolean> {
     const ok = await confirm({ title: req.title, text: req.text ?? (req.undo ? 'Puoi annullare subito dopo.' : undefined), confirmLabel: req.confirmLabel })

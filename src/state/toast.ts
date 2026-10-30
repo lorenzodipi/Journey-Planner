@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 
 // Messaggio breve in basso (es. "Tappa eliminata · Annulla"). Un solo toast alla volta.
 

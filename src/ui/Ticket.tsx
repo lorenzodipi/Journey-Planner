@@ -1,5 +1,6 @@
+import type React from 'react'
 import { PlusIcon } from './Icons'
-import type { ComponentChildren } from 'preact'
+import type { ReactNode } from 'react'
 
 /**
  * Biglietto: spezzone a sinistra, strappo tratteggiato e due tacche. Le tacche sono vere aperture:
@@ -15,10 +16,10 @@ export function Ticket({
   flash = false,
   stubFill = false,
   tint,
-  class: cls = '',
+  className: cls = '',
 }: {
-  stub: ComponentChildren
-  children: ComponentChildren
+  stub: ReactNode
+  children: ReactNode
   stubWidth?: number
   tone?: 'line' | 'warn' | 'ok' | 'accent'
   flash?: boolean
@@ -26,31 +27,31 @@ export function Ticket({
   stubFill?: boolean
   /** Biglietto colorato con una tinta del design system (azzurro, menta, limone, lavanda, confetto): testo scuro in ogni tema. */
   tint?: Tint
-  class?: string
+  className?: string
 }) {
   const border = tint ? `var(--tinta-${tint})` : { line: 'var(--hairline)', warn: 'var(--warn)', ok: 'var(--ok)', accent: 'var(--accent)' }[tone]
   return (
     // il bordo trasparente da 2px tiene il contenuto alla stessa distanza di sempre dal bordo disegnato
-    <div class={`relative isolate flex rounded-[18px] ${cls}`} style={{ border: '2px solid transparent', ...(tint ? TINT_SCOPE : null) }}>
+    <div className={`relative isolate flex rounded-[18px] ${cls}`} style={{ border: '2px solid transparent', ...(tint ? TINT_SCOPE : null) }}>
       <i
         aria-hidden="true"
-        class="jp-ticket-edge pointer-events-none absolute -inset-0.5 -z-10 rounded-[18px]"
-        style={{ background: border, '--tx': `${stubWidth + 1}px` }}
+        className="jp-ticket-edge pointer-events-none absolute -inset-0.5 -z-10 rounded-[18px]"
+        style={{ background: border, '--tx': `${stubWidth + 1}px` } as React.CSSProperties}
       />
       <i
         aria-hidden="true"
-        class={`jp-ticket-fill pointer-events-none absolute -z-10 rounded-[16px] ${tint ? '' : 'bg-surface'} ${flash ? 'jp-flash' : ''}`}
-        style={{ inset: 0, '--tx': `${stubWidth - 1}px`, ...(tint ? { background: `var(--tinta-${tint})` } : null) }}
+        className={`jp-ticket-fill pointer-events-none absolute -z-10 rounded-[16px] ${tint ? '' : 'bg-surface'} ${flash ? 'jp-flash' : ''}`}
+        style={{ inset: 0, '--tx': `${stubWidth - 1}px`, ...(tint ? { background: `var(--tinta-${tint})` } : null) } as React.CSSProperties}
       />
       <div
-        class={`box-border grid shrink-0 place-items-center border-r-2 border-dashed border-[color-mix(in_srgb,var(--ink)_28%,transparent)] text-center ${
+        className={`box-border grid shrink-0 place-items-center border-r-2 border-dashed border-[color-mix(in_srgb,var(--ink)_28%,transparent)] text-center ${
           stubFill ? 'jp-ticket-fill relative overflow-hidden rounded-l-[16px]' : 'px-1 py-2.5'
         }`}
-        style={stubFill ? { width: `${stubWidth}px`, '--tx': `${stubWidth - 1}px` } : { width: `${stubWidth}px` }}
+        style={(stubFill ? { width: `${stubWidth}px`, '--tx': `${stubWidth - 1}px` } : { width: `${stubWidth}px` }) as React.CSSProperties}
       >
         {stub}
       </div>
-      <div class="flex min-w-0 flex-1 items-center py-3 pl-3.5 pr-1.5">{children}</div>
+      <div className="flex min-w-0 flex-1 items-center py-3 pl-3.5 pr-1.5">{children}</div>
     </div>
   )
 }
@@ -77,9 +78,9 @@ export function BoardingNotches() {
     border: '2px solid var(--hairline)',
   }
   return (
-    <div class="relative h-0" aria-hidden="true">
-      <i class="absolute -left-3 -top-2.5 box-border size-5 rounded-full" style={{ ...base, clipPath: 'inset(0 0 0 50%)' }} />
-      <i class="absolute -right-3 -top-2.5 box-border size-5 rounded-full" style={{ ...base, clipPath: 'inset(0 50% 0 0)' }} />
+    <div className="relative h-0" aria-hidden="true">
+      <i className="absolute -left-3 -top-2.5 box-border size-5 rounded-full" style={{ ...base, clipPath: 'inset(0 0 0 50%)' }} />
+      <i className="absolute -right-3 -top-2.5 box-border size-5 rounded-full" style={{ ...base, clipPath: 'inset(0 50% 0 0)' }} />
     </div>
   )
 }
@@ -87,10 +88,10 @@ export function BoardingNotches() {
 /** Striscia in cima alle carte principali: azzurro, menta e arancia del design system. */
 export function Stripe() {
   return (
-    <div class="flex h-2 overflow-hidden rounded-t-[18px]" aria-hidden="true">
-      <i class="block flex-[3]" style={{ background: 'var(--cielo)' }} />
-      <i class="block flex-[2]" style={{ background: 'var(--menta)' }} />
-      <i class="block flex-1" style={{ background: 'var(--arancia)' }} />
+    <div className="flex h-2 overflow-hidden rounded-t-[18px]" aria-hidden="true">
+      <i className="block flex-[3]" style={{ background: 'var(--cielo)' }} />
+      <i className="block flex-[2]" style={{ background: 'var(--menta)' }} />
+      <i className="block flex-1" style={{ background: 'var(--arancia)' }} />
     </div>
   )
 }
@@ -105,20 +106,20 @@ const dotClass: Record<Tone, string> = {
 }
 
 /** Etichetta di stato del design system: pillola a contorno con un pallino del colore dello stato (Prenotato, Da pagare…). */
-export function Tag({ tone, children }: { tone: Tone; children: ComponentChildren }) {
+export function Tag({ tone, children }: { tone: Tone; children: ReactNode }) {
   return (
-    <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-xs font-extrabold leading-[1.45rem] text-ink shadow-[inset_0_0_0_1.5px_var(--line)]">
-      <i class={`size-2 rounded-full ${dotClass[tone]}`} aria-hidden="true" />
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-xs font-extrabold leading-[1.45rem] text-ink shadow-[inset_0_0_0_1.5px_var(--line)]">
+      <i className={`size-2 rounded-full ${dotClass[tone]}`} aria-hidden="true" />
       {children}
     </span>
   )
 }
 
 /** Cerchio colorato con dentro un'icona (categoria, tipo di prenotazione…). */
-export function Disc({ color, size = 40, children }: { color: string; size?: number; children: ComponentChildren }) {
+export function Disc({ color, size = 40, children }: { color: string; size?: number; children: ReactNode }) {
   return (
     <span
-      class="grid shrink-0 place-items-center rounded-full font-extrabold"
+      className="grid shrink-0 place-items-center rounded-full font-extrabold"
       style={{ width: `${size}px`, height: `${size}px`, background: color, color: 'var(--on-bright)' }}
     >
       {children}
@@ -131,7 +132,7 @@ export function Avatar({ name, color, size = 24 }: { name: string; color: string
   return (
     <span
       aria-hidden="true"
-      class="grid shrink-0 place-items-center rounded-full font-display font-medium"
+      className="grid shrink-0 place-items-center rounded-full font-display font-medium"
       style={{ width: `${size}px`, height: `${size}px`, background: color, color: 'var(--on-bright)', fontSize: `${Math.round(size * 0.46)}px` }}
     >
       {name.slice(0, 1).toUpperCase()}
@@ -140,9 +141,9 @@ export function Avatar({ name, color, size = 24 }: { name: string; color: string
 }
 
 /** Etichetta giapponese (Zen Kaku Gothic New) a lato dei titoli. */
-export function Jp({ children, class: cls = '' }: { children: ComponentChildren; class?: string }) {
+export function Jp({ children, className: cls = '' }: { children: ReactNode; className?: string }) {
   return (
-    <span lang="ja" aria-hidden="true" class={`font-jp text-[15px] text-pale ${cls}`}>
+    <span lang="ja" aria-hidden="true" className={`font-jp text-[15px] text-pale ${cls}`}>
       {children}
     </span>
   )
@@ -159,10 +160,10 @@ export function Fab({ label, onClick, wide = false }: { label: string; onClick: 
       onClick={onClick}
       aria-label={`Aggiungi ${label.toLowerCase()}`}
       title={`Aggiungi ${label.toLowerCase()}`}
-      class={`fixed right-5 z-10 inline-flex h-14 items-center justify-center gap-2 bg-accent text-[15px] font-extrabold text-accent-ink shadow-[0_6px_16px_rgb(20_25_48/0.28)] ${wide ? 'rounded-full px-5' : 'w-14 rounded-full'}`}
+      className={`fixed right-5 z-10 inline-flex h-14 items-center justify-center gap-2 bg-accent text-[15px] font-extrabold text-accent-ink shadow-[0_6px_16px_rgb(20_25_48/0.28)] ${wide ? 'rounded-full px-5' : 'w-14 rounded-full'}`}
       style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}
     >
-      <PlusIcon size={wide ? 22 : 28} stroke-width={2.4} />
+      <PlusIcon size={wide ? 22 : 28} strokeWidth={2.4} />
       {wide && label}
     </button>
   )

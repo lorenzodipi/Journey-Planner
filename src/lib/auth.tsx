@@ -1,6 +1,6 @@
-import { createContext } from 'preact'
-import { useContext, useEffect, useState } from 'preact/hooks'
-import type { ComponentChildren } from 'preact'
+import { createContext } from 'react'
+import { useContext, useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { isSupabaseConfigured, supabase } from './supabase'
 
@@ -27,7 +27,7 @@ function translateError(message: string): string {
   return message
 }
 
-export function AuthProvider({ children }: { children: ComponentChildren }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   // Senza variabili Supabase l'app parte in modalità demo (dati fittizi).
   const [status, setStatus] = useState<AuthStatus>(isSupabaseConfigured ? 'loading' : 'demo')
   const [session, setSession] = useState<Session | null>(null)

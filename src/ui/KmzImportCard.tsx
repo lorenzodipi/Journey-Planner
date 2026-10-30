@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from 'preact/hooks'
+import type React from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { readKmzFile, type KmzContent } from '../lib/kmz'
 import { planImport } from '../lib/kmzPlan'
 import { startPositionJob } from '../state/positionJob'
@@ -36,7 +37,7 @@ export function KmzImportCard() {
     setReplaceLinks(false)
   }
 
-  async function onFile(e: Event) {
+  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const el = e.currentTarget as HTMLInputElement
     const file = el.files?.[0]
     el.value = '' // permette di scegliere di nuovo lo stesso file
@@ -83,8 +84,8 @@ export function KmzImportCard() {
 
   return (
     <Card>
-      <h2 class="font-display text-lg font-extrabold">Importa da Google Maps</h2>
-      <p class="mt-1 text-[13px] leading-snug text-muted">
+      <h2 className="font-display text-lg font-extrabold">Importa da Google Maps</h2>
+      <p className="mt-1 text-[13px] leading-snug text-muted">
         Scegli il file .kmz della tua mappa (Google My Maps → ⋮ → Esporta in KML/KMZ). I luoghi che hai già ricevono il link a Google Maps,
         quelli che mancano vengono aggiunti a «{trip.title}».
       </p>
@@ -93,77 +94,77 @@ export function KmzImportCard() {
         type="file"
         // niente `accept`: iOS non conosce il tipo .kmz e metterebbe in grigio il file, che non si potrebbe scegliere.
         // Il contenuto si controlla dopo la scelta (se non è una mappa Google compare un errore chiaro).
-        class="sr-only"
+        className="sr-only"
         tabIndex={-1}
         onChange={(e) => void onFile(e)}
         aria-label="File della mappa Google"
       />
-      <div class="mt-3">
+      <div className="mt-3">
         <SecondaryButton onClick={() => input.current?.click()}>{reading ? 'Leggo il file…' : plan ? 'Scegli un altro file' : 'Scegli il file .kmz'}</SecondaryButton>
       </div>
 
       {error && (
-        <div class="mt-3">
+        <div className="mt-3">
           <FormError message={error} />
         </div>
       )}
 
       {plan && content && (
-        <div class="mt-3 space-y-3 rounded-[20px] border border-hairline bg-bg p-4">
-          <p class="text-sm text-muted">
-            <span class="font-extrabold text-ink">{fileName}</span> · {plural(content.points.length, 'luogo', 'luoghi')}
+        <div className="mt-3 space-y-3 rounded-[20px] border border-hairline bg-bg p-4">
+          <p className="text-sm text-muted">
+            <span className="font-extrabold text-ink">{fileName}</span> · {plural(content.points.length, 'luogo', 'luoghi')}
             {content.skipped > 0 && ` (${plural(content.skipped, 'linea o area ignorata', 'linee o aree ignorate')})`}
           </p>
-          <ul class="space-y-1.5 text-sm">
+          <ul className="space-y-1.5 text-sm">
             <li>
-              <span class="font-extrabold">{plan.matched}</span> già nell'app
+              <span className="font-extrabold">{plan.matched}</span> già nell'app
               {plan.updates.length > 0 ? ` · ${plural(plan.updates.length, 'riceve il link', 'ricevono il link')}` : plan.matched > 0 ? ' · già a posto' : ''}
             </li>
             <li>
-              <span class="font-extrabold">{plan.fresh.length}</span> da aggiungere
-              {plan.newCategories.length > 0 && <span class="text-muted"> · nuove categorie: {plan.newCategories.join(', ')}</span>}
+              <span className="font-extrabold">{plan.fresh.length}</span> da aggiungere
+              {plan.newCategories.length > 0 && <span className="text-muted"> · nuove categorie: {plan.newCategories.join(', ')}</span>}
             </li>
           </ul>
           {plan.fresh.length > 0 && (
-            <details class="text-sm">
-              <summary class="min-h-6 cursor-pointer font-extrabold text-pale">Vedi i luoghi da aggiungere</summary>
-              <ul class="mt-2 max-h-48 list-disc space-y-0.5 overflow-y-auto pl-5">
+            <details className="text-sm">
+              <summary className="min-h-6 cursor-pointer font-extrabold text-pale">Vedi i luoghi da aggiungere</summary>
+              <ul className="mt-2 max-h-48 list-disc space-y-0.5 overflow-y-auto pl-5">
                 {plan.fresh.slice(0, 60).map((p) => (
                   <li>
                     {p.name}
-                    {p.city && <span class="text-muted"> · {p.city}</span>}
+                    {p.city && <span className="text-muted"> · {p.city}</span>}
                   </li>
                 ))}
-                {plan.fresh.length > 60 && <li class="list-none text-muted">…e altri {plan.fresh.length - 60}</li>}
+                {plan.fresh.length > 60 && <li className="list-none text-muted">…e altri {plan.fresh.length - 60}</li>}
               </ul>
             </details>
           )}
           {plan.withoutCoords > 0 && (
-            <p class="text-xs leading-snug text-muted">
+            <p className="text-xs leading-snug text-muted">
               Il file non contiene le coordinate: il link è una ricerca su Google per nome e indirizzo. Dopo l'import l'app cerca da sola la posizione dei luoghi
               senza pallino (qualche minuto, con l'avanzamento qui sotto); i pin che hai già non vengono spostati.
             </p>
           )}
           {plan.far.length > 0 && (
-            <p class="rounded-xl border-2 border-warn px-3 py-2 text-xs leading-snug">
+            <p className="rounded-xl border-2 border-warn px-3 py-2 text-xs leading-snug">
               Controlla questi: nell'app sono a più di 2 km da dove li mette Google — {plan.far.map((f) => `${f.name} (${f.km} km)`).join(', ')}.
             </p>
           )}
           {plan.matched > 0 && (
-            <label class="flex min-h-11 items-center gap-3 text-sm">
-              <input type="checkbox" checked={replaceLinks} onChange={(e) => setReplaceLinks(e.currentTarget.checked)} class="size-5 accent-[var(--accent)]" />
+            <label className="flex min-h-11 items-center gap-3 text-sm">
+              <input type="checkbox" checked={replaceLinks} onChange={(e) => setReplaceLinks(e.currentTarget.checked)} className="size-5 accent-[var(--accent)]" />
               Sostituisci anche i link che i luoghi hanno già
             </label>
           )}
           {nothing ? (
-            <p class="text-sm text-muted">Non c'è nulla da cambiare: i luoghi sono già tutti aggiornati.</p>
+            <p className="text-sm text-muted">Non c'è nulla da cambiare: i luoghi sono già tutti aggiornati.</p>
           ) : (
             <form
               onSubmit={(e) => {
                 e.preventDefault()
                 void run()
               }}
-              class="space-y-2"
+              className="space-y-2"
             >
               <PrimaryButton busy={busy}>
                 {busy ? 'Importo…' : `Importa${plan.fresh.length + plan.updates.length > 0 ? ` (${plan.fresh.length + plan.updates.length})` : ''}`}

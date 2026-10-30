@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'preact/hooks'
-import type { ComponentChildren } from 'preact'
+import { useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { stampOpen } from './dialogStack'
 import { TrashG } from './glyphs'
 
@@ -34,23 +34,23 @@ function ConfirmDialog({ title, text, confirmLabel = 'Elimina', onAnswer }: Conf
       onClick={(e) => {
         if (e.target === e.currentTarget) onAnswer(false)
       }}
-      class="fdialog"
+      className="fdialog"
     >
-      <div class="fdialog-in">
+      <div className="fdialog-in">
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-          <span class="fdialog-ic">
+          <span className="fdialog-ic">
             <TrashG size={22} />
           </span>
           <div style={{ minWidth: 0 }}>
-            <h2 class="h-md">{title}</h2>
-            {text && <p class="b-sm muted" style={{ marginTop: '4px' }}>{text}</p>}
+            <h2 className="h-md">{title}</h2>
+            {text && <p className="b-sm muted" style={{ marginTop: '4px' }}>{text}</p>}
           </div>
         </div>
-        <div class="grid2">
-          <button type="button" onClick={() => onAnswer(false)} class="btn line">
+        <div className="grid2">
+          <button type="button" onClick={() => onAnswer(false)} className="btn line">
             Annulla
           </button>
-          <button type="button" onClick={() => onAnswer(true)} class="btn" style={{ background: 'var(--danger)', color: 'var(--canvas)' }}>
+          <button type="button" onClick={() => onAnswer(true)} className="btn" style={{ background: 'var(--danger)', color: 'var(--canvas)' }}>
             {confirmLabel}
           </button>
         </div>
@@ -63,7 +63,7 @@ function ConfirmDialog({ title, text, confirmLabel = 'Elimina', onAnswer }: Conf
  * Popup di conferma. Uso: `const [confirm, confirmDialog] = useConfirm()`, poi
  * `if (!(await confirm({ title: 'Eliminare…?' }))) return` e `{confirmDialog}` nel JSX.
  */
-export function useConfirm(): [(options: ConfirmOptions) => Promise<boolean>, ComponentChildren] {
+export function useConfirm(): [(options: ConfirmOptions) => Promise<boolean>, ReactNode] {
   const [pending, setPending] = useState<PendingState | null>(null)
   const pendingRef = useRef<PendingState | null>(null)
 
@@ -102,7 +102,7 @@ export function TrashButton({ label, onClick, disabled }: { label: string; onCli
         e.stopPropagation()
         onClick()
       }}
-      class="rbtn sm trash"
+      className="rbtn sm trash"
     >
       <TrashG size={20} />
     </button>

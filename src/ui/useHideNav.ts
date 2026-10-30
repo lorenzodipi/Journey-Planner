@@ -1,4 +1,4 @@
-import { useEffect } from 'preact/hooks'
+import { useEffect } from 'react'
 
 /**
  * Nasconde la barra di navigazione in basso finché `hide` è vero (es. in selezione multipla,

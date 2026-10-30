@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import { useConfirm } from './ConfirmDialog'
 import type { ItemInput } from '../lib/tripApi'
 import type { DayItem, ItemKind, Trip } from '../types'
@@ -44,7 +44,7 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
     if (place && !title.trim()) setTitle(place.name)
   }
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     if (!title.trim()) return setError('Scrivi cosa fai in questa tappa.')
     if (startTime && endTime && endTime < startTime) return setError("L'ora di fine è prima dell'inizio.")
@@ -78,7 +78,7 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
   const extraOpen = Boolean(initial && (initial.endTime || initial.kind !== 'visit'))
 
   return (
-    <form class="space-y-4" onSubmit={submit} noValidate>
+    <form className="space-y-4" onSubmit={submit} noValidate>
       {placeCount > 0 && (
         <Select
           label="Luogo"
@@ -94,19 +94,19 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
       )}
 
       {placeId && onOpenPlace && place && (
-        <button type="button" onClick={() => onOpenPlace(placeId)} class="btn soft sm" style={{ marginTop: '-4px' }}>
+        <button type="button" onClick={() => onOpenPlace(placeId)} className="btn soft sm" style={{ marginTop: '-4px' }}>
           Apri la scheda del luogo
         </button>
       )}
 
-      <TextField label="Cosa fai" value={title} onInput={setTitle} maxLength={120} />
+      <TextField label="Cosa fai" value={title} onChange={setTitle} maxLength={120} />
 
-      <div class="grid grid-cols-2 gap-3">
-        <TextField label="Orario" type="time" value={startTime} onInput={onStartTime} />
+      <div className="grid grid-cols-2 gap-3">
+        <TextField label="Orario" type="time" value={startTime} onChange={onStartTime} />
         <TextField
           label="Durata"
           value={duration}
-          onInput={setDuration}
+          onChange={setDuration}
           list="durate-tappa"
           placeholder={place?.visitMinutes ? formatDuration(place.visitMinutes) : 'es. 1 h 30'}
         />
@@ -117,18 +117,18 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
         ))}
       </datalist>
 
-      <TextArea label="Nota" value={notes} onInput={setNotes} />
+      <TextArea label="Nota" value={notes} onChange={setNotes} />
 
-      <details open={extraOpen} class="space-y-4">
-        <summary class="b-bold" style={{ cursor: 'pointer', color: 'var(--azzurro-ink)', minHeight: '44px', display: 'flex', alignItems: 'center' }}>
+      <details open={extraOpen} className="space-y-4">
+        <summary className="b-bold" style={{ cursor: 'pointer', color: 'var(--azzurro-ink)', minHeight: '44px', display: 'flex', alignItems: 'center' }}>
           Altre opzioni
         </summary>
-        <TextField label="Fine" type="time" value={endTime} onInput={setEndTime} min={startTime || undefined} />
+        <TextField label="Fine" type="time" value={endTime} onChange={setEndTime} min={startTime || undefined} />
         <fieldset>
-          <legend class="b-bold" style={{ marginBottom: '8px' }}>Tipo</legend>
-          <div class="chips" style={{ flexWrap: 'wrap', margin: 0, padding: 0, overflow: 'visible' }}>
+          <legend className="b-bold" style={{ marginBottom: '8px' }}>Tipo</legend>
+          <div className="chips" style={{ flexWrap: 'wrap', margin: 0, padding: 0, overflow: 'visible' }}>
             {KINDS.map((k) => (
-              <button type="button" aria-pressed={kind === k} onClick={() => setKind(k)} class={`chip${kind === k ? ' on' : ''}`}>
+              <button type="button" aria-pressed={kind === k} onClick={() => setKind(k)} className={`chip${kind === k ? ' on' : ''}`}>
                 {KIND_LABEL[k]}
               </button>
             ))}

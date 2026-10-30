@@ -1,6 +1,6 @@
-import { Fragment } from 'preact'
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
-import { Link } from 'wouter-preact'
+import { Fragment } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'wouter'
 import { budgetStatus, fxOf, paidFromSections, summarizeExpenses } from '../lib/budget'
 import { buildExport, downloadJson, exportFileName, serializeExport } from '../lib/exportData'
 import { doneCount } from '../lib/checklist'
@@ -72,45 +72,45 @@ function OggiPre({ trip, now, toStart }: { trip: Trip; now: Date; toStart: numbe
   }
 
   return (
-    <main class="screen">
-      <section class="tkt cori" aria-label="Biglietto di partenza">
-        <LogoSym class="tkt-logo" />
-        <div class="tkt-top">
-          <div class="tkt-meta">
-            <span class="tkt-t">{trip.title}</span>
-            <span class="num">
+    <main className="screen">
+      <section className="tkt cori" aria-label="Biglietto di partenza">
+        <LogoSym className="tkt-logo" />
+        <div className="tkt-top">
+          <div className="tkt-meta">
+            <span className="tkt-t">{trip.title}</span>
+            <span className="num">
               {formatShort(trip.startDate)} – {formatShort(trip.endDate)}
               {people > 0 && ` · ${people} ${people === 1 ? 'persona' : 'persone'}`}
             </span>
           </div>
-          <p class="tkt-lab">Alla partenza mancano</p>
-          <div class="tkt-count" role="timer" aria-label={`Mancano ${toStart} ${toStart === 1 ? 'giorno' : 'giorni'} alla partenza`}>
-            <span class="tkt-num num">{toStart}</span>
-            <span class="tkt-unit">
+          <p className="tkt-lab">Alla partenza mancano</p>
+          <div className="tkt-count" role="timer" aria-label={`Mancano ${toStart} ${toStart === 1 ? 'giorno' : 'giorni'} alla partenza`}>
+            <span className="tkt-num num">{toStart}</span>
+            <span className="tkt-unit">
               <b>{toStart === 1 ? 'giorno' : 'giorni'}</b>
               <span>alla partenza</span>
             </span>
           </div>
         </div>
-        <div class="tkt-perf" aria-hidden="true" />
-        <div class="tkt-bot">
+        <div className="tkt-perf" aria-hidden="true" />
+        <div className="tkt-bot">
           {flight ? (
             <>
-              <p class="tkt-lab">Prossima partenza</p>
-              <div class="tkt-route">
-                <span class="tkt-ap">{flight.leg.from}</span>
+              <p className="tkt-lab">Prossima partenza</p>
+              <div className="tkt-route">
+                <span className="tkt-ap">{flight.leg.from}</span>
                 <Ic name="i-tra-plane" size={44} />
-                <span class="tkt-ap">{flight.leg.to}</span>
+                <span className="tkt-ap">{flight.leg.to}</span>
               </div>
-              <p class="tkt-when num">
+              <p className="tkt-when num">
                 {cap(longDateIn(flight.leg.departAt, flight.leg.fromTz))} · {flightTime(flight.leg.departAt, flight.leg.fromTz)}
               </p>
             </>
           ) : (
             <>
-              <p class="tkt-lab">{trip.destination || 'Il viaggio'}</p>
-              <p class="tkt-when">{trip.flights.length === 0 ? 'Nessun volo inserito' : 'Nessun volo in programma'}</p>
-              <Link href="/altro/trasporti" class="btn soft sm" style={{ marginTop: '12px' }}>
+              <p className="tkt-lab">{trip.destination || 'Il viaggio'}</p>
+              <p className="tkt-when">{trip.flights.length === 0 ? 'Nessun volo inserito' : 'Nessun volo in programma'}</p>
+              <Link href="/altro/trasporti" className="btn soft sm" style={{ marginTop: '12px' }}>
                 Vai ai trasporti
               </Link>
             </>
@@ -120,12 +120,12 @@ function OggiPre({ trip, now, toStart }: { trip: Trip; now: Date; toStart: numbe
 
       {total > 0 && (
         <section aria-label="Checklist">
-          <div class="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px' }}>
               <Ring value={done / total} label={`${done}/${total}`} size={64} />
               <div>
-                <h2 class="h-md">Prima di partire</h2>
-                <p class="b-sm">
+                <h2 className="h-md">Prima di partire</h2>
+                <p className="b-sm">
                   {done} {done === 1 ? 'voce fatta' : 'voci fatte'} su {total}
                 </p>
               </div>
@@ -134,18 +134,18 @@ function OggiPre({ trip, now, toStart }: { trip: Trip; now: Date; toStart: numbe
               <div style={{ borderTop: '1.5px solid var(--border-strong)' }}>
                 {open.slice(0, 2).map((i, k) => {
                   const row = (
-                    <div class="row" style={{ minHeight: '52px', padding: '4px 16px' }}>
-                      <button type="button" class="hit" role="checkbox" aria-checked={false} aria-label={`Segna fatto: ${i.text}`} onClick={() => void toggle(i.id, i.done, i.quantity)}>
-                        <span class="cb" />
+                    <div className="row" style={{ minHeight: '52px', padding: '4px 16px' }}>
+                      <button type="button" className="hit" role="checkbox" aria-checked={false} aria-label={`Segna fatto: ${i.text}`} onClick={() => void toggle(i.id, i.done, i.quantity)}>
+                        <span className="cb" />
                       </button>
-                      <span class="grow tt">{i.text}</span>
+                      <span className="grow tt">{i.text}</span>
                     </div>
                   )
                   return k === 0 ? row : <div style={{ borderTop: '1px solid var(--hairline)' }}>{row}</div>
                 })}
               </div>
             )}
-            <Link href="/altro/checklist" class="row" style={{ borderTop: '1.5px solid var(--border-strong)', fontWeight: 700 }}>
+            <Link href="/altro/checklist" className="row" style={{ borderTop: '1.5px solid var(--border-strong)', fontWeight: 700 }}>
               {open.length > 0 ? `Vedi tutte le ${open.length} voci` : 'Apri la checklist'}
               <span style={{ marginLeft: 'auto' }}>
                 <ChevronRightG />
@@ -212,30 +212,30 @@ function WeatherHero({ day, hours, city, nowHour }: { day: DayWeather; hours: Ho
   const w = weatherLabel(code)
   const sentence = rainLater ? `Pioggia dalle ${rainLater.from}` : rain ? 'Pioggia già passata' : undefined
   return (
-    <section class="wxc cori" aria-label={`Meteo a ${city}`}>
+    <section className="wxc cori" aria-label={`Meteo a ${city}`}>
       <Ic name={weatherSymbol(code)} size={48} />
-      <div class="wxm">
-        <span class="wxl">Meteo a {city}</span>
-        <span class="wxt num">{temp}°</span>
+      <div className="wxm">
+        <span className="wxl">Meteo a {city}</span>
+        <span className="wxt num">{temp}°</span>
       </div>
-      <div class="wxd">
-        <span class="wxn">{w.label}</span>
+      <div className="wxd">
+        <span className="wxn">{w.label}</span>
         {sentence && <span>{sentence}</span>}
-        <span class="num">Minima {day.min}°</span>
+        <span className="num">Minima {day.min}°</span>
       </div>
       {picks.length > 0 && (
-        <div class="wxh" ref={strip} role="list" aria-label={`Meteo ora per ora a ${city}, scorri in orizzontale`} tabIndex={0}>
+        <div className="wxh" ref={strip} role="list" aria-label={`Meteo ora per ora a ${city}, scorri in orizzontale`} tabIndex={0}>
           {picks.map(({ label, h, now }) => (
-            <div class={`wxi ${now ? 'now' : ''}`.trim()} role="listitem">
-              <span class="num">{label}</span>
+            <div className={`wxi ${now ? 'now' : ''}`.trim()} role="listitem">
+              <span className="num">{label}</span>
               <Ic name={weatherSymbol(h.code)} size={30} />
-              <b class="num">{h.t}°</b>
+              <b className="num">{h.t}°</b>
             </div>
           ))}
         </div>
       )}
       {rainLater && (
-        <p class="wxr">
+        <p className="wxr">
           <Ic name="i-sez-rain" size={22} />
           Pioggia dalle {rainLater.from} alle {rainLater.to} · porta l’ombrello
         </p>
@@ -319,49 +319,49 @@ function OggiDuring({ trip, now, today }: { trip: Trip; now: Date; today: string
   const nowAt = steps.findIndex((s) => s.state === 'now')
 
   return (
-    <main class="screen oggi-c">
-      <header class="hero pad">
-        <div class="hrow">
+    <main className="screen oggi-c">
+      <header className="hero pad">
+        <div className="hrow">
           <div>
             <h1>Oggi</h1>
-            <p class="hsub">
+            <p className="hsub">
               {focus ? `${formatDay(focus.date)} · giorno ${dayIndex + 1} di ${trip.days.length}` : trip.title}
             </p>
           </div>
-          <div class="acts" />
+          <div className="acts" />
         </div>
-        <div class="hps clk-row">
-          <div class="clk a cori">
-            <span class="cl">{city}</span>
-            <span class="num ct">{clock.time}</span>
+        <div className="hps clk-row">
+          <div className="clk a cori">
+            <span className="cl">{city}</span>
+            <span className="num ct">{clock.time}</span>
           </div>
-          <div class="clk b">
-            <span class="cl">{homeName}</span>
-            <span class="num ct">{homeTime(homeTz, now)}</span>
+          <div className="clk b">
+            <span className="cl">{homeName}</span>
+            <span className="num ct">{homeTime(homeTz, now)}</span>
           </div>
         </div>
         {day && isToday && <WeatherHero day={day} hours={day.hours} city={city} nowHour={Math.floor(nowMin / 60)} />}
       </header>
 
       <section aria-label="Programma di oggi">
-        <div class="sec-h" style={{ marginBottom: '10px' }}>
-          <h2 class="h-md">Programma di oggi</h2>
+        <div className="sec-h" style={{ marginBottom: '10px' }}>
+          <h2 className="h-md">Programma di oggi</h2>
           {timedItems.length > 0 && (
-            <span class="b-bold num">
+            <span className="b-bold num">
               {doneN} di {timedItems.length} {doneN === 1 ? 'fatta' : 'fatte'}
             </span>
           )}
         </div>
         {timedItems.length > 0 ? (
           <>
-            <div class="bar" role="progressbar" aria-label="Tappe fatte" aria-valuemin={0} aria-valuemax={timedItems.length} aria-valuenow={doneN} style={{ height: '10px' }}>
+            <div className="bar" role="progressbar" aria-label="Tappe fatte" aria-valuemin={0} aria-valuemax={timedItems.length} aria-valuenow={doneN} style={{ height: '10px' }}>
               <i style={{ width: `${(doneN / timedItems.length) * 100}%` }} />
             </div>
             <div style={{ height: '16px' }} />
           </>
         ) : null}
         {steps.length > 0 ? (
-          <ol class="tp-steps">
+          <ol className="tp-steps">
             {steps.map((s, i) => {
               const prev = steps[i - 1]
               const leg = s.item ? legByTo.get(s.item.id) : undefined
@@ -369,9 +369,9 @@ function OggiDuring({ trip, now, today }: { trip: Trip; now: Date; today: string
               return (
                 <Fragment key={s.key}>
                   {hop && (
-                    <li class={`tp-seg${nowAt >= 0 && i > nowAt ? ' after' : ''}`}>
-                      <span class="tp-rail" />
-                      <span class="tp-sg">
+                    <li className={`tp-seg${nowAt >= 0 && i > nowAt ? ' after' : ''}`}>
+                      <span className="tp-rail" />
+                      <span className="tp-sg">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                           <use href={`#${hop.symbol}`} />
                         </svg>
@@ -385,9 +385,9 @@ function OggiDuring({ trip, now, today }: { trip: Trip; now: Date; today: string
             })}
           </ol>
         ) : (
-          <div class="card empty">
-            <p class="h-sm">Giornata libera</p>
-            <p class="b-sm muted" style={{ marginTop: '4px' }}>Aggiungi le tappe dalla scheda Giorni.</p>
+          <div className="card empty">
+            <p className="h-sm">Giornata libera</p>
+            <p className="b-sm muted" style={{ marginTop: '4px' }}>Aggiungi le tappe dalla scheda Giorni.</p>
           </div>
         )}
       </section>
@@ -398,8 +398,8 @@ function OggiDuring({ trip, now, today }: { trip: Trip; now: Date; today: string
 
 function StepRow({ s, nowMin, onState }: { s: Step; nowMin: number; onState?: (done: boolean) => void }) {
   const node = (
-    <span class="tp-rail">
-      <span class={`tp-nd ${s.state}`}>
+    <span className="tp-rail">
+      <span className={`tp-nd ${s.state}`}>
         {s.state === 'done' ? (
           <NodeCheck />
         ) : (
@@ -416,39 +416,39 @@ function StepRow({ s, nowMin, onState }: { s: Step; nowMin: number; onState?: (d
     const total = start != null && end != null ? end - start : undefined
     const elapsed = start != null ? Math.max(0, Math.min(total ?? 0, nowMin - start)) : 0
     return (
-      <li class="tp-stp now">
+      <li className="tp-stp now">
         {node}
-        <div class="tp-body tp-card cori" aria-label="Tappa in corso">
-          <div class="tp-top">
+        <div className="tp-body tp-card cori" aria-label="Tappa in corso">
+          <div className="tp-top">
             <div>
-              <div class="tp-t">{s.title}</div>
-              {s.meta && <div class="tp-m">{s.meta}</div>}
+              <div className="tp-t">{s.title}</div>
+              {s.meta && <div className="tp-m">{s.meta}</div>}
             </div>
-            <div class="tp-r">
-              <span class="tp-badge now">Ora</span>
+            <div className="tp-r">
+              <span className="tp-badge now">Ora</span>
             </div>
           </div>
           {s.time && (
-            <div class="tp-when">
-              <span class="num tp-big">{s.endTime ? `${s.time} – ${s.endTime}` : s.time}</span>
-              {total ? <span class="num">{formatDuration(total)}</span> : null}
+            <div className="tp-when">
+              <span className="num tp-big">{s.endTime ? `${s.time} – ${s.endTime}` : s.time}</span>
+              {total ? <span className="num">{formatDuration(total)}</span> : null}
             </div>
           )}
           {total ? (
-            <div class="tp-pr">
-              <div class="tp-pbar" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={elapsed} aria-label="Tempo trascorso in questa tappa">
+            <div className="tp-pr">
+              <div className="tp-pbar" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={elapsed} aria-label="Tempo trascorso in questa tappa">
                 <i style={{ width: `${(elapsed / total) * 100}%` }} />
               </div>
-              <span class="num">Restano {formatDuration(Math.max(0, total - elapsed))}</span>
+              <span className="num">Restano {formatDuration(Math.max(0, total - elapsed))}</span>
             </div>
           ) : null}
-          <div class="tp-acts">
+          <div className="tp-acts">
             {s.mapsHref && <MapsPill kind="big" href={s.mapsHref} label={s.title} />}
             {onState && (
-              <label class="tp-sel" style={{ position: 'relative' }}>
-                <span class="tp-sel-t">
-                  <span class="tp-sel-l">Stato della tappa:</span>
-                  <span class="tp-sel-v">In corso</span>
+              <label className="tp-sel" style={{ position: 'relative' }}>
+                <span className="tp-sel-t">
+                  <span className="tp-sel-l">Stato della tappa:</span>
+                  <span className="tp-sel-v">In corso</span>
                 </span>
                 <ChevronDownG size={20} sw={2.6} />
                 <select
@@ -469,33 +469,33 @@ function StepRow({ s, nowMin, onState }: { s: Step; nowMin: number; onState?: (d
     )
   }
   return (
-    <li class={`tp-stp ${s.state}`}>
+    <li className={`tp-stp ${s.state}`}>
       {node}
-      <div class="tp-body">
-        <div class="tp-top">
+      <div className="tp-body">
+        <div className="tp-top">
           <div>
-            <div class="tp-t">{s.title}</div>
-            {s.meta && <div class="tp-m">{s.meta}</div>}
+            <div className="tp-t">{s.title}</div>
+            {s.meta && <div className="tp-m">{s.meta}</div>}
           </div>
-          <div class="tp-r">
-            {s.time && <span class="tp-time">{s.time}</span>}
+          <div className="tp-r">
+            {s.time && <span className="tp-time">{s.time}</span>}
             {s.state === 'done' ? (
-              <span class="tp-st">
+              <span className="tp-st">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M6.5 12.5l3.8 3.8 7.2-8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M6.5 12.5l3.8 3.8 7.2-8" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 Fatta
               </span>
             ) : (
-              <span class="tp-badge next">{s.late ? 'Da fare' : 'Dopo'}</span>
+              <span className="tp-badge next">{s.late ? 'Da fare' : 'Dopo'}</span>
             )}
           </div>
         </div>
         {(s.mapsHref || (s.item && s.state !== 'done')) && (
-          <div class="tp-foot">
+          <div className="tp-foot">
             {s.mapsHref && <MapsPill kind="tp" href={s.mapsHref} label={s.title} />}
             {s.item && s.state === 'next' && s.late && onState && (
-              <button type="button" class="btn soft sm" onClick={() => onState(true)}>
+              <button type="button" className="btn soft sm" onClick={() => onState(true)}>
                 Segna fatta
               </button>
             )}
@@ -550,7 +550,7 @@ function OggiPost({ trip }: { trip: Trip }) {
   void t
 
   return (
-    <main class="screen">
+    <main className="screen">
       <section style={{ background: 'var(--tinta-azzurro)', color: 'var(--on-tinta)', borderRadius: '28px', padding: '24px', position: 'relative', overflow: 'hidden' }} aria-label="Bentornati">
         <LogoSym width={62} height={73} style={{ position: 'absolute', right: '24px', top: '20px' }} />
         <p lang="ja" style={{ font: "700 14px/20px 'Zen Kaku Gothic New','Hiragino Sans','Yu Gothic',sans-serif", letterSpacing: '.04em', position: 'relative' }}>
@@ -563,65 +563,65 @@ function OggiPost({ trip }: { trip: Trip }) {
         {back && (
           <div style={{ marginTop: '20px', paddingTop: '14px', borderTop: '2px dashed var(--on-tinta-muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span class="h-lg num">{back.from}</span>
+              <span className="h-lg num">{back.from}</span>
               <Ic name="i-tra-plane" size={28} />
-              <span class="h-lg num">{back.to}</span>
+              <span className="h-lg num">{back.to}</span>
             </div>
-            <span class="b-bold">rientro {formatShort(trip.endDate)}</span>
+            <span className="b-bold">rientro {formatShort(trip.endDate)}</span>
           </div>
         )}
       </section>
 
       <section aria-label="Il viaggio in numeri">
-        <div class="sec-h" style={{ marginBottom: '10px' }}>
-          <h2 class="h-md">Il viaggio in numeri</h2>
+        <div className="sec-h" style={{ marginBottom: '10px' }}>
+          <h2 className="h-md">Il viaggio in numeri</h2>
         </div>
-        <div class="statg">
-          <div class="stat" style={{ background: 'var(--tinta-menta)' }}>
-            <p class="big">{nDays}</p>
-            <div class="stat-t">
-              <p class="b-bold">{nDays === 1 ? 'giorno' : 'giorni'}</p>
-              <p class="of">{formatShort(trip.startDate)} – {formatShort(trip.endDate)}</p>
+        <div className="statg">
+          <div className="stat" style={{ background: 'var(--tinta-menta)' }}>
+            <p className="big">{nDays}</p>
+            <div className="stat-t">
+              <p className="b-bold">{nDays === 1 ? 'giorno' : 'giorni'}</p>
+              <p className="of">{formatShort(trip.startDate)} – {formatShort(trip.endDate)}</p>
             </div>
-            <img class="stat-pic" src={sceneFor('panorama')} alt="" />
-            <div class="stat-x dots" aria-hidden="true">
+            <img className="stat-pic" src={sceneFor('panorama')} alt="" />
+            <div className="stat-x dots" aria-hidden="true">
               {Array.from({ length: nDays }, () => (
                 <i />
               ))}
             </div>
           </div>
           {cities.length > 0 && (
-            <div class="stat" style={{ background: 'var(--tinta-azzurro)' }}>
-              <p class="big">{cities.length}</p>
-              <div class="stat-t">
-                <p class="b-bold">{cities.length === 1 ? 'città' : 'città'}</p>
-                <p class="of">{cities.length > 1 ? `da ${cities[0]} a ${cities[cities.length - 1]}` : cities[0]}</p>
+            <div className="stat" style={{ background: 'var(--tinta-azzurro)' }}>
+              <p className="big">{cities.length}</p>
+              <div className="stat-t">
+                <p className="b-bold">{cities.length === 1 ? 'città' : 'città'}</p>
+                <p className="of">{cities.length > 1 ? `da ${cities[0]} a ${cities[cities.length - 1]}` : cities[0]}</p>
               </div>
-              <img class="stat-pic" src={sceneFor('district')} alt="" />
+              <img className="stat-pic" src={sceneFor('district')} alt="" />
             </div>
           )}
           {items.length > 0 && (
-            <div class="stat" style={{ background: 'var(--tinta-lavanda)' }}>
-              <p class="big">{doneItems}</p>
-              <div class="stat-t">
-                <p class="b-bold">{doneItems === 1 ? 'tappa fatta' : 'tappe fatte'}</p>
-                <p class="of">su {items.length} {items.length === 1 ? 'pianificata' : 'pianificate'}</p>
+            <div className="stat" style={{ background: 'var(--tinta-lavanda)' }}>
+              <p className="big">{doneItems}</p>
+              <div className="stat-t">
+                <p className="b-bold">{doneItems === 1 ? 'tappa fatta' : 'tappe fatte'}</p>
+                <p className="of">su {items.length} {items.length === 1 ? 'pianificata' : 'pianificate'}</p>
               </div>
-              <img class="stat-pic" src={sceneFor('temple')} alt="" />
-              <div class="stat-x sx-bar" role="progressbar" aria-valuemin={0} aria-valuemax={items.length} aria-valuenow={doneItems} aria-label={`Tappe fatte su ${items.length} pianificate`}>
+              <img className="stat-pic" src={sceneFor('temple')} alt="" />
+              <div className="stat-x sx-bar" role="progressbar" aria-valuemin={0} aria-valuemax={items.length} aria-valuenow={doneItems} aria-label={`Tappe fatte su ${items.length} pianificate`}>
                 <i style={{ width: `${(doneItems / items.length) * 100}%` }} />
               </div>
             </div>
           )}
           {trip.places.length > 0 && (
-            <div class="stat" style={{ background: 'var(--tinta-confetto)' }}>
-              <p class="big">{visited.length}</p>
-              <div class="stat-t">
-                <p class="b-bold">{visited.length === 1 ? 'luogo visitato' : 'luoghi visitati'}</p>
-                <p class="of">su {trip.places.length} {trip.places.length === 1 ? 'salvato' : 'salvati'}</p>
+            <div className="stat" style={{ background: 'var(--tinta-confetto)' }}>
+              <p className="big">{visited.length}</p>
+              <div className="stat-t">
+                <p className="b-bold">{visited.length === 1 ? 'luogo visitato' : 'luoghi visitati'}</p>
+                <p className="of">su {trip.places.length} {trip.places.length === 1 ? 'salvato' : 'salvati'}</p>
               </div>
-              <img class="stat-pic" src={sceneFor('nature')} alt="" />
-              <div class="stat-x sx-bar" role="progressbar" aria-valuemin={0} aria-valuemax={trip.places.length} aria-valuenow={visited.length} aria-label={`Luoghi visitati su ${trip.places.length} salvati`}>
+              <img className="stat-pic" src={sceneFor('nature')} alt="" />
+              <div className="stat-x sx-bar" role="progressbar" aria-valuemin={0} aria-valuemax={trip.places.length} aria-valuenow={visited.length} aria-label={`Luoghi visitati su ${trip.places.length} salvati`}>
                 <i style={{ width: `${(visited.length / trip.places.length) * 100}%` }} />
               </div>
             </div>
@@ -631,22 +631,22 @@ function OggiPost({ trip }: { trip: Trip }) {
 
       {review.length > 0 && (
         <section aria-label="Luoghi visitati">
-          <div class="sec-h" style={{ marginBottom: '10px' }}>
-            <h2 class="h-md">Da rivedere</h2>
-            <span class="b-bold num">
+          <div className="sec-h" style={{ marginBottom: '10px' }}>
+            <h2 className="h-md">Da rivedere</h2>
+            <span className="b-bold num">
               {review.length} {review.length === 1 ? 'luogo' : 'luoghi'}
             </span>
           </div>
-          <div class="rows">
+          <div className="rows">
             {review.slice(0, 3).map(({ p, day }) => (
-              <div class="prow">
-                <span class="thumb" style={{ width: '56px', height: '56px' }}>
+              <div className="prow">
+                <span className="thumb" style={{ width: '56px', height: '56px' }}>
                   <img src={sceneFor(categoryIcon(p.category))} alt="" />
                 </span>
-                <div class="grow">
-                  <p class="pt2">{p.name}</p>
-                  <p class="pm">{[p.city, day && formatDay(day.date)].filter(Boolean).join(' · ')}</p>
-                  <span class="sp vi">
+                <div className="grow">
+                  <p className="pt2">{p.name}</p>
+                  <p className="pm">{[p.city, day && formatDay(day.date)].filter(Boolean).join(' · ')}</p>
+                  <span className="sp vi">
                     <CheckG size={14} sw={3} />
                     Visitato
                   </span>
@@ -658,21 +658,21 @@ function OggiPost({ trip }: { trip: Trip }) {
         </section>
       )}
 
-      <Link href="/altro/budget" class="row card" style={{ padding: '12px 16px' }}>
+      <Link href="/altro/budget" className="row card" style={{ padding: '12px 16px' }}>
         <Ic name="i-sez-budget" size={44} />
-        <span class="grow">
-          <span class="tt" style={{ display: 'block', fontWeight: 700 }}>
+        <span className="grow">
+          <span className="tt" style={{ display: 'block', fontWeight: 700 }}>
             Spese
           </span>
-          <span class="mm num" style={{ whiteSpace: 'nowrap' }}>{formatMoney(spent, trip.baseCurrency)} spesi</span>
+          <span className="mm num" style={{ whiteSpace: 'nowrap' }}>{formatMoney(spent, trip.baseCurrency)} spesi</span>
         </span>
         {limit && trip.budgetLimit ? (
           <span style={{ textAlign: 'right' }}>
-            <span class={`sp ${limit.state === 'over' ? 'bad' : limit.state === 'warn' ? 'warn' : 'ok'}`}>
+            <span className={`sp ${limit.state === 'over' ? 'bad' : limit.state === 'warn' ? 'warn' : 'ok'}`}>
               <CheckG size={14} sw={3} />
               {limit.state === 'over' ? 'Oltre il budget' : 'Sotto il budget'}
             </span>
-            <b class="b-bold num" style={{ display: 'block' }}>
+            <b className="b-bold num" style={{ display: 'block' }}>
               {formatMoney(Math.abs(round2(trip.budgetLimit - spent)), trip.baseCurrency)}
             </b>
           </span>
@@ -682,11 +682,11 @@ function OggiPost({ trip }: { trip: Trip }) {
         </span>
       </Link>
 
-      <div class="cta" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <button type="button" class="btn block" onClick={() => void share()}>
+      <div className="cta" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <button type="button" className="btn block" onClick={() => void share()}>
           Condividi il riepilogo
         </button>
-        <button type="button" class="btn soft block" onClick={() => void save()}>
+        <button type="button" className="btn soft block" onClick={() => void save()}>
           Salva tutti i dati del viaggio
         </button>
       </div>

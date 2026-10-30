@@ -1,5 +1,5 @@
 // Aspetto dell'app: chiaro, scuro o come il telefono. È una comodità del singolo utente: sta solo in questo telefono.
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 
 export type ThemePref = 'system' | 'light' | 'dark'
 export type Theme = 'light' | 'dark'

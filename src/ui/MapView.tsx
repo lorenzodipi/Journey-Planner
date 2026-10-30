@@ -11,7 +11,7 @@ import {
 } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
-import { useEffect, useRef } from 'preact/hooks'
+import { useEffect, useRef } from 'react'
 import { pinIconSvg, type PinIcon } from '../lib/categoryIcon'
 import { isTap, type TapDown } from '../lib/mapTap'
 
@@ -259,7 +259,7 @@ export function MapView({ pins, center, selectedId, onSelect }: MapViewProps) {
     for (const [id, mk] of markers.current) setSelected(mk.getElement(), id === selectedId)
   }, [selectedId])
 
-  return <div ref={el} class="h-full w-full" role="application" aria-label="Mappa dei luoghi" />
+  return <div ref={el} className="h-full w-full" role="application" aria-label="Mappa dei luoghi" />
 }
 
 interface PinPickerProps {
@@ -317,7 +317,7 @@ export function PinPicker({ lat, lng, center, onMove }: PinPickerProps) {
     }
   }, [lat, lng])
 
-  return <div ref={el} class="h-56 w-full overflow-hidden rounded-2xl" role="application" aria-label="Sposta il pin" />
+  return <div ref={el} className="h-56 w-full overflow-hidden rounded-2xl" role="application" aria-label="Sposta il pin" />
 }
 
 // ---------- mappa del giorno ----------
@@ -562,5 +562,5 @@ export function DayMapView({ stops, lines, ends, center, selectedId, onSelect }:
 
   useEffect(markSelected, [selectedId])
 
-  return <div ref={el} class="h-full w-full" role="application" aria-label="Mappa della giornata" />
+  return <div ref={el} className="h-full w-full" role="application" aria-label="Mappa della giornata" />
 }

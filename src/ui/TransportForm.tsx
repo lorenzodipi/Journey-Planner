@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import { useConfirm } from './ConfirmDialog'
 import { amountToText, parseAmount, tripCurrencies } from '../lib/money'
 import { transportToForm, type TransportInput } from '../lib/logistics'
@@ -104,7 +104,7 @@ export function TransportForm({ trip, initial, defaults, onSubmit, onDelete, onD
     else keepArrivalAfter(departDate, v)
   }
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     if (!from.trim() || !to.trim()) return setError('Scrivi da dove e verso dove ti sposti.')
     if (departTime && !departDate) return setError('Scegli la data di partenza.')
@@ -140,39 +140,39 @@ export function TransportForm({ trip, initial, defaults, onSubmit, onDelete, onD
   }
 
   return (
-    <form class="space-y-4" onSubmit={submit} noValidate>
-      <label class="block">
-        <span class="mb-1 block text-sm font-extrabold">Compila da un link di Google Maps</span>
+    <form className="space-y-4" onSubmit={submit} noValidate>
+      <label className="block">
+        <span className="mb-1 block text-sm font-extrabold">Compila da un link di Google Maps</span>
         <input
           type="url"
           value={dirLink}
           placeholder="https://www.google.com/maps/dir/…"
           aria-label="Link di Google Maps con le indicazioni"
-          onInput={(e) => onDirectionsLink((e.currentTarget as HTMLInputElement).value)}
-          class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-4"
+          onChange={(e) => onDirectionsLink((e.currentTarget as HTMLInputElement).value)}
+          className="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-4"
         />
-        <span class={`mt-1 block text-xs ${dirHint && !dirHint.ok ? 'text-danger' : 'text-muted'}`} role={dirHint && !dirHint.ok ? 'alert' : 'status'}>
+        <span className={`mt-1 block text-xs ${dirHint && !dirHint.ok ? 'text-danger' : 'text-muted'}`} role={dirHint && !dirHint.ok ? 'alert' : 'status'}>
           {dirHint?.text ?? 'Facoltativo: incolla le indicazioni da Google Maps e compilo partenza, arrivo, posizioni e mezzo.'}
         </span>
       </label>
-      <div class="grid grid-cols-2 gap-3">
-        <TextField label="Da" value={from} onInput={setFrom} placeholder="Tokyo" />
-        <TextField label="A" value={to} onInput={setTo} placeholder="Nikko" />
+      <div className="grid grid-cols-2 gap-3">
+        <TextField label="Da" value={from} onChange={setFrom} placeholder="Tokyo" />
+        <TextField label="A" value={to} onChange={setTo} placeholder="Nikko" />
       </div>
       <ChipSelect label="Mezzo" value={mode} options={MODES} onChange={setMode} />
 
-      <div class="grid grid-cols-2 gap-3">
-        <TextField label="Partenza" type="date" value={departDate} onInput={onDepartDate} optional />
-        <TextField label="Ora partenza" type="time" value={departTime} onInput={onDepartTime} />
-        <TextField label="Arrivo" type="date" value={arriveDate} onInput={setArriveDate} min={departDate || undefined} optional />
-        <TextField label="Ora arrivo" type="time" value={arriveTime} onInput={setArriveTime} min={arriveDate && arriveDate === departDate ? departTime || undefined : undefined} />
+      <div className="grid grid-cols-2 gap-3">
+        <TextField label="Partenza" type="date" value={departDate} onChange={onDepartDate} optional />
+        <TextField label="Ora partenza" type="time" value={departTime} onChange={onDepartTime} />
+        <TextField label="Arrivo" type="date" value={arriveDate} onChange={setArriveDate} min={departDate || undefined} optional />
+        <TextField label="Ora arrivo" type="time" value={arriveTime} onChange={setArriveTime} min={arriveDate && arriveDate === departDate ? departTime || undefined : undefined} />
       </div>
-      <p class="-mt-2 text-xs text-muted">Orari nel fuso del viaggio ({trip.timezone}). Puoi lasciarli vuoti.</p>
+      <p className="-mt-2 text-xs text-muted">Orari nel fuso del viaggio ({trip.timezone}). Puoi lasciarli vuoti.</p>
 
-      <details class="rounded-[20px] border border-hairline px-3 py-2" open={fromPos != null || toPos != null}>
-        <summary class="min-h-11 cursor-pointer py-2 text-sm font-extrabold">Posizione sulla mappa (facoltativa)</summary>
-        <div class="space-y-3 pb-2">
-          <p class="text-xs text-muted">
+      <details className="rounded-[20px] border border-hairline px-3 py-2" open={fromPos != null || toPos != null}>
+        <summary className="min-h-11 cursor-pointer py-2 text-sm font-extrabold">Posizione sulla mappa (facoltativa)</summary>
+        <div className="space-y-3 pb-2">
+          <p className="text-xs text-muted">
             Serve per disegnare il tragitto sulla mappa del giorno (es. lo shinkansen da Tokyo Station a Kyoto Station).
           </p>
           <PointSearch label="Partenza" fallbackQuery={from} near={trip.center} value={fromPos} onChange={setFromPos} />
@@ -190,8 +190,8 @@ export function TransportForm({ trip, initial, defaults, onSubmit, onDelete, onD
         onScope={setScope}
       />
       <CheckField label="Biglietto già acquistato" checked={bought} onChange={setBought} />
-      <TextField label="Codice prenotazione" value={refCode} onInput={setRefCode} />
-      <TextArea label="Note" value={notes} onInput={setNotes} />
+      <TextField label="Codice prenotazione" value={refCode} onChange={setRefCode} />
+      <TextArea label="Note" value={notes} onChange={setNotes} />
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva trasporto' : 'Aggiungi trasporto'}</PrimaryButton>
       {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina trasporto</SecondaryButton>}

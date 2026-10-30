@@ -1,6 +1,6 @@
-import { createContext } from 'preact'
-import type { ComponentChildren } from 'preact'
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks'
+import { createContext } from 'react'
+import type { ReactNode } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { demoTrip } from '../demo/demoTrip'
 import { useAuth } from '../lib/auth'
 import { clearSnapshot, loadActiveId, loadSnapshot, saveActiveId, saveSnapshot } from '../lib/cache'
@@ -141,7 +141,7 @@ const demoResult: Result = Promise.resolve(DEMO_MESSAGE)
 
 const TripsContext = createContext<TripsValue | null>(null)
 
-export function TripProvider({ children }: { children: ComponentChildren }) {
+export function TripProvider({ children }: { children: ReactNode }) {
   const auth = useAuth()
   const demo = auth.status === 'demo'
   const signedIn = auth.status === 'signed-in'

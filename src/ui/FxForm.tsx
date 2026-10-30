@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import { currencyName, extraCurrencies, formatMoney, parseRate } from '../lib/money'
 import { fetchFxRate } from '../lib/moneyApi'
 import type { Trip } from '../types'
@@ -55,7 +55,7 @@ export function FxForm({ trip, onSubmit, onDone }: Props) {
     setError(null)
   }
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     if (!value || value <= 0) return setError('Inserisci un tasso maggiore di zero (es. 0,0056).')
     const extra: Record<string, number> = {}
@@ -73,15 +73,15 @@ export function FxForm({ trip, onSubmit, onDone }: Props) {
   }
 
   return (
-    <form class="space-y-4" onSubmit={submit} noValidate>
-      <p class="text-sm text-muted">
+    <form className="space-y-4" onSubmit={submit} noValidate>
+      <p className="text-sm text-muted">
         {multi
           ? `Servono a mettere nella stessa valuta (${base}) le voci in valuta estera. Le spese possono avere un cambio proprio, che ha la precedenza.`
           : `Serve a mettere nella stessa valuta (${base}) le voci in ${local}. Le spese possono avere un cambio proprio, che ha la precedenza.`}
       </p>
-      <TextField label={`1 ${local} = ? ${base}`} value={rate} onInput={setRate} inputMode="decimal" placeholder="0,0056" />
+      <TextField label={`1 ${local} = ? ${base}`} value={rate} onChange={setRate} inputMode="decimal" placeholder="0,0056" />
       {value ? (
-        <p class="-mt-2 text-xs text-muted">
+        <p className="-mt-2 text-xs text-muted">
           {formatMoney(10_000, local)} ≈ {formatMoney(Math.round(10_000 * value * 100) / 100, base)}
         </p>
       ) : null}
@@ -89,22 +89,22 @@ export function FxForm({ trip, onSubmit, onDone }: Props) {
       {extras.map((x, i) => {
         const v = parseRate(x.text)
         return (
-          <div key={x.code} class="space-y-1">
-            <div class="flex items-end gap-3">
-              <div class="min-w-0 flex-1">
+          <div key={x.code} className="space-y-1">
+            <div className="flex items-end gap-3">
+              <div className="min-w-0 flex-1">
                 <TextField
                   label={`1 ${x.code} = ? ${base}`}
                   value={x.text}
-                  onInput={(t) => setExtras(extras.map((y, j) => (j === i ? { ...y, text: t } : y)))}
+                  onChange={(t) => setExtras(extras.map((y, j) => (j === i ? { ...y, text: t } : y)))}
                   inputMode="decimal"
                   placeholder="0,00065"
                 />
               </div>
-              <button type="button" onClick={() => setExtras(extras.filter((_, j) => j !== i))} aria-label={`Togli ${x.code}`} class="min-h-12 px-1 text-sm font-extrabold text-danger">
+              <button type="button" onClick={() => setExtras(extras.filter((_, j) => j !== i))} aria-label={`Togli ${x.code}`} className="min-h-12 px-1 text-sm font-extrabold text-danger">
                 Togli
               </button>
             </div>
-            <p class="text-xs text-muted">
+            <p className="text-xs text-muted">
               {[currencyName(x.code), v ? `${formatMoney(10_000, x.code)} ≈ ${formatMoney(Math.round(10_000 * v * 100) / 100, base)}` : ''].filter(Boolean).join(' · ')}
             </p>
           </div>
@@ -112,16 +112,16 @@ export function FxForm({ trip, onSubmit, onDone }: Props) {
       })}
 
       {adding ? (
-        <div class="flex items-end gap-3">
-          <div class="min-w-0 flex-1">
-            <TextField label="Codice della valuta (3 lettere)" value={newCode} onInput={(v) => setNewCode(v.toUpperCase())} maxLength={3} autoComplete="off" placeholder="KRW" />
+        <div className="flex items-end gap-3">
+          <div className="min-w-0 flex-1">
+            <TextField label="Codice della valuta (3 lettere)" value={newCode} onChange={(v) => setNewCode(v.toUpperCase())} maxLength={3} autoComplete="off" placeholder="KRW" />
           </div>
-          <button type="button" onClick={addCurrency} class="min-h-12 rounded-full border-2 border-accent px-4 text-sm font-extrabold text-accent">
+          <button type="button" onClick={addCurrency} className="min-h-12 rounded-full border-2 border-accent px-4 text-sm font-extrabold text-accent">
             Aggiungi
           </button>
         </div>
       ) : (
-        <button type="button" onClick={() => setAdding(true)} class="min-h-11 text-sm font-extrabold text-pale">
+        <button type="button" onClick={() => setAdding(true)} className="min-h-11 text-sm font-extrabold text-pale">
           + Aggiungi valuta…
         </button>
       )}

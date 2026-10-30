@@ -1,3 +1,4 @@
+import type React from 'react'
 import type { ItemKind } from '../types'
 import { NodeCheck } from './glyphs'
 import { MapsPill } from './MapsPill'
@@ -20,12 +21,12 @@ export function nodeGlyph(icon: string): string {
 }
 
 const UpIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M12 19V5M6 11l6-6 6 6" />
   </svg>
 )
 const DownIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M12 5v14M6 13l6 6 6-6" />
   </svg>
 )
@@ -62,8 +63,8 @@ export function StepRow({ id, title, state, glyph, meta, time, badge, mapsHref, 
   const done = state === 'done'
   const head = (
     <>
-      <span class="tp-t">{title}</span>
-      {meta && <span class="tp-m">{meta}</span>}
+      <span className="tp-t">{title}</span>
+      {meta && <span className="tp-m">{meta}</span>}
     </>
   )
   const nodeInner = done ? (
@@ -74,43 +75,43 @@ export function StepRow({ id, title, state, glyph, meta, time, badge, mapsHref, 
     </svg>
   )
   return (
-    <li id={`tappa-${id}`} class={`tp-stp ${state}${highlight ? ' hl' : ''}`}>
-      <span class="tp-rail">
+    <li id={`tappa-${id}`} className={`tp-stp ${state}${highlight ? ' hl' : ''}`}>
+      <span className="tp-rail">
         {onToggleDone ? (
-          <button type="button" class={`tp-nd ${state}`} role="checkbox" aria-checked={done} aria-label={`${done ? 'Segna come da fare' : 'Segna come fatta'}: ${title}`} onClick={onToggleDone}>
+          <button type="button" className={`tp-nd ${state}`} role="checkbox" aria-checked={done} aria-label={`${done ? 'Segna come da fare' : 'Segna come fatta'}: ${title}`} onClick={onToggleDone}>
             {nodeInner}
           </button>
         ) : (
-          <span class={`tp-nd ${state}`}>{nodeInner}</span>
+          <span className={`tp-nd ${state}`}>{nodeInner}</span>
         )}
       </span>
-      <div class="tp-body">
-        <div class="tp-top">
+      <div className="tp-body">
+        <div className="tp-top">
           {onOpen ? (
-            <button type="button" class="tp-edit" onClick={onOpen} aria-label={`Modifica ${title}`}>
+            <button type="button" className="tp-edit" onClick={onOpen} aria-label={`Modifica ${title}`}>
               {head}
             </button>
           ) : (
-            <div class="tp-edit">{head}</div>
+            <div className="tp-edit">{head}</div>
           )}
-          <div class="tp-r">
-            {time && <span class="tp-time">{time}</span>}
+          <div className="tp-r">
+            {time && <span className="tp-time">{time}</span>}
             {done ? (
-              <span class="tp-st">
+              <span className="tp-st">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M6.5 12.5l3.8 3.8 7.2-8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M6.5 12.5l3.8 3.8 7.2-8" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 Fatta
               </span>
             ) : state === 'now' ? (
-              <span class="tp-badge now">Ora</span>
+              <span className="tp-badge now">Ora</span>
             ) : badge ? (
-              <span class="tp-badge next">{badge}</span>
+              <span className="tp-badge next">{badge}</span>
             ) : null}
           </div>
         </div>
         {mapsHref && (
-          <div class="tp-foot">
+          <div className="tp-foot">
             <MapsPill kind="tp" href={mapsHref} label={title} />
           </div>
         )}
@@ -134,7 +135,7 @@ interface RowProps {
    * Se presente, al posto del pulsante Maps compaiono i comandi per riordinare: le frecce (su touch restano
    * solo per screen reader e tastiera) e, su touch, la maniglia da trascinare.
    */
-  reorder?: { onUp?: () => void; onDown?: () => void; onGrab?: (e: PointerEvent) => void }
+  reorder?: { onUp?: () => void; onDown?: () => void; onGrab?: (e: React.PointerEvent<HTMLElement>) => void }
   /** Stile della riga mentre si trascina (spostamento) e se è proprio questa a essere trascinata. */
   dragStyle?: { transform: string; transition: string }
   dragging?: boolean
@@ -144,38 +145,38 @@ interface RowProps {
 /** Una tappa senza orario: riga `.prow` con il disco della categoria (toccandolo si segna fatta). */
 export function ItemRow({ id, title, icon, meta, done, mapsHref, onOpen, onToggleDone, reorder, dragStyle, dragging, highlight }: RowProps) {
   const disc = done ? (
-    <span class="tp-nd done" aria-hidden="true">
+    <span className="tp-nd done" aria-hidden="true">
       <NodeCheck />
     </span>
   ) : (
     <Ic name={icon} size={44} />
   )
   return (
-    <li id={`tappa-${id}`} class={`prow${highlight ? ' hl' : ''}${dragging ? ' dragging' : ''}`} style={dragStyle}>
+    <li id={`tappa-${id}`} className={`prow${highlight ? ' hl' : ''}${dragging ? ' dragging' : ''}`} style={dragStyle}>
       {onToggleDone ? (
-        <button type="button" class="tp-disc" role="checkbox" aria-checked={Boolean(done)} aria-label={`${done ? 'Segna come da fare' : 'Segna come fatta'}: ${title}`} onClick={onToggleDone}>
+        <button type="button" className="tp-disc" role="checkbox" aria-checked={Boolean(done)} aria-label={`${done ? 'Segna come da fare' : 'Segna come fatta'}: ${title}`} onClick={onToggleDone}>
           {disc}
         </button>
       ) : (
         disc
       )}
-      <div class="grow">
+      <div className="grow">
         {onOpen ? (
-          <button type="button" class="pt2 tp-edit" onClick={onOpen} aria-label={`Modifica ${title}`} style={done ? { color: 'var(--ink-muted)', textDecoration: 'line-through' } : undefined}>
+          <button type="button" className="pt2 tp-edit" onClick={onOpen} aria-label={`Modifica ${title}`} style={done ? { color: 'var(--ink-muted)', textDecoration: 'line-through' } : undefined}>
             {title}
           </button>
         ) : (
-          <p class="pt2">{title}</p>
+          <p className="pt2">{title}</p>
         )}
-        {meta && <p class="pm">{meta}</p>}
+        {meta && <p className="pm">{meta}</p>}
       </div>
       {reorder ? (
         <span style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-          <span class="flex pointer-coarse:sr-only" style={{ gap: '4px' }}>
-            <button type="button" class="rbtn sm" aria-label="Sposta su" disabled={!reorder.onUp} onClick={reorder.onUp} style={{ opacity: reorder.onUp ? 1 : 0.35 }}>
+          <span className="flex pointer-coarse:sr-only" style={{ gap: '4px' }}>
+            <button type="button" className="rbtn sm" aria-label="Sposta su" disabled={!reorder.onUp} onClick={reorder.onUp} style={{ opacity: reorder.onUp ? 1 : 0.35 }}>
               <UpIcon />
             </button>
-            <button type="button" class="rbtn sm" aria-label="Sposta giù" disabled={!reorder.onDown} onClick={reorder.onDown} style={{ opacity: reorder.onDown ? 1 : 0.35 }}>
+            <button type="button" className="rbtn sm" aria-label="Sposta giù" disabled={!reorder.onDown} onClick={reorder.onDown} style={{ opacity: reorder.onDown ? 1 : 0.35 }}>
               <DownIcon />
             </button>
           </span>
@@ -185,7 +186,7 @@ export function ItemRow({ id, title, icon, meta, done, mapsHref, onOpen, onToggl
               aria-hidden="true"
               tabIndex={-1}
               onPointerDown={reorder.onGrab}
-              class="rbtn hidden cursor-grab touch-none select-none pointer-coarse:grid"
+              className="rbtn hidden cursor-grab touch-none select-none pointer-coarse:grid"
               title={`Trascina «${title}»`}
             >
               <GripIcon />

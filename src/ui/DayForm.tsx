@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 import { formatDayLong } from '../lib/dates'
 import type { Day } from '../types'
 import { FormError, PrimaryButton, TextArea, TextField } from './Field'
@@ -16,7 +16,7 @@ export function DayForm({ day, onSubmit, onDone }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     setBusy(true)
     setError(null)
@@ -27,11 +27,11 @@ export function DayForm({ day, onSubmit, onDone }: Props) {
   }
 
   return (
-    <form class="space-y-4" onSubmit={submit}>
-      <p class="-mt-2 text-sm text-muted first-letter:uppercase">{formatDayLong(day.date)}</p>
-      <TextField label="Città o zona" value={city} onInput={setCity} placeholder="Tokyo" maxLength={60} />
-      <TextField label="Titolo della giornata" value={title} onInput={setTitle} placeholder="Arrivo" maxLength={80} />
-      <TextArea label="Note" value={notes} onInput={setNotes} placeholder="Promemoria per questa giornata" />
+    <form className="space-y-4" onSubmit={submit}>
+      <p className="-mt-2 text-sm text-muted first-letter:uppercase">{formatDayLong(day.date)}</p>
+      <TextField label="Città o zona" value={city} onChange={setCity} placeholder="Tokyo" maxLength={60} />
+      <TextField label="Titolo della giornata" value={title} onChange={setTitle} placeholder="Arrivo" maxLength={80} />
+      <TextArea label="Note" value={notes} onChange={setNotes} placeholder="Promemoria per questa giornata" />
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : 'Salva giornata'}</PrimaryButton>
     </form>

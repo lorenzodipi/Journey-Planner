@@ -1,4 +1,4 @@
-import { useMemo } from 'preact/hooks'
+import { useMemo } from 'react'
 import type { Category } from '../types'
 import { Select, type SelectOption } from './Select'
 

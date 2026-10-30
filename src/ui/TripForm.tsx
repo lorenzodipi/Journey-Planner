@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'preact/hooks'
+import { useMemo, useState } from 'react'
 import { useAuth } from '../lib/auth'
 import { COUNTRIES, countryByCode, countryByName, themeForCountry, zonesOf } from '../lib/countries'
 import { currencyName, parseAmount } from '../lib/money'
@@ -99,7 +99,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
     return [diff !== 0 ? formatDiffHours(diff) : 'stesso fuso', name ?? (cur || '')].filter(Boolean).join(', ')
   })()
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     // budget massimo: facoltativo; vuoto = nessun tetto (e, in modifica, toglie quello che c'era)
     let budgetLimit: number | null | undefined
@@ -145,12 +145,12 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
 
   return (
     <form onSubmit={submit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <TextField label="Nome del viaggio" value={title} onInput={setTitle} placeholder="Es. Estate 2027" maxLength={80} />
+      <TextField label="Nome del viaggio" value={title} onChange={setTitle} placeholder="Es. Estate 2027" maxLength={80} />
       <Select label="Destinazione" value={destination} onChange={onCountry} options={countryOptions} placeholder="Scegli il paese" searchable />
 
-      <div class="grid2">
-        <TextField label="Partenza" type="date" value={startDate} onInput={onStartDate} />
-        <TextField label="Ritorno" type="date" value={endDate} onInput={setEndDate} min={startDate || undefined} />
+      <div className="grid2">
+        <TextField label="Partenza" type="date" value={startDate} onChange={onStartDate} />
+        <TextField label="Ritorno" type="date" value={endDate} onChange={setEndDate} min={startDate || undefined} />
       </div>
 
       <Select label="Paese di partenza (facoltativo)" value={originCountry} onChange={onOrigin} options={originOptions} placeholder="Nessuno" searchable />
@@ -161,7 +161,7 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
       <TextField
         label={`Budget massimo, in ${baseCurrency.trim().toUpperCase() || 'EUR'} (facoltativo)`}
         value={budget}
-        onInput={setBudget}
+        onChange={setBudget}
         inputMode="decimal"
         placeholder="Es. 3.000"
         maxLength={12}
@@ -169,79 +169,79 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
 
       {!editing && (
         <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
-          <legend class="b-bold" style={{ marginBottom: '8px' }}>
+          <legend className="b-bold" style={{ marginBottom: '8px' }}>
             Chi viaggia
           </legend>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <label class="fld person">
-              <span class="av" style={{ background: 'var(--arancia)' }} aria-hidden="true">
+            <label className="fld person">
+              <span className="av" style={{ background: 'var(--arancia)' }} aria-hidden="true">
                 {(selfName.trim().charAt(0) || '?').toUpperCase()}
               </span>
               <div>
-                <span class="l">Il tuo nome</span>
-                <input type="text" class="v" value={selfName} maxLength={40} autoComplete="off" placeholder="Come ti chiami" onInput={(e) => setSelfName(e.currentTarget.value)} />
+                <span className="l">Il tuo nome</span>
+                <input type="text" className="v" value={selfName} maxLength={40} autoComplete="off" placeholder="Come ti chiami" onChange={(e) => setSelfName(e.currentTarget.value)} />
               </div>
             </label>
-            {ownEmail && <p class="cap muted">Sei tu: {ownEmail}</p>}
+            {ownEmail && <p className="cap muted">Sei tu: {ownEmail}</p>}
             {others.map((o, i) => (
-              <div class="fld person" style={{ alignItems: 'flex-start', paddingTop: '10px', paddingBottom: '10px' }}>
-                <span class="av" style={{ background: AV[(i + 1) % AV.length] }} aria-hidden="true">
+              <div className="fld person" style={{ alignItems: 'flex-start', paddingTop: '10px', paddingBottom: '10px' }}>
+                <span className="av" style={{ background: AV[(i + 1) % AV.length] }} aria-hidden="true">
                   {(o.name.trim().charAt(0) || o.email.trim().charAt(0) || '?').toUpperCase()}
                 </span>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label>
-                    <span class="l">Email della persona {i + 1}</span>
+                    <span className="l">Email della persona {i + 1}</span>
                     <input
                       type="email"
                       inputMode="email"
-                      class="v"
+                      className="v"
                       value={o.email}
                       placeholder="Email del suo account"
                       autoComplete="off"
                       autoCapitalize="none"
-                      onInput={(e) => setOthers(others.map((x, j) => (j === i ? { ...x, email: e.currentTarget.value } : x)))}
+                      onChange={(e) => setOthers(others.map((x, j) => (j === i ? { ...x, email: e.currentTarget.value } : x)))}
                     />
                   </label>
                   <label>
-                    <span class="l">Nome (facoltativo)</span>
+                    <span className="l">Nome (facoltativo)</span>
                     <input
                       type="text"
-                      class="v"
+                      className="v"
                       value={o.name}
                       maxLength={40}
                       autoComplete="off"
-                      onInput={(e) => setOthers(others.map((x, j) => (j === i ? { ...x, name: e.currentTarget.value } : x)))}
+                      onChange={(e) => setOthers(others.map((x, j) => (j === i ? { ...x, name: e.currentTarget.value } : x)))}
                     />
                   </label>
                 </div>
-                <button type="button" class="rbtn sm" aria-label={`Rimuovi persona ${i + 1}`} onClick={() => setOthers(others.filter((_, j) => j !== i))}>
+                <button type="button" className="rbtn sm" aria-label={`Rimuovi persona ${i + 1}`} onClick={() => setOthers(others.filter((_, j) => j !== i))}>
                   <CloseG size={16} />
                 </button>
               </div>
             ))}
             {others.length < 5 && (
-              <div class="chips" style={{ margin: 0, padding: 0 }}>
-                <button type="button" class="chip dash" onClick={() => setOthers([...others, { email: '', name: '' }])}>
+              <div className="chips" style={{ margin: 0, padding: 0 }}>
+                <button type="button" className="chip dash" onClick={() => setOthers([...others, { email: '', name: '' }])}>
                   <PlusG size={16} />
                   Aggiungi
                 </button>
               </div>
             )}
-            <p class="cap muted">Gli altri partecipanti devono avere già un account: scrivi la loro email e potranno vedere e modificare il viaggio.</p>
+            <p className="cap muted">Gli altri partecipanti devono avere già un account: scrivi la loro email e potranno vedere e modificare il viaggio.</p>
           </div>
         </fieldset>
       )}
 
-      <details class="group rows">
-        <summary class="row" style={{ minHeight: '56px', cursor: 'pointer', listStyle: 'none' }}>
-          <span class="grow tt">Fuso e valute</span>
-          <span class="muted transition-transform duration-200 group-open:rotate-180">
+      <details className="group rows">
+        <summary className="row" style={{ minHeight: '56px', cursor: 'pointer', listStyle: 'none' }}>
+          <span className="grow tt">Fuso e valute</span>
+          <span className="muted transition-transform duration-200 group-open:rotate-180">
             <ChevronDownG />
           </span>
         </summary>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '4px 16px 16px' }}>
           <Select label="Fuso orario della destinazione" value={timezone} onChange={onTimezone} creatable options={timezoneOptions(timezone)} />
-          <div class="grid2">
+          <div className="grid2">
             <CurrencySelect label="Valuta base" value={baseCurrency} onChange={setBaseCurrency} />
             <CurrencySelect label="Valuta locale" value={localCurrency} onChange={setLocalCurrency} optional />
           </div>
@@ -249,10 +249,10 @@ export function TripForm({ trip, onSubmit, onDone }: Props) {
       </details>
 
       <FormError message={error} />
-      <div class="cta">
+      <div className="cta">
         <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : editing ? 'Salva modifiche' : 'Crea viaggio'}</PrimaryButton>
         {!editing && autoNote && (
-          <p class="cap muted" style={{ textAlign: 'center', marginTop: '8px' }}>
+          <p className="cap muted" style={{ textAlign: 'center', marginTop: '8px' }}>
             Fuso orario e valuta si compilano da soli: {autoNote}.
           </p>
         )}

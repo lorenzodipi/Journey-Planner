@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 import type { Place } from '../types'
 import { PlaceDisc } from './PlaceDisc'
 import { usePlacePhoto } from './usePlacePhoto'
@@ -24,10 +24,10 @@ export function PlacePhotoStub({ place, color, langs }: { place: Place; color: s
           src={url}
           alt=""
           decoding="async"
-          referrerpolicy="no-referrer"
+          referrerPolicy="no-referrer"
           onLoad={() => setLoaded(true)}
           onError={() => setBroken(true)}
-          class={`absolute inset-0 size-full object-cover transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 size-full object-cover transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         />
       )}
     </>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 import { DEFAULT_VIEW, type PlaceView } from '../lib/placeView'
 
 // Raggruppamento e ordine dell'elenco Luoghi: legati al viaggio attivo, solo in memoria

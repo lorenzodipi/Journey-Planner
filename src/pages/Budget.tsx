@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'preact/hooks'
-import { Link } from 'wouter-preact'
+import { useEffect, useState } from 'react'
+import { Link } from 'wouter'
 import { budgetLines, budgetStatus, categoryOverview, expenseBase, expensesByCurrency, fxOf, logisticsLines, paidByTraveler, paidFromSections, personSummary, shareAmounts, summarizeExpenses, summarizeLines, toBase, type CategoryOverview, type Line } from '../lib/budget'
 import { useAuth } from '../lib/auth'
 import { formatShort } from '../lib/dates'
@@ -77,27 +77,27 @@ export function Budget() {
                     const mine = toBase(amounts[0], l.currency, fx)
                     const body = (
                       <>
-                        <span class="min-w-0 flex-1">
-                          <span class="block truncate font-extrabold">{l.label}</span>
-                          <span class="block text-xs text-muted">
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-extrabold">{l.label}</span>
+                          <span className="block text-xs text-muted">
                             {l.scope === 'per_person' ? 'a persona' : 'totale'}
                             {item?.dueDate && ` · entro ${formatShort(item.dueDate)}`}
                             {l.source !== 'budget' && ' · dai dati inseriti'}
                           </span>
                         </span>
-                        <span class="shrink-0 text-right">
-                          <span class="block font-extrabold">{formatMoney(l.amount, l.currency)}</span>
+                        <span className="shrink-0 text-right">
+                          <span className="block font-extrabold">{formatMoney(l.amount, l.currency)}</span>
                           {l.currency !== base && mine !== null && l.scope === 'per_person' && (
-                            <span class="block text-xs text-muted">≈ {formatMoney(mine, base)} a testa</span>
+                            <span className="block text-xs text-muted">≈ {formatMoney(mine, base)} a testa</span>
                           )}
                         </span>
                       </>
                     )
                     return (
-                      <li class="py-2 pl-4 pr-1">
+                      <li className="py-2 pl-4 pr-1">
                         {item ? (
-                          <div class="flex items-center">
-                            <button type="button" onClick={() => setSheet({ kind: 'edit', item })} class="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left">
+                          <div className="flex items-center">
+                            <button type="button" onClick={() => setSheet({ kind: 'edit', item })} className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left">
                               {body}
                             </button>
                             <TrashButton
@@ -113,14 +113,14 @@ export function Budget() {
                             />
                           </div>
                         ) : (
-                          <div class="pr-3">
-                          <Link href={SOURCE_HREF[l.source as keyof typeof SOURCE_HREF]} class="flex min-h-11 items-center gap-3">
+                          <div className="pr-3">
+                          <Link href={SOURCE_HREF[l.source as keyof typeof SOURCE_HREF]} className="flex min-h-11 items-center gap-3">
                             {body}
                           </Link>
                           </div>
                         )}
                         {item && item.shares.length > 0 && trip.travelers.length > 0 && (
-                          <div class="mb-1 flex pr-3 flex-wrap gap-2">
+                          <div className="mb-1 flex pr-3 flex-wrap gap-2">
                             {item.shares.map((s) => {
                               const person = traveler.get(s.travelerId)
                               if (!person) return null
@@ -129,7 +129,7 @@ export function Budget() {
                                   type="button"
                                   aria-pressed={s.paid}
                                   onClick={() => void togglePaid(s.id, s.paid)}
-                                  class={`inline-flex min-h-11 items-center gap-1.5 rounded-full border-2 px-3 text-xs font-extrabold ${
+                                  className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border-2 px-3 text-xs font-extrabold ${
                                     s.paid ? 'border-ok text-ok' : 'border-line text-muted'
                                   }`}
                                 >
@@ -141,7 +141,7 @@ export function Budget() {
                           </div>
                         )}
                         {!item && (
-                          <p class="mb-1 pr-3 text-xs text-muted">
+                          <p className="mb-1 pr-3 text-xs text-muted">
                             {l.shares.length > 0 && l.shares.every((s) => s.paid) ? '✓ Pagato' : '○ Non pagato'}
                           </p>
                         )}
@@ -151,11 +151,11 @@ export function Budget() {
 
   const categoryActions = (c: CategoryOverview) =>
     c.id ? (
-      <span class="flex shrink-0">
+      <span className="flex shrink-0">
         <button
           type="button"
           onClick={() => setSheet({ kind: 'rename-category', id: c.id as string, label: c.label })}
-          class="min-h-11 px-3 text-sm font-extrabold text-pale"
+          className="min-h-11 px-3 text-sm font-extrabold text-pale"
         >
           Rinomina
         </button>
@@ -181,17 +181,17 @@ export function Budget() {
     const inBase = expenseBase(e, fx)
     const payer = e.paidBy ? person.get(e.paidBy) : undefined
     return (
-      <li class="flex items-center">
-        <button type="button" onClick={() => setSheet({ kind: 'edit-expense', expense: e })} class="flex min-h-12 min-w-0 flex-1 items-center gap-3 py-2 text-left">
-          <span class="min-w-0 flex-1">
-            <span class="block truncate font-extrabold">{e.label}</span>
-            <span class="block truncate text-xs text-muted">
+      <li className="flex items-center">
+        <button type="button" onClick={() => setSheet({ kind: 'edit-expense', expense: e })} className="flex min-h-12 min-w-0 flex-1 items-center gap-3 py-2 text-left">
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-extrabold">{e.label}</span>
+            <span className="block truncate text-xs text-muted">
               {[formatShort(dateInZone(e.spentAt, trip.timezone)), payer && `pagato da ${payer.name}`].filter(Boolean).join(' · ')}
             </span>
           </span>
-          <span class="shrink-0 text-right">
-            <span class="block font-extrabold">{formatMoney(e.amount, e.currency)}</span>
-            {e.currency !== base && inBase !== null && <span class="block text-xs text-muted">≈ {formatMoney(inBase, base)}</span>}
+          <span className="shrink-0 text-right">
+            <span className="block font-extrabold">{formatMoney(e.amount, e.currency)}</span>
+            {e.currency !== base && inBase !== null && <span className="block text-xs text-muted">≈ {formatMoney(inBase, base)}</span>}
           </span>
         </button>
         <TrashButton
@@ -216,59 +216,59 @@ export function Budget() {
     const over = c.planned > 0 && c.spent > c.planned
     const pct = c.planned > 0 ? Math.min(100, (c.spent / c.planned) * 100) : 0
     return (
-      <div class="-mx-1">
-        <p class="flex items-baseline justify-between gap-3 px-1">
-          <span class="text-sm text-muted">Speso</span>
-          <span class="font-display text-2xl font-extrabold">{formatMoney(c.spent, base)}</span>
+      <div className="-mx-1">
+        <p className="flex items-baseline justify-between gap-3 px-1">
+          <span className="text-sm text-muted">Speso</span>
+          <span className="font-display text-2xl font-extrabold">{formatMoney(c.spent, base)}</span>
         </p>
         {c.planned > 0 && (
-          <div class="px-1">
-            <div role="progressbar" aria-valuemin={0} aria-valuemax={c.planned} aria-valuenow={Math.min(c.spent, c.planned)} class="mt-1 h-2.5 overflow-hidden rounded-[5px] border-2 border-line bg-surface">
-              <i class={`block h-full ${over ? 'bg-danger' : 'bg-accent'}`} style={{ width: `${pct}%` }} />
+          <div className="px-1">
+            <div role="progressbar" aria-valuemin={0} aria-valuemax={c.planned} aria-valuenow={Math.min(c.spent, c.planned)} className="mt-1 h-2.5 overflow-hidden rounded-[5px] border-2 border-line bg-surface">
+              <i className={`block h-full ${over ? 'bg-danger' : 'bg-accent'}`} style={{ width: `${pct}%` }} />
             </div>
-            <p class={`mt-1 text-xs ${over ? 'font-extrabold text-danger' : 'text-muted'}`}>
+            <p className={`mt-1 text-xs ${over ? 'font-extrabold text-danger' : 'text-muted'}`}>
               Previsto {formatMoney(c.planned, base)}
               {over ? ` · oltre di ${formatMoney(c.spent - c.planned, base)}` : ` · restano ${formatMoney(c.planned - c.spent, base)}`}
             </p>
           </div>
         )}
         {c.unconverted.length > 0 && (
-          <p role="alert" class="mx-1 mt-2 rounded-xl border-2 border-warn px-3 py-2 text-xs font-extrabold text-warn">
+          <p role="alert" className="mx-1 mt-2 rounded-xl border-2 border-warn px-3 py-2 text-xs font-extrabold text-warn">
             Manca il cambio per {c.unconverted.join(', ')}: quelle voci non sono nel totale.
           </p>
         )}
 
         {c.expenses.length > 0 && (
-          <div class="mt-3 border-t border-hairline">
-            <p class="px-1 pt-2 text-xs font-extrabold text-muted">
+          <div className="mt-3 border-t border-hairline">
+            <p className="px-1 pt-2 text-xs font-extrabold text-muted">
               {c.expenses.length} {c.expenses.length === 1 ? 'spesa' : 'spese'}
             </p>
-            <ul class="divide-y-2 divide-dashed divide-hairline px-1">{c.expenses.map(expenseRow)}</ul>
+            <ul className="divide-y-2 divide-dashed divide-hairline px-1">{c.expenses.map(expenseRow)}</ul>
           </div>
         )}
 
         {c.lines.some((l) => l.source !== 'budget') && (
-          <div class="mt-2 border-t border-hairline">
-            <p class="px-1 pt-2 text-xs font-extrabold text-muted">Già inseriti in {c.label} · il pagato conta come speso</p>
-            <ul class="divide-y-2 divide-dashed divide-hairline">{c.lines.filter((l) => l.source !== 'budget').map(lineRow)}</ul>
+          <div className="mt-2 border-t border-hairline">
+            <p className="px-1 pt-2 text-xs font-extrabold text-muted">Già inseriti in {c.label} · il pagato conta come speso</p>
+            <ul className="divide-y-2 divide-dashed divide-hairline">{c.lines.filter((l) => l.source !== 'budget').map(lineRow)}</ul>
           </div>
         )}
 
         {c.lines.some((l) => l.source === 'budget') && (
-          <div class="mt-2 border-t border-hairline">
-            <p class="px-1 pt-2 text-xs font-extrabold text-muted">Costi previsti</p>
-            <ul class="divide-y-2 divide-dashed divide-hairline">{c.lines.filter((l) => l.source === 'budget').map(lineRow)}</ul>
+          <div className="mt-2 border-t border-hairline">
+            <p className="px-1 pt-2 text-xs font-extrabold text-muted">Costi previsti</p>
+            <ul className="divide-y-2 divide-dashed divide-hairline">{c.lines.filter((l) => l.source === 'budget').map(lineRow)}</ul>
           </div>
         )}
 
-        <div class="mt-2 flex flex-wrap items-center border-t border-hairline">
-          <button type="button" onClick={() => setSheet({ kind: 'new-expense', category: c.label })} class="min-h-11 px-2 text-sm font-extrabold text-pale">
+        <div className="mt-2 flex flex-wrap items-center border-t border-hairline">
+          <button type="button" onClick={() => setSheet({ kind: 'new-expense', category: c.label })} className="min-h-11 px-2 text-sm font-extrabold text-pale">
             + Spesa
           </button>
-          <button type="button" onClick={() => setSheet({ kind: 'new', category: c.label })} class="min-h-11 px-2 text-sm font-extrabold text-muted">
+          <button type="button" onClick={() => setSheet({ kind: 'new', category: c.label })} className="min-h-11 px-2 text-sm font-extrabold text-muted">
             + Costo previsto
           </button>
-          <span class="ml-auto">{categoryActions(c)}</span>
+          <span className="ml-auto">{categoryActions(c)}</span>
         </div>
       </div>
     )
@@ -330,18 +330,18 @@ export function Budget() {
   })()
 
   return (
-    <main class="screen">
+    <main className="screen">
       <PageHeader
         title="Spese"
         subtitle={`${trip.title}${fxNote}`}
         back={{ href: '/altro', label: 'Altro' }}
         actions={
           <>
-            <button type="button" class="rbtn" aria-label="Nuova categoria" onClick={() => setSheet({ kind: 'new-category' })}>
+            <button type="button" className="rbtn" aria-label="Nuova categoria" onClick={() => setSheet({ kind: 'new-category' })}>
               <PlusG />
             </button>
             {hasLocal && (
-              <button type="button" class="rbtn" aria-label="Cambia valuta" onClick={() => setSheet({ kind: 'fx' })}>
+              <button type="button" className="rbtn" aria-label="Cambia valuta" onClick={() => setSheet({ kind: 'fx' })}>
                 <SwapG />
               </button>
             )}
@@ -349,37 +349,37 @@ export function Budget() {
         }
       />
 
-      <section class="riep" aria-label="Speso finora">
-        <LogoSym class="logo-sym" width={62} height={73} style={{ position: 'absolute', right: '24px', top: '18px' }} />
-        <span class="l">Speso finora</span>
-        <span class="big num">{formatMoney(spentTotal, base)}</span>
-        <span class="c">
+      <section className="riep" aria-label="Speso finora">
+        <LogoSym className="logo-sym" width={62} height={73} style={{ position: 'absolute', right: '24px', top: '18px' }} />
+        <span className="l">Speso finora</span>
+        <span className="big num">{formatMoney(spentTotal, base)}</span>
+        <span className="c">
           {planned > 0 ? `previsti ${formatMoney(planned, base)}` : `${trip.expenses.length} ${trip.expenses.length === 1 ? 'spesa' : 'spese'}`}
           {trip.budgetLimit ? ` · budget ${formatMoney(trip.budgetLimit, base)}` : planned > 0 ? ` · ${left >= 0 ? `restano ${formatMoney(left, base)}` : `oltre di ${formatMoney(-left, base)}`}` : ''}
         </span>
         {limitStatus && trip.budgetLimit && (
           <>
-            <div class="rbar" role="progressbar" aria-valuemin={0} aria-valuemax={trip.budgetLimit} aria-valuenow={Math.min(spentTotal, trip.budgetLimit)} aria-label="Speso sul budget massimo">
+            <div className="rbar" role="progressbar" aria-valuemin={0} aria-valuemax={trip.budgetLimit} aria-valuenow={Math.min(spentTotal, trip.budgetLimit)} aria-label="Speso sul budget massimo">
               <i style={{ width: `${limitStatus.spentPct}%` }} />
             </div>
-            <span class="c">{budgetNote}</span>
+            <span className="c">{budgetNote}</span>
           </>
         )}
       </section>
 
-      <div class="riep2">
+      <div className="riep2">
         {saldo && (
-          <div class="rc a">
-            <span class={`badge ${saldo.now ? 'now' : 'soft'}`}>{saldo.badge}</span>
-            <span class="l" style={{ marginTop: '8px' }}>{saldo.title}</span>
-            <span class="v num">{saldo.value}</span>
-            <span class="c">{saldo.note}</span>
+          <div className="rc a">
+            <span className={`badge ${saldo.now ? 'now' : 'soft'}`}>{saldo.badge}</span>
+            <span className="l" style={{ marginTop: '8px' }}>{saldo.title}</span>
+            <span className="v num">{saldo.value}</span>
+            <span className="c">{saldo.note}</span>
           </div>
         )}
-        <div class="rc b" style={saldo ? undefined : { gridColumn: '1 / -1' }}>
-          <span class="l">Persone</span>
-          <span class="v num">{trip.travelers.length}</span>
-          <div class="avr">
+        <div className="rc b" style={saldo ? undefined : { gridColumn: '1 / -1' }}>
+          <span className="l">Persone</span>
+          <span className="v num">{trip.travelers.length}</span>
+          <div className="avr">
             {trip.travelers.map((p) => (
               <span key={p.id} style={{ background: p.color }} title={p.name}>
                 {p.name.slice(0, 1).toUpperCase()}
@@ -389,21 +389,21 @@ export function Budget() {
         </div>
       </div>
 
-      <section class="rcp" aria-label="Resoconto delle spese">
-        <div class="rc-body">
-          <p class="b-bold" style={{ marginBottom: '6px' }}>Per categoria</p>
+      <section className="rcp" aria-label="Resoconto delle spese">
+        <div className="rc-body">
+          <p className="b-bold" style={{ marginBottom: '6px' }}>Per categoria</p>
           {categories.length === 0 ? (
-            <p class="sm" style={{ padding: '8px 0 12px' }}>Nessuna categoria: creane una (Cibo, Souvenir…) e il totale si aggiorna da solo.</p>
+            <p className="sm" style={{ padding: '8px 0 12px' }}>Nessuna categoria: creane una (Cibo, Souvenir…) e il totale si aggiorna da solo.</p>
           ) : (
             categories.map((c) => (
-              <div class="rc-cat" key={c.key}>
-                <button type="button" class="grow" style={{ border: 0, background: 'none', textAlign: 'left', color: 'inherit' }} aria-label={`Apri ${c.label}`} onClick={() => setSheet({ kind: 'category', key: c.key })}>
-                  <div class="lead">
-                    <span class="lb">{c.label}</span>
+              <div className="rc-cat" key={c.key}>
+                <button type="button" className="grow" style={{ border: 0, background: 'none', textAlign: 'left', color: 'inherit' }} aria-label={`Apri ${c.label}`} onClick={() => setSheet({ kind: 'category', key: c.key })}>
+                  <div className="lead">
+                    <span className="lb">{c.label}</span>
                     <i />
-                    <span class="vl">{formatMoney(c.spent, base)}</span>
+                    <span className="vl">{formatMoney(c.spent, base)}</span>
                   </div>
-                  <span class="sm">
+                  <span className="sm">
                     {[
                       c.expenses.length > 0 ? `${c.expenses.length} ${c.expenses.length === 1 ? 'spesa' : 'spese'}` : null,
                       c.sections.count > 0 ? `${c.sections.paid} di ${c.sections.count} pagati` : null,
@@ -415,11 +415,11 @@ export function Budget() {
                   </span>
                 </button>
                 {c.id ? (
-                  <button type="button" class="rc-trash" aria-label={`Elimina la categoria ${c.label}`} style={{ color: 'var(--ink)' }} onClick={() => askDeleteCategory(c)}>
+                  <button type="button" className="rc-trash" aria-label={`Elimina la categoria ${c.label}`} style={{ color: 'var(--ink)' }} onClick={() => askDeleteCategory(c)}>
                     <TrashG />
                   </button>
                 ) : (
-                  <span class="rc-trash" aria-hidden="true" />
+                  <span className="rc-trash" aria-hidden="true" />
                 )}
               </div>
             ))
@@ -427,22 +427,22 @@ export function Budget() {
 
           {planned > 0 && (
             <>
-              <div class="dash" style={{ marginTop: '6px' }} />
+              <div className="dash" style={{ marginTop: '6px' }} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
-                <div class="lead">
-                  <span class="lb reg">Previsto</span>
+                <div className="lead">
+                  <span className="lb reg">Previsto</span>
                   <i />
-                  <span class="vl reg">{formatMoney(summary.planned, base)}</span>
+                  <span className="vl reg">{formatMoney(summary.planned, base)}</span>
                 </div>
-                <div class="lead">
-                  <span class="lb reg">Già pagato</span>
+                <div className="lead">
+                  <span className="lb reg">Già pagato</span>
                   <i />
-                  <span class="vl reg">{formatMoney(summary.paid, base)}</span>
+                  <span className="vl reg">{formatMoney(summary.paid, base)}</span>
                 </div>
-                <div class="lead">
-                  <span class="lb">Da pagare</span>
+                <div className="lead">
+                  <span className="lb">Da pagare</span>
                   <i />
-                  <span class="vl">{formatMoney(summary.outstanding, base)}</span>
+                  <span className="vl">{formatMoney(summary.outstanding, base)}</span>
                 </div>
               </div>
             </>
@@ -450,13 +450,13 @@ export function Budget() {
 
           {trip.travelers.length > 1 && anyPaid && (
             <>
-              <div class="dash" style={{ marginTop: '14px' }} />
+              <div className="dash" style={{ marginTop: '14px' }} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
                 {trip.travelers.map((p) => (
-                  <div class="lead" key={p.id}>
-                    <span class="lb">{p.name} ha pagato</span>
+                  <div className="lead" key={p.id}>
+                    <span className="lb">{p.name} ha pagato</span>
                     <i />
-                    <span class="vl">{formatMoney(paidBy.get(p.id) ?? 0, base)}</span>
+                    <span className="vl">{formatMoney(paidBy.get(p.id) ?? 0, base)}</span>
                   </div>
                 ))}
               </div>
@@ -464,12 +464,12 @@ export function Budget() {
           )}
 
           {unconverted.length > 0 && (
-            <p role="alert" class="b-sm" style={{ marginTop: '14px', fontWeight: 600 }}>
+            <p role="alert" className="b-sm" style={{ marginTop: '14px', fontWeight: 600 }}>
               Mancano i tassi per {unconverted.join(', ')}: queste voci non sono nei totali.
             </p>
           )}
         </div>
-        <svg class="rc-zig" width="100%" height="10" aria-hidden="true">
+        <svg className="rc-zig" width="100%" height="10" aria-hidden="true">
           <defs>
             <pattern id="zz" width="20" height="10" patternUnits="userSpaceOnUse">
               <path d="M0 0H20L10 10z" style={{ fill: 'var(--surface-card)' }} />
@@ -482,13 +482,13 @@ export function Budget() {
       {/* solo nei viaggi con valute extra: quanto si è speso in ciascuna valuta e a quanto corrisponde */}
       {extraCurrencies(trip).length > 0 && trip.expenses.length > 0 && (
         <Card>
-          <h2 class="h-sm">Spese per valuta</h2>
+          <h2 className="h-sm">Spese per valuta</h2>
           <ul style={{ marginTop: '4px' }}>
             {expensesByCurrency(trip.expenses, fx).map((r, i) => (
               <li key={r.currency} style={{ display: 'flex', minHeight: '48px', alignItems: 'center', borderTop: i > 0 ? '1px solid var(--hairline)' : undefined }}>
                 <span>
-                  <span class="b-bold num" style={{ display: 'block' }}>{formatMoney(r.amount, r.currency)}</span>
-                  {r.currency !== base && <span class="b-sm muted" style={{ display: 'block' }}>{r.base === null ? `manca il cambio per ${r.currency}` : `≈ ${formatMoney(r.base, base)}`}</span>}
+                  <span className="b-bold num" style={{ display: 'block' }}>{formatMoney(r.amount, r.currency)}</span>
+                  {r.currency !== base && <span className="b-sm muted" style={{ display: 'block' }}>{r.base === null ? `manca il cambio per ${r.currency}` : `≈ ${formatMoney(r.base, base)}`}</span>}
                 </span>
               </li>
             ))}
@@ -496,28 +496,28 @@ export function Budget() {
         </Card>
       )}
 
-      <Link href="/altro/spese" class="card" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 16px 16px 18px', borderRadius: '20px' }} aria-label="Apri il dettaglio delle spese">
+      <Link href="/altro/spese" className="card" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 16px 16px 18px', borderRadius: '20px' }} aria-label="Apri il dettaglio delle spese">
         <Ic name="i-con-spese" size={48} />
         <span style={{ flex: 1, minWidth: 0 }}>
-          <span class="h-sm" style={{ display: 'block' }}>Dettaglio spese</span>
-          <span class="b-sm" style={{ display: 'block' }}>{expenseCount > 0 ? `Tutte le ${expenseCount} spese, una per una` : 'Registra cosa spendi, anche in yen'}</span>
+          <span className="h-sm" style={{ display: 'block' }}>Dettaglio spese</span>
+          <span className="b-sm" style={{ display: 'block' }}>{expenseCount > 0 ? `Tutte le ${expenseCount} spese, una per una` : 'Registra cosa spendi, anche in yen'}</span>
         </span>
         <ChevronRightG size={24} sw={2.8} />
       </Link>
 
-      <div class="cta" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <button type="button" class="btn block" onClick={() => setSheet({ kind: 'new-expense' })}>
+      <div className="cta" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <button type="button" className="btn block" onClick={() => setSheet({ kind: 'new-expense' })}>
           <PlusG />
           Registra spesa
         </button>
-        <button type="button" class="btn soft block" onClick={() => setSheet({ kind: 'new' })}>
+        <button type="button" className="btn soft block" onClick={() => setSheet({ kind: 'new' })}>
           Aggiungi costo previsto
         </button>
       </div>
 
       {delDialog}
       <Sheet open={sheet !== null} title={sheetTitle(sheet, openCategory?.label)} onClose={close}>
-        {sheet?.kind === 'category' && (openCategory ? categoryDetail(openCategory) : <p class="text-sm text-muted">Questa categoria non esiste più.</p>)}
+        {sheet?.kind === 'category' && (openCategory ? categoryDetail(openCategory) : <p className="text-sm text-muted">Questa categoria non esiste più.</p>)}
         {sheet?.kind === 'new' && (
           <BudgetItemForm trip={trip} defaultCategory={sheet.category} onSubmit={(i) => t.createBudgetItem(trip.id, i)} onDone={close} />
         )}

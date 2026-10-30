@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../lib/auth'
 import { useTrips } from '../state/trip'
 
@@ -34,7 +34,7 @@ function SendingPill({ count }: { count: number }) {
   if (!visible || count === 0) return null
   return (
     <p
-      class="sending"
+      className="sending"
       style={{ top: 'calc(0.5rem + env(safe-area-inset-top))' }}
     >
       Invio di {count} {count === 1 ? 'modifica' : 'modifiche'}…
@@ -53,17 +53,17 @@ export function OutboxBanner() {
   return (
     <div role="status">
       {failed.map((f) => (
-        <div class={`${bar} bad`} style={top}>
-          <span class="obar-t">
+        <div className={`${bar} bad`} style={top}>
+          <span className="obar-t">
             Non salvata: {f.label}. {f.error}
           </span>
-          <button type="button" onClick={() => dismissFailed(f.id)} class="obar-b">
+          <button type="button" onClick={() => dismissFailed(f.id)} className="obar-b">
             Scarta
           </button>
         </div>
       ))}
       {stale || !online ? (
-        <p class={bar} style={top}>
+        <p className={bar} style={top}>
           {pending > 0
             ? `Offline · ${pending} ${pending === 1 ? 'modifica partirà' : 'modifiche partiranno'} quando torna la rete`
             : 'Offline · spese, checklist e tappe si salvano sul telefono; le altre modifiche richiedono la rete'}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'react'
 import { dropIndex } from '../lib/dragOrder'
 
 export interface DragState {
@@ -31,7 +31,7 @@ export function useDragReorder(onDrop: (from: number, to: number) => void | Prom
   // se la pagina si chiude a metà trascinamento
   useEffect(() => () => stop.current?.(), [])
 
-  function start(from: number, e: PointerEvent) {
+  function start(from: number, e: PointerEvent | { pointerId: number; clientY: number; clientX: number; currentTarget: EventTarget | null; preventDefault(): void; button?: number; pointerType?: string }) {
     const ul = listRef.current
     const handle = e.currentTarget as HTMLElement
     if (!ul || drag) return

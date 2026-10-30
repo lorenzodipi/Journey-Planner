@@ -54,17 +54,17 @@ import {
 
 interface IconProps {
   size?: number
-  class?: string
+  className?: string
   /** Ignorato: le icone Font Awesome sono piene. Resta per non cambiare le chiamate esistenti. */
-  'stroke-width'?: number
+  strokeWidth?: number
 }
 
 const wrap =
   (def: IconDefinition) =>
-  ({ size = 24, class: cls }: IconProps) => {
+  ({ size = 24, className: cls }: IconProps) => {
     const [w, h, , , path] = def.icon
     return (
-      <svg width={size} height={size} viewBox={`0 0 ${w} ${h}`} fill="currentColor" class={cls} aria-hidden="true">
+      <svg width={size} height={size} viewBox={`0 0 ${w} ${h}`} fill="currentColor" className={cls} aria-hidden="true">
         <path d={path as string} />
       </svg>
     )
@@ -126,13 +126,13 @@ export const SunsetIcon = wrap(faArrowDown)
 export const FilterIcon = wrap(faSliders)
 
 /** Pallino sbarrato: il luogo non ha una posizione e non compare sulla mappa. */
-export function NoPinIcon({ size = 24, class: cls }: IconProps) {
+export function NoPinIcon({ size = 24, className: cls }: IconProps) {
   const [w, h, , , path] = faLocationDot.icon
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${w} ${h}`} fill="currentColor" class={cls} aria-hidden="true">
+    <svg width={size} height={size} viewBox={`0 0 ${w} ${h}`} fill="currentColor" className={cls} aria-hidden="true">
       <path d={path as string} />
-      <path d="M40 40 L344 472" stroke="var(--color-bg, #0b1b33)" stroke-width="88" stroke-linecap="round" fill="none" />
-      <path d="M40 40 L344 472" stroke="currentColor" stroke-width="40" stroke-linecap="round" fill="none" />
+      <path d="M40 40 L344 472" stroke="var(--color-bg, #0b1b33)" strokeWidth="88" strokeLinecap="round" fill="none" />
+      <path d="M40 40 L344 472" stroke="currentColor" strokeWidth="40" strokeLinecap="round" fill="none" />
     </svg>
   )
 }

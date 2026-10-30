@@ -15,7 +15,7 @@ export function MapsPill({ href, label, text, kind = 'pill' }: { href: string; l
   const { cls, size } = SPEC[kind]
   const t = text ?? (kind === 'big' ? 'Apri in Google Maps' : kind === 'pill' ? 'Apri sulla mappa' : 'Maps')
   return (
-    <a class={cls} href={href} target="_blank" rel="noopener noreferrer" aria-label={`Apri in Google Maps: ${label}`}>
+    <a className={cls} href={href} target="_blank" rel="noopener noreferrer" aria-label={`Apri in Google Maps: ${label}`}>
       <Ic name="i-nav-pin-out" size={size} />
       {kind === 'btn' || kind === 'big' || kind === 'tp' ? (kind === 'btn' ? <span>{t}</span> : t) : <span>{t}</span>}
     </a>

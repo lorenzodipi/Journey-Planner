@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 import { useConfirm } from './ConfirmDialog'
 import { dateInZone } from '../lib/flights'
 import { amountToText, formatMoney, parseAmount, parseRate, rateFor, tripCurrencies } from '../lib/money'
@@ -67,7 +67,7 @@ export function ExpenseForm({ trip, initial, defaults, onSubmit, onDelete, onDon
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trip.fxRate, trip.fxRates, cur])
 
-  async function submit(e: Event) {
+  async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     if (!label.trim()) return setError('Scrivi cosa hai pagato (es. Ramen).')
     if (value === null || value <= 0) return setError("Inserisci l'importo (es. 1200).")
@@ -99,22 +99,22 @@ export function ExpenseForm({ trip, initial, defaults, onSubmit, onDelete, onDon
   }
 
   return (
-    <form class="space-y-4" onSubmit={submit} noValidate>
-      <TextField label="Cosa hai pagato" value={label} onInput={setLabel} maxLength={120} />
+    <form className="space-y-4" onSubmit={submit} noValidate>
+      <TextField label="Cosa hai pagato" value={label} onChange={setLabel} maxLength={120} />
       <CostFields amountLabel="Importo" amount={amount} currency={currency} currencies={tripCurrencies(trip, initial?.currency)} scope="total" onAmount={setAmount} onCurrency={onCurrency} onScope={() => {}} withScope={false} />
       {foreign && (
-        <div class="space-y-1">
-          <TextField label={`Cambio: 1 ${cur || '…'} = ? ${trip.baseCurrency}`} value={rate} onInput={(v) => { setRateTouched(true); setRate(v) }} inputMode="decimal" placeholder="0,0056" />
-          {preview !== null && <p class="text-xs text-muted">≈ {formatMoney(preview, trip.baseCurrency)}</p>}
+        <div className="space-y-1">
+          <TextField label={`Cambio: 1 ${cur || '…'} = ? ${trip.baseCurrency}`} value={rate} onChange={(v) => { setRateTouched(true); setRate(v) }} inputMode="decimal" placeholder="0,0056" />
+          {preview !== null && <p className="text-xs text-muted">≈ {formatMoney(preview, trip.baseCurrency)}</p>}
         </div>
       )}
       {trip.travelers.length > 0 && (
         <>
-          <fieldset class="fgroup">
+          <fieldset className="fgroup">
             <legend>Chi ha pagato</legend>
-            <div class="chips">
+            <div className="chips">
               {trip.travelers.map((t) => (
-                <button type="button" aria-pressed={paidBy === t.id} onClick={() => setPaidBy(paidBy === t.id ? '' : t.id)} class={`chip${paidBy === t.id ? ' on' : ''}`}>
+                <button type="button" aria-pressed={paidBy === t.id} onClick={() => setPaidBy(paidBy === t.id ? '' : t.id)} className={`chip${paidBy === t.id ? ' on' : ''}`}>
                   <span aria-hidden="true" style={{ width: '12px', height: '12px', borderRadius: '9999px', background: t.color, boxShadow: '0 0 0 2px var(--surface-card)' }} />
                   {t.name}
                 </button>
@@ -124,9 +124,9 @@ export function ExpenseForm({ trip, initial, defaults, onSubmit, onDelete, onDon
           <TravelerChips label="Dividi tra" travelers={trip.travelers} selected={sharedWith} onChange={setSharedWith} hint="In parti uguali." />
         </>
       )}
-      <TextField label="Data" type="date" value={date} onInput={setDate} />
+      <TextField label="Data" type="date" value={date} onChange={setDate} />
       <CategorySelect value={category} onChange={setCategory} categories={trip.expenseCategories} suggestions={SUGGESTED} />
-      <TextArea label="Note" value={notes} onInput={setNotes} />
+      <TextArea label="Note" value={notes} onChange={setNotes} />
       <FormError message={error} />
       <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : initial ? 'Salva spesa' : 'Aggiungi spesa'}</PrimaryButton>
       {onDelete && <SecondaryButton danger onClick={() => void remove()}>Elimina spesa</SecondaryButton>}

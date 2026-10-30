@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 import { EMPTY_FILTERS, type PlaceFilters } from '../lib/placeFilter'
 
 // Ogni pagina ha i suoi filtri: quelli messi in Luoghi non valgono per la Mappa e viceversa.

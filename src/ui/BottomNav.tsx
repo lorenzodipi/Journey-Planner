@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'wouter-preact'
+import { Link, useLocation } from 'wouter'
 import { Ic } from './Sprite'
 
 const tabs = [
@@ -13,14 +13,14 @@ const tabs = [
 export function BottomNav() {
   const [location] = useLocation()
   return (
-    <nav class="tabbar" aria-label="Navigazione principale">
+    <nav className="tabbar" aria-label="Navigazione principale">
       <ul>
         {tabs.map(({ href, label, icon }) => {
           const active = href === '/' ? location === '/' : location.startsWith(href)
           return (
             <li>
-              <Link href={href} class={`tab${active ? ' on' : ''}`} aria-current={active ? 'page' : undefined}>
-                <span class="tpill">
+              <Link href={href} className={`tab${active ? ' on' : ''}`} aria-current={active ? 'page' : undefined}>
+                <span className="tpill">
                   <Ic name={icon} size={28} />
                 </span>
                 <span>{label}</span>

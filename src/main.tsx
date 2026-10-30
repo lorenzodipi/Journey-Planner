@@ -1,4 +1,4 @@
-import { render } from 'preact'
+import { createRoot } from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
 import { App } from './app'
 import { AuthProvider } from './lib/auth'
@@ -24,11 +24,10 @@ else {
 // Tiene attivo il progetto Supabase (piano Free) a ogni apertura
 pingSupabase()
 
-render(
+createRoot(document.getElementById('app') as HTMLElement).render(
   <AuthProvider>
     <TripProvider>
       <App />
     </TripProvider>
-  </AuthProvider>,
-  document.getElementById('app') as HTMLElement,
+  </AuthProvider>
 )

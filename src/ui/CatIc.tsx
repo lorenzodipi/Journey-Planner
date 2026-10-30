@@ -9,7 +9,7 @@ export function CatIc({ category, size = 48 }: { category?: string; size?: numbe
   const icon = categoryIcon(category)
   if (OUTLINED.has(icon)) {
     return (
-      <span class={`cat-ic c-${icon}`} aria-hidden="true">
+      <span className={`cat-ic c-${icon}`} aria-hidden="true">
         <svg width={size} height={size} viewBox="0 0 24 24">
           <use href={`#o-${icon}`} />
         </svg>
@@ -19,9 +19,9 @@ export function CatIc({ category, size = 48 }: { category?: string; size?: numbe
   const { viewBox, d } = pinIconShape(icon)
   const [, , w, h] = viewBox.split(' ').map(Number)
   return (
-    <span class={`cat-ic c-${icon}`} aria-hidden="true">
+    <span className={`cat-ic c-${icon}`} aria-hidden="true">
       <svg width={size} height={size} viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="10.9" fill="none" stroke="currentColor" stroke-width="1.6" />
+        <circle cx="12" cy="12" r="10.9" fill="none" stroke="currentColor" strokeWidth="1.6" />
         <g transform={`translate(${((24 - w * K) / 2).toFixed(3)} ${((24 - h * K) / 2).toFixed(3)}) scale(${K})`}>
           <path d={d} fill="currentColor" />
         </g>

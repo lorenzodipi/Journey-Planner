@@ -10,17 +10,17 @@ export function PrimoViaggio() {
   const auth = useAuth()
 
   return (
-    <main class="screen">
+    <main className="screen">
       <div style={{ paddingTop: '8px' }}>
-        <img class="sym" src={ART.symbol} alt="" width="52" height="63" style={{ marginBottom: '20px' }} />
-        <h1 class="d-lg">Dove si va?</h1>
-        <p class="b-sm muted" style={{ marginTop: '8px' }}>
+        <img className="sym" src={ART.symbol} alt="" width="52" height="63" style={{ marginBottom: '20px' }} />
+        <h1 className="d-lg">Dove si va?</h1>
+        <p className="b-sm muted" style={{ marginTop: '8px' }}>
           Dai un nome al viaggio e scegli le date. Il resto lo aggiungi dopo.
         </p>
       </div>
       <TripForm onSubmit={trips.createTrip} onDone={() => undefined} />
       <div style={{ textAlign: 'center' }}>
-        <button type="button" class="btn danger" onClick={() => void auth.signOut()}>
+        <button type="button" className="btn danger" onClick={() => void auth.signOut()}>
           <ChevronLeftG />
           Esci dall’account
         </button>

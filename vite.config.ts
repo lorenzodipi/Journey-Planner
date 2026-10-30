@@ -1,5 +1,4 @@
 import { defineConfig } from 'vitest/config'
-import preact from '@preact/preset-vite'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
@@ -19,7 +18,6 @@ export default defineConfig(({ mode }) => {
     __NATIVE__: JSON.stringify(native),
   },
   plugins: [
-    preact(),
     tailwindcss(),
     VitePWA({
       // nell'app nativa il modulo virtual:pwa-register resta, ma non fa nulla
@@ -72,6 +70,7 @@ export default defineConfig(({ mode }) => {
       },
     }),
   ],
+  oxc: { jsx: { runtime: 'automatic', importSource: 'react' } },
   build: { target: 'es2022' },
   test: { environment: 'node', include: ['src/**/*.test.ts', 'scripts/**/*.test.mjs'] },
   }

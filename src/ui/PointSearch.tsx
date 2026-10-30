@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 import { searchPlaces, type GeoResult } from '../lib/geocode'
 import { parseMapsUrl } from '../lib/mapsUrl'
 
@@ -73,72 +73,72 @@ export function PointSearch({ label, fallbackQuery, near, value, onChange }: Pro
   }
 
   return (
-    <div class="rounded-[20px] border border-hairline p-3">
-      <div class="flex items-center justify-between gap-2">
-        <p class="text-sm font-extrabold">{label}</p>
+    <div className="rounded-[20px] border border-hairline p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-extrabold">{label}</p>
         {value ? (
-          <button type="button" onClick={() => onChange(null)} class="min-h-11 rounded-full px-3 text-sm text-muted">
+          <button type="button" onClick={() => onChange(null)} className="min-h-11 rounded-full px-3 text-sm text-muted">
             Rimuovi
           </button>
         ) : (
-          <span class="text-xs text-muted">non impostata</span>
+          <span className="text-xs text-muted">non impostata</span>
         )}
       </div>
-      {value && <p class="text-xs text-muted">Posizione impostata ({value.lat.toFixed(4)}, {value.lng.toFixed(4)})</p>}
-      <div class="mt-2 flex gap-2">
+      {value && <p className="text-xs text-muted">Posizione impostata ({value.lat.toFixed(4)}, {value.lng.toFixed(4)})</p>}
+      <div className="mt-2 flex gap-2">
         <input
           type="text"
           value={query}
           placeholder={fallbackQuery.trim() || 'Es. Tokyo Station'}
           aria-label={`Cerca ${label.toLowerCase()}`}
-          onInput={(e) => setQuery((e.currentTarget as HTMLInputElement).value)}
+          onChange={(e) => setQuery((e.currentTarget as HTMLInputElement).value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault()
               void search()
             }
           }}
-          class="min-h-12 min-w-0 flex-1 rounded-xl border-[1.5px] border-line bg-surface px-4"
+          className="min-h-12 min-w-0 flex-1 rounded-xl border-[1.5px] border-line bg-surface px-4"
         />
         <button
           type="button"
           disabled={busy || !text}
           onClick={() => void search()}
-          class="min-h-12 shrink-0 rounded-full bg-accent px-4 text-sm font-extrabold text-accent-ink disabled:opacity-50"
+          className="min-h-12 shrink-0 rounded-full bg-accent px-4 text-sm font-extrabold text-accent-ink disabled:opacity-50"
         >
           {busy ? 'Cerco…' : 'Cerca'}
         </button>
       </div>
       {error && (
-        <p class="mt-2 text-sm text-danger" role="alert">
+        <p className="mt-2 text-sm text-danger" role="alert">
           {error}
         </p>
       )}
       {results && results.length > 0 && (
-        <ul class="mt-2 divide-y divide-hairline rounded-[20px] border border-hairline">
+        <ul className="mt-2 divide-y divide-hairline rounded-[20px] border border-hairline">
           {results.map((r) => (
             <li>
-              <button type="button" onClick={() => pick(r)} class="block min-h-12 w-full px-3 py-2 text-left text-sm">
-                <span class="block font-extrabold">{r.name}</span>
-                <span class="block truncate text-xs text-muted">{r.address}</span>
+              <button type="button" onClick={() => pick(r)} className="block min-h-12 w-full px-3 py-2 text-left text-sm">
+                <span className="block font-extrabold">{r.name}</span>
+                <span className="block truncate text-xs text-muted">{r.address}</span>
               </button>
             </li>
           ))}
         </ul>
       )}
-      <label class="mt-3 block">
-        <span class="mb-1 block text-xs font-extrabold text-muted">Oppure incolla un link di Google Maps</span>
+      <label className="mt-3 block">
+        <span className="mb-1 block text-xs font-extrabold text-muted">Oppure incolla un link di Google Maps</span>
         <input
           type="url"
           value={link}
           placeholder="https://www.google.com/maps/place/…"
           aria-label={`Link di Google Maps: ${label.toLowerCase()}`}
-          onInput={(e) => onLink((e.currentTarget as HTMLInputElement).value)}
-          class="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-4"
+          onChange={(e) => onLink((e.currentTarget as HTMLInputElement).value)}
+          className="min-h-12 w-full rounded-xl border-[1.5px] border-line bg-surface px-4"
         />
       </label>
       {linkHint && (
-        <p class={`mt-2 text-sm ${linkHint.ok ? 'text-muted' : 'text-danger'}`} role={linkHint.ok ? 'status' : 'alert'}>
+        <p className={`mt-2 text-sm ${linkHint.ok ? 'text-muted' : 'text-danger'}`} role={linkHint.ok ? 'status' : 'alert'}>
           {linkHint.text}
         </p>
       )}
