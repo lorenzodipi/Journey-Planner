@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { Redirect, Route, Router, Switch, useLocation } from 'wouter'
-import type { ComponentType, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { navigate as hashNavigate, useHashLocation } from 'wouter/use-hash-location'
 import { useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
@@ -17,15 +17,14 @@ import { ChecklistPage } from './pages/checklist/ChecklistPage'
 import { PrenotazioniPage } from './pages/prenotazioni/PrenotazioniPage'
 import { Giorni } from './pages/Giorni'
 import { Giorno } from './pages/Giorno'
-import { Account } from './pages/Account'
+import { ImpostazioniPage } from './pages/altro/ImpostazioniPage'
+import { ProfiloPage } from './pages/altro/ProfiloPage'
 import { Login } from './pages/Login'
 import { Luoghi } from './pages/Luoghi'
 import { Oggi } from './pages/Oggi'
 import { TrasportiPage } from './pages/trasporti/TrasportiPage'
 import { PrimoViaggio } from './pages/PrimoViaggio'
-import { BottomNav } from './ui/BottomNav'
 import { PullToRefresh } from './ui/PullToRefresh'
-import { OutboxBanner } from './ui/OutboxBanner'
 import { ToastHost } from './ui/ToastHost'
 import { EmptyState } from './ui/PageHeader'
 import { Sprite } from './ui/Sprite'
@@ -38,19 +37,6 @@ const navigateClean: typeof hashNavigate = (to, options) => hashNavigate(to.incl
 const useHashLoc = (options?: Parameters<typeof useHashLocation>[0]): [string, typeof hashNavigate] => [useHashLocation(options)[0], navigateClean]
 useHashLoc.hrefs = (href: string) => `#${href}`
 
-/** Pagine non ancora rifatte col design system Faraway: CSS di prima e barra di prima (#26). */
-function legacy<P extends object>(Page: ComponentType<P>) {
-  return function Legacy(props: P) {
-    return (
-      <div className="legacy">
-        <OutboxBanner />
-        <Page {...props} />
-        <BottomNav />
-      </div>
-    )
-  }
-}
-const OldAccount = legacy(Account)
 
 /** Ogni cambio di pagina riparte dall'alto (altrimenti resta la posizione della pagina precedente). */
 function ScrollToTop() {
@@ -147,8 +133,8 @@ export function App() {
           <Route path="/altro/trasporti" component={TrasportiPage} />
           <Route path="/altro/checklist" component={ChecklistPage} />
           <Route path="/altro/prenotazioni" component={PrenotazioniPage} />
-          <Route path="/altro/impostazioni" component={OldAccount} />
-          <Route path="/altro/account" component={OldAccount} />
+          <Route path="/altro/impostazioni" component={ImpostazioniPage} />
+          <Route path="/altro/account" component={ProfiloPage} />
           <Route>
             <main className="screen legacy">
               <EmptyState title="Pagina non trovata" text="Torna alla scheda Oggi dalla barra in basso." />
