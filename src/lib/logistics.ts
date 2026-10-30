@@ -27,6 +27,10 @@ export interface StayRow {
   // dalla migrazione 0019
   paid_by?: string | null
   for_travelers?: string[] | null
+  // dalla migrazione 0024
+  room?: string | null
+  room_type?: string | null
+  booking_code?: string | null
 }
 
 export interface TransportRow {
@@ -130,6 +134,9 @@ export function mapStays(rows: StayRow[], tripId: string): Stay[] {
       notes: r.notes ?? undefined,
       paidBy: r.paid_by ?? undefined,
       forTravelers: r.for_travelers?.length ? r.for_travelers : undefined,
+      room: r.room ?? undefined,
+      roomType: r.room_type ?? undefined,
+      bookingCode: r.booking_code ?? undefined,
     }))
     .sort((a, b) => a.checkIn.localeCompare(b.checkIn) || a.name.localeCompare(b.name, 'it'))
 }
@@ -232,12 +239,34 @@ export interface StayInput {
   booked: boolean
   paid: boolean
   notes: string
+  paidBy?: string
+  forTravelers?: string[]
+  room?: string
+  roomType?: string
+  bookingCode?: string
 }
 
 const orNull = (s: string) => s.trim() || null
 
-export function stayColumns(i: StayInput) {
+/** Colonne aggiunte dalle migrazioni 0019/0024: solo se servono (o se c'erano), così senza migrazione il salvataggio funziona come prima. */
+export function stayExtras(i: StayInput, old?: Stay) {
+  const out: Record<string, unknown> = {}
+  const put = (key: string, value: unknown, had: unknown) => {
+    const empty = value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)
+    if (!empty) out[key] = value
+    else if (had !== undefined && had !== null && !(Array.isArray(had) && had.length === 0)) out[key] = Array.isArray(value) ? [] : null
+  }
+  put('paid_by', i.paidBy, old?.paidBy)
+  put('for_travelers', i.forTravelers, old?.forTravelers)
+  put('room', i.room?.trim(), old?.room)
+  put('room_type', i.roomType?.trim(), old?.roomType)
+  put('booking_code', i.bookingCode?.trim(), old?.bookingCode)
+  return out
+}
+
+export function stayColumns(i: StayInput, old?: Stay) {
   return {
+    ...stayExtras(i, old),
     name: i.name.trim(),
     city: orNull(i.city),
     check_in: i.checkIn,

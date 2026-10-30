@@ -65,6 +65,8 @@ await runMigration('0022_trasporti_biglietto.sql')
 await runMigration('0022_trasporti_biglietto.sql') // si può rilanciare
 await runMigration('0023_ticket_codes.sql')
 await runMigration('0023_ticket_codes.sql') // si può rilanciare
+await runMigration('0024_alloggi_biglietto.sql')
+await runMigration('0024_alloggi_biglietto.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {

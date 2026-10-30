@@ -4,7 +4,7 @@ import type { ComponentType, ReactNode } from 'react'
 import { navigate as hashNavigate, useHashLocation } from 'wouter/use-hash-location'
 import { useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
-import { Alloggi } from './pages/Alloggi'
+import { AlloggiPage } from './pages/alloggi/AlloggiPage'
 import { Altro } from './pages/Altro'
 import { BudgetPage } from './pages/spese/BudgetPage'
 import { Dettaglio } from './pages/spese/Dettaglio'
@@ -49,7 +49,6 @@ function legacy<P extends object>(Page: ComponentType<P>) {
   }
 }
 const OldAltro = legacy(Altro)
-const OldAlloggi = legacy(Alloggi)
 const OldChecklist = legacy(Checklist)
 const OldPrenotazioni = legacy(Prenotazioni)
 const OldImpostazioni = legacy(Impostazioni)
@@ -120,7 +119,7 @@ export function App() {
             <Redirect to="/spese/dettaglio" replace />
           </Route>
           <Route path="/altro" component={OldAltro} />
-          <Route path="/altro/alloggi" component={OldAlloggi} />
+          <Route path="/altro/alloggi" component={AlloggiPage} />
           <Route path="/altro/voli" component={VoliPage} />
           <Route path="/altro/trasporti" component={TrasportiPage} />
           <Route path="/altro/checklist" component={OldChecklist} />

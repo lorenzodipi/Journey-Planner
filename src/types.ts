@@ -106,6 +106,10 @@ export interface Stay {
   paidBy?: string
   /** Per chi è (#34), vuoto = tutti. */
   forTravelers?: string[]
+  /** dalla migrazione 0024 */
+  room?: string
+  roomType?: string
+  bookingCode?: string
 }
 
 export interface Transport {

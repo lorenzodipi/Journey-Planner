@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Day, Flight, Transport } from '../types'
+import type { Day, Flight, Stay, Transport } from '../types'
 import { client } from './db'
 import {
   flightColumns,
@@ -32,8 +32,8 @@ export async function createStay(tripId: string, input: StayInput): Promise<void
   if (error) throw error
 }
 
-export async function updateStay(id: string, input: StayInput): Promise<void> {
-  const { error } = await client().from('stays').update(stayColumns(input)).eq('id', id)
+export async function updateStay(id: string, input: StayInput, old?: Stay): Promise<void> {
+  const { error } = await client().from('stays').update(stayColumns(input, old)).eq('id', id)
   if (error) throw error
 }
 

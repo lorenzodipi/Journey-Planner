@@ -24,7 +24,7 @@ import type { BookingInput, ChecklistInput } from '../lib/planningData'
 import type { BudgetInput, ExpenseInput } from '../lib/moneyData'
 import type { FlightInput, StayInput, TransportInput } from '../lib/logistics'
 import type { InvitedInput, ItemInput, PlaceInput, TravelerInput, TripInput, TripPeople } from '../lib/tripApi'
-import type { Booking, BudgetItem, ChecklistItem, Expense, Flight, ItemStatus, PlaceStatus, Trip, TicketCode, TicketKind } from '../types'
+import type { Booking, BudgetItem, ChecklistItem, Expense, Flight, ItemStatus, PlaceStatus, Trip, Stay, TicketCode, TicketKind } from '../types'
 import { schema } from '../lib/schema'
 
 export type TripsStatus = 'loading' | 'ready' | 'error'
@@ -101,7 +101,7 @@ interface TripsValue {
   saveItemCost: (tripId: string, itemId: string, cost: ItemCost | null) => Result
   setItemDeleted: (id: string, deleted: boolean) => Result
   createStay: (tripId: string, input: StayInput) => Result
-  updateStay: (id: string, input: StayInput) => Result
+  updateStay: (id: string, input: StayInput, old?: Stay) => Result
   setStayFlag: (id: string, flag: 'booked' | 'paid', value: boolean) => Result
   setStayDeleted: (id: string, deleted: boolean) => Result
   createTransport: (tripId: string, input: TransportInput) => Result
@@ -557,7 +557,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     setItemDone: (id, done) => queued('Tappa fatta', [{ k: 'update', table: 'day_items', id, patch: { done } }], { t: 'item.done', id, done }),
     setItemDeleted: (id, deleted) => run(() => api.setItemDeleted(id, deleted), ['items']),
     createStay: (tripId, input) => run(() => logistics.createStay(tripId, input), ['logistics']),
-    updateStay: (id, input) => run(() => logistics.updateStay(id, input), ['logistics']),
+    updateStay: (id, input, old) => run(() => logistics.updateStay(id, input, old), ['logistics']),
     setStayFlag: (id, flag, value) => run(() => logistics.setStayFlag(id, flag, value), ['logistics']),
     setStayDeleted: (id, deleted) => run(() => logistics.setStayDeleted(id, deleted), ['logistics']),
     createTransport: (tripId, input) => {
