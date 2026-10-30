@@ -158,12 +158,28 @@ export async function setTripFxRates(tripId: string, rate: number | null, extra:
   }
 }
 
-/** Tasso del giorno dalla BCE (Frankfurter): quante unità di `base` valgono 1 unità di `local`. */
+/**
+ * Tasso del giorno: quante unità di `base` valgono 1 unità di `local`. Prima la BCE (Frankfurter); se non ha la
+ * valuta (es. AED) un ripiego gratuito senza chiave (currency-api via jsDelivr). Se anche questo manca: errore, e il tasso si scrive a mano.
+ */
 export async function fetchFxRate(local: string, base: string): Promise<number> {
-  const res = await fetch(`https://api.frankfurter.dev/v1/latest?base=${encodeURIComponent(local)}&symbols=${encodeURIComponent(base)}`)
-  if (!res.ok) throw new Error('Servizio dei cambi non raggiungibile. Scrivi il tasso a mano.')
-  const json = (await res.json()) as { rates?: Record<string, number> }
-  const rate = json.rates?.[base]
+  if (local.toUpperCase() === base.toUpperCase()) return 1
+  try {
+    const res = await fetch(`https://api.frankfurter.dev/v1/latest?base=${encodeURIComponent(local)}&symbols=${encodeURIComponent(base)}`)
+    if (res.ok) {
+      const json = (await res.json()) as { rates?: Record<string, number> }
+      const rate = json.rates?.[base]
+      if (rate && rate > 0) return rate
+    }
+  } catch {
+    // rete assente o servizio fermo: si prova il ripiego
+  }
+  const low = local.toLowerCase()
+  const res = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${low}.json`).catch(() => null)
+  if (!res || !res.ok) throw new Error('Servizio dei cambi non raggiungibile. Scrivi il tasso a mano.')
+  const json = (await res.json()) as Record<string, Record<string, number> | string>
+  const table = json[low]
+  const rate = typeof table === 'object' ? table[base.toLowerCase()] : undefined
   if (!rate || !(rate > 0)) throw new Error(`Nessun tasso ${local}→${base} disponibile. Scrivilo a mano.`)
   return rate
 }

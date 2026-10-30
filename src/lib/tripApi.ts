@@ -1,6 +1,6 @@
 import { cleanSpec, type OpeningSpec } from './opening'
 import { noteItemRow, schema } from './schema'
-import type { Category, Day, DayItem, ItemKind, ItemStatus, MemberRole, Place, PlaceStatus, ThemeName, Traveler, Trip } from '../types'
+import type { Category, Day, DayItem, ItemKind, ItemStatus, MemberRole, Place, PlaceStatus, ThemeName, Traveler, Trip, TripCountry } from '../types'
 import { todayYmd } from './dates'
 import { client } from './db'
 import { queryLogistics } from './logisticsApi'
@@ -59,6 +59,24 @@ export interface TripInput {
   /** Paese e fuso di casa: `undefined` = non toccare le colonne, `null` = toglierli. */
   originCountry?: string | null
   originTimezone?: string | null
+  /** Paesi del viaggio (#35); se ci sono, destinazione, fuso, valuta e cambio del viaggio si ricavano dal principale. */
+  countries?: TripCountry[]
+  /** Cambi delle valute dei paesi diversi dal principale, da unire a `fx_rates` (unità di valuta di casa per 1 unità). */
+  fxRate?: number | null
+  fxRates?: Record<string, number>
+}
+
+interface CountryRow {
+  id: string
+  trip_id: string
+  country: string
+  name: string
+  currency: string
+  timezone: string
+  start_date: string
+  end_date: string
+  fx_rate: number | string | null
+  position: number
 }
 
 
@@ -157,6 +175,8 @@ interface TripRow {
   budget_limit?: number | string | null
   origin_country?: string | null
   origin_timezone?: string | null
+  /** unite da fetchTrips (migrazione 0020) */
+  trip_countries?: CountryRow[]
   center_lat: number | null
   center_lng: number | null
   trip_travelers: TravelerRow[]
@@ -243,9 +263,24 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
       items: itemsByDay.get(d.id) ?? [],
     }))
 
+  const fxRates = Object.keys(cleanRates(row.fx_rates)).length > 0 ? cleanRates(row.fx_rates) : undefined
+  const countries: TripCountry[] | undefined =
+    row.trip_countries && row.trip_countries.length > 0
+      ? row.trip_countries
+          .slice()
+          .sort((a, b) => a.start_date.localeCompare(b.start_date) || a.position - b.position)
+          .map((c, i) => {
+            const currency = c.currency?.trim().toUpperCase() ?? ''
+            // il cambio vero sta nelle colonne del viaggio (le modifica anche «Cambi»); la riga del paese ne tiene una copia
+            const fx = currency && currency === row.local_currency?.trim().toUpperCase() && row.fx_rate != null ? Number(row.fx_rate) : (fxRates?.[currency] ?? (c.fx_rate == null ? undefined : Number(c.fx_rate)))
+            return { id: c.id, country: c.country ?? '', name: c.name, currency, timezone: c.timezone, startDate: c.start_date, endDate: c.end_date, ...(fx ? { fxRate: fx } : {}), position: i }
+          })
+      : undefined
+
   const today = todayYmd()
   return {
     id: row.id,
+    ...(countries ? { countries } : {}),
     title: row.title,
     destination: row.destination ?? '',
     startDate: row.start_date ?? days[0]?.date ?? today,
@@ -272,7 +307,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     checklist: mapChecklist(extras.checklist, row.id),
     bookings: mapBookings(extras.bookings, row.id),
     fxRate: row.fx_rate == null ? undefined : Number(row.fx_rate),
-    fxRates: Object.keys(cleanRates(row.fx_rates)).length > 0 ? cleanRates(row.fx_rates) : undefined,
+    fxRates,
     budgetLimit: row.budget_limit != null && Number(row.budget_limit) > 0 ? Number(row.budget_limit) : undefined,
     originCountry: row.origin_country?.trim() || undefined,
     originTimezone: row.origin_timezone?.trim() || undefined,
@@ -388,6 +423,14 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
     bookings: keep(bookings, old?.bookings as BookingRow[]),
   }
   const rows = keep(trips, prev?.trips as TripRow[])
+  // paesi dei viaggi (0020): senza la tabella l'app usa il modello di prima
+  if (want('trips')) {
+    const res = await db.from('trip_countries').select('*')
+    const byTrip = new Map<string, CountryRow[]>()
+    if (!res.error) for (const c of res.data as CountryRow[]) byTrip.set(c.trip_id, [...(byTrip.get(c.trip_id) ?? []), c])
+    else if (!MANCA_TABELLA.test(res.error.message)) throw res.error
+    for (const r of rows) r.trip_countries = byTrip.get(r.id)
+  }
   const myId = (await db.auth.getSession()).data.session?.user.id
   // chi ha accesso: una richiesta per viaggio, solo per i viaggi che non conosco ancora
   const people = new Map<string, PersonRow[]>()
@@ -411,6 +454,35 @@ async function loadPeople(tripId: string): Promise<PersonRow[]> {
   }
 }
 
+const MANCA_TABELLA = /trip_countries|schema cache|does not exist/i
+
+/** Scrive i paesi del viaggio sostituendo quelli di prima. Senza la migrazione 0020 un paese solo non serve (basta il modello di prima). */
+async function writeCountries(tripId: string, list: TripCountry[] | undefined): Promise<void> {
+  if (!list) return
+  const db = client()
+  const del = await db.from('trip_countries').delete().eq('trip_id', tripId)
+  if (del.error) {
+    if (!MANCA_TABELLA.test(del.error.message)) throw del.error
+    if (list.length > 1) throw new Error("Per più paesi manca la migrazione 0020 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0020_trip_countries.sql).")
+    return
+  }
+  if (list.length === 0) return
+  const res = await db.from('trip_countries').insert(
+    list.map((c, i) => ({
+      trip_id: tripId,
+      country: c.country,
+      name: c.name.trim(),
+      currency: c.currency.trim().toUpperCase(),
+      timezone: c.timezone,
+      start_date: c.startDate,
+      end_date: c.endDate,
+      fx_rate: c.fxRate ?? null,
+      position: (i + 1) * 1000,
+    })),
+  )
+  if (res.error) throw res.error
+}
+
 function tripColumns(input: TripInput) {
   return {
     title: input.title.trim(),
@@ -427,6 +499,9 @@ function tripColumns(input: TripInput) {
     ...(input.budgetLimit !== undefined ? { budget_limit: input.budgetLimit } : {}),
     // idem per la migrazione 0014
     ...(input.originCountry !== undefined ? { origin_country: input.originCountry, origin_timezone: input.originTimezone ?? null } : {}),
+    // cambi dei paesi (#35): il cambio del principale e delle altre valute
+    ...(input.fxRate !== undefined ? { fx_rate: input.fxRate } : {}),
+    ...(input.fxRates !== undefined ? { fx_rates: input.fxRates } : {}),
   }
 }
 
@@ -457,6 +532,7 @@ export async function createTrip(input: TripInput, people: TripPeople): Promise<
       const res = await db.from('days').insert(dates.map((date) => ({ trip_id: id, date })))
       if (res.error) throw res.error
     }
+    await writeCountries(id, input.countries)
   } catch (e) {
     // le righe figlie si eliminano a cascata; se non è permesso, almeno si nasconde il viaggio
     const del = await db.from('trips').delete().eq('id', id)
@@ -477,6 +553,7 @@ export async function updateTrip(id: string, input: TripInput): Promise<void> {
   const db = client()
   const { error } = await db.from('trips').update(tripColumns(input)).eq('id', id)
   if (error) throw error
+  await writeCountries(id, input.countries)
 
   const { data, error: daysError } = await db.from('days').select('id, date, deleted_at').eq('trip_id', id)
   if (daysError) throw daysError

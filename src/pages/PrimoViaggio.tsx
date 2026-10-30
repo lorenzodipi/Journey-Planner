@@ -1,13 +1,13 @@
 import { useAuth } from '../lib/auth'
-import { useTrips } from '../state/trip'
 import { ART } from '../ui/art'
 import { ChevronLeftG } from '../ui/glyphs'
-import { TripForm } from '../ui/TripForm'
+import { useState } from 'react'
+import { ViaggioSheet } from './viaggio/ViaggioSheet'
 
 /** Schermata mostrata quando l'utente non ha ancora nessun viaggio (Fw3-NuovoViaggio). */
 export function PrimoViaggio() {
-  const trips = useTrips()
   const auth = useAuth()
+  const [aperto, setAperto] = useState(true)
 
   return (
     <main className="screen">
@@ -18,7 +18,10 @@ export function PrimoViaggio() {
           Dai un nome al viaggio e scegli le date. Il resto lo aggiungi dopo.
         </p>
       </div>
-      <TripForm onSubmit={trips.createTrip} onDone={() => undefined} />
+      <button type="button" className="btn block" onClick={() => setAperto(true)}>
+        Crea il primo viaggio
+      </button>
+      <ViaggioSheet open={aperto} onClose={() => setAperto(false)} />
       <div style={{ textAlign: 'center' }}>
         <button type="button" className="btn danger" onClick={() => void auth.signOut()}>
           <ChevronLeftG />

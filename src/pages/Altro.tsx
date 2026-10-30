@@ -6,7 +6,6 @@ import { daysBetween, formatShort } from '../lib/dates'
 import { TRAVELER_COLORS } from '../lib/tripForm'
 import { useTrips } from '../state/trip'
 import type { Traveler, Trip } from '../types'
-import { SecondaryButton } from '../ui/Field'
 import { ChevronRightG, LogoSym, PlusG, UserG } from '../ui/glyphs'
 import { PageHeader } from '../ui/PageHeader'
 import { Ic } from '../ui/Sprite'
@@ -14,7 +13,7 @@ import { Sheet } from '../ui/Sheet'
 import { InviteForm } from '../ui/InviteForm'
 import { LinkAccount } from '../ui/LinkAccount'
 import { TravelerForm } from '../ui/TravelerForm'
-import { TripForm } from '../ui/TripForm'
+import { ViaggioSheet } from './viaggio/ViaggioSheet'
 import { AvatarStack, avColor, initialOf, plural } from './altroBits'
 import { Viaggi } from './Viaggi'
 
@@ -68,7 +67,6 @@ const sections = [
 type SheetState =
   | { kind: 'new-trip' }
   | { kind: 'edit-trip' }
-  | { kind: 'delete-trip' }
   | { kind: 'new-traveler' }
   | { kind: 'edit-traveler'; traveler: Traveler }
   | null
@@ -77,7 +75,6 @@ export function Altro() {
   const t = useTrips()
   const auth = useAuth()
   const [sheet, setSheet] = useState<SheetState>(null)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [viaggi, setViaggi] = useState(false)
   const trip = t.active
   if (!trip) return null
@@ -89,11 +86,9 @@ export function Altro() {
       ? 'Nuovo viaggio'
       : sheet?.kind === 'edit-trip'
         ? 'Modifica viaggio'
-        : sheet?.kind === 'delete-trip'
-          ? 'Eliminare il viaggio?'
-          : sheet?.kind === 'new-traveler'
-            ? 'Aggiungi una persona'
-            : 'Modifica viaggiatore'
+        : sheet?.kind === 'new-traveler'
+          ? 'Aggiungi una persona'
+          : 'Modifica viaggiatore'
 
   const saved = loadSnapshot()?.savedAt
   const savedTime = saved ? new Date(saved).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : null
@@ -248,49 +243,8 @@ export function Altro() {
         </section>
       </main>
 
-      <Sheet open={sheet !== null} title={title} onClose={close}>
-        {sheet?.kind === 'new-trip' && <TripForm onSubmit={t.createTrip} onDone={close} />}
-
-        {sheet?.kind === 'edit-trip' && (
-          <div className="space-y-4">
-            <TripForm trip={trip} onSubmit={(input) => t.updateTrip(trip.id, input)} onDone={close} />
-            <SecondaryButton
-              danger
-              onClick={() => {
-                setDeleteError(null)
-                setSheet({ kind: 'delete-trip' })
-              }}
-            >
-              Elimina viaggio
-            </SecondaryButton>
-          </div>
-        )}
-
-        {sheet?.kind === 'delete-trip' && (
-          <div className="space-y-3">
-            <p className="text-sm text-muted">
-              «{trip.title}» sparirà dall'elenco. I dati non vengono cancellati subito dal database, quindi si possono
-              ancora recuperare dalla dashboard di Supabase.
-            </p>
-            {deleteError && (
-              <p role="alert" className="rounded-2xl bg-danger/10 px-4 py-3 text-sm text-danger">
-                {deleteError}
-              </p>
-            )}
-            <SecondaryButton
-              danger
-              onClick={async () => {
-                const message = await t.deleteTrip(trip.id)
-                if (message) setDeleteError(message)
-                else close()
-              }}
-            >
-              Sì, elimina
-            </SecondaryButton>
-            <SecondaryButton onClick={close}>Annulla</SecondaryButton>
-          </div>
-        )}
-
+      <ViaggioSheet key={sheet?.kind === 'edit-trip' ? trip.id : 'new'} trip={sheet?.kind === 'edit-trip' ? trip : undefined} open={sheet?.kind === 'new-trip' || sheet?.kind === 'edit-trip'} onClose={close} />
+      <Sheet open={sheet?.kind === 'new-traveler' || sheet?.kind === 'edit-traveler'} title={title} onClose={close}>
         {sheet?.kind === 'new-traveler' && (
           <InviteForm
             defaultColor={TRAVELER_COLORS[trip.travelers.length % TRAVELER_COLORS.length]}

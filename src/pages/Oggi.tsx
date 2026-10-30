@@ -1,4 +1,5 @@
 // Oggi (mock Fa-03…Fa-07, Fa-52…Fa-55; issue #28, #29, #30): prima, durante e dopo il viaggio.
+import { oggiNelViaggio } from '../lib/paesi'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'wouter'
 import { countryByCode } from '../lib/countries'
@@ -45,9 +46,10 @@ const wdm = (ymd: string) => new Intl.DateTimeFormat('it-IT', { weekday: 'short'
 const deviceTz = () => Intl.DateTimeFormat().resolvedOptions().timeZone
 
 export function Oggi() {
-  const trip = useTrip()
+  const real = useTrip()
   const now = useNow()
-  const today = tripToday(trip, now)
+  // più paesi: oggi, fuso, valuta e centro seguono il paese del giorno (#35)
+  const { today, trip } = oggiNelViaggio(real, now)
   const fase = faseViaggio(trip, today)
   if (fase === 'pre') return <OggiPrima trip={trip} now={now} today={today} />
   if (fase === 'post') return <OggiDopo trip={trip} now={now} today={today} />

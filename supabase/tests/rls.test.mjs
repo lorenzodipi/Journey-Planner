@@ -57,6 +57,8 @@ await runMigration('0018_luoghi_orari.sql')
 await runMigration('0018_luoghi_orari.sql') // si può rilanciare
 await runMigration('0019_spese_previsto_paganti.sql')
 await runMigration('0019_spese_previsto_paganti.sql') // si può rilanciare
+await runMigration('0020_trip_countries.sql')
+await runMigration('0020_trip_countries.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -364,6 +366,18 @@ check('categorie di spesa: C non vede quelle di un viaggio non suo', (await db.q
 await asUser(A)
 const t8 = (await db.query(`insert into trips (title) values ('Altro viaggio') returning id`)).rows[0].id
 await throws('una spesa non può usare la categoria di un altro viaggio', () => db.query(`insert into expenses (trip_id,label,amount,currency,category_id) values ($1,'X',1,'EUR',$2)`, [t8, ec]))
+
+// paesi del viaggio (0020): RLS come le altre tabelle e viaggi esistenti con un paese solo
+await asUser(A)
+{
+  const own = (await db.query(`insert into trip_countries (trip_id,name,currency,timezone,start_date,end_date) values ($1,'Giappone','JPY','Asia/Tokyo','2026-11-22','2026-12-09') returning id`, [t8])).rows[0].id
+  check('0020 il proprietario crea un paese del viaggio', !!own)
+  await throws('paese con fine prima dell\'inizio rifiutato', () => db.query(`insert into trip_countries (trip_id,name,timezone,start_date,end_date) values ($1,'X','UTC','2026-12-09','2026-12-01')`, [t8]))
+  await asUser(C)
+  check('0020 un non membro non vede i paesi', (await db.query(`select 1 from trip_countries where trip_id=$1`, [t8])).rows.length === 0)
+  await throws('0020 un non membro non crea paesi', () => db.query(`insert into trip_countries (trip_id,name,timezone,start_date,end_date) values ($1,'Intruso','UTC','2026-12-01','2026-12-02')`, [t8]))
+  await asUser(A)
+}
 
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione
 await asUser(null, 'service_role')

@@ -254,6 +254,21 @@ export interface Booking {
   forTravelers?: string[]
 }
 
+/** Un paese del viaggio (#35): fuso, valuta e cambio valgono per i giorni dell'intervallo. */
+export interface TripCountry {
+  id: string
+  /** codice ISO («JP»); vuoto se il paese non è nell'elenco */
+  country: string
+  name: string
+  currency: string
+  timezone: string
+  startDate: string
+  endDate: string
+  /** unità di valuta di casa per 1 unità di questa valuta */
+  fxRate?: number
+  position: number
+}
+
 export interface Trip {
   id: string
   title: string
@@ -287,6 +302,8 @@ export interface Trip {
   fxRates?: Record<string, number>
   /** Budget massimo del viaggio, nella valuta base (facoltativo). */
   budgetLimit?: number
+  /** Paesi del viaggio con le date (migrazione 0020); assenti = un solo paese, quello di destination. */
+  countries?: TripCountry[]
   /** Paese di casa (codice ISO, es. «IT») e suo fuso: per l'ora di casa e il fuso di partenza di voli e trasporti. */
   originCountry?: string
   originTimezone?: string

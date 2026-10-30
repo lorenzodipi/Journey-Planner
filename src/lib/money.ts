@@ -90,7 +90,7 @@ export function sumByCurrency(items: { amount: number; currency: string }[]): { 
   )
 }
 
-type RateTrip = { baseCurrency: string; localCurrency?: string; fxRate?: number; fxRates?: Record<string, number> }
+type RateTrip = { baseCurrency: string; localCurrency?: string; fxRate?: number; fxRates?: Record<string, number>; countries?: { currency: string; fxRate?: number }[] }
 
 /** Valute extra del viaggio (oltre a base e locale), in ordine alfabetico. */
 export function extraCurrencies(trip: Pick<RateTrip, 'fxRates'>): string[] {
@@ -103,7 +103,9 @@ export function rateFor(trip: RateTrip, currency: string): number | undefined {
   if (code === trip.baseCurrency) return 1
   if (code === trip.localCurrency) return trip.fxRate && trip.fxRate > 0 ? trip.fxRate : undefined
   const r = trip.fxRates?.[code]
-  return r && r > 0 ? r : undefined
+  if (r && r > 0) return r
+  const own = trip.countries?.find((c) => c.currency === code)?.fxRate
+  return own && own > 0 ? own : undefined
 }
 
 /** Ripulisce un oggetto di cambi (da database o file): codici di 3 lettere maiuscole, tassi positivi e sensati. */
@@ -122,9 +124,9 @@ export function cleanRates(raw: unknown): Record<string, number> {
  * Valute che si possono scegliere in un viaggio: la base, quella locale (se c'è e se è diversa) e le extra.
  * `current` è la valuta già salvata su una voce da modificare: resta nell'elenco anche se il viaggio non la prevede più.
  */
-export function tripCurrencies(trip: { baseCurrency: string; localCurrency?: string; fxRates?: Record<string, number> }, current?: string): string[] {
+export function tripCurrencies(trip: { baseCurrency: string; localCurrency?: string; fxRates?: Record<string, number>; countries?: { currency: string }[] }, current?: string): string[] {
   const out: string[] = []
-  for (const c of [trip.baseCurrency, trip.localCurrency, ...extraCurrencies(trip), current]) {
+  for (const c of [trip.baseCurrency, trip.localCurrency, ...(trip.countries ?? []).map((x) => x.currency), ...extraCurrencies(trip), current]) {
     const code = c?.trim().toUpperCase()
     if (code && !out.includes(code)) out.push(code)
   }

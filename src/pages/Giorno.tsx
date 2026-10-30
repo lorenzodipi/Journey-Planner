@@ -1,6 +1,7 @@
 // Giorno (mock Fa-09…Fa-15, issue #32): mappa con «Percorso migliore», tappe con stati e spostamenti,
 // card aperta in linea, fogli Aggiungi / Modifica / Sposta / Elimina; sotto le tappe Alloggio, Spese e
 // Prenotazioni del giorno, e i giorni vicini.
+import { vistaDelGiorno } from '../lib/paesi'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useSearch } from 'wouter'
 import { expenseBase, fxOf } from '../lib/budget'
@@ -86,7 +87,8 @@ export function Giorno({ params }: { params: { id: string } }) {
   const prev = trip.days[index - 1]
   const next = trip.days[index + 1]
   const today = tripToday(trip)
-  const ctx = { isToday: day.date === today, isPast: day.date < today, nowMin: minutesOfDay(new Date(), trip.timezone), timeZone: trip.timezone }
+  const dayView = vistaDelGiorno(trip, day.date)
+  const ctx = { isToday: day.date === today, isPast: day.date < today, nowMin: minutesOfDay(new Date(), dayView.timezone), timeZone: dayView.timezone }
   const city = day.city || trip.destination
   const legs = [...segments.values()]
   const stopState = new Map(day.items.map((i) => {
@@ -181,7 +183,7 @@ export function Giorno({ params }: { params: { id: string } }) {
       {day.items.length > 0 || route.transports.length > 0 ? (
         <section className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }} aria-label="Mappa del giorno">
           <div className="fa-dm" style={{ position: 'relative' }}>
-            <DayMapPanel route={route} center={trip.center} selectedId={openId} onSelect={onPin} height={240} bare stopState={stopState} />
+            <DayMapPanel route={route} center={dayView.center} selectedId={openId} onSelect={onPin} height={240} bare stopState={stopState} />
             {route.stops.length > 1 ? (
               <span className="fa-pillst soft" style={{ position: 'absolute', left: 12, top: 12, background: 'var(--surface-card)', zIndex: 2 }}>
                 Percorso migliore

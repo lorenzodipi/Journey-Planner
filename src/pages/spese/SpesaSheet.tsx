@@ -7,6 +7,7 @@ import { decimalsOf } from '../../lib/fx'
 import { currencyName, formatMoney, parseAmount, rateFor, round2, tripCurrencies } from '../../lib/money'
 import type { ExpenseInput } from '../../lib/moneyData'
 import { CATEGORIE_BASE, catKey } from '../../lib/ricevuta'
+import { valutaDelGiorno } from '../../lib/paesi'
 import { tripToday } from '../../lib/today'
 import { useMe, discOf, initials } from '../../state/me'
 import { showToast } from '../../state/toast'
@@ -92,7 +93,9 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
   const t = useTrips()
   const me = useMe(trip)
   const base = trip.baseCurrency
-  const others = tripCurrencies(trip, expense?.currency).filter((c) => c !== base)
+  // la valuta del paese di oggi sta davanti alle altre (più paesi, #35)
+  const delGiorno = valutaDelGiorno(trip, expense ? dateInZone(expense.spentAt, trip.timezone) : tripToday(trip))
+  const others = tripCurrencies(trip, expense?.currency).filter((c) => c !== base).sort((a, b) => Number(b === delGiorno) - Number(a === delGiorno))
   const [other, setOther] = useState<string | null>(expense && expense.currency !== base ? expense.currency : (others[0] ?? null))
   const [side, setSide] = useState(expense?.currency ?? other ?? base)
   const [text, setText] = useState(expense ? scrivi(expense.amount, expense.currency) : '')
