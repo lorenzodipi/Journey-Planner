@@ -9,7 +9,7 @@ import { parseYmd } from '../lib/dates'
 import { formatDistance } from '../lib/dayRoute'
 import { dayBookings, dayExpenses, dayStays } from '../lib/dayView'
 import { formatMoney, round2 } from '../lib/money'
-import { mapsLinkFor, parseMapsUrl } from '../lib/mapsUrl'
+import { parseMapsUrl } from '../lib/mapsUrl'
 import { planRoute } from '../lib/routeOrder'
 import { minutesOfDay } from '../lib/sun'
 import { fase, riepilogoPercorso, stimaSpostamento } from '../lib/tappa'
@@ -18,13 +18,15 @@ import { useDaySegments } from '../state/daySegments'
 import { useHere } from '../state/here'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
-import type { DayItem, Expense, ItemStatus } from '../types'
+import type { DayItem, Expense, ItemStatus, Stay } from '../types'
 import { DaySheet, type DaySheetState } from '../ui/DaySheet'
 import { DayMapPanel } from '../ui/DayMapPanel'
-import { PulsanteIcona, Pulsante, Pillola, Sezione } from '../faraway/base'
+import { PulsanteIcona, Pulsante, Sezione } from '../faraway/base'
 import { useConferma } from '../faraway/Foglio'
 import { Sv } from '../faraway/icons'
-import { Riga } from '../faraway/Righe'
+import { CartaAlloggio } from '../faraway/CartaAlloggio'
+import { Riga, useUnaAperta } from '../faraway/Righe'
+import { AlloggioSheet } from './alloggi/AlloggioSheet'
 import { BarraIndietro, Schermata } from '../faraway/shell'
 import { Vuoto } from '../faraway/Stati'
 import { linkedExpense, TappeLista } from '../faraway/Tappe'
@@ -49,6 +51,8 @@ export function Giorno({ params }: { params: { id: string } }) {
   const [openId, setOpenId] = useState<string | null>(null)
   const [highlight, setHighlight] = useState<string | null>(null)
   const [ask, confirmNode] = useConferma()
+  const stayOpen = useUnaAperta()
+  const [stayEdit, setStayEdit] = useState<Stay | null>(null)
   const here = useHere()
 
   const index = trip.days.findIndex((d) => d.id === params.id)
@@ -242,28 +246,22 @@ export function Giorno({ params }: { params: { id: string } }) {
       {stayList.length > 0 ? (
         <section style={{ display: 'grid', gap: 12 }} aria-label="Alloggio">
           <Sezione title="Alloggio" right={<Link href="/altro/alloggi" className="fa-lnk">Tutti</Link>} />
-          <div className="fa-list">
-            {stayList.map((s) => {
-              const label = s.checkOut === day.date ? 'Check-out oggi' : s.checkIn === day.date ? 'Check-in oggi' : 'Dormi qui'
-              const info = s.checkOut === day.date ? s.checkOutInfo : s.checkIn === day.date ? s.checkInInfo : undefined
-              return (
-                <Riga
-                  key={`${label}-${s.id}`}
-                  icon="i-sez-bed"
-                  title={s.name}
-                  sub={[label, info, s.city].filter(Boolean).join(' · ')}
-                  end={<Pillola tone={s.paid ? 'acq' : 'mut'}>{s.paid ? 'Pagato' : 'Non pagato'}</Pillola>}
-                  onPress={() => setLegacy({ kind: 'edit-stay', stay: s })}
-                />
-              )
-            })}
-          </div>
-          {stays.night && (stays.night.address || stays.night.mapsUrl) ? (
-            <a className="fa-btn sm out" style={{ justifySelf: 'start' }} href={mapsLinkFor({ mapsUrl: stays.night.mapsUrl, lat: null, lng: null, name: [stays.night.name, stays.night.address, stays.night.city].filter(Boolean).join(' ') })} target="_blank" rel="noopener noreferrer">
-              <Sv name="pin" size={18} />
-              Apri sulla mappa
-            </a>
-          ) : null}
+          {stayList.map((s) => (
+            <CartaAlloggio
+              key={s.id}
+              trip={trip}
+              stay={s}
+              open={stayOpen.isOpen(s.id)}
+              onToggle={() => stayOpen.toggle(s.id)}
+              onEdit={() => setStayEdit(s)}
+              onDelete={async () => {
+                const ok = await ask({ title: 'Eliminare l’alloggio?', message: `${s.name} sparisce dagli alloggi e dalle spese. Puoi annullare subito dopo.`, confirm: 'Elimina l’alloggio', cancel: 'Tieni l’alloggio', destructive: true })
+                if (!ok) return
+                const m = await t.setStayDeleted(s.id, true)
+                showToast(m ?? 'Alloggio eliminato', m ? undefined : { label: 'Annulla', run: () => void t.setStayDeleted(s.id, false) })
+              }}
+            />
+          ))}
         </section>
       ) : null}
 
@@ -334,6 +332,7 @@ export function Giorno({ params }: { params: { id: string } }) {
           }}
         />
       ) : null}
+      {stayEdit ? <AlloggioSheet key={stayEdit.id} trip={trip} stay={stayEdit} open onClose={() => setStayEdit(null)} /> : null}
       {confirmNode}
       <div className="legacy">
         <DaySheet trip={trip} state={legacy} onChange={setLegacy} />
