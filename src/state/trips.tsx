@@ -24,7 +24,7 @@ import type { BookingInput, ChecklistInput } from '../lib/planningData'
 import type { BudgetInput, ExpenseInput } from '../lib/moneyData'
 import type { FlightInput, StayInput, TransportInput } from '../lib/logistics'
 import type { InvitedInput, ItemInput, PlaceInput, TravelerInput, TripInput, TripPeople } from '../lib/tripApi'
-import type { Booking, BudgetItem, ChecklistItem, Expense, Flight, ItemStatus, PlaceStatus, Trip, Stay, TicketCode, TicketKind } from '../types'
+import type { Booking, BudgetItem, ChecklistItem, Expense, Flight, ItemStatus, PlaceStatus, ReceivedInvite, Trip, Stay, TicketCode, TicketKind } from '../types'
 import { schema } from '../lib/schema'
 
 export type TripsStatus = 'loading' | 'ready' | 'error'
@@ -71,6 +71,15 @@ interface TripsValue {
   updateDay: (id: string, patch: { city: string; title: string; notes: string }) => Result
   addTraveler: (tripId: string, input: InvitedInput) => Result
   linkTraveler: (id: string, email: string) => Result
+  /** Invito per email (#44): solo chi ha creato il viaggio. */
+  inviteByEmail: (tripId: string, email: string) => Result
+  cancelInvite: (id: string) => Result
+  removeMember: (tripId: string, userId: string | undefined, travelerId: string) => Result
+  /** Inviti ricevuti da accettare o rifiutare. */
+  receivedInvites: ReceivedInvite[]
+  refreshInvites: () => Promise<void>
+  /** Accetta o rifiuta un invito; accettando ricarica i viaggi e restituisce l'id del viaggio. */
+  respondInvite: (id: string, accept: boolean) => Promise<{ error?: string; tripId?: string | null }>
   updateTraveler: (id: string, input: TravelerInput) => Result
   removeTraveler: (id: string) => Result
   createPlace: (tripId: string, input: PlaceInput) => Result
@@ -204,6 +213,11 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(demo ? demoTrip.id : loadActiveId())
   const hasData = useRef(false)
+  const [receivedInvites, setReceivedInvites] = useState<ReceivedInvite[]>([])
+  const refreshInvites = useCallback(async () => {
+    if (demo) return
+    setReceivedInvites(await api.fetchReceivedInvites())
+  }, [demo])
 
   /** Ricarica dal server (tutto, o solo i gruppi indicati). `true` se ci è riuscita. */
   const load = useCallback(async (only?: api.Scope[]): Promise<boolean> => {
@@ -217,6 +231,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       const fresh = await Promise.race([api.fetchTrips(only), limit]).finally(() => clearTimeout(timer))
       hasData.current = true
       setTrips(fresh)
+      if (!only || only.includes('trips')) void refreshInvites()
       setStale(false)
       setError(null)
       setStatus('ready')
@@ -233,7 +248,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       }
       return false
     }
-  }, [demo])
+  }, [demo, refreshInvites])
 
   const refresh = useCallback(() => load(), [load])
 
@@ -459,6 +474,23 @@ export function TripProvider({ children }: { children: ReactNode }) {
     updateDay: (id, patch) => run(() => api.updateDay(id, patch), ['trips']),
     addTraveler: (tripId, input) => run(() => api.addTraveler(tripId, input)),
     linkTraveler: (id, email) => run(() => api.linkTraveler(id, email)),
+    inviteByEmail: (tripId, email) => run(() => api.inviteByEmail(tripId, email), ['trips']),
+    cancelInvite: (id) => run(() => api.cancelInvite(id), ['trips']),
+    removeMember: (tripId, userId, travelerId) => run(() => api.removeMember(tripId, userId, travelerId), ['trips']),
+    receivedInvites,
+    refreshInvites,
+    respondInvite: async (id, accept) => {
+      if (demo) return { error: DEMO_MESSAGE }
+      try {
+        const tripId = await api.respondInvite(id, accept)
+        setReceivedInvites((l) => l.filter((x) => x.id !== id))
+        if (accept) await load()
+        return { tripId }
+      } catch (e) {
+        void refreshInvites()
+        return { error: api.describeError(e) }
+      }
+    },
     updateTraveler: (id, input) => run(() => api.updateTraveler(id, input)),
     removeTraveler: (id) => run(() => api.removeTraveler(id)),
     createPlace: (tripId, input) =>

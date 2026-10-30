@@ -6,6 +6,7 @@ import { useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
 import { AlloggiPage } from './pages/alloggi/AlloggiPage'
 import { ViaggiPage } from './pages/viaggi/ViaggiPage'
+import { ViaggiatoriPage } from './pages/altro/ViaggiatoriPage'
 import { AltroPage } from './pages/altro/AltroPage'
 import { DatiTelefono } from './pages/altro/DatiTelefono'
 import { BudgetPage } from './pages/spese/BudgetPage'
@@ -69,7 +70,7 @@ function ScrollToTop() {
 
 export function App() {
   const auth = useAuth()
-  const { active: trip, trips, status, refresh } = useTrips()
+  const { active: trip, trips, status, refresh, receivedInvites } = useTrips()
   const [scelto, setScelto] = useState(() => {
     try {
       return sessionStorage.getItem('jp.viaggio.scelto') === '1'
@@ -93,7 +94,7 @@ export function App() {
   if (status === 'loading') return screen(<SchermataCaricamento title={title} />)
   if (status === 'error') return screen(<SchermataErrore title={title} onRetry={() => void refresh()} />)
 
-  if (!trip) return <PrimoViaggio />
+  if (!trip) return receivedInvites.length > 0 ? screen(<ViaggiPage scelta onChosen={() => undefined} />) : <PrimoViaggio />
 
   // dopo l'accesso, con più di un viaggio, si sceglie quale aprire (#43)
   if (auth.status === 'signed-in' && trips.length > 1 && !scelto) {
@@ -140,6 +141,7 @@ export function App() {
           </Route>
           <Route path="/altro" component={AltroPage} />
           <Route path="/altro/dati" component={DatiTelefono} />
+          <Route path="/altro/viaggiatori" component={ViaggiatoriPage} />
           <Route path="/altro/alloggi" component={AlloggiPage} />
           <Route path="/altro/voli" component={VoliPage} />
           <Route path="/altro/trasporti" component={TrasportiPage} />

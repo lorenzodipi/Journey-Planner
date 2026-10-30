@@ -1,6 +1,6 @@
 import { cleanSpec, type OpeningSpec } from './opening'
 import { noteItemRow, schema } from './schema'
-import type { Category, Day, DayItem, ItemKind, ItemStatus, MemberRole, Place, PlaceStatus, ThemeName, Traveler, Trip, TripCountry } from '../types'
+import type { Category, Day, DayItem, ItemKind, ItemStatus, MemberRole, Place, PlaceStatus, ReceivedInvite, StatoInvito, ThemeName, Traveler, Trip, TripCountry } from '../types'
 import { todayYmd } from './dates'
 import { client } from './db'
 import { queryLogistics } from './logisticsApi'
@@ -36,6 +36,16 @@ export interface InvitedInput extends TravelerInput {
 export interface TripPeople {
   self: TravelerInput
   others: InvitedInput[]
+}
+
+interface InviteRow {
+  id: string
+  trip_id: string
+  email: string
+  status: StatoInvito
+  created_at: string
+  expires_at: string
+  responded_at: string | null
 }
 
 interface PersonRow {
@@ -179,6 +189,8 @@ interface TripRow {
   origin_timezone?: string | null
   /** unite da fetchTrips (migrazione 0020) */
   trip_countries?: CountryRow[]
+  /** unite da fetchTrips (migrazione 0027) */
+  trip_invites?: InviteRow[]
   center_lat: number | null
   center_lng: number | null
   trip_travelers: TravelerRow[]
@@ -191,7 +203,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     .sort((a, b) => a.position - b.position)
     .map((t) => {
       const who = t.user_id ? people.find((p) => p.user_id === t.user_id) : undefined
-      return { id: t.id, name: t.name, color: t.color, position: t.position, userId: t.user_id ?? undefined, email: who?.email }
+      return { id: t.id, name: t.name, color: t.color, position: t.position, userId: t.user_id ?? undefined, email: who?.email, ...(who?.role ? { role: who.role } : {}) }
     })
 
   const categories: Category[] = extras.categories
@@ -298,6 +310,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     },
     travelers,
     myRole: myId ? people.find((p) => p.user_id === myId)?.role : undefined,
+    ...(row.trip_invites ? { invites: row.trip_invites.map((i) => ({ id: i.id, email: i.email, status: i.status, createdAt: i.created_at, expiresAt: i.expires_at, ...(i.responded_at ? { respondedAt: i.responded_at } : {}) })) } : {}),
     days,
     places,
     categories,
@@ -331,6 +344,7 @@ export function scopeOfTable(table: string): Scope | null {
   switch (table) {
     case 'trips':
     case 'days':
+    case 'trip_invites':
       return 'trips'
     case 'places':
       return 'places'
@@ -440,6 +454,12 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
     if (!res.error) for (const c of res.data as CountryRow[]) byTrip.set(c.trip_id, [...(byTrip.get(c.trip_id) ?? []), c])
     else if (!MANCA_TABELLA.test(res.error.message)) throw res.error
     for (const r of rows) r.trip_countries = byTrip.get(r.id)
+    // inviti (0027): senza la tabella non ce ne sono
+    const inv = await db.from('trip_invites').select('*').order('created_at', { ascending: false })
+    const invBy = new Map<string, InviteRow[]>()
+    if (!inv.error) for (const i of inv.data as InviteRow[]) invBy.set(i.trip_id, [...(invBy.get(i.trip_id) ?? []), i])
+    else if (!MANCA_TABELLA.test(inv.error.message) && !/trip_invites/.test(inv.error.message)) throw inv.error
+    for (const r of rows) r.trip_invites = inv.error ? undefined : (invBy.get(r.id) ?? [])
   }
   const myId = (await db.auth.getSession()).data.session?.user.id
   // chi ha accesso: una richiesta per viaggio, solo per i viaggi che non conosco ancora
@@ -628,6 +648,55 @@ export async function updateTraveler(id: string, input: TravelerInput): Promise<
     .update({ name: input.name.trim(), color: input.color })
     .eq('id', id)
   if (error) throw error
+}
+
+/** Invita una persona per email (solo chi ha creato il viaggio). Chi è invitato accetta dentro l'app. */
+export async function inviteByEmail(tripId: string, email: string): Promise<void> {
+  const { error } = await client().from('trip_invites').insert({ trip_id: tripId, email: email.trim().toLowerCase() })
+  if (error) throw error
+}
+
+/** Annulla un invito non ancora accettato. */
+export async function cancelInvite(id: string): Promise<void> {
+  const { error } = await client().from('trip_invites').delete().eq('id', id)
+  if (error) throw error
+}
+
+/** Toglie una persona dal viaggio: perde l'accesso e non compare più tra i viaggiatori (solo chi ha creato il viaggio). */
+export async function removeMember(tripId: string, userId: string | undefined, travelerId: string): Promise<void> {
+  if (userId) {
+    const del = await client().from('trip_members').delete().eq('trip_id', tripId).eq('user_id', userId).select('user_id')
+    if (del.error) throw del.error
+    if ((del.data ?? []).length === 0) throw new Error('Non posso togliere questa persona dal viaggio')
+  }
+  await removeTraveler(travelerId)
+}
+
+/** Inviti ricevuti e ancora aperti (funzione my_invites, migrazione 0027); senza la migrazione non ce ne sono. */
+export async function fetchReceivedInvites(): Promise<ReceivedInvite[]> {
+  try {
+    const { data, error } = await client().rpc('my_invites')
+    if (error) return []
+    return ((data ?? []) as Array<{ id: string; trip_id: string; title: string; destination: string | null; start_date: string | null; end_date: string | null; invited_by_name: string | null; expires_at: string }>).map((r) => ({
+      id: r.id,
+      tripId: r.trip_id,
+      title: r.title,
+      destination: r.destination ?? '',
+      startDate: r.start_date ?? undefined,
+      endDate: r.end_date ?? undefined,
+      invitedBy: r.invited_by_name ?? '',
+      expiresAt: r.expires_at,
+    }))
+  } catch {
+    return []
+  }
+}
+
+/** Accetta o rifiuta un invito ricevuto; accettando restituisce l'id del viaggio. */
+export async function respondInvite(id: string, accept: boolean): Promise<string | null> {
+  const { data, error } = await client().rpc('respond_invite', { _invite: id, _accept: accept })
+  if (error) throw error
+  return (data as string | null) ?? null
 }
 
 export async function removeTraveler(id: string): Promise<void> {

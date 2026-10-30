@@ -1,8 +1,11 @@
 // Viaggi (mock Fa-12, #43): copertine illustrate, stato, avatar, date e riga finale; FAB «+ Viaggio»; stato vuoto.
 // Dopo l'accesso, con più viaggi, è la scelta del viaggio (`scelta`).
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation } from 'wouter'
 import { periodo, viaggiText } from '../../lib/altro'
+import { formatShort } from '../../lib/dates'
+import { showToast } from '../../state/toast'
+import { Sv } from '../../faraway/icons'
 import { riassunto } from '../../lib/spese'
 import { ordinaViaggi, rigaFinale, scenaDelViaggio, statoViaggio, STATO_TESTO } from '../../lib/viaggi'
 import { initials, discOf } from '../../state/me'
@@ -25,6 +28,21 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
   const [nuovo, setNuovo] = useState(false)
   const [invito, setInvito] = useState(false)
   const lista = ordinaViaggi(t.trips)
+  const [rispondendo, setRispondendo] = useState<string | null>(null)
+  useEffect(() => {
+    void t.refreshInvites()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function rispondi(id: string, accetta: boolean, titolo: string) {
+    setRispondendo(id)
+    const r = await t.respondInvite(id, accetta)
+    setRispondendo(null)
+    if (r.error) return showToast(r.error)
+    if (!accetta) return showToast('Invito rifiutato')
+    showToast(`Sei dentro: «${titolo}»`)
+    if (r.tripId) apri(r.tripId)
+  }
 
   const apri = (id: string) => {
     t.setActive(id)
@@ -83,6 +101,31 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
         </>
       }
     >
+      {t.receivedInvites.length > 0 ? (
+        <section aria-label="Inviti ricevuti" style={{ display: 'grid', gap: 12 }}>
+          <h2 className="fa-h3" style={{ margin: 0 }}>Inviti ricevuti</h2>
+          {t.receivedInvites.map((i) => (
+            <div key={i.id} className="fa-card xl pad" style={{ display: 'grid', gap: 10 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Sv name="mail" size={20} />
+                <span className="fa-h3">{i.title}</span>
+              </span>
+              <span className="fa-m">
+                {i.invitedBy ? `${i.invitedBy} ti ha invitato` : 'Sei stato invitato'}
+                {i.startDate && i.endDate ? ` · ${formatShort(i.startDate)} – ${formatShort(i.endDate)}` : ''}
+              </span>
+              <span style={{ display: 'flex', gap: 8 }}>
+                <Pulsante isLoading={rispondendo === i.id} onPress={() => void rispondi(i.id, true, i.title)}>
+                  Accetta
+                </Pulsante>
+                <Pulsante color="secondary" isDisabled={rispondendo === i.id} onPress={() => void rispondi(i.id, false, i.title)}>
+                  Rifiuta
+                </Pulsante>
+              </span>
+            </div>
+          ))}
+        </section>
+      ) : null}
       {lista.length === 0 ? (
         <Vuoto
           art="vuotoViaggi"

@@ -17,6 +17,31 @@ export interface Traveler {
   /** Account collegato: chi non ce l'ha è un viaggiatore "vecchio" da collegare. */
   userId?: string
   email?: string
+  /** Ruolo nel viaggio: creatore (owner) o partecipante (editor). */
+  role?: MemberRole
+}
+
+/** Invito per email a un viaggio (#44). «Scaduto» si calcola anche dalla data (vedi lib/inviti). */
+export type StatoInvito = 'inviato' | 'accettato' | 'rifiutato' | 'scaduto'
+export interface TripInvite {
+  id: string
+  email: string
+  status: StatoInvito
+  createdAt: string
+  expiresAt: string
+  respondedAt?: string
+}
+
+/** Invito che ho ricevuto e non ho ancora accettato (non vedo nulla del viaggio finché non accetto). */
+export interface ReceivedInvite {
+  id: string
+  tripId: string
+  title: string
+  destination: string
+  startDate?: string
+  endDate?: string
+  invitedBy: string
+  expiresAt: string
 }
 
 export type MemberRole = 'owner' | 'editor' | 'viewer'
@@ -333,6 +358,8 @@ export interface Trip {
   travelers: Traveler[]
   /** Ruolo di chi sta usando l'app in questo viaggio (se noto). */
   myRole?: MemberRole
+  /** Inviti per email, visibili a tutti i partecipanti (migrazione 0027). */
+  invites?: TripInvite[]
   days: Day[]
   places: Place[]
   /** Categorie dei luoghi (Tempio, Ristorante…). */

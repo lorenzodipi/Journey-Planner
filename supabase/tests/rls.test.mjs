@@ -71,6 +71,8 @@ await runMigration('0025_prenotazioni_tipi.sql')
 await runMigration('0025_prenotazioni_tipi.sql') // si può rilanciare
 await runMigration('0026_checklist_personale.sql')
 await runMigration('0026_checklist_personale.sql') // si può rilanciare
+await runMigration('0027_inviti.sql')
+await runMigration('0027_inviti.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -431,6 +433,54 @@ await asUser(null, 'postgres')
   check('0026 A vede la spunta di B sulla voce comune', (await db.query(`select 1 from checklist_checks where item_id=$1 and traveler_id=$2`, [common, tb])).rows.length === 1)
   await asUser(C)
   check('0026 un non membro non vede voci né spunte', (await db.query(`select 1 from checklist_items where trip_id=$1`, [tc])).rows.length === 0 && (await db.query(`select 1 from checklist_checks where trip_id=$1`, [tc])).rows.length === 0)
+  await asUser(A)
+}
+
+// partecipanti e inviti (0027): solo il creatore invita, chi è invitato non vede nulla finché non accetta
+await asUser(null, 'postgres')
+{
+  await db.exec(`insert into auth.users values ('44444444-4444-4444-4444-444444444444','d@test.it') on conflict do nothing`)
+  const D = '44444444-4444-4444-4444-444444444444'
+  const ti = (await db.query(`insert into trips (title, owner_id) values ('Inviti', $1) returning id`, [A])).rows[0].id
+  await db.query(`insert into trip_members (trip_id,user_id,role) values ($1,$2,'editor') on conflict do nothing`, [ti, B])
+  await asUser(B)
+  await throws('0027 un partecipante non invita', () => db.query(`insert into trip_invites (trip_id,email) values ($1,'c@test.it')`, [ti]))
+  await asUser(A)
+  const inv = (await db.query(`insert into trip_invites (trip_id,email) values ($1,' C@Test.it ') returning id, email, status`, [ti])).rows[0]
+  check('0027 il creatore invita (email normalizzata, stato Inviato)', inv.email === 'c@test.it' && inv.status === 'inviato')
+  await throws('0027 invito doppio rifiutato', () => db.query(`insert into trip_invites (trip_id,email) values ($1,'c@test.it')`, [ti]))
+  await throws('0027 chi è già nel viaggio non si invita', () => db.query(`insert into trip_invites (trip_id,email) values ($1,'b@test.it')`, [ti]))
+  await asUser(B)
+  check('0027 un partecipante vede gli inviti del viaggio', (await db.query(`select 1 from trip_invites where trip_id=$1`, [ti])).rows.length === 1)
+  await asUser(C)
+  check('0027 chi è invitato non vede il viaggio', (await db.query(`select 1 from trips where id=$1`, [ti])).rows.length === 0)
+  check('0027 chi è invitato non vede la tabella inviti', (await db.query(`select 1 from trip_invites where trip_id=$1`, [ti])).rows.length === 0)
+  check('0027 ma vede il proprio invito con my_invites()', (await db.query(`select 1 from my_invites() where id=$1`, [inv.id])).rows.length === 1)
+  await asUser(D)
+  check('0027 un altro utente non vede inviti altrui', (await db.query(`select 1 from my_invites()`)).rows.length === 0)
+  await throws('0027 un altro utente non risponde a un invito altrui', () => db.query(`select respond_invite($1, true)`, [inv.id]))
+  await asUser(C)
+  const joined = (await db.query(`select respond_invite($1, true) t`, [inv.id])).rows[0].t
+  check('0027 accettando entra nel viaggio come partecipante', joined === ti && (await db.query(`select 1 from trip_members where trip_id=$1 and user_id=$2 and role='editor'`, [ti, C])).rows.length === 1)
+  check('0027 ha il suo viaggiatore e vede il viaggio', (await db.query(`select 1 from trip_travelers where trip_id=$1 and user_id=$2 and deleted_at is null`, [ti, C])).rows.length === 1 && (await db.query(`select 1 from trips where id=$1`, [ti])).rows.length === 1)
+  await throws('0027 non si accetta due volte', () => db.query(`select respond_invite($1, true)`, [inv.id]))
+  await asUser(A)
+  const inv2 = (await db.query(`insert into trip_invites (trip_id,email) values ($1,'d@test.it') returning id`, [ti])).rows[0].id
+  await asUser(D)
+  await db.query(`select respond_invite($1, false)`, [inv2])
+  check('0027 rifiutando non entra nel viaggio', (await db.query(`select status from trip_invites where id=$1`, [inv2]).catch(() => ({ rows: [] }))).rows.length === 0 && (await db.query(`select 1 from trips where id=$1`, [ti])).rows.length === 0)
+  await asUser(null, 'postgres')
+  check('0027 stato Rifiutato registrato', (await db.query(`select status from trip_invites where id=$1`, [inv2])).rows[0].status === 'rifiutato')
+  await db.query(`update trip_invites set status='inviato', expires_at = now() - interval '1 day' where id=$1`, [inv2])
+  await asUser(D)
+  check('0027 un invito scaduto non compare', (await db.query(`select 1 from my_invites()`)).rows.length === 0)
+  await throws('0027 un invito scaduto non si accetta', () => db.query(`select respond_invite($1, true)`, [inv2]))
+  await asUser(A)
+  await throws('0027 il creatore non si toglie dai partecipanti', async () => { const r = await db.query(`delete from trip_members where trip_id=$1 and user_id=$2 returning 1`, [ti, A]); if (r.rows.length === 0) throw new Error('nessuna riga eliminata') })
+  await db.query(`delete from trip_members where trip_id=$1 and user_id=$2`, [ti, B])
+  check('0027 il creatore rimuove un partecipante', (await db.query(`select 1 from trip_members where trip_id=$1 and user_id=$2`, [ti, B])).rows.length === 0)
+  await asUser(B)
+  check('0027 chi è rimosso non vede più il viaggio', (await db.query(`select 1 from trips where id=$1`, [ti])).rows.length === 0)
   await asUser(A)
 }
 
