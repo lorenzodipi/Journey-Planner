@@ -24,9 +24,21 @@ import type { BookingInput, ChecklistInput } from '../lib/planningData'
 import type { BudgetInput, ExpenseInput } from '../lib/moneyData'
 import type { FlightInput, StayInput, TransportInput } from '../lib/logistics'
 import type { InvitedInput, ItemInput, PlaceInput, TravelerInput, TripInput, TripPeople } from '../lib/tripApi'
-import type { Booking, BudgetItem, ChecklistItem, Expense, Flight, PlaceStatus, Trip } from '../types'
+import type { Booking, BudgetItem, ChecklistItem, Expense, Flight, ItemStatus, PlaceStatus, Trip } from '../types'
+import { schema } from '../lib/schema'
 
 export type TripsStatus = 'loading' | 'ready' | 'error'
+
+/** Costo di una tappa: diventa la spesa collegata. */
+export interface ItemCost {
+  amount: number
+  currency: string
+  paidBy: string | null
+  /** tra chi si divide (vuoto = tutti) */
+  travelerIds: string[]
+  category: string
+  notes?: string
+}
 
 /** Ogni azione restituisce `null` se è andata bene, altrimenti il messaggio d'errore da mostrare. */
 type Result = Promise<string | null>
@@ -75,6 +87,13 @@ interface TripsValue {
   /** Scrive posizioni già calcolate (es. «Ottimizza percorso» e il suo «Annulla»). */
   setItemPositions: (list: { id: string; position: number }[]) => Result
   setItemDone: (id: string, done: boolean) => Result
+  /** Stato della tappa (#32): salva anche l'ora del cambio; «Fatta» segna il luogo collegato come visitato. */
+  setItemStatus: (tripId: string, id: string, status: ItemStatus) => Result
+  /** Sposta la tappa in un altro giorno; con `postpone` diventa «Rimandata» dal giorno di partenza. */
+  moveItemToDay: (tripId: string, id: string, toDayId: string, postpone?: boolean) => Result
+  setItemParticipants: (id: string, participants: string[]) => Result
+  /** Costo della tappa = spesa collegata in Spese (#32): crea, aggiorna o (con `null`) elimina la spesa. */
+  saveItemCost: (tripId: string, itemId: string, cost: ItemCost | null) => Result
   setItemDeleted: (id: string, deleted: boolean) => Result
   createStay: (tripId: string, input: StayInput) => Result
   updateStay: (id: string, input: StayInput) => Result
@@ -459,6 +478,52 @@ export function TripProvider({ children }: { children: ReactNode }) {
       return changed ? run(() => api.setItemPositions(changed), ['items']) : null
     },
     setItemPositions: (list) => (list.length === 0 ? Promise.resolve(null) : run(() => api.setItemPositions(list), ['items'])),
+    setItemStatus: async (tripId, id, status) => {
+      const at = new Date().toISOString()
+      const patch = schema.itemStatus ? { status, status_changed_at: at, done: status === 'done' } : { done: status === 'done' }
+      if (!schema.itemStatus && status !== 'done' && status !== 'todo') return Promise.resolve(api.MIGRATION_0017)
+      const err = await queued('Stato della tappa', [{ k: 'update', table: 'day_items', id, patch }], { t: 'item.status', id, status, at })
+      if (err || status !== 'done') return err
+      // la tappa fatta segna il luogo collegato come «Visitato»
+      const trip = trips.find((t) => t.id === tripId)
+      const item = trip?.days.flatMap((d) => d.items).find((i) => i.id === id)
+      const place = item?.placeId ? trip?.places.find((p) => p.id === item.placeId) : undefined
+      if (place && place.status !== 'done') return queued('Stato del luogo', [{ k: 'update', table: 'places', id: place.id, patch: { status: 'done' } }], { t: 'place.status', id: place.id, status: 'done' })
+      return null
+    },
+    moveItemToDay: (tripId, id, toDayId, postpone) => {
+      const trip = trips.find((t) => t.id === tripId)
+      const from = trip?.days.find((d) => d.items.some((i) => i.id === id))
+      const to = trip?.days.find((d) => d.id === toDayId)
+      if (!trip || !from || !to) return Promise.resolve('Giorno non trovato.')
+      const position = positionForNew(to.items.map((i, k) => ({ ...i, position: i.position ?? (k + 1) * 1000 })))
+      return run(() => api.moveItemToDay(id, toDayId, position, postpone ? from.id : undefined), ['items'])
+    },
+    saveItemCost: (tripId, itemId, cost) => {
+      const trip = trips.find((t) => t.id === tripId)
+      if (!trip) return Promise.resolve('Viaggio non trovato.')
+      const day = trip.days.find((d) => d.items.some((i) => i.id === itemId))
+      const item = day?.items.find((i) => i.id === itemId)
+      if (!day || !item) return Promise.resolve('Tappa non trovata.')
+      const linked = trip.expenses.find((e) => e.source?.kind === 'day_item' && e.source.id === itemId)
+      if (!cost) return linked ? queued('Spesa', [{ k: 'update', table: 'expenses', id: linked.id, patch: deletedPatch(true) }], { t: 'expense.deleted', id: linked.id, deleted: true }) : Promise.resolve(null)
+      if (!schema.itemStatus) return Promise.resolve(api.MIGRATION_0017)
+      const input: ExpenseInput = {
+        label: item.title,
+        category: cost.category,
+        amount: cost.amount,
+        currency: cost.currency,
+        fxRate: null,
+        paidBy: cost.paidBy,
+        spentDate: day.date,
+        notes: cost.notes ?? '',
+        travelerIds: cost.travelerIds.length > 0 ? cost.travelerIds : trip.travelers.map((t) => t.id),
+        source: { kind: 'day_item', id: itemId },
+      }
+      const e = expenseEntry(trip, input, linked)
+      return queued(e.label, e.ops, e.local)
+    },
+    setItemParticipants: (id, participants) => run(() => api.setItemParticipants(id, participants), ['items']),
     setItemDone: (id, done) => queued('Tappa fatta', [{ k: 'update', table: 'day_items', id, patch: { done } }], { t: 'item.done', id, done }),
     setItemDeleted: (id, deleted) => run(() => api.setItemDeleted(id, deleted), ['items']),
     createStay: (tripId, input) => run(() => logistics.createStay(tripId, input), ['logistics']),

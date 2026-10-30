@@ -48,6 +48,11 @@ function apply(trips: Trip[], l: Local): Trip[] {
         ...t,
         days: t.days.map((d) => ({ ...d, items: d.items.map((i) => (i.id === l.id ? { ...i, done: l.done } : i)) })),
       }))
+    case 'item.status':
+      return patchTrip(trips, null, (t) => ({
+        ...t,
+        days: t.days.map((d) => ({ ...d, items: d.items.map((i) => (i.id === l.id ? { ...i, status: l.status, done: l.status === 'done', statusChangedAt: l.at } : i)) })),
+      }))
     case 'place.status':
       return patchTrip(trips, null, (t) => ({ ...t, places: t.places.map((p) => (p.id === l.id ? { ...p, status: l.status } : p)) }))
   }
@@ -95,6 +100,7 @@ export function expenseEntry(
     dayId: cols.day_id ?? undefined,
     notes: cols.notes ?? undefined,
     shares: input.travelerIds.map((travelerId) => ({ travelerId, weight: 1 })),
+    ...(input.source ? { source: input.source } : {}),
   }
   const write: Op = existing
     ? { k: 'update', table: 'expenses', id, patch: cols }

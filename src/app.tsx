@@ -38,7 +38,6 @@ function legacy<P extends object>(Page: ComponentType<P>) {
   }
 }
 const OldOggi = legacy(Oggi)
-const OldGiorno = legacy(Giorno)
 const OldLuoghi = legacy(Luoghi)
 const OldBudget = legacy(Budget)
 const OldSpese = legacy(Spese)
@@ -120,7 +119,7 @@ export function App() {
         <Switch>
           <Route path="/" component={OldOggi} />
           <Route path="/giorni" component={Giorni} />
-          <Route path="/giorni/:id" component={OldGiorno} />
+          <Route path="/giorni/:id" component={Giorno} />
           <Route path="/luoghi" component={OldLuoghi} />
           <Route path="/mappa">
             <Redirect to="/luoghi?vista=mappa" replace />

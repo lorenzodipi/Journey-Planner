@@ -1,4 +1,6 @@
-import type { Category, Day, DayItem, ItemKind, MemberRole, Place, PlaceStatus, ThemeName, Traveler, Trip } from '../types'
+import { cleanSpec } from './opening'
+import { noteItemRow, schema } from './schema'
+import type { Category, Day, DayItem, ItemKind, ItemStatus, MemberRole, Place, PlaceStatus, ThemeName, Traveler, Trip } from '../types'
 import { todayYmd } from './dates'
 import { client } from './db'
 import { queryLogistics } from './logisticsApi'
@@ -95,6 +97,7 @@ interface PlaceRow {
   lng: number | null
   maps_url: string | null
   opening_hours: string | null
+  opening_spec?: unknown
   est_cost: number | string | null
   currency: string | null
   status: PlaceStatus
@@ -114,6 +117,11 @@ interface ItemRow {
   done: boolean
   position: number
   duration_minutes?: number | null
+  status?: ItemStatus
+  status_changed_at?: string | null
+  postponed_from_day_id?: string | null
+  participants?: string[] | null
+  category_id?: string | null
 }
 interface Extras {
   places: PlaceRow[]
@@ -188,6 +196,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
       address: p.address ?? undefined,
       mapsUrl: p.maps_url ?? undefined,
       openingHours: p.opening_hours ?? undefined,
+      openingSpec: cleanSpec(p.opening_spec),
       estCost: p.est_cost == null ? undefined : Number(p.est_cost),
       currency: p.currency?.trim() || undefined,
       visitMinutes: p.visit_minutes ?? undefined,
@@ -196,6 +205,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     }))
     .sort((a, b) => a.name.localeCompare(b.name, 'it'))
 
+  noteItemRow(extras.items[0])
   const itemsByDay = new Map<string, DayItem[]>()
   for (const it of extras.items.filter((i) => i.trip_id === row.id).sort((a, b) => a.position - b.position)) {
     const list = itemsByDay.get(it.day_id) ?? []
@@ -208,7 +218,12 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
       placeId: it.place_id ?? undefined,
       note: it.notes ?? undefined,
       durationMinutes: it.duration_minutes ?? undefined,
-      done: it.done,
+      done: it.status ? it.status === 'done' : it.done,
+      status: it.status ?? (it.done ? 'done' : 'todo'),
+      statusChangedAt: it.status_changed_at ?? undefined,
+      postponedFromDayId: it.postponed_from_day_id ?? undefined,
+      participants: it.participants && it.participants.length > 0 ? it.participants : undefined,
+      categoryId: it.category_id ?? undefined,
       position: it.position,
     })
     itemsByDay.set(it.day_id, list)
@@ -760,6 +775,10 @@ export interface ItemInput {
   placeId: string | null
   /** Durata propria. `undefined` = non toccare, `null` = come il luogo collegato. */
   durationMinutes?: number | null
+  /** Categoria propria della tappa (0017). `undefined` = non toccare. */
+  categoryId?: string | null
+  /** Per chi è la tappa, vuoto = tutti (0017). `undefined` = non toccare. */
+  participants?: string[]
 }
 
 const timeOrNull = (t: string) => (/^\d{2}:\d{2}$/.test(t) ? t : null)
@@ -773,6 +792,8 @@ function itemColumns(input: ItemInput) {
     notes: input.notes.trim() || null,
     place_id: input.placeId,
     ...(input.durationMinutes !== undefined ? { duration_minutes: input.durationMinutes } : {}),
+    ...(input.categoryId !== undefined && schema.itemStatus ? { category_id: input.categoryId } : {}),
+    ...(input.participants !== undefined && schema.itemStatus ? { participants: input.participants } : {}),
   }
 }
 
@@ -798,6 +819,38 @@ export async function setItemPositions(list: { id: string; position: number }[])
 export async function setItemDone(id: string, done: boolean): Promise<void> {
   const { error } = await client().from('day_items').update({ done }).eq('id', id)
   if (error) throw error
+}
+
+export const MIGRATION_0017 = 'Per gli stati delle tappe esegui la migrazione 0017_tappe_stati.sql nello SQL Editor di Supabase.'
+const needs0017 = (error: { message: string }) => (/status|postponed_from_day_id|participants|source_kind|source_id/i.test(error.message) ? new Error(MIGRATION_0017) : error)
+
+/** Cambia lo stato della tappa e salva l'ora del cambio. Senza la 0017 si possono usare solo «Da fare» e «Fatta». */
+export async function setItemStatus(id: string, status: ItemStatus, at: string = new Date().toISOString()): Promise<void> {
+  const { error } = await client()
+    .from('day_items')
+    .update({ status, status_changed_at: at, done: status === 'done' })
+    .eq('id', id)
+  if (!error) return
+  if (/status/i.test(error.message) && (status === 'done' || status === 'todo')) {
+    const old = await client().from('day_items').update({ done: status === 'done' }).eq('id', id)
+    if (old.error) throw old.error
+    return
+  }
+  throw needs0017(error)
+}
+
+/** Sposta la tappa in un altro giorno (in coda). «Rimandata» la riporta a «Da fare» e ricorda il giorno di partenza. */
+export async function moveItemToDay(id: string, dayId: string, position: number, postponedFrom?: string): Promise<void> {
+  const cols: Record<string, unknown> = { day_id: dayId, position }
+  if (postponedFrom) Object.assign(cols, { status: 'todo', status_changed_at: new Date().toISOString(), done: false, postponed_from_day_id: postponedFrom })
+  const { error } = await client().from('day_items').update(cols).eq('id', id)
+  if (error) throw needs0017(error)
+}
+
+/** Per chi è la tappa (vuoto = tutti). */
+export async function setItemParticipants(id: string, participants: string[]): Promise<void> {
+  const { error } = await client().from('day_items').update({ participants }).eq('id', id)
+  if (error) throw needs0017(error)
 }
 
 export async function setItemDeleted(id: string, deleted: boolean): Promise<void> {

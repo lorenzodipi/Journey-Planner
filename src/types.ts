@@ -6,6 +6,8 @@ export type PlaceStatus = 'idea' | 'planned' | 'done' | 'skipped'
 export type Scope = 'per_person' | 'total'
 export type TransportMode = 'train' | 'metro' | 'bus' | 'taxi' | 'walk' | 'car' | 'plane' | 'ferry' | 'other'
 export type ItemKind = 'visit' | 'meal' | 'transport' | 'free' | 'note' | 'flight'
+/** Stato della tappa (#32): registro in `src/lib/tappaStati.ts`. */
+export type ItemStatus = 'todo' | 'done' | 'skipped' | 'late' | 'postponed' | 'cancelled'
 
 export interface Traveler {
   id: string
@@ -37,6 +39,8 @@ export interface Place {
   address?: string
   mapsUrl?: string
   openingHours?: string
+  /** Orari strutturati (#33); `openingHours` resta come testo di ripiego. */
+  openingSpec?: import('./lib/opening').OpeningSpec
   estCost?: number
   /** Quanto fermarsi, in minuti (facoltativo). */
   visitMinutes?: number
@@ -56,6 +60,16 @@ export interface DayItem {
   /** Durata propria della tappa, in minuti. Assente = come il luogo collegato. */
   durationMinutes?: number
   done?: boolean
+  /** Stato (#32). Senza la migrazione 0017 vale «done» o «todo» da `done`. */
+  status?: ItemStatus
+  /** Quando è cambiato lo stato (istante ISO). */
+  statusChangedAt?: string
+  /** Giorno da cui è stata rimandata. */
+  postponedFromDayId?: string
+  /** Per chi è la tappa (vuoto = tutti). */
+  participants?: string[]
+  /** Categoria propria della tappa; vuota = quella del luogo collegato. */
+  categoryId?: string
   position?: number
 }
 
@@ -177,7 +191,11 @@ export interface Expense {
   dayId?: string
   notes?: string
   shares: ExpenseShare[] // tra chi si divide (vuoto = tutti in parti uguali)
+  /** Spesa nata da un'altra voce (tappa con costo, alloggio, volo, trasporto, prenotazione pagati). */
+  source?: { kind: ExpenseSourceKind; id: string }
 }
+
+export type ExpenseSourceKind = 'day_item' | 'stay' | 'flight' | 'transport' | 'booking'
 
 export type ChecklistKind = 'todo' | 'packing' | 'docs'
 

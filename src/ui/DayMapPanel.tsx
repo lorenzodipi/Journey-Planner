@@ -13,12 +13,18 @@ export function DayMapPanel({
   selectedId,
   onSelect,
   height = 260,
+  bare = false,
+  stopState,
 }: {
   route: DayRoute
   center: Trip['center']
   selectedId?: string | null
   onSelect?: (stopId: string) => void
   height?: number
+  /** Dentro una card del design system: niente bordo né elenco dei trasporti. */
+  bare?: boolean
+  /** Stato di ogni tappa (per id) per il colore dei pin. */
+  stopState?: Map<string, 'done' | 'skip' | 'now' | 'next'>
 }) {
   const [View, setView] = useState<DayMapComponent | null>(null)
   const [loadError, setLoadError] = useState(false)
@@ -37,6 +43,12 @@ export function DayMapPanel({
   const { stops, transports, lines, ends, missing } = route
 
   if (stops.length === 0 && transports.length === 0) {
+    if (bare)
+      return (
+        <p className="fa-m" style={{ padding: '16px 16px 0' }}>
+          Nessuna tappa ha ancora una posizione: collega le tappe a luoghi con una posizione per vederle sulla mappa.
+        </p>
+      )
     return (
       <p className="card b-sm muted">
         Nessuna tappa di questo giorno ha ancora una posizione: collega le tappe a luoghi con una posizione sulla mappa, oppure imposta partenza e arrivo di un trasporto.
@@ -46,9 +58,9 @@ export function DayMapPanel({
 
   return (
     <div>
-      <div className="map" style={{ height: `${height}px`, border: '1.5px solid var(--border-strong)' }}>
+      <div className="map" style={bare ? { height: `${height}px`, borderRadius: 0 } : { height: `${height}px`, border: '1.5px solid var(--border-strong)' }}>
         {View ? (
-          <View stops={stops} lines={lines} ends={ends} center={stops[0] ?? transports[0]?.from ?? center} selectedId={selectedId} onSelect={onSelect} />
+          <View stops={stopState ? stops.map((x) => ({ ...x, state: stopState.get(x.id) })) : stops} lines={lines} ends={ends} center={stops[0] ?? transports[0]?.from ?? center} selectedId={selectedId} onSelect={onSelect} />
         ) : (
           <p className="b-sm muted" style={{ display: 'grid', height: '100%', placeItems: 'center', padding: '0 24px', textAlign: 'center' }} role="status">
             {loadError ? 'Non riesco a caricare la mappa: serve la connessione la prima volta.' : 'Carico la mappa…'}
@@ -56,7 +68,7 @@ export function DayMapPanel({
         )}
       </div>
 
-      {transports.length > 0 && (
+      {!bare && transports.length > 0 && (
         <ul className="b-sm" style={{ display: 'grid', gap: '6px', marginTop: '10px' }} aria-label="Trasporti sulla mappa">
           {transports.map((t) => (
             <li style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -69,7 +81,7 @@ export function DayMapPanel({
         </ul>
       )}
 
-      {missing > 0 && (
+      {!bare && missing > 0 && (
         <p className="cap muted" style={{ marginTop: '8px' }}>
           {missing} {missing === 1 ? 'tappa non ha' : 'tappe non hanno'} una posizione e non compare sulla mappa.
         </p>

@@ -45,6 +45,14 @@ await runMigration('0014_trip_origin.sql')
 await runMigration('0014_trip_origin.sql') // si può rilanciare
 await runMigration('0015_visit_duration.sql')
 await runMigration('0015_visit_duration.sql') // si può rilanciare
+await runMigration('0016_checklist_url.sql')
+// una tappa «fatta» prima della 0017 deve diventare «Fatta»
+{
+  const day = (await db.query(`insert into days (trip_id, date) values ($1, '2026-11-22') returning id`, [legacyTrip])).rows[0].id
+  await db.query(`insert into day_items (trip_id, day_id, title, done) values ($1, $2, 'Vecchia fatta', true)`, [legacyTrip, day])
+}
+await runMigration('0017_tappe_stati.sql')
+await runMigration('0017_tappe_stati.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -54,6 +62,10 @@ let pass = 0, fail = 0
 const check = (name, cond, extra = '') => { (cond ? pass++ : fail++); console.log(`${cond ? 'OK  ' : 'FAIL'} ${name} ${extra}`) }
 const throws = async (name, fn) => { try { await fn(); check(name, false, '(nessun errore)') } catch (e) { check(name, true, `→ ${String(e.message).slice(0, 70)}`) } }
 
+{
+const st = (await db.query(`select status from day_items where title = 'Vecchia fatta'`)).rows[0]?.status
+check('0017 porta le tappe fatte allo stato «done»', st === 'done', String(st))
+}
 {
 const legacyCats = (await db.query(`select label from expense_categories where trip_id=$1 order by label`, [legacyTrip])).rows.map((r) => r.label)
 check('0008 recupera le categorie a testo libero (una per nome, senza badare alle maiuscole)', legacyCats.length === 2 && legacyCats.includes('Trasporti'), JSON.stringify(legacyCats))

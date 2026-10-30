@@ -1,4 +1,4 @@
-import type { Category, ChecklistItem, Expense, PlaceStatus } from '../types'
+import type { Category, ChecklistItem, Expense, PlaceStatus, ItemStatus } from '../types'
 
 // Coda delle modifiche fatte senza rete (o con rete instabile).
 // Ogni voce contiene le scritture da inviare (`ops`) e come si vede la modifica nell'app
@@ -23,6 +23,7 @@ export type Local =
   | { t: 'checklist.deleted'; id: string; deleted: boolean }
   | { t: 'checklist.deletedMany'; ids: string[]; deleted: boolean }
   | { t: 'item.done'; id: string; done: boolean }
+  | { t: 'item.status'; id: string; status: ItemStatus; at: string }
   | { t: 'place.status'; id: string; status: PlaceStatus }
 
 export interface Entry {

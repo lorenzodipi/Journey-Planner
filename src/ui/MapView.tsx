@@ -325,6 +325,8 @@ export function PinPicker({ lat, lng, center, onMove }: PinPickerProps) {
 export interface DayMapStop {
   id: string
   n: number
+  /** Stato della tappa per il colore del pin (mock Fa-09): fatta, saltata, in corso, dopo. */
+  state?: 'done' | 'skip' | 'now' | 'next'
   name: string
   lat: number
   lng: number
@@ -419,7 +421,8 @@ function numberElement(stop: DayMapStop, h: PinHandlers): HTMLElement {
   hit.setAttribute('aria-label', `Tappa ${stop.n}: ${stop.name}`)
   const dot = document.createElement('div')
   dot.className = 'jp-num'
-  dot.style.background = STOP_COLOR
+  if (stop.state) hit.dataset.state = stop.state
+  else dot.style.background = STOP_COLOR
   dot.textContent = String(stop.n)
   hit.appendChild(dot)
 
