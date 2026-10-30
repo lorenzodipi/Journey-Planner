@@ -65,9 +65,15 @@ const fasceText = (f: Fascia[]) => f.map((x) => `${x.from}–${x.to}`).join(' e 
 
 /** «Gio–Mar · 11:30–15:00 e 17:30–21:00 · Chiuso il mercoledì» (gruppi di giorni consecutivi con gli stessi orari). */
 export function formatOpening(spec: OpeningSpec | undefined): string | null {
+  const p = openingParts(spec)
+  return p ? [p.main, p.sub].filter(Boolean).join(' · ') : null
+}
+
+/** Orari divisi in riga principale («Gio–Mar · 11:30–15:00 e 17:30–21:00») e seconda riga (chiusure e nota). */
+export function openingParts(spec: OpeningSpec | undefined): { main: string; sub: string | null } | null {
   if (!spec) return null
   const open = WEEKDAYS.filter((d) => (spec.w[d.n]?.length ?? 0) > 0)
-  if (open.length === 0) return spec.note ?? null
+  if (open.length === 0) return spec.note ? { main: spec.note, sub: null } : null
   // gruppi di giorni con gli stessi orari, partendo dal giorno dopo un giorno chiuso (così «Gio–Mar» resta unito)
   const firstClosed = WEEKDAYS.findIndex((d) => !(spec.w[d.n]?.length))
   const start = firstClosed < 0 ? 0 : (firstClosed + 1) % 7
@@ -82,9 +88,8 @@ export function formatOpening(spec: OpeningSpec | undefined): string | null {
     if (last && consecutive && sameFasce(last.f, f)) last.days.push(d)
     else groups.push({ days: [d], f })
   }
-  const parts = groups.map((g) => `${g.days.length === 7 ? 'Tutti i giorni' : g.days.length > 1 ? `${g.days[0].short}–${g.days[g.days.length - 1].short}` : g.days[0].short} · ${fasceText(g.f)}`)
+  const main = groups.map((g) => `${g.days.length === 7 ? 'Tutti i giorni' : g.days.length > 1 ? `${g.days[0].short}–${g.days[g.days.length - 1].short}` : g.days[0].short} · ${fasceText(g.f)}`).join('; ')
   const closed = WEEKDAYS.filter((d) => !(spec.w[d.n]?.length))
-  if (closed.length > 0 && closed.length < 7) parts.push(`Chiuso ${closed.length === 1 ? `il ${closed[0].long}` : closed.map((d) => d.long).join(', ')}`)
-  if (spec.note) parts.push(spec.note)
-  return parts.join(' · ')
+  const sub = [closed.length > 0 && closed.length < 7 ? `Chiuso ${closed.length === 1 ? `il ${closed[0].long}` : closed.map((d) => d.long).join(', ')}` : null, spec.note ?? null].filter(Boolean).join(' · ')
+  return { main, sub: sub || null }
 }

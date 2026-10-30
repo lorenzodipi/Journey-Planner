@@ -45,7 +45,7 @@ describe('viewPlaces', () => {
 
   it('per stato: idee, pianificati, fatti, saltati', () => {
     const g = viewPlaces(places, { groupBy: 'status', sortBy: 'name' }, ctx)
-    expect(g.map((x) => x.title)).toEqual(['Idee', 'Pianificati', 'Fatti', 'Saltati'])
+    expect(g.map((x) => x.title)).toEqual(['Da visitare', 'In programma', 'Visitati', 'Scartati'])
   })
 
   it('per giorno: giorni in sequenza, poi da assegnare', () => {

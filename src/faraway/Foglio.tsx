@@ -19,10 +19,12 @@ interface FoglioProps {
   full?: boolean
   /** Titolo semplice centrato, senza «Chiudi» (es. conferme). */
   plain?: boolean
+  /** Azione a sinistra del titolo (es. «Azzera» nei filtri); «Chiudi» va a destra. */
+  headStart?: ReactNode
   className?: string
 }
 
-export function Foglio({ open, title, onClose, children, footer, full, plain, className }: FoglioProps) {
+export function Foglio({ open, title, onClose, children, footer, full, plain, headStart, className }: FoglioProps) {
   const ref = useRef<HTMLDialogElement>(null)
   const sheet = useRef<HTMLDivElement>(null)
   const drag = useRef<{ startY: number; startAt: number; dy: number } | null>(null)
@@ -83,6 +85,14 @@ export function Foglio({ open, title, onClose, children, footer, full, plain, cl
         {plain ? (
           <div className="st" {...handle}>
             {title}
+          </div>
+        ) : headStart ? (
+          <div className="hd" {...handle}>
+            {headStart}
+            <h2 className="st">{title}</h2>
+            <button type="button" className="fa-ib" style={{ background: 'none' }} aria-label="Chiudi" onClick={onClose}>
+              <Sv name="close" />
+            </button>
           </div>
         ) : (
           <div className="hd" {...handle}>

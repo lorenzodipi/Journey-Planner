@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect } from 'react'
 import { Redirect, Route, Router, Switch, useLocation } from 'wouter'
 import type { ComponentType } from 'react'
-import { useHashLocation } from 'wouter/use-hash-location'
+import { navigate as hashNavigate, useHashLocation } from 'wouter/use-hash-location'
 import { useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
 import { Alloggi } from './pages/Alloggi'
@@ -26,6 +26,12 @@ import { ToastHost } from './ui/ToastHost'
 import { EmptyState } from './ui/PageHeader'
 import { Sprite } from './ui/Sprite'
 
+// La query delle rotte (?vista=mappa) sta in location.search: wouter la lascia alla pagina dopo se il
+// nuovo indirizzo non ha «?». Qui ogni cambio di pagina la riscrive (vuota se non c'è).
+const navigateClean: typeof hashNavigate = (to, options) => hashNavigate(to.includes('?') ? to : `${to}?`, options)
+const useHashLoc = (options?: Parameters<typeof useHashLocation>[0]): [string, typeof hashNavigate] => [useHashLocation(options)[0], navigateClean]
+useHashLoc.hrefs = (href: string) => `#${href}`
+
 /** Pagine non ancora rifatte col design system Faraway: CSS di prima e barra di prima (#26). */
 function legacy<P extends object>(Page: ComponentType<P>) {
   return function Legacy(props: P) {
@@ -37,7 +43,6 @@ function legacy<P extends object>(Page: ComponentType<P>) {
     )
   }
 }
-const OldLuoghi = legacy(Luoghi)
 const OldBudget = legacy(Budget)
 const OldSpese = legacy(Spese)
 const OldAltro = legacy(Altro)
@@ -105,7 +110,7 @@ export function App() {
   if (!trip) return <PrimoViaggio />
 
   return (
-    <Router hook={useHashLocation}>
+    <Router hook={useHashLoc}>
       <ScrollToTop />
       <Sprite />
       <div>
@@ -119,7 +124,7 @@ export function App() {
           <Route path="/" component={Oggi} />
           <Route path="/giorni" component={Giorni} />
           <Route path="/giorni/:id" component={Giorno} />
-          <Route path="/luoghi" component={OldLuoghi} />
+          <Route path="/luoghi" component={Luoghi} />
           <Route path="/mappa">
             <Redirect to="/luoghi?vista=mappa" replace />
           </Route>

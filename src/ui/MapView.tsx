@@ -11,7 +11,7 @@ import {
 } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type MutableRefObject } from 'react'
 import { pinIconSvg, type PinIcon } from '../lib/categoryIcon'
 import { isTap, type TapDown } from '../lib/mapTap'
 
@@ -85,7 +85,7 @@ class StyleToggle implements IControl {
   }
 }
 
-function newMap(el: HTMLElement, center: { lat: number; lng: number }, zoom: number, withToggle: boolean, cooperative = false, locate = false): MLMap {
+function newMap(el: HTMLElement, center: { lat: number; lng: number }, zoom: number, withToggle: boolean, cooperative = false, locate: boolean | GeolocateControl = false, nav = true): MLMap {
   let pref = loadPref()
   let current = styleFor(pref)
   const map = new MLMap({
@@ -111,8 +111,8 @@ function newMap(el: HTMLElement, center: { lat: number; lng: number }, zoom: num
       : {}),
   })
   map.touchZoomRotate.disableRotation()
-  map.addControl(new NavigationControl({ showCompass: false }), 'top-right')
-  if (locate) map.addControl(new GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: false }), 'top-right')
+  if (nav) map.addControl(new NavigationControl({ showCompass: false }), 'top-right')
+  if (locate) map.addControl(locate === true ? new GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: false }) : locate, 'top-right')
   map.addControl(new AttributionControl({ compact: true }), 'bottom-left')
 
   const apply = (style: string) => {
@@ -179,16 +179,52 @@ export interface MapPin {
   ring?: string
 }
 
+/** Comandi della mappa per i pulsanti della pagina (design system: «La mia posizione», «Ingrandisci»). */
+export interface MapApi {
+  locate: () => void
+  zoomTo: (ids: string[]) => void
+  flyTo: (id: string) => void
+}
+
 interface MapViewProps {
   pins: MapPin[]
   center: { lat: number; lng: number }
   selectedId: string | null
   /** `null` quando si tocca la mappa fuori dai pin. */
   onSelect: (id: string | null) => void
+  /** Stile del design system Faraway: niente controlli di MapLibre, pin a disco da 36px. */
+  bare?: boolean
+  /** Raggruppa i pin troppo vicini in un pallino con il numero (mock Fa-21). */
+  cluster?: boolean
+  onCluster?: (ids: string[]) => void
+  apiRef?: MutableRefObject<MapApi | null>
+}
+
+const CLUSTER_PX = 40
+
+function faPinElement(p: MapPin, selected: boolean): HTMLElement {
+  const el = document.createElement('button')
+  el.type = 'button'
+  el.className = 'fa-pin'
+  el.title = p.name
+  el.setAttribute('aria-label', p.name)
+  el.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#${p.symbol ?? 'i-cat-pin-w'}"/></svg>`
+  el.classList.toggle('on', selected)
+  el.style.zIndex = selected ? '10' : ''
+  return el
+}
+
+function clusterElement(n: number): HTMLElement {
+  const el = document.createElement('button')
+  el.type = 'button'
+  el.className = 'fa-pinclu'
+  el.textContent = String(n)
+  el.setAttribute('aria-label', `${n} luoghi qui`)
+  return el
 }
 
 /** Mappa con un pin colorato per luogo. Si adatta ai pin visibili quando cambiano i filtri. */
-export function MapView({ pins, center, selectedId, onSelect }: MapViewProps) {
+export function MapView({ pins, center, selectedId, onSelect, bare, cluster, onCluster, apiRef }: MapViewProps) {
   const el = useRef<HTMLDivElement>(null)
   const map = useRef<MLMap | null>(null)
   const markers = useRef<Map<string, Marker>>(new Map())
@@ -200,12 +236,37 @@ export function MapView({ pins, center, selectedId, onSelect }: MapViewProps) {
   selectedIdRef.current = selectedId
   const fitted = useRef('')
   const ready = useRef(false)
+  const onClusterRef = useRef(onCluster)
+  onClusterRef.current = onCluster
+  // fitBounds fa partire subito «zoomend»: senza questo i pin si disegnerebbero due volte
+  const drawing = useRef(false)
 
   useEffect(() => {
     if (!el.current) return
-    const m = newMap(el.current, center, 11, true, false, true)
+    const geo = new GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: false })
+    const m = bare ? newMap(el.current, center, 11, false, false, geo, false) : newMap(el.current, center, 11, true, false, true)
     map.current = m
     m.on('click', () => onSelectRef.current(null))
+    if (cluster) m.on('zoomend', () => drawPins())
+    if (apiRef) {
+      apiRef.current = {
+        locate: () => void geo.trigger(),
+        flyTo: (id) => {
+          const p = pinsRef.current.find((x) => x.id === id)
+          if (p) m.easeTo({ center: [p.lng, p.lat], zoom: Math.max(m.getZoom(), 15) })
+        },
+        zoomTo: (ids) => {
+          const list = pinsRef.current.filter((x) => ids.includes(x.id))
+          if (list.length === 0) return
+          const b = new LngLatBounds()
+          for (const p of list) b.extend([p.lng, p.lat])
+          const sw = b.getSouthWest()
+          const ne = b.getNorthEast()
+          if (sw.lng === ne.lng && sw.lat === ne.lat) m.easeTo({ center: [sw.lng, sw.lat], zoom: Math.min(19, m.getZoom() + 3) })
+          else m.fitBounds(b, { padding: 72, maxZoom: 19 })
+        },
+      }
+    }
     // i pin sono elementi HTML: servono solo dopo che la mappa esiste
     ready.current = true
     drawPins()
@@ -215,6 +276,7 @@ export function MapView({ pins, center, selectedId, onSelect }: MapViewProps) {
       markers.current.clear()
       m.remove()
       map.current = null
+      if (apiRef) apiRef.current = null
     }
     // la mappa si crea una volta sola
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -222,19 +284,19 @@ export function MapView({ pins, center, selectedId, onSelect }: MapViewProps) {
 
   function drawPins() {
     const m = map.current
-    if (!m || !ready.current) return
+    if (!m || !ready.current || drawing.current) return
+    drawing.current = true
+    try {
+      placePins(m)
+    } finally {
+      drawing.current = false
+    }
+  }
+
+  function placePins(m: MLMap) {
     const list = pinsRef.current
     for (const mk of markers.current.values()) mk.remove()
     markers.current.clear()
-    for (const p of list) {
-      const pe = pinElement(p, p.id === selectedIdRef.current)
-      const select = () => onSelectRef.current(p.id)
-      pe.addEventListener('click', (ev) => {
-        ev.stopPropagation()
-        select()
-      })
-      markers.current.set(p.id, new Marker({ element: pe, anchor: 'center' }).setLngLat([p.lng, p.lat]).addTo(m))
-    }
     // inquadra tutto solo se cambia l'insieme dei pin (non a ogni selezione)
     const key = list.map((p) => p.id).join(',')
     if (key !== fitted.current && list.length > 0) {
@@ -246,6 +308,37 @@ export function MapView({ pins, center, selectedId, onSelect }: MapViewProps) {
         m.fitBounds(b, { padding: 48, maxZoom: 16, duration: 0 })
       }
     }
+    // pin vicini (meno di 40px) in un pallino col numero; il pin scelto resta sempre da solo
+    const groups: { pins: MapPin[]; x: number; y: number }[] = []
+    for (const p of list) {
+      const pt = m.project([p.lng, p.lat])
+      const g = cluster && p.id !== selectedIdRef.current ? groups.find((x) => x.pins[0].id !== selectedIdRef.current && Math.hypot(x.x - pt.x, x.y - pt.y) < CLUSTER_PX) : undefined
+      if (g) {
+        g.pins.push(p)
+        g.x += (pt.x - g.x) / g.pins.length
+        g.y += (pt.y - g.y) / g.pins.length
+      } else groups.push({ pins: [p], x: pt.x, y: pt.y })
+    }
+    for (const g of groups) {
+      if (g.pins.length > 1) {
+        const ce = clusterElement(g.pins.length)
+        const ids = g.pins.map((p) => p.id)
+        ce.addEventListener('click', (ev) => {
+          ev.stopPropagation()
+          onClusterRef.current?.(ids)
+        })
+        const at = m.unproject([g.x, g.y])
+        markers.current.set(`c:${ids.join(',')}`, new Marker({ element: ce, anchor: 'center' }).setLngLat(at).addTo(m))
+        continue
+      }
+      const p = g.pins[0]
+      const pe = bare ? faPinElement(p, p.id === selectedIdRef.current) : pinElement(p, p.id === selectedIdRef.current)
+      pe.addEventListener('click', (ev) => {
+        ev.stopPropagation()
+        onSelectRef.current(p.id)
+      })
+      markers.current.set(p.id, new Marker({ element: pe, anchor: 'center' }).setLngLat([p.lng, p.lat]).addTo(m))
+    }
   }
 
   // ridisegna i pin quando cambiano
@@ -256,10 +349,18 @@ export function MapView({ pins, center, selectedId, onSelect }: MapViewProps) {
 
   // evidenzia il pin selezionato senza ricreare tutto
   useEffect(() => {
-    for (const [id, mk] of markers.current) setSelected(mk.getElement(), id === selectedId)
+    if (cluster) return drawPins()
+    for (const [id, mk] of markers.current) {
+      const e = mk.getElement()
+      if (bare) {
+        e.classList.toggle('on', id === selectedId)
+        e.style.zIndex = id === selectedId ? '10' : ''
+      } else setSelected(e, id === selectedId)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId])
 
-  return <div ref={el} className="h-full w-full" role="application" aria-label="Mappa dei luoghi" />
+  return <div ref={el} className={bare ? 'fa-mapgl' : 'h-full w-full'} role="application" aria-label="Mappa dei luoghi" />
 }
 
 interface PinPickerProps {

@@ -12,13 +12,13 @@ interface Stored {
 let current: Stored = { tripId: '', view: DEFAULT_VIEW }
 const listeners = new Set<(s: Stored) => void>()
 
-export function usePlaceView(tripId: string): [PlaceView, (v: PlaceView) => void] {
+export function usePlaceView(tripId: string, fallback: PlaceView = DEFAULT_VIEW): [PlaceView, (v: PlaceView) => void] {
   const [stored, setStored] = useState<Stored>(current)
   useEffect(() => {
     listeners.add(setStored)
     return () => void listeners.delete(setStored)
   }, [])
-  const view = stored.tripId === tripId ? stored.view : DEFAULT_VIEW
+  const view = stored.tripId === tripId ? stored.view : fallback
   const set = (next: PlaceView) => {
     current = { tripId, view: next }
     for (const l of listeners) l(current)

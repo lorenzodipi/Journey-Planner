@@ -1,334 +1,633 @@
-import { useMemo, useRef, useState } from 'react'
-import { formatDuration } from '../lib/duration'
-import { mapsLinkFor } from '../lib/mapsUrl'
-import { countActive, filterPlaces, toggleValue } from '../lib/placeFilter'
-import { DEFAULT_VIEW, GROUP_LABEL, SORT_LABEL, isDefaultView, viewPlaces } from '../lib/placeView'
-import { minutesOfDay } from '../lib/sun'
-import { nextItem, tripToday } from '../lib/today'
+// Scheda Luoghi (mock Fa-16…Fa-21, Fa-56, issue #33): Elenco | Mappa con filtri separati, pillole di stato,
+// card aperta in linea con «Aggiungi a una tappa», selezione multipla, FAB «+ Luogo».
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useSearch } from 'wouter'
+import { countActive, EMPTY_FILTERS, filterPlaces, type PlaceFilters } from '../lib/placeFilter'
+import { LUOGHI_VIEW, viewPlaces } from '../lib/placeView'
+import { conStato, STATI_LUOGO, STATO_LUOGO, tappaDelLuogo } from '../lib/luoghi'
+import { isJapanTrip } from '../lib/tripLocale'
 import { usePlaceFilters } from '../state/placeFilters'
 import { usePlaceView } from '../state/placeView'
+import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
-import type { Place } from '../types'
-import { ART } from '../ui/art'
-import { CatIc } from '../ui/CatIc'
-import { FilterSheet } from '../ui/FilterSheet'
-import { FindPositions } from '../ui/FindPositions'
-import { CheckG, CloseG, ClockG, FilterG, MinusG, PlusG, SearchG, TrashG } from '../ui/glyphs'
-import { MapsPill } from '../ui/MapsPill'
-import { EmptyState, PageHeader } from '../ui/PageHeader'
-import { PlaceSheet, type PlaceSheetState } from '../ui/PlaceSheet'
-import { useDeleter } from '../ui/useDeleter'
-import { useHideNav } from '../ui/useHideNav'
+import type { Place, PlaceStatus, Trip } from '../types'
+import type { MapApi, MapPin } from '../ui/MapView'
+import { usePlacePhoto } from '../ui/usePlacePhoto'
+import { Ic } from '../ui/Sprite'
+import { Campo, Chip, Pulsante, PulsanteIcona, Segmenti } from '../faraway/base'
+import { cx } from '../faraway/cx'
+import { useConferma } from '../faraway/Foglio'
+import { Sv } from '../faraway/icons'
+import { discOfPlace, LuogoCard } from '../faraway/Luogo'
+import { useUnaAperta } from '../faraway/Righe'
+import { BarraGrande, Schermata } from '../faraway/shell'
+import { Vuoto, VuotoFiltro } from '../faraway/Stati'
+import { SpostaSheet } from './giorno/SpostaSheet'
+import { FiltriSheet } from './luoghi/FiltriSheet'
+import { LuogoSheet } from './luoghi/LuogoSheet'
+import { TrovaPosizioni } from './luoghi/TrovaPosizioni'
 
-/** Stato del luogo come nel mock: Fatto, Ora, Giorno N, Idea, Saltato. */
-function StatusSp({ place, dayNo, now }: { place: Place; dayNo: number | undefined; now: boolean }) {
-  if (place.status === 'done')
-    return (
-      <span className="sp vi">
-        <CheckG size={14} sw={3} />
-        Fatto
-      </span>
-    )
-  if (place.status === 'skipped')
-    return (
-      <span className="sp bad">
-        <CloseG size={14} sw={2.6} />
-        Saltato
-      </span>
-    )
-  if (now)
-    return (
-      <span className="sp now">
-        <ClockG size={14} sw={2.4} />
-        Ora
-      </span>
-    )
-  const text = dayNo != null ? `Giorno ${dayNo}` : place.status === 'planned' ? 'Pianificato' : 'Idea'
+type Vista = 'elenco' | 'mappa'
+type MapViewComponent = typeof import('../ui/MapView').MapView
+
+const VUOTO_STATO: Record<PlaceStatus, { title: string; text: string }> = {
+  idea: { title: 'Nessun luogo da visitare', text: 'Qui trovi i luoghi salvati che non sono ancora in un giorno.' },
+  planned: { title: 'Nessun luogo in programma', text: 'Quando aggiungi un luogo a un giorno lo trovi qui.' },
+  done: { title: 'Nessun luogo visitato', text: 'Quando segni come fatta una tappa, il suo luogo arriva qui.' },
+  skipped: { title: 'Nessun luogo scartato', text: 'Quando scarti un luogo lo trovi qui, senza che finisca nel programma.' },
+}
+
+const n = (k: number, one: string, many: string) => `${k} ${k === 1 ? one : many}`
+
+/** Barra «Filtri» + pillole di stato (Tutti · Da visitare · In programma · Visitato · Scartato). */
+function RigaFiltri({ filters, onChange, onOpen }: { filters: PlaceFilters; onChange: (f: PlaceFilters) => void; onOpen: () => void }) {
+  const active = countActive(filters)
+  const only = filters.statuses.length === 1 ? filters.statuses[0] : null
   return (
-    <span className="sp idle">
-      <MinusG size={14} sw={2.6} />
-      {text}
-    </span>
+    <div className="fa-frow">
+      <button type="button" className={cx('fa-fbtn', active > 0 && 'on')} aria-label={active > 0 ? `Apri i filtri, ${active} attivi` : 'Apri i filtri'} onClick={onOpen}>
+        <Sv name="filter" size={18} />
+        Filtri
+        {active > 0 ? <b>{active}</b> : null}
+      </button>
+      <div className="fa-chips scroll" role="group" aria-label="Stato">
+        <Chip on={filters.statuses.length === 0} onPress={() => onChange({ ...filters, statuses: [] })}>
+          Tutti
+        </Chip>
+        {STATI_LUOGO.map((s) => (
+          <Chip key={s} on={only === s} onPress={() => onChange({ ...filters, statuses: only === s ? [] : [s] })}>
+            {STATO_LUOGO[s].label}
+          </Chip>
+        ))}
+      </div>
+    </div>
   )
 }
 
-export function Luoghi() {
-  const trip = useTrip()
+/** Azioni comuni sulle card: aggiungere a un giorno, spostare la tappa, modificare, eliminare. */
+function useAzioniLuogo(trip: Trip) {
   const t = useTrips()
-  const [del, delDialog] = useDeleter()
+  const [ask, confirmNode] = useConferma()
+  const [sheet, setSheet] = useState<{ place?: Place; focusPosition?: boolean } | null>(null)
+  const [move, setMove] = useState<{ place: Place } | null>(null)
+
+  async function addToDay(place: Place, dayId: string) {
+    const index = trip.days.findIndex((d) => d.id === dayId)
+    const message = await t.createItem(trip.id, dayId, { title: place.name, kind: 'visit', startTime: '', endTime: '', notes: '', placeId: place.id })
+    if (message) showToast(message)
+    else showToast(`Aggiunto al Giorno ${index + 1}`)
+  }
+
+  async function remove(list: Place[]): Promise<boolean> {
+    if (list.length === 0) return false
+    const used = list.filter((p) => tappaDelLuogo(trip, p.id)).length
+    const one = list.length === 1
+    const ok = await ask({
+      title: one ? `Eliminare «${list[0].name}»?` : `Eliminare ${list.length} luoghi?`,
+      message: used > 0 ? `${one ? 'Resta nelle tappe dei giorni' : 'Le tappe dei giorni restano'}, ma senza il luogo collegato. Puoi annullare subito dopo.` : 'Puoi annullare subito dopo.',
+      confirm: one ? 'Elimina il luogo' : `Elimina ${list.length} luoghi`,
+      cancel: one ? 'Tieni il luogo' : 'Tieni i luoghi',
+      destructive: true,
+    })
+    if (!ok) return false
+    const ids = list.map((p) => p.id)
+    const message = await t.setPlacesDeleted(ids, true) // una sola richiesta per tutti
+    if (message) {
+      showToast(message)
+      return false
+    }
+    showToast(one ? 'Luogo eliminato' : `${list.length} luoghi eliminati`, { label: 'Annulla', run: () => void t.setPlacesDeleted(ids, false) })
+    return true
+  }
+
+  const tappa = move ? tappaDelLuogo(trip, move.place.id) : null
+  const nodes = (
+    <>
+      {confirmNode}
+      {sheet ? <LuogoSheet key={sheet.place?.id ?? 'new'} trip={trip} place={sheet.place} focusPosition={sheet.focusPosition} open onClose={() => setSheet(null)} /> : null}
+      {move && tappa ? (
+        <SpostaSheet
+          trip={trip}
+          current={trip.days[tappa.dayIndex]}
+          open
+          title="Sposta in un altro giorno"
+          preferCity={move.place.city}
+          onClose={() => setMove(null)}
+          onMove={async (dayId) => {
+            const m = await t.moveItemToDay(trip.id, tappa.item.id, dayId)
+            if (!m) showToast(`Spostato al Giorno ${trip.days.findIndex((d) => d.id === dayId) + 1}`)
+            return m
+          }}
+        />
+      ) : null}
+    </>
+  )
+  return {
+    nodes,
+    addToDay,
+    remove,
+    edit: (place: Place, focusPosition = false) => setSheet({ place, focusPosition }),
+    create: () => setSheet({}),
+    changeDay: (place: Place) => setMove({ place }),
+  }
+}
+
+export function Luoghi() {
+  const search = useSearch()
+  const [, navigate] = useLocation()
+  const vista: Vista = new URLSearchParams(search).get('vista') === 'mappa' ? 'mappa' : 'elenco'
+  const setVista = (v: Vista) => navigate(v === 'mappa' ? '/luoghi?vista=mappa' : '/luoghi', { replace: true })
+  return vista === 'mappa' ? <Mappa setVista={setVista} /> : <Elenco setVista={setVista} />
+}
+
+function sottotitolo(places: Place[]): string {
+  if (places.length === 0) return 'Nessun luogo'
+  const cities = new Set(places.map((p) => p.city.trim().toLowerCase()).filter(Boolean)).size
+  return [n(places.length, 'luogo', 'luoghi'), cities > 0 ? n(cities, 'città', 'città') : ''].filter(Boolean).join(' · ')
+}
+
+/** Ricerca nei luoghi, sotto la barra: si apre con «Cerca». */
+function CampoCerca({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return <Campo label="Cerca nei tuoi luoghi" hideLabel icon="search" type="search" value={value} onChange={onChange} placeholder="Nome, città o categoria" autoFocus enterKeyHint="search" />
+}
+
+/* ------------------------------------------------------------------ Elenco */
+
+function Elenco({ setVista }: { setVista: (v: Vista) => void }) {
+  const trip = useTrip()
+  const places = useMemo(() => conStato(trip), [trip])
   const [filters, setFilters] = usePlaceFilters('luoghi', trip.id)
-  const [view, setView] = usePlaceView(trip.id)
-  const [text, setText] = useState('')
+  const [view, setView] = usePlaceView(trip.id, LUOGHI_VIEW)
+  const [filtriOpen, setFiltriOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
-  const [filterOpen, setFilterOpen] = useState(false)
-  const [sheet, setSheet] = useState<PlaceSheetState>(null)
+  const [text, setText] = useState('')
   const [selecting, setSelecting] = useState(false)
   const [sel, setSel] = useState<Set<string>>(new Set())
-  const searchRef = useRef<HTMLInputElement>(null)
-  useHideNav(selecting)
+  const card = useUnaAperta()
+  const az = useAzioniLuogo(trip)
 
-  const visible = filterPlaces(trip.places, filters, text)
-  const dayIndexOf = (placeId: string) => {
-    const i = trip.days.findIndex((d) => d.items.some((it) => it.placeId === placeId))
-    return i < 0 ? undefined : i
-  }
-  const groups = viewPlaces(visible, view, { dayIndex: dayIndexOf, categoryOrder: trip.categories.map((c) => c.label) })
-
-  // il luogo della tappa in corso adesso (stato «Ora»)
-  const nowPlaceId = useMemo(() => {
-    const now = new Date()
-    const day = trip.days.find((d) => d.date === tripToday(trip, now))
-    const cur = day ? nextItem(day, minutesOfDay(now, trip.timezone)) : null
-    return cur?.status === 'now' ? cur.item.placeId : undefined
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trip.days, trip.timezone])
-
-  // si agisce solo sui luoghi che si vedono nell'elenco (con filtri e ricerca applicati)
+  const visible = filterPlaces(places, filters, searchOpen ? text : '')
+  const dayIndex = (id: string) => tappaDelLuogo(trip, id)?.dayIndex
+  const groups = viewPlaces(visible, view, { dayIndex, categoryOrder: trip.categories.map((c) => c.label) })
   const chosen = visible.filter((p) => sel.has(p.id))
   const allSelected = visible.length > 0 && chosen.length === visible.length
+  const original = (p: Place) => trip.places.find((x) => x.id === p.id) ?? p
 
-  function stopSelecting() {
-    setSelecting(false)
-    setSel(new Set())
+  const stopSelecting = () => (setSelecting(false), setSel(new Set()))
+  const startSelecting = (id?: string) => {
+    card.setOpen(null)
+    setSelecting(true)
+    setSel(new Set(id ? [id] : []))
   }
-  function toggleSel(id: string) {
+  const toggleSel = (id: string) =>
     setSel((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
       return next
     })
-  }
-  async function deleteChosen() {
-    const list = chosen
-    if (list.length === 0) return
-    const used = list.reduce((n, p) => n + trip.days.reduce((m, d) => m + d.items.filter((i) => i.placeId === p.id).length, 0), 0)
-    const ok = await del({
-      title: list.length === 1 ? `Eliminare «${list[0].name}»?` : `Eliminare ${list.length} luoghi?`,
-      text: used > 0 ? `Restano in ${used} ${used === 1 ? 'tappa' : 'tappe'} dei giorni, ma senza più il luogo collegato. Puoi annullare subito dopo.` : 'Puoi annullare subito dopo.',
-      done: list.length === 1 ? 'Luogo eliminato' : `${list.length} luoghi eliminati`,
-      confirmLabel: list.length === 1 ? 'Elimina' : `Elimina ${list.length} luoghi`,
-      run: () => t.setPlacesDeleted(list.map((p) => p.id), true), // una sola richiesta per tutti
-      undo: () => t.setPlacesDeleted(list.map((p) => p.id), false),
-    })
-    if (ok) stopSelecting()
-  }
 
-  // chip delle città (con il numero di luoghi) e delle categorie
-  const cities = useMemo(() => {
-    const m = new Map<string, number>()
-    for (const p of trip.places) if (p.city) m.set(p.city, (m.get(p.city) ?? 0) + 1)
-    return [...m.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'it'))
-  }, [trip.places])
-  const cats = useMemo(() => {
-    const used = new Set(trip.places.map((p) => p.category))
-    const labels = trip.categories.map((c) => c.label).filter((l) => used.has(l))
-    for (const u of used) if (u && !labels.includes(u)) labels.push(u)
-    return labels
-  }, [trip.places, trip.categories])
-  const pickOne = (list: string[], v: string) => (list.length === 1 && list[0] === v ? [] : [v])
+  // il tasto «indietro» esce dalla selezione
+  useEffect(() => {
+    if (!selecting) return
+    const root = document.documentElement
+    root.setAttribute('data-card-open', '')
+    const close = () => stopSelecting()
+    window.addEventListener('fa:close-card', close)
+    return () => {
+      root.removeAttribute('data-card-open')
+      window.removeEventListener('fa:close-card', close)
+    }
+  }, [selecting])
 
-  const activeFilters = countActive(filters)
-  const oneCity = filters.cities.length === 1 ? filters.cities[0] : null
-  const subtitle = `${visible.length} ${visible.length === 1 ? 'luogo' : 'luoghi'}${oneCity ? ` a ${oneCity}` : ''}`
+  const only = filters.statuses.length === 1 && countActive(filters) === 1 && !text ? filters.statuses[0] : null
+  const empty = trip.places.length === 0
 
-  function toggleSearch() {
-    const next = !searchOpen
-    setSearchOpen(next)
-    if (next) setTimeout(() => searchRef.current?.focus(), 0)
-    else setText('')
-  }
-
-  const header = selecting ? (
-    <PageHeader
-      title={chosen.length === 0 ? 'Tocca i luoghi' : chosen.length === 1 ? '1 selezionato' : `${chosen.length} selezionati`}
-      subtitle="tocca i luoghi per sceglierli"
+  const bar = selecting ? (
+    <BarraGrande
+      title={chosen.length === 0 ? 'Tocca i luoghi' : n(chosen.length, 'selezionato', 'selezionati')}
+      sub="Scegli i luoghi da eliminare"
       actions={
-        <button type="button" className="btn soft sm" onClick={stopSelecting}>
+        <button type="button" className="fa-btn soft sm" onClick={stopSelecting}>
           Annulla
         </button>
       }
     />
   ) : (
-    <PageHeader
+    <BarraGrande
       title="Luoghi"
-      subtitle={subtitle}
+      sub={sottotitolo(trip.places)}
       actions={
-        <>
-          <button type="button" className="rbtn" aria-label="Cerca un luogo" aria-pressed={searchOpen} onClick={toggleSearch}>
-            <SearchG />
-          </button>
-          <button type="button" className={`rbtn${activeFilters > 0 ? ' pri' : ''}`} aria-label={activeFilters > 0 ? `Filtra, ${activeFilters} attivi` : 'Filtra'} onClick={() => setFilterOpen(true)}>
-            <FilterG />
-          </button>
-          {visible.length > 0 && (
-            <button type="button" className="rbtn" aria-label="Seleziona luoghi" onClick={() => setSelecting(true)}>
-              <CheckG />
-            </button>
-          )}
-        </>
+        empty ? (
+          <PulsanteIcona icon="search" label="Cerca un luogo" pressed={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />
+        ) : (
+          <>
+            <PulsanteIcona icon="check" label="Seleziona luoghi" onPress={() => startSelecting()} />
+            <PulsanteIcona icon="search" label="Cerca un luogo" pressed={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />
+          </>
+        )
       }
     />
   )
 
   return (
-    <main className="screen">
-      {header}
-
-      {!selecting && searchOpen && trip.places.length > 0 && (
-        <label className="fld srch">
-          <SearchG />
-          <input ref={searchRef} type="search" value={text} placeholder="Cerca un luogo" aria-label="Cerca nei tuoi luoghi" onChange={(e) => setText(e.currentTarget.value)} />
-        </label>
-      )}
-
-      {!selecting && <FindPositions />}
-
-      {trip.places.length > 0 && (
+    <Schermata
+      bar={bar}
+      tabs={!selecting}
+      fab={empty || selecting ? null : { label: 'Luogo', aria: 'Aggiungi un luogo', onPress: az.create }}
+      className={selecting ? 'fa-selmode' : undefined}
+      overlay={
         <>
-          {cities.length > 1 && (
-            <div className="chips scroll" role="group" aria-label="Città">
-              <button type="button" className={`chip${filters.cities.length === 0 ? ' on' : ''}`} aria-pressed={filters.cities.length === 0} onClick={() => setFilters({ ...filters, cities: [] })}>
-                Tutti <span className="n">{trip.places.length}</span>
-              </button>
-              {cities.map(([c, n]) => (
-                <button type="button" key={c} className={`chip${filters.cities.includes(c) ? ' on' : ''}`} aria-pressed={filters.cities.includes(c)} onClick={() => setFilters({ ...filters, cities: pickOne(filters.cities, c) })}>
-                  {c} <span className="n">{n}</span>
-                </button>
-              ))}
+          {selecting ? (
+            <div className="fa-selbar">
+              <Pulsante color="tertiary-destructive" iconLeading="trash" isDisabled={chosen.length === 0} onPress={() => void az.remove(chosen.map(original)).then((ok) => ok && stopSelecting())}>
+                {chosen.length === 0 ? 'Elimina' : chosen.length === 1 ? 'Elimina 1 luogo' : `Elimina ${chosen.length} luoghi`}
+              </Pulsante>
             </div>
-          )}
-          {cats.length > 0 && (
-            <div className="chips scroll" role="group" aria-label="Categorie">
-              <button type="button" className={`chip${filters.categories.length === 0 ? ' on' : ''}`} aria-pressed={filters.categories.length === 0} onClick={() => setFilters({ ...filters, categories: [] })}>
-                Tutte
-              </button>
-              {cats.map((c) => (
-                <button
-                  type="button"
-                  key={c || 'none'}
-                  className={`chip${filters.categories.includes(c) ? ' on' : ''}`}
-                  aria-pressed={filters.categories.includes(c)}
-                  onClick={() => setFilters({ ...filters, categories: pickOne(filters.categories, c) })}
-                >
-                  {c || 'Senza categoria'}
-                </button>
-              ))}
-            </div>
-          )}
-          {(filters.statuses.length > 0 || !isDefaultView(view)) && (
-            <div className="chips scroll" aria-label="Filtri attivi">
-              {filters.statuses.map((s) => (
-                <button type="button" key={s} className="chip on" aria-label={`Togli filtro stato ${s}`} onClick={() => setFilters({ ...filters, statuses: toggleValue(filters.statuses, s) })}>
-                  {{ idea: 'Idea', planned: 'Pianificato', done: 'Fatto', skipped: 'Saltato' }[s]}
-                  <CloseG size={14} sw={2.6} />
-                </button>
-              ))}
-              {view.groupBy !== DEFAULT_VIEW.groupBy && (
-                <button type="button" className="chip on" aria-label="Togli il raggruppamento" onClick={() => setView({ ...view, groupBy: DEFAULT_VIEW.groupBy })}>
-                  Raggruppa: {GROUP_LABEL[view.groupBy]}
-                  <CloseG size={14} sw={2.6} />
-                </button>
-              )}
-              {view.sortBy !== DEFAULT_VIEW.sortBy && (
-                <button type="button" className="chip on" aria-label="Togli l'ordinamento" onClick={() => setView({ ...view, sortBy: DEFAULT_VIEW.sortBy })}>
-                  Ordina: {SORT_LABEL[view.sortBy]}
-                  <CloseG size={14} sw={2.6} />
-                </button>
-              )}
-            </div>
-          )}
+          ) : null}
+          {filtriOpen ? (
+            <FiltriSheet
+              trip={trip}
+              places={places}
+              open
+              filters={filters}
+              view={view}
+              onApply={(f, v) => {
+                setFilters(f)
+                if (v) setView(v)
+              }}
+              onClose={() => setFiltriOpen(false)}
+            />
+          ) : null}
+          {az.nodes}
+        </>
+      }
+    >
+      {searchOpen && !selecting ? <CampoCerca value={text} onChange={setText} /> : null}
+      {selecting ? null : (
+        <Segmenti
+          label="Vista"
+          value="elenco"
+          options={[
+            { value: 'elenco', label: 'Elenco' },
+            { value: 'mappa', label: 'Mappa' },
+          ]}
+          onChange={(v) => setVista(v as Vista)}
+        />
+      )}
+      {empty ? (
+        <Vuoto art="vuotoLuoghi" title="Nessun luogo salvato" text="Salva qui ristoranti, templi e viste da non perdere. Poi li metti nei giorni che vuoi." action="Aggiungi un luogo" onAction={az.create} />
+      ) : (
+        <>
+          {selecting ? null : <RigaFiltri filters={filters} onChange={setFilters} onOpen={() => setFiltriOpen(true)} />}
+          {selecting ? null : <TrovaPosizioni />}
+          {visible.length === 0 ? (
+            only ? (
+              <VuotoFiltro title={VUOTO_STATO[only].title} text={VUOTO_STATO[only].text} action="Mostra tutti i luoghi" onAction={() => setFilters(EMPTY_FILTERS)} />
+            ) : (
+              <VuotoFiltro title="Nessun luogo con questi filtri" text={text ? 'Nessun luogo ha questo nome: prova a scriverlo in un altro modo.' : 'Prova a togliere qualche filtro.'} action="Mostra tutti i luoghi" onAction={() => (setFilters(EMPTY_FILTERS), setText(''))} />
+            )
+          ) : null}
+          {selecting && visible.length > 0 ? (
+            <button
+              type="button"
+              className="fa-card fa-selall"
+              role="checkbox"
+              aria-checked={allSelected ? true : chosen.length > 0 ? 'mixed' : false}
+              onClick={() => setSel(allSelected ? new Set() : new Set(visible.map((p) => p.id)))}
+            >
+              <span className={cx('fa-cbx', chosen.length > 0 && 'on')} aria-hidden="true">
+                {allSelected ? <Sv name="check" size={16} /> : chosen.length > 0 ? <Sv name="minus" size={16} /> : null}
+              </span>
+              <span className="t">{allSelected ? 'Deseleziona tutti' : 'Seleziona tutti'}</span>
+              <span className="fa-c">
+                {chosen.length} su {visible.length}
+              </span>
+            </button>
+          ) : null}
+          {groups.map((g) => (
+            <section key={g.key} aria-label={g.title || 'Luoghi'} style={{ display: 'grid', gap: 8 }}>
+              {g.title ? (
+                <div className="fa-sech">
+                  <h2 className="fa-h3">{g.title}</h2>
+                  <span className="fa-c">{n(g.places.length, 'luogo', 'luoghi')}</span>
+                </div>
+              ) : null}
+              <div className="k-Luoghi">
+                <div className="list">
+                  {g.places.map((p) => (
+                    <LuogoCard
+                      key={p.id}
+                      trip={trip}
+                      place={original(p)}
+                      open={card.isOpen(p.id)}
+                      onToggle={() => card.toggle(p.id)}
+                      onAddToDay={(dayId) => az.addToDay(original(p), dayId)}
+                      onChangeDay={() => az.changeDay(original(p))}
+                      onEdit={() => az.edit(original(p))}
+                      onDelete={() => void az.remove([original(p)])}
+                      selecting={selecting}
+                      selected={sel.has(p.id)}
+                      onSelect={() => toggleSel(p.id)}
+                      onLongPress={() => startSelecting(p.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </section>
+          ))}
         </>
       )}
+    </Schermata>
+  )
+}
 
-      {trip.places.length === 0 && (
-        <EmptyState title="Nessun luogo ancora" text="Aggiungi i posti che vuoi visitare: cerca per nome oppure incolla un link di Google Maps." art={ART.vuotoLuoghi} />
-      )}
-      {trip.places.length > 0 && visible.length === 0 && <EmptyState title="Nessun risultato" text="Prova a togliere qualche filtro o a cambiare la ricerca." art={ART.vuotoLuoghi} />}
+/* ------------------------------------------------------------------ Mappa */
 
-      {selecting && visible.length > 0 && (
-        <div className="rows">
-          <button
-            type="button"
-            className="selall"
-            role="checkbox"
-            aria-checked={allSelected ? true : chosen.length > 0 ? 'mixed' : false}
-            aria-label={allSelected ? `Deseleziona tutti i ${visible.length} luoghi` : `Seleziona tutti i ${visible.length} luoghi`}
-            onClick={() => setSel(allSelected ? new Set() : new Set(visible.map((p) => p.id)))}
-          >
-            <span className={`cb${chosen.length > 0 ? ' on' : ''}`}>{allSelected ? <CheckG size={16} sw={3} /> : chosen.length > 0 ? <MinusG size={16} sw={3} /> : null}</span>
-            <span className="grow">{allSelected ? 'Deseleziona tutti' : 'Seleziona tutti'}</span>
-            <span className="b-bold num">
-              {chosen.length} su {visible.length}
-            </span>
+/** La foto di Wikipedia del luogo (#20) nel disco della card della Mappa, se c'è; sotto resta il disco. */
+function FotoLuogo({ trip, place }: { trip: Trip; place: Place }) {
+  const photo = usePlacePhoto(place, isJapanTrip(trip) ? ['ja'] : [])
+  const url = photo.status === 'ready' ? photo.photo.url : null
+  const [bad, setBad] = useState<string | null>(null)
+  return (
+    <span className="fa-foto">
+      <Ic name={discOfPlace(place)} size={44} />
+      {url && bad !== url ? <img src={url} alt="" decoding="async" referrerPolicy="no-referrer" onError={() => setBad(url)} /> : null}
+    </span>
+  )
+}
+
+function CreditoFoto({ trip, place }: { trip: Trip; place: Place }) {
+  const photo = usePlacePhoto(place, isJapanTrip(trip) ? ['ja'] : [])
+  if (photo.status !== 'ready') return null
+  return (
+    <p className="fa-c" style={{ marginTop: 12 }}>
+      Foto:{' '}
+      <a href={photo.photo.page} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>
+        Wikimedia Commons
+      </a>{' '}
+      (da «{photo.photo.title}»)
+    </p>
+  )
+}
+
+function Mappa({ setVista }: { setVista: (v: Vista) => void }) {
+  const trip = useTrip()
+  const places = useMemo(() => conStato(trip), [trip])
+  const [filters, setFilters] = usePlaceFilters('mappa', trip.id)
+  const [filtriOpen, setFiltriOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [text, setText] = useState('')
+  const [View, setView] = useState<MapViewComponent | null>(null)
+  const [loadError, setLoadError] = useState(false)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [cardOpen, setCardOpen] = useState(false)
+  const [clusterIds, setClusterIds] = useState<string[] | null>(null)
+  const [noPos, setNoPos] = useState<{ ids: string[]; i: number } | null>(null)
+  const [noPosDismissed, setNoPosDismissed] = useState('')
+  const api = useRef<MapApi | null>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [cardH, setCardH] = useState(0)
+  const az = useAzioniLuogo(trip)
+
+  // MapLibre si scarica solo quando si apre la Mappa
+  useEffect(() => {
+    let active = true
+    import('../ui/MapView').then(
+      (m) => active && setView(() => m.MapView),
+      () => active && setLoadError(true),
+    )
+    return () => {
+      active = false
+    }
+  }, [])
+
+  // la mappa riempie lo spazio tra la barra in alto e le schede (anche con il banner della demo sopra)
+  useEffect(() => {
+    const el = document.querySelector<HTMLElement>('.fa-mapmode')
+    if (!el) return
+    const top = el.getBoundingClientRect().top + window.scrollY
+    el.style.height = top > 0 ? `calc(100dvh - ${Math.round(top)}px)` : ''
+  }, [])
+
+  const visible = filterPlaces(places, filters)
+  const withPos = visible.filter((p) => p.lat != null && p.lng != null)
+  const withoutPos = visible.filter((p) => p.lat == null || p.lng == null)
+  const filterKey = JSON.stringify(filters)
+  const original = (id: string) => trip.places.find((x) => x.id === id)
+
+  const pins: MapPin[] = useMemo(
+    () => withPos.map((p) => ({ id: p.id, lat: p.lat as number, lng: p.lng as number, name: p.name, color: '', symbol: `${discOfPlace(p)}-w` })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [withPos.map((p) => `${p.id}:${p.lat}:${p.lng}:${p.category}`).join('|')],
+  )
+
+  // card «senza posizione» con i filtri attivi: compare da sola se i filtri ne trovano
+  const autoNoPos = countActive(filters) > 0 && withoutPos.length > 0 && noPosDismissed !== filterKey && !selectedId && !clusterIds ? { ids: withoutPos.map((p) => p.id), i: 0 } : null
+  const nopos = noPos ?? autoNoPos
+  const selected = selectedId ? original(selectedId) : undefined
+
+  const showCard = Boolean(selected || clusterIds || nopos)
+  useEffect(() => {
+    const el = cardRef.current
+    if (!el) return setCardH(0)
+    const ro = new ResizeObserver(() => setCardH(el.getBoundingClientRect().height))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [showCard, selectedId, clusterIds, nopos?.ids.join(',')])
+
+  function select(id: string | null) {
+    setSelectedId(id)
+    setCardOpen(false)
+    setClusterIds(null)
+    setNoPos(null)
+    if (id === null && autoNoPos) setNoPosDismissed(filterKey)
+  }
+  function pickFromSearch(p: Place) {
+    setSearchOpen(false)
+    setText('')
+    if (p.lat != null && p.lng != null) {
+      select(p.id)
+      api.current?.flyTo(p.id)
+    } else {
+      setSelectedId(null)
+      setClusterIds(null)
+      setNoPos({ ids: [p.id], i: 0 })
+    }
+  }
+
+  const q = text.trim().toLowerCase()
+  const results = searchOpen && q ? visible.filter((p) => `${p.name} ${p.nameLocal ?? ''} ${p.city} ${p.category}`.toLowerCase().includes(q)).slice(0, 6) : []
+  const np = nopos ? original(nopos.ids[Math.min(nopos.i, nopos.ids.length - 1)]) : undefined
+  const fabHidden = (cardOpen && Boolean(selected)) || trip.places.length === 0
+
+  return (
+    <Schermata
+      bare
+      className="fa-mapmode"
+      bar={<BarraGrande title="Luoghi" sub={sottotitolo(trip.places)} actions={<PulsanteIcona icon="search" label="Cerca un luogo" pressed={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />} />}
+      overlay={
+        <>
+          {fabHidden ? null : (
+            <button type="button" className="fa-fab" aria-label="Aggiungi un luogo" onClick={az.create} style={showCard ? { bottom: `calc(64px + env(safe-area-inset-bottom, 0px) + ${Math.round(cardH) + 24}px)` } : undefined}>
+              <Sv name="plus" size={24} />
+              Luogo
+            </button>
+          )}
+          {filtriOpen ? <FiltriSheet trip={trip} places={places} open filters={filters} onApply={(f) => (setFilters(f), select(null), setNoPosDismissed(''))} onClose={() => setFiltriOpen(false)} /> : null}
+          {az.nodes}
+        </>
+      }
+    >
+      <div className="fa-maptop">
+        {searchOpen ? (
+          <div style={{ position: 'relative', display: 'grid', gap: 8 }}>
+            <CampoCerca value={text} onChange={setText} />
+            {results.length > 0 ? (
+              <ul className="fa-list fa-mapres" aria-label="Luoghi trovati">
+                {results.map((p) => (
+                  <li key={p.id}>
+                    <button type="button" className="fa-row" onClick={() => pickFromSearch(p)}>
+                      <Ic name={discOfPlace(p)} size={44} />
+                      <span style={{ minWidth: 0 }}>
+                        <span className="t" style={{ display: 'block' }}>
+                          {p.name}
+                        </span>
+                        <span className="s" style={{ display: 'block' }}>
+                          {[p.city, p.lat == null ? 'Senza posizione' : STATO_LUOGO[p.status].label].filter(Boolean).join(' · ')}
+                        </span>
+                      </span>
+                      <span className="end" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : q ? (
+              <span className="fa-help">Nessun luogo con questo nome.</span>
+            ) : null}
+          </div>
+        ) : null}
+        <Segmenti
+          label="Vista"
+          value="mappa"
+          options={[
+            { value: 'elenco', label: 'Elenco' },
+            { value: 'mappa', label: 'Mappa' },
+          ]}
+          onChange={(v) => setVista(v as Vista)}
+        />
+        {trip.places.length > 0 ? <RigaFiltri filters={filters} onChange={(f) => (setFilters(f), select(null), setNoPosDismissed(''))} onOpen={() => setFiltriOpen(true)} /> : null}
+      </div>
+      <div className="fa-map">
+        {View ? (
+          <View pins={pins} center={trip.center} selectedId={selectedId} onSelect={select} bare cluster onCluster={(ids) => (setSelectedId(null), setNoPos(null), setClusterIds(ids))} apiRef={api} />
+        ) : (
+          <p className="fa-m fa-mapmsg" role="status">
+            {loadError ? 'Non riesco a caricare la mappa: serve la connessione la prima volta.' : 'Carico la mappa…'}
+          </p>
+        )}
+        <div className="fa-mapctl">
+          <button type="button" className="fa-ib" aria-label="La mia posizione" onClick={() => api.current?.locate()}>
+            <Sv name="pin" size={22} />
           </button>
         </div>
-      )}
-
-      {groups.length > 0 && (
-        <div className="lst">
-          {groups.map((g) => (
-            <section key={g.key} aria-label={g.title || 'Luoghi'}>
-              {g.title && (
-                <div className="sec-t">
-                  <h2 className="h-md">{g.title}</h2>
-                  <span className="b-bold num">{g.places.length}</span>
+        {showCard ? (
+          <div className="fa-mapcard" ref={cardRef}>
+            {selected ? (
+              <div className="k-Luoghi">
+                <div className="list">
+                  <LuogoCard
+                    trip={trip}
+                    place={selected}
+                    open={cardOpen}
+                    onToggle={() => setCardOpen(!cardOpen)}
+                    onAddToDay={(dayId) => az.addToDay(selected, dayId)}
+                    onChangeDay={() => az.changeDay(selected)}
+                    onEdit={() => az.edit(selected)}
+                    onDelete={() => void az.remove([selected]).then((ok) => ok && select(null))}
+                    lead={<FotoLuogo key={selected.id} trip={trip} place={selected} />}
+                    foot={<CreditoFoto trip={trip} place={selected} />}
+                  />
                 </div>
-              )}
-              <div className="rows">
-                {g.places.map((p) => {
-                  const picked = selecting && sel.has(p.id)
-                  const di = dayIndexOf(p.id)
-                  const meta = [p.category, p.visitMinutes ? formatDuration(p.visitMinutes) : ''].filter(Boolean).join(' · ') || p.city
-                  const open = () => (selecting ? toggleSel(p.id) : setSheet({ kind: 'detail', placeId: p.id }))
+              </div>
+            ) : clusterIds ? (
+              <div className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="fa-sech" style={{ padding: '12px 16px 4px' }}>
+                  <h2 className="fa-h3">{n(clusterIds.length, 'luogo qui', 'luoghi qui')}</h2>
+                  <button type="button" className="fa-lnk" onClick={() => (api.current?.zoomTo(clusterIds), setClusterIds(null))}>
+                    Ingrandisci
+                  </button>
+                </div>
+                {clusterIds.map((id) => {
+                  const p = places.find((x) => x.id === id)
+                  if (!p) return null
                   return (
-                    <div className={`prow${picked ? ' cur' : ''}`} key={p.id}>
-                      {selecting ? (
-                        <button type="button" className="hit" role="checkbox" aria-checked={picked} aria-label={`Seleziona: ${p.name}`} onClick={() => toggleSel(p.id)}>
-                          <span className={`cb${picked ? ' on' : ''}`}>{picked && <CheckG size={16} sw={3} />}</span>
-                        </button>
-                      ) : (
-                        <CatIc category={p.category} />
-                      )}
-                      <button type="button" className="grow" onClick={open} aria-label={selecting ? `Seleziona: ${p.name}` : `Apri ${p.name}`}>
-                        <span className="pt2">{p.name}</span>
-                        <span className="pm">{meta}</span>
-                        <span className="pills">
-                          <StatusSp place={p} dayNo={di != null ? di + 1 : undefined} now={nowPlaceId === p.id} />
-                          {(p.lat == null || p.lng == null) && <span className="sp warn">Non sulla mappa</span>}
+                    <div key={id} className="fa-xr">
+                      <button type="button" className="fa-row" aria-expanded={false} onClick={() => (setClusterIds(null), setSelectedId(id), setCardOpen(true))}>
+                        <Ic name={discOfPlace(p)} size={44} />
+                        <span style={{ minWidth: 0 }}>
+                          <span className="t" style={{ display: 'block' }}>
+                            {p.name}
+                          </span>
+                          <span className="s" style={{ display: 'block' }}>
+                            {[p.city, STATO_LUOGO[p.status].label].filter(Boolean).join(' · ')}
+                          </span>
+                        </span>
+                        <span className="end">
+                          <Sv name="chev" size={20} />
                         </span>
                       </button>
-                      {!selecting && <MapsPill kind="btn" href={mapsLinkFor(p)} label={p.name} />}
                     </div>
                   )
                 })}
               </div>
-            </section>
-          ))}
-        </div>
-      )}
-
-      {!selecting && (
-        <div className="cta">
-          <button type="button" className="btn block" onClick={() => setSheet({ kind: 'new' })}>
-            <PlusG />
-            Aggiungi luogo
-          </button>
-        </div>
-      )}
-      {delDialog}
-
-      {selecting && (
-        <div className="selbar">
-          <button type="button" className="btn del block" disabled={chosen.length === 0} onClick={() => void deleteChosen()}>
-            <TrashG />
-            {chosen.length === 0 ? 'Elimina' : chosen.length === 1 ? 'Elimina 1 luogo' : `Elimina ${chosen.length} luoghi`}
-          </button>
-        </div>
-      )}
-
-      <FilterSheet trip={trip} open={filterOpen} filters={filters} onChange={setFilters} onClose={() => setFilterOpen(false)} view={view} onViewChange={setView} />
-      <PlaceSheet trip={trip} state={sheet} onChange={setSheet} />
-    </main>
+            ) : np && nopos ? (
+              <div className="fa-card xl pad" style={{ display: 'grid', gap: 12, justifyItems: 'start' }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', width: '100%' }}>
+                  <Ic name="i-nav-no-pin" size={44} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="fa-b">{np.name}</div>
+                    <div className="fa-m">Non ha una posizione sulla mappa</div>
+                  </div>
+                  {nopos.ids.length > 1 ? (
+                    <span className="fa-npnav">
+                      <button type="button" className="fa-ib" aria-label="Luogo precedente" disabled={nopos.i === 0} onClick={() => setNoPos({ ...nopos, i: nopos.i - 1 })}>
+                        <Sv name="back" size={20} />
+                      </button>
+                      <span className="fa-c">
+                        {nopos.i + 1} di {nopos.ids.length}
+                      </span>
+                      <button type="button" className="fa-ib" aria-label="Luogo seguente" disabled={nopos.i >= nopos.ids.length - 1} onClick={() => setNoPos({ ...nopos, i: nopos.i + 1 })}>
+                        <Sv name="chevr" size={20} />
+                      </button>
+                    </span>
+                  ) : null}
+                </div>
+                <p className="fa-m">Aggiungi l’indirizzo e lo vedi qui, con la strada per arrivarci.</p>
+                <button type="button" className="fa-btn out" style={{ height: 44, fontSize: 14 }} onClick={() => az.edit(np, true)}>
+                  Aggiungi la posizione
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        {trip.places.length === 0 ? (
+          <div className="fa-mapcard">
+            <div className="fa-card xl pad" style={{ display: 'grid', gap: 8, justifyItems: 'start' }}>
+              <h2 className="fa-h3">Nessun luogo salvato</h2>
+              <p className="fa-m">Salva qui ristoranti, templi e viste da non perdere. Poi li metti nei giorni che vuoi.</p>
+            </div>
+          </div>
+        ) : visible.length === 0 ? (
+          <div className="fa-mapcard">
+            {filters.statuses.length === 1 && countActive(filters) === 1 ? (
+              <VuotoFiltro title={VUOTO_STATO[filters.statuses[0]].title} text={VUOTO_STATO[filters.statuses[0]].text} action="Mostra tutti i luoghi" onAction={() => setFilters(EMPTY_FILTERS)} />
+            ) : (
+              <VuotoFiltro title="Nessun luogo con questi filtri" text="Prova a togliere qualche filtro." action="Mostra tutti i luoghi" onAction={() => setFilters(EMPTY_FILTERS)} />
+            )}
+          </div>
+        ) : null}
+      </div>
+    </Schermata>
   )
 }

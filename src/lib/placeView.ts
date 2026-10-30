@@ -29,10 +29,13 @@ export const SORT_LABEL: Record<SortBy, string> = {
   cost: 'Costo',
 }
 
+/** Vista della scheda Luoghi (#33): gruppi per città, in ordine di nome. */
+export const LUOGHI_VIEW: PlaceView = { groupBy: 'city', sortBy: 'name' }
+
 export const isDefaultView = (v: PlaceView) => v.groupBy === DEFAULT_VIEW.groupBy && v.sortBy === DEFAULT_VIEW.sortBy
 
 const STATUS_ORDER: PlaceStatus[] = ['idea', 'planned', 'done', 'skipped']
-const STATUS_TITLE: Record<PlaceStatus, string> = { idea: 'Idee', planned: 'Pianificati', done: 'Fatti', skipped: 'Saltati' }
+const STATUS_TITLE: Record<PlaceStatus, string> = { idea: 'Da visitare', planned: 'In programma', done: 'Visitati', skipped: 'Scartati' }
 
 const collator = new Intl.Collator('it', { sensitivity: 'base' })
 const byName = (a: Place, b: Place) => collator.compare(a.name, b.name)

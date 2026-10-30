@@ -98,6 +98,9 @@ interface InputProps {
   textarea?: boolean
   trailing?: ReactNode
   name?: string
+  /** Id di un <datalist> con i suggerimenti. */
+  list?: string
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
   enterKeyHint?: 'done' | 'go' | 'next' | 'search' | 'send'
   hideLabel?: boolean
 }

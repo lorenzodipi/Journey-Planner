@@ -1,4 +1,4 @@
-import { cleanSpec } from './opening'
+import { cleanSpec, type OpeningSpec } from './opening'
 import { noteItemRow, schema } from './schema'
 import type { Category, Day, DayItem, ItemKind, ItemStatus, MemberRole, Place, PlaceStatus, ThemeName, Traveler, Trip } from '../types'
 import { todayYmd } from './dates'
@@ -557,6 +557,8 @@ export interface PlaceInput {
   openingHours: string
   /** Quanto fermarsi, in minuti. `undefined` = non toccare la colonna, `null` = nessuna durata. */
   visitMinutes?: number | null
+  /** Orari strutturati (0018). `undefined` = non toccare la colonna. */
+  openingSpec?: OpeningSpec | null
   lat: number | null
   lng: number | null
 }
@@ -585,7 +587,8 @@ async function resolveCategory(tripId: string, label: string, known: Category[])
 
 const MIGRATION_0015 =
   "Manca la migrazione 0015 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0015_visit_duration.sql). Senza, il tempo di permanenza non si può salvare."
-const needs0015 = (error: { message: string }) => (/visit_minutes|duration_minutes/i.test(error.message) ? new Error(MIGRATION_0015) : error)
+const needs0015 = (error: { message: string }) =>
+  /opening_spec/i.test(error.message) ? new Error('Per gli orari esegui la migrazione 0018_luoghi_orari.sql nello SQL Editor di Supabase.') : /visit_minutes|duration_minutes/i.test(error.message) ? new Error(MIGRATION_0015) : error
 
 function placeColumns(input: PlaceInput, categoryId: string | null) {
   return {
@@ -602,6 +605,7 @@ function placeColumns(input: PlaceInput, categoryId: string | null) {
     notes: input.notes.trim() || null,
     // solo se serve: senza la migrazione 0015 la colonna non esiste e la richiesta fallirebbe
     ...(input.visitMinutes !== undefined ? { visit_minutes: input.visitMinutes } : {}),
+    ...(input.openingSpec !== undefined ? { opening_spec: input.openingSpec } : {}),
   }
 }
 

@@ -53,6 +53,8 @@ await runMigration('0016_checklist_url.sql')
 }
 await runMigration('0017_tappe_stati.sql')
 await runMigration('0017_tappe_stati.sql') // si può rilanciare
+await runMigration('0018_luoghi_orari.sql')
+await runMigration('0018_luoghi_orari.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -65,6 +67,8 @@ const throws = async (name, fn) => { try { await fn(); check(name, false, '(ness
 {
 const st = (await db.query(`select status from day_items where title = 'Vecchia fatta'`)).rows[0]?.status
 check('0017 porta le tappe fatte allo stato «done»', st === 'done', String(st))
+const col = (await db.query(`select data_type from information_schema.columns where table_name = 'places' and column_name = 'opening_spec'`)).rows[0]?.data_type
+check('0018 aggiunge gli orari strutturati ai luoghi', col === 'jsonb', String(col))
 }
 {
 const legacyCats = (await db.query(`select label from expense_categories where trip_id=$1 order by label`, [legacyTrip])).rows.map((r) => r.label)

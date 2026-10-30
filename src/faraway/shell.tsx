@@ -104,10 +104,12 @@ interface ScreenProps {
   mainStyle?: CSSProperties
   overlay?: ReactNode
   className?: string
+  /** Contenuto senza il <main> con i margini (es. la Mappa a tutto schermo). */
+  bare?: boolean
 }
 
 /** Una schermata dell'app: la «cornice del telefono» del mock è la pagina intera. */
-export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, overlay, className }: ScreenProps) {
+export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, overlay, className, bare }: ScreenProps) {
   useEffect(() => {
     const root = document.documentElement
     if (tabs) root.removeAttribute('data-no-tabs')
@@ -117,9 +119,13 @@ export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, ove
     <div className={cx('fa-phone', tabs && 'has-tabs', fab && 'has-fab', className)}>
       <div className="fa-top" />
       {bar}
-      <main className="fa-main" style={{ ...(gap ? { gap } : null), ...mainStyle }}>
-        {children}
-      </main>
+      {bare ? (
+        children
+      ) : (
+        <main className="fa-main" style={{ ...(gap ? { gap } : null), ...mainStyle }}>
+          {children}
+        </main>
+      )}
       {tabs ? <BarraSchede /> : null}
       {fab ? <Fab {...fab} /> : null}
       {overlay}
