@@ -53,6 +53,14 @@ export interface TransportRow {
   // dalla migrazione 0019
   paid_by?: string | null
   for_travelers?: string[] | null
+  // dalla migrazione 0022
+  title?: string | null
+  stops?: number | null
+  operator?: string | null
+  platform?: string | null
+  baggage?: string | null
+  policy?: string | null
+  checkin_at?: string | null
 }
 
 export interface FlightRow {
@@ -151,6 +159,13 @@ export function mapTransports(rows: TransportRow[], tripId: string): Transport[]
       notes: r.notes ?? undefined,
       paidBy: r.paid_by ?? undefined,
       forTravelers: r.for_travelers?.length ? r.for_travelers : undefined,
+      title: r.title ?? undefined,
+      stops: r.stops ?? undefined,
+      operator: r.operator ?? undefined,
+      platform: r.platform ?? undefined,
+      baggage: r.baggage ?? undefined,
+      policy: r.policy ?? undefined,
+      checkinAt: r.checkin_at ?? undefined,
     }))
     .sort((a, b) => (a.departAt ?? '9999').localeCompare(b.departAt ?? '9999') || a.from.localeCompare(b.from, 'it'))
 }
@@ -258,10 +273,39 @@ export interface TransportInput {
   bought: boolean
   refCode: string
   notes: string
+  paidBy?: string
+  forTravelers?: string[]
+  title?: string
+  stops?: number | null
+  operator?: string
+  platform?: string
+  baggage?: string
+  policy?: string
+  checkinAt?: string
+}
+
+/** Colonne aggiunte dalle migrazioni 0019/0022: solo se servono (o se c'erano), così senza migrazione il salvataggio funziona come prima. */
+export function transportExtras(i: TransportInput, old?: Transport) {
+  const out: Record<string, unknown> = {}
+  const put = (key: string, value: unknown, had: unknown) => {
+    const empty = value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)
+    if (!empty) out[key] = value
+    else if (had !== undefined && had !== null && !(Array.isArray(had) && had.length === 0)) out[key] = Array.isArray(value) ? [] : null
+  }
+  put('paid_by', i.paidBy, old?.paidBy)
+  put('for_travelers', i.forTravelers, old?.forTravelers)
+  put('title', i.title?.trim(), old?.title)
+  put('stops', i.stops, old?.stops)
+  put('operator', i.operator?.trim(), old?.operator)
+  put('platform', i.platform?.trim(), old?.platform)
+  put('baggage', i.baggage?.trim(), old?.baggage)
+  put('policy', i.policy?.trim(), old?.policy)
+  put('checkin_at', i.checkinAt, old?.checkinAt)
+  return out
 }
 
 /** Colonne di un trasporto. Gli orari sono locali nel fuso del viaggio; il giorno si ricava dalla data di partenza. */
-export function transportColumns(i: TransportInput, timeZone: string, days: Pick<Day, 'id' | 'date'>[]) {
+export function transportColumns(i: TransportInput, timeZone: string, days: Pick<Day, 'id' | 'date'>[], old?: Transport) {
   const depart = isCompleteZoned(i.departDate, i.departTime) ? zonedToInstant(i.departDate, i.departTime, timeZone) : null
   const arrive = isCompleteZoned(i.arriveDate, i.arriveTime) ? zonedToInstant(i.arriveDate, i.arriveTime, timeZone) : null
   const day = i.departDate ? days.find((d) => d.date === i.departDate) : undefined
@@ -285,6 +329,7 @@ export function transportColumns(i: TransportInput, timeZone: string, days: Pick
     bought: i.bought,
     ref_code: orNull(i.refCode),
     notes: orNull(i.notes),
+    ...transportExtras(i, old),
   }
 }
 

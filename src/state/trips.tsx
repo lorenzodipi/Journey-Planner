@@ -563,7 +563,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     },
     updateTransport: (tripId, id, input) => {
       const trip = trips.find((x) => x.id === tripId)
-      return run(() => logistics.updateTransport(id, input, trip?.timezone ?? 'UTC', trip?.days ?? []), ['logistics'])
+      return run(() => logistics.updateTransport(id, input, trip?.timezone ?? 'UTC', trip?.days ?? [], trip?.transports.find((x) => x.id === id)), ['logistics'])
     },
     setTransportBought: (id, bought) => run(() => logistics.setTransportBought(id, bought), ['logistics']),
     setTransportDeleted: (id, deleted) => run(() => logistics.setTransportDeleted(id, deleted), ['logistics']),

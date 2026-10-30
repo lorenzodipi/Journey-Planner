@@ -19,7 +19,7 @@ import { Impostazioni } from './pages/Impostazioni'
 import { Login } from './pages/Login'
 import { Luoghi } from './pages/Luoghi'
 import { Oggi } from './pages/Oggi'
-import { Trasporti } from './pages/Trasporti'
+import { TrasportiPage } from './pages/trasporti/TrasportiPage'
 import { PrimoViaggio } from './pages/PrimoViaggio'
 import { BottomNav } from './ui/BottomNav'
 import { PullToRefresh } from './ui/PullToRefresh'
@@ -50,7 +50,6 @@ function legacy<P extends object>(Page: ComponentType<P>) {
 }
 const OldAltro = legacy(Altro)
 const OldAlloggi = legacy(Alloggi)
-const OldTrasporti = legacy(Trasporti)
 const OldChecklist = legacy(Checklist)
 const OldPrenotazioni = legacy(Prenotazioni)
 const OldImpostazioni = legacy(Impostazioni)
@@ -123,7 +122,7 @@ export function App() {
           <Route path="/altro" component={OldAltro} />
           <Route path="/altro/alloggi" component={OldAlloggi} />
           <Route path="/altro/voli" component={VoliPage} />
-          <Route path="/altro/trasporti" component={OldTrasporti} />
+          <Route path="/altro/trasporti" component={TrasportiPage} />
           <Route path="/altro/checklist" component={OldChecklist} />
           <Route path="/altro/prenotazioni" component={OldPrenotazioni} />
           <Route path="/altro/impostazioni" component={OldImpostazioni} />

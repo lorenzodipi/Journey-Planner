@@ -1,3 +1,4 @@
+import { riepilogoTrasporti } from '../lib/trasporti'
 import { useState } from 'react'
 import { Link } from 'wouter'
 import { useAuth } from '../lib/auth'
@@ -36,7 +37,7 @@ const sections = [
     href: '/altro/trasporti',
     title: 'Trasporti',
     icon: 'i-tra-train',
-    text: (t: Trip) => (t.transports.length ? plural(t.transports.length, 'trasporto', 'trasporti') : 'Treni, pass, bus e taxi'),
+    text: (t: Trip) => (t.transports.length ? riepilogoTrasporti(t.transports) : 'Treni, pass, bus e taxi'),
   },
   {
     href: '/altro/budget',

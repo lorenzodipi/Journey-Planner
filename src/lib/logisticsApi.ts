@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Day, Flight } from '../types'
+import type { Day, Flight, Transport } from '../types'
 import { client } from './db'
 import {
   flightColumns,
@@ -85,8 +85,9 @@ export async function updateTransport(
   input: TransportInput,
   timeZone: string,
   days: Pick<Day, 'id' | 'date'>[],
+  old?: Transport,
 ): Promise<void> {
-  await saveTransport(transportColumns(input, timeZone, days), (c) => client().from('transports').update(c).eq('id', id))
+  await saveTransport(transportColumns(input, timeZone, days, old), (c) => client().from('transports').update(c).eq('id', id))
 }
 
 export async function setTransportBought(id: string, bought: boolean): Promise<void> {

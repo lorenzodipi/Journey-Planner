@@ -61,6 +61,8 @@ await runMigration('0020_trip_countries.sql')
 await runMigration('0020_trip_countries.sql') // si può rilanciare
 await runMigration('0021_voli_carta.sql')
 await runMigration('0021_voli_carta.sql') // si può rilanciare
+await runMigration('0022_trasporti_biglietto.sql')
+await runMigration('0022_trasporti_biglietto.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -78,6 +80,8 @@ check('0018 aggiunge gli orari strutturati ai luoghi', col === 'jsonb', String(c
 const cols19 = (await db.query(`select table_name, column_name from information_schema.columns where column_name in ('planned', 'paid_by', 'for_travelers') and table_name in ('expense_categories', 'stays', 'flights', 'transports', 'bookings')`)).rows.length
 check('0019 aggiunge previsto per categoria e «pagato da / per chi»', cols19 === 9, String(cols19))
 const cols21 = (await db.query(`select 1 from information_schema.columns where (table_name='flight_legs' and column_name in ('terminal','gate','boarding_time','seats_by')) or (table_name='flights' and column_name in ('baggage','policy','checkin_at'))`)).rows.length
+const cols22 = (await db.query(`select 1 from information_schema.columns where table_name='transports' and column_name in ('title','stops','operator','platform','baggage','policy','checkin_at')`)).rows.length
+check('0022 aggiunge nome, fermate, operatore, binario, bagaglio e politiche ai trasporti', cols22 === 7, String(cols22))
 check('0021 aggiunge gate, terminal, imbarco, posti per persona e i dati del volo', cols21 === 7, String(cols21))
 }
 {

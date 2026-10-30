@@ -132,6 +132,15 @@ export interface Transport {
   paidBy?: string
   /** Per chi è (#34), vuoto = tutti. */
   forTravelers?: string[]
+  /** dalla migrazione 0022 */
+  title?: string
+  /** fermate intermedie, 0 = diretto */
+  stops?: number
+  operator?: string
+  platform?: string
+  baggage?: string
+  policy?: string
+  checkinAt?: string
 }
 
 export interface FlightLeg {
