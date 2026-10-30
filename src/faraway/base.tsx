@@ -95,6 +95,7 @@ interface InputProps {
   min?: string
   max?: string
   autoFocus?: boolean
+  onBlur?: () => void
   textarea?: boolean
   trailing?: ReactNode
   name?: string

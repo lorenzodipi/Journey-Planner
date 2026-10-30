@@ -44,7 +44,7 @@ const AuthContext = createContext<AuthValue>({
 })
 
 function translateError(message: string): string {
-  if (/invalid login credentials/i.test(message)) return 'Email o password non corretti.'
+  if (/invalid login credentials/i.test(message)) return 'Email o password non corrette. Controlla i dati e riprova.'
   if (/failed to fetch|network/i.test(message)) return 'Nessuna connessione: per il primo accesso serve la rete.'
   if (/email not confirmed/i.test(message)) return 'Email non confermata: conferma l’utente dalla dashboard di Supabase.'
   return message

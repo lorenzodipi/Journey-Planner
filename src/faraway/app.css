@@ -158,3 +158,8 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-stay .avs{display:inline-flex}
 .fa-stay .avs span{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;font:600 10px/1 var(--font-sans);color:var(--on-bright);margin-right:-6px;border:2px solid var(--tk)}
 .fa-stay .acts2{display:flex;gap:var(--space-sm)}
+
+/* Accesso (#48): un solo logo, quello del tema */
+[data-theme="dark"] .logo.lt{display:none}
+[data-theme="light"] .logo.dk{display:none}
+.fa-in input:focus-visible,.fa-in textarea:focus-visible{outline:none}

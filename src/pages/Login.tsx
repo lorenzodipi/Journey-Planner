@@ -1,18 +1,28 @@
+// Accesso (mock Fa-01, Fa-02, #48): «Bentornato», email e password, errore, caricamento e offline. Senza registrazione né recupero password.
 import { useState } from 'react'
+import { erroreEmail } from '../lib/accesso'
 import { useAuth } from '../lib/auth'
+import { useOnline } from '../state/online'
 import { ART } from '../ui/art'
-import { FormError } from '../ui/Field'
+import { Banner, Campo, PulsanteIcona, Pulsante } from '../faraway/base'
+import { Schermata } from '../faraway/shell'
 
 export function Login() {
   const auth = useAuth()
+  const online = useOnline()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [show, setShow] = useState(false)
+  const [toccata, setToccata] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const erroreMail = toccata ? erroreEmail(email) : null
 
   async function onSubmit(e: { preventDefault(): void }) {
     e.preventDefault()
+    if (busy || !online) return
+    setToccata(true)
+    if (erroreEmail(email)) return
     setBusy(true)
     setError(null)
     const message = await auth.signIn(email, password)
@@ -21,63 +31,60 @@ export function Login() {
   }
 
   return (
-    <main className="screen">
-      <form onSubmit={onSubmit} noValidate style={{ display: 'contents' }}>
-        <div style={{ paddingTop: '48px' }}>
+    <Schermata tabs={false} rete={false} mainStyle={{ paddingTop: 56 }}>
+      <form onSubmit={onSubmit} noValidate style={{ display: 'grid', gap: 20 }}>
+        <div style={{ display: 'grid', gap: 8 }}>
           <img className="logo lt" src={ART.lockup} alt="Faraway" width="232" height="58" />
           <img className="logo dk" src={ART.lockupReverse} alt="Faraway" width="232" height="58" />
-          <h1 className="d-md" style={{ marginTop: '40px' }}>
+          <h1 className="fa-h2" style={{ margin: '32px 0 0' }}>Bentornato</h1>
+          <p className="fa-lead" style={{ margin: 0, color: 'var(--ink-muted)' }}>Accedi per ritrovare i tuoi viaggi.</p>
+        </div>
+
+        {error ? (
+          <Banner tone="cor" icon="err">
+            {error}
+          </Banner>
+        ) : null}
+        {!online ? (
+          <Banner tone="az" icon="wifi">
+            Sei offline: per entrare serve la rete.
+          </Banner>
+        ) : null}
+
+        <div style={{ display: 'grid', gap: 12 }}>
+          <Campo
+            label="Email"
+            type="email"
+            inputMode="email"
+            autoComplete="username"
+            placeholder="nome@esempio.it"
+            value={email}
+            onChange={(v) => (setEmail(v), setError(null))}
+            error={erroreMail}
+            onBlur={() => email && setToccata(true)}
+          />
+          <Campo
+            label="Password"
+            type={show ? 'text' : 'password'}
+            autoComplete="current-password"
+            hint="Almeno 8 caratteri"
+            value={password}
+            onChange={(v) => (setPassword(v), setError(null))}
+            trailing={<PulsanteIcona icon="eye" label={show ? 'Nascondi la password' : 'Mostra la password'} pressed={show} onPress={() => setShow(!show)} />}
+          />
+        </div>
+
+        <div style={{ display: 'grid', gap: 12 }}>
+          <Pulsante type="submit" isLoading={busy} isDisabled={!online || !email || !password}>
             Accedi
-          </h1>
-          <p className="body-lg muted" style={{ marginTop: '8px', fontSize: '18px', lineHeight: '26px', letterSpacing: 0 }}>
-            Il tuo viaggio, tappa dopo tappa. Funziona anche senza rete.
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <label className="fld">
-            <div>
-              <span className="l">Email</span>
-              <input
-                type="email"
-                inputMode="email"
-                autoComplete="username"
-                autoCapitalize="none"
-                required
-                className="v"
-                value={email}
-                onChange={(e) => setEmail(e.currentTarget.value)}
-              />
-            </div>
-          </label>
-          <div className="fld">
-            <label style={{ flex: 1, minWidth: 0 }}>
-              <span className="l">Password</span>
-              <input
-                type={(show ? 'text' : 'password') as 'password'}
-                autoComplete="current-password"
-                required
-                className="v"
-                value={password}
-                onChange={(e) => setPassword(e.currentTarget.value)}
-              />
-            </label>
-            <button type="button" className="fld-act" aria-pressed={show} onClick={() => setShow(!show)}>
-              {show ? 'Nascondi' : 'Mostra'}
-            </button>
-          </div>
-          <FormError message={error} />
-        </div>
-
-        <div className="cta">
-          <button type="submit" className="btn block" disabled={busy || !email || !password}>
-            {busy ? 'Accesso in corso…' : 'Accedi'}
-          </button>
-          <p className="cap muted" style={{ textAlign: 'center', marginTop: '12px' }}>
-            Le registrazioni sono chiuse: usa l’account che hai ricevuto.
-          </p>
+          </Pulsante>
+          {busy ? (
+            <p className="fa-m" role="status" style={{ margin: 0, textAlign: 'center' }}>
+              Accesso in corso. Ci mette qualche secondo.
+            </p>
+          ) : null}
         </div>
       </form>
-    </main>
+    </Schermata>
   )
 }
