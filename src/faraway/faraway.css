@@ -138,7 +138,7 @@
 .fa-avs{display:flex}
 .fa-avs .fa-av+.fa-av{margin-left:-6px}
 .fa-av.r1{background:var(--disco-corallo)} .fa-av.r2{background:var(--disco-glicine)} .fa-av.r3{background:var(--disco-cielo)} .fa-av.r4{background:var(--disco-menta)} .fa-av.r5{background:var(--disco-rosa)}
-.fa-avs.ring .fa-av{box-shadow:0 0 0 2px var(--surface-card)}
+.fa-avs.anello .fa-av{box-shadow:0 0 0 2px var(--surface-card)}
 .fa-pbar{height:8px;border-radius:9999px;background:var(--surface-high);overflow:hidden}
 .fa-pbar i{display:block;height:100%;background:var(--azzurro);border-radius:9999px}
 .fa-div{border-top:1px dashed var(--border-strong);opacity:.6}

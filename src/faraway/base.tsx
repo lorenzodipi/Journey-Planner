@@ -193,7 +193,7 @@ export function Avatar({ initials, n = 1, large, label }: { initials: string; n?
 
 export function Avatars({ people, ring = true, label }: { people: { initials: string; n: number }[]; ring?: boolean; label?: string }) {
   return (
-    <span className={cx('fa-avs', ring && 'ring')} role={label ? 'img' : undefined} aria-label={label}>
+    <span className={cx('fa-avs', ring && 'anello')} role={label ? 'img' : undefined} aria-label={label}>
       {people.map((p, i) => (
         <Avatar key={i} initials={p.initials} n={p.n} />
       ))}
