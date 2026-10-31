@@ -24,7 +24,7 @@ import type { BookingInput, ChecklistInput } from '../lib/planningData'
 import type { BudgetInput, ExpenseInput } from '../lib/moneyData'
 import type { FlightInput, StayInput, TransportInput } from '../lib/logistics'
 import type { InvitedInput, ItemInput, PlaceInput, TravelerInput, TripInput, TripPeople } from '../lib/tripApi'
-import type { Booking, BudgetItem, ChecklistItem, Expense, Flight, ItemStatus, PlaceStatus, ReceivedInvite, Trip, Stay, TicketCode, TicketKind } from '../types'
+import type { Booking, BudgetItem, DocKind, Visibilita, ChecklistItem, Expense, Flight, ItemStatus, PlaceStatus, ReceivedInvite, Trip, Stay, TicketCode, TicketKind } from '../types'
 import { schema } from '../lib/schema'
 
 export type TripsStatus = 'loading' | 'ready' | 'error'
@@ -130,6 +130,13 @@ interface TripsValue {
   /** Rimborsi (#51): servono la rete e la migrazione 0029. */
   declareSettlement: (input: { tripId: string; fromId: string; toId: string; amount: number; currency: string; paidOn: string; corrects?: string }) => Result
   cancelSettlement: (id: string) => Result
+  /** Documenti (#52): servono la rete e la migrazione 0030. */
+  createDocument: (tripId: string, input: planning.DocumentoInput) => Result
+  updateDocumentVisibility: (id: string, visibility: Visibilita, access: string[]) => Result
+  renameDocument: (id: string, name: string) => Result
+  deleteDocument: (id: string, path: string) => Result
+  linkDocument: (id: string, kind: DocKind, refId: string) => Result
+  unlinkDocument: (id: string, kind: DocKind, refId: string) => Result
   decideSettlement: (id: string, accept: boolean, version: string | null) => Result
   balanceVersion: (tripId: string) => Promise<string | null>
   setExpenseCategoryPlanned: (tripId: string, label: string, planned: number | null) => Result
@@ -637,6 +644,12 @@ export function TripProvider({ children }: { children: ReactNode }) {
     removeExpenseFile: (id, path) => run(() => money.deleteExpenseFile(id, path), ['money']),
     declareSettlement: (input) => run(() => money.declareSettlement(input), ['money']),
     cancelSettlement: (id) => run(() => money.cancelSettlement(id), ['money']),
+    createDocument: (tripId, input) => run(() => planning.createDocument(tripId, input), ['planning']),
+    updateDocumentVisibility: (id, visibility, access) => run(() => planning.updateDocumentVisibility(id, visibility, access, auth.session?.user.id), ['planning']),
+    renameDocument: (id, name) => run(() => planning.renameDocument(id, name), ['planning']),
+    deleteDocument: (id, path) => run(() => planning.deleteDocument(id, path), ['planning']),
+    linkDocument: (id, kind, refId) => run(() => planning.linkDocument(id, kind, refId), ['planning']),
+    unlinkDocument: (id, kind, refId) => run(() => planning.unlinkDocument(id, kind, refId), ['planning']),
     decideSettlement: (id, accept, version) => run(() => money.decideSettlement(id, accept, version), ['money']),
     balanceVersion: (tripId) => money.fetchBalanceVersion(tripId).catch(() => null),
     setExpenseCategoryPlanned: (tripId, label, planned) => run(() => money.setExpenseCategoryPlanned(tripId, label, planned, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['expenseCategories']),

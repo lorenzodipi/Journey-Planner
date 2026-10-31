@@ -8,6 +8,7 @@ import { AlloggiPage } from './pages/alloggi/AlloggiPage'
 import { NotificheHost } from './state/NotificheHost'
 import { ViaggiPage } from './pages/viaggi/ViaggiPage'
 import { ViaggiatoriPage } from './pages/altro/ViaggiatoriPage'
+import { DocumentiPage } from './pages/documenti/DocumentiPage'
 import { AltroPage } from './pages/altro/AltroPage'
 import { DatiTelefono } from './pages/altro/DatiTelefono'
 import { BudgetPage } from './pages/spese/BudgetPage'
@@ -136,6 +137,7 @@ export function App() {
           <Route path="/altro/trasporti" component={TrasportiPage} />
           <Route path="/altro/checklist" component={ChecklistPage} />
           <Route path="/altro/prenotazioni" component={PrenotazioniPage} />
+          <Route path="/altro/documenti" component={DocumentiPage} />
           <Route path="/altro/impostazioni" component={ImpostazioniPage} />
           <Route path="/altro/account" component={ProfiloPage} />
           <Route>

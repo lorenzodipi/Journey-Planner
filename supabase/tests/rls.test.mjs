@@ -77,6 +77,8 @@ await runMigration('0028_spese_avanzate.sql')
 await runMigration('0028_spese_avanzate.sql') // si può rilanciare
 await runMigration('0029_rimborsi.sql')
 await runMigration('0029_rimborsi.sql') // si può rilanciare
+await runMigration('0030_documenti.sql')
+await runMigration('0030_documenti.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -542,6 +544,60 @@ await asUser(null, 'postgres')
   check('0029 il destinatario rifiuta', (await db.query(`select status from settlements where id=$1`, [s3])).rows[0].status === 'rifiutato')
   await asUser(C)
   check('0029 un non membro non vede nulla', (await db.query(`select 1 from settlements where trip_id=$1`, [tr])).rows.length === 0 && (await db.query(`select balance_version($1) v`, [tr])).rows[0].v === null)
+  await asUser(A)
+}
+
+// documenti (0030): tre visibilità, solo chi ha caricato le cambia, anche il file nel bucket segue il documento
+await asUser(null, 'postgres')
+{
+  await db.exec(`insert into auth.users values ('44444444-4444-4444-4444-444444444444','d@test.it') on conflict do nothing`)
+  const D = '44444444-4444-4444-4444-444444444444'
+  const td0 = (await db.query(`insert into trips (title, owner_id) values ('Documenti', $1) returning id`, [A])).rows[0].id
+  for (const u of [B, D]) await db.query(`insert into trip_members (trip_id,user_id,role) values ($1,$2,'editor') on conflict do nothing`, [td0, u])
+  const tB = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'B',$2) returning id`, [td0, B])).rows[0].id
+  await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'D',$2)`, [td0, D])
+  await db.query(`insert into storage.buckets values ('bookings','bookings',false) on conflict do nothing`)
+  await db.exec(`grant select, insert, update, delete on storage.objects to authenticated`)
+  await asUser(A)
+  const mk = async (vis, name) => {
+    const id = (await db.query(`insert into documents (trip_id,file_path,name,visibility) values ($1,$2,$3,$4) returning id`, [td0, `${td0}/doc/${name}`, name, vis])).rows[0].id
+    await db.query(`insert into storage.objects (bucket_id,name) values ('bookings',$1)`, [`${td0}/doc/${name}`])
+    return id
+  }
+  const dAll = await mk('all', 'tutti.pdf')
+  const dSel = await mk('selected', 'biglietto.pdf')
+  const dPriv = await mk('private', 'passaporto.pdf')
+  await db.query(`insert into document_access (document_id,traveler_id) values ($1,$2)`, [dSel, tB])
+  await db.query(`insert into document_links (document_id,kind,ref_id) values ($1,'flight',gen_random_uuid()),($1,'stay',gen_random_uuid())`, [dAll])
+  check('0030 chi carica vede tutti i suoi documenti', (await db.query(`select 1 from documents where trip_id=$1`, [td0])).rows.length === 3)
+  check('0030 un documento ha più collegamenti, un solo file', (await db.query(`select 1 from document_links where document_id=$1`, [dAll])).rows.length === 2)
+  await throws('0030 stesso file due volte rifiutato', () => db.query(`insert into documents (trip_id,file_path,name) values ($1,$2,'copia')`, [td0, `${td0}/doc/tutti.pdf`]))
+  await asUser(B)
+  const seen = (await db.query(`select name from documents where trip_id=$1 order by name`, [td0])).rows.map((r) => r.name)
+  check('0030 B (selezionato) vede Tutti e il suo, non il privato', seen.join() === 'biglietto.pdf,tutti.pdf', seen.join())
+  check('0030 B non vede il file privato nel bucket', (await db.query(`select name from storage.objects where bucket_id='bookings' and name like '%passaporto%'`)).rows.length === 0)
+  check('0030 B vede il file del documento a cui ha accesso', (await db.query(`select name from storage.objects where name like '%biglietto%'`)).rows.length === 1)
+  check('0030 B non vede i collegamenti del privato', (await db.query(`select 1 from document_links where document_id=$1`, [dPriv])).rows.length === 0)
+  await db.query(`update documents set visibility='all' where id=$1`, [dPriv])
+  check('0030 solo chi ha caricato cambia la visibilità', (await db.query(`select 1 from documents where id=$1`, [dPriv])).rows.length === 0)
+  await db.query(`update documents set visibility='private' where id=$1`, [dSel])
+  await asUser(A)
+  check('0030 B non ha alterato il documento di A', (await db.query(`select visibility from documents where id=$1`, [dSel])).rows[0].visibility === 'selected')
+  await throws('0030 B non aggiunge accessi a un documento altrui', async () => { await asUser(B); await db.query(`insert into document_access (document_id,traveler_id) values ($1,$2)`, [dAll, tB]) })
+  await asUser(D)
+  const seenD = (await db.query(`select name from documents where trip_id=$1`, [td0])).rows.map((r) => r.name)
+  check('0030 D (non selezionato) vede solo Tutti', seenD.join() === 'tutti.pdf', seenD.join())
+  check('0030 D non vede il file del biglietto nel bucket (anche conoscendo il nome)', (await db.query(`select 1 from storage.objects where name=$1`, [`${td0}/doc/biglietto.pdf`])).rows.length === 0)
+  await db.query(`delete from storage.objects where name=$1`, [`${td0}/doc/tutti.pdf`])
+  await asUser(A)
+  check('0030 D non cancella il file di un altro', (await db.query(`select 1 from storage.objects where name=$1`, [`${td0}/doc/tutti.pdf`])).rows.length === 1)
+  await asUser(C)
+  check('0030 un non membro non vede documenti né file', (await db.query(`select 1 from documents where trip_id=$1`, [td0])).rows.length === 0 && (await db.query(`select 1 from storage.objects where name like $1`, [`${td0}%`])).rows.length === 0)
+  // file di prima, senza documento: restano dei membri
+  await asUser(A)
+  await db.query(`insert into storage.objects (bucket_id,name) values ('bookings',$1)`, [`${td0}/vecchio.pdf`])
+  await asUser(D)
+  check('0030 un file senza documento resta visibile ai membri', (await db.query(`select 1 from storage.objects where name=$1`, [`${td0}/vecchio.pdf`])).rows.length === 1)
   await asUser(A)
 }
 

@@ -1,5 +1,6 @@
 // Foglio «Nuovo volo» / «Modifica volo» (#36, #58): compagnia, prenotazione, tratte con terminal, gate, imbarco e posti,
 // chi vola, costo con «Pagato / Non pagato» e «Pagato da», bagaglio, politiche e apertura del check-in.
+import { DocumentiCollegati } from '../documenti/DocumentiCollegati'
 import { useState } from 'react'
 import { isIata, timezoneForAirport } from '../../lib/airports'
 import { legDuration } from '../../lib/flights'
@@ -236,6 +237,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
           <Campo label="Apre il check-in, ora" type="time" icon="clock" value={checkin.time} onChange={(v) => setCheckin({ ...checkin, time: v })} />
         </div>
         <Campo label="Note" textarea value={notes} onChange={setNotes} />
+        {flight ? <DocumentiCollegati trip={trip} kind={'flight'} refId={flight.id} /> : null}
         {errors.form ? <Errore>{errors.form}</Errore> : null}
         <datalist id="volo-fusi">{tz.map((z) => <option key={z.value} value={z.value} />)}</datalist>
         <datalist id="volo-valute">{tripCurrencies(trip, flight?.currency).map((c) => <option key={c} value={c} />)}</datalist>

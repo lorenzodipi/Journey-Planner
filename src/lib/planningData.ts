@@ -1,4 +1,4 @@
-import type { Booking, BookingType, ChecklistItem, ChecklistKind, Scope, TicketCode, TicketKind } from '../types'
+import type { Booking, BookingType, ChecklistItem, ChecklistKind, DocKind, Documento, Scope, TicketCode, TicketKind } from '../types'
 import { zonedToInstant } from './zoned'
 
 // Checklist e prenotazioni: righe del database <-> tipi dell'app, e colonne da salvare.
@@ -269,4 +269,45 @@ export function bookingColumns(i: BookingInput, timeZone: string, hadCost = fals
       ? { cost: i.cost, currency: i.currency.trim().toUpperCase(), scope: i.scope, payer_ids: hasCost ? i.payerIds : [] }
       : {}),
   }
+}
+
+export interface DocumentRow {
+  id: string
+  trip_id: string
+  file_path: string
+  name: string
+  mime_type: string | null
+  size_bytes: number | null
+  owner_id: string | null
+  visibility: Documento['visibility']
+  created_at: string
+  visibility_changed_at: string | null
+}
+export interface DocumentAccessRow {
+  document_id: string
+  traveler_id: string
+}
+export interface DocumentLinkRow {
+  document_id: string
+  kind: DocKind
+  ref_id: string
+}
+
+export function mapDocuments(rows: DocumentRow[], access: DocumentAccessRow[], links: DocumentLinkRow[], tripId: string): Documento[] {
+  return rows
+    .filter((r) => r.trip_id === tripId)
+    .map((r) => ({
+      id: r.id,
+      path: r.file_path,
+      name: r.name,
+      visibility: r.visibility,
+      access: access.filter((a) => a.document_id === r.id).map((a) => a.traveler_id),
+      links: links.filter((l) => l.document_id === r.id).map((l) => ({ kind: l.kind, refId: l.ref_id })),
+      createdAt: r.created_at,
+      ...(r.mime_type ? { mime: r.mime_type } : {}),
+      ...(r.size_bytes ? { size: r.size_bytes } : {}),
+      ...(r.owner_id ? { ownerId: r.owner_id } : {}),
+      ...(r.visibility_changed_at ? { changedAt: r.visibility_changed_at } : {}),
+    }))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 }

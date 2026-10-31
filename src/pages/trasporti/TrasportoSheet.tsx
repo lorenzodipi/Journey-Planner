@@ -1,5 +1,6 @@
 // Foglio «Nuovo trasporto» / «Modifica trasporto» (#37, #58): mezzo, nome o numero, percorso con orari, fermate, chi viaggia,
 // prezzo con «Pagato / Non pagato» e «Pagato da», codice, operatore, binario, bagaglio, politiche e note.
+import { DocumentiCollegati } from '../documenti/DocumentiCollegati'
 import { useState } from 'react'
 import { amountToText, parseAmount, tripCurrencies } from '../../lib/money'
 import { transportToForm, type TransportInput } from '../../lib/logistics'
@@ -200,6 +201,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
           <Campo label="Apre il check-in, ora" type="time" icon="clock" value={checkin.time} onChange={(v) => setCheckin({ ...checkin, time: v })} />
         </div>
         <Campo label="Nota" textarea value={notes} onChange={setNotes} />
+        {t ? <DocumentiCollegati trip={trip} kind={'transport'} refId={t.id} /> : null}
         {errors.form ? <Errore>{errors.form}</Errore> : null}
         <datalist id="tr-valute">{tripCurrencies(trip, t?.currency).map((c) => <option key={c} value={c} />)}</datalist>
       </form>

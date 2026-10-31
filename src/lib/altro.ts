@@ -70,3 +70,9 @@ export function riepilogoCambio(trip: Pick<Trip, 'baseCurrency' | 'localCurrency
 
 export const personeText = (n: number) => plural(n, 'persona', 'persone')
 export const viaggiText = (n: number) => plural(n, 'viaggio', 'viaggi')
+
+export function riepilogoDocumenti(trip: Pick<Trip, 'documents'>): string {
+  if (!trip.documents) return 'Con visibilità per persona'
+  const n = trip.documents.filter((d) => d.links.length === 0).length
+  return n === 0 ? 'Nessun documento' : n === 1 ? '1 documento' : `${n} documenti`
+}

@@ -1,5 +1,6 @@
 // Foglio «Nuovo alloggio» / «Modifica alloggio» (#39, #58): nome, città, indirizzo, date e orari, camera, codice,
 // costo con «Pagato / Non pagato», «Pagato da», «Per chi», pasti e note.
+import { DocumentiCollegati } from '../documenti/DocumentiCollegati'
 import { useState } from 'react'
 import type { StayInput } from '../../lib/logistics'
 import { amountToText, parseAmount, tripCurrencies } from '../../lib/money'
@@ -155,6 +156,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
           </div>
         </div>
         <Campo label="Nota" textarea value={notes} onChange={setNotes} />
+        {s ? <DocumentiCollegati trip={trip} kind={'stay'} refId={s.id} /> : null}
         {errors.form ? <Errore>{errors.form}</Errore> : null}
         <datalist id="al-valute">{tripCurrencies(trip, s?.currency).map((c) => <option key={c} value={c} />)}</datalist>
       </form>

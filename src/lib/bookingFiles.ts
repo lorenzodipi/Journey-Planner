@@ -1,5 +1,6 @@
 import type { Trip } from '../types'
 import { client } from './db'
+import { isDocOffline } from './documentiOffline'
 
 // File delle prenotazioni (biglietti, conferme) nel bucket privato "bookings" di Supabase Storage.
 // Percorso: <id viaggio>/<id casuale>-<nome>. L'accesso passa dalle policy dello Storage (membri del viaggio).
@@ -129,6 +130,7 @@ export async function syncOfflineFiles(trips: Trip[]): Promise<void> {
     const wanted = new Set<string>()
     for (const t of trips) {
       for (const b of t.bookings) if (b.keepOffline && b.filePath) wanted.add(b.filePath)
+      for (const d of t.documents ?? []) if (isDocOffline(d.id)) wanted.add(d.path) // solo i documenti che posso ancora vedere
       for (const c of t.ticketCodes ?? []) wanted.add(c.filePath) // i codici dei biglietti sono sempre sul telefono (#38)
     }
     for (const path of wanted) {

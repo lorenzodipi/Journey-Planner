@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useLocation } from 'wouter'
 import { useAuth } from '../../lib/auth'
 import { loadSnapshot } from '../../lib/cache'
-import { cittaDelViaggio, periodo, personeText, riepilogoAlloggi, riepilogoBudget, riepilogoCambio, riepilogoChecklist, riepilogoPrenotazioni, riepilogoTrasportiAltro, riepilogoVoli, rigaBudgetValute, viaggiText } from '../../lib/altro'
+import { cittaDelViaggio, periodo, personeText, riepilogoAlloggi, riepilogoBudget, riepilogoCambio, riepilogoChecklist, riepilogoDocumenti, riepilogoPrenotazioni, riepilogoTrasportiAltro, riepilogoVoli, rigaBudgetValute, viaggiText } from '../../lib/altro'
 import { riassunto } from '../../lib/spese'
 import { discOf, initials, useMe } from '../../state/me'
 import { useTrip, useTrips } from '../../state/trip'
@@ -37,6 +37,7 @@ export function AltroPage() {
     { icon: 'i-tra-plane', title: 'Voli', sub: riepilogoVoli(trip), to: '/altro/voli' },
     { icon: 'i-tra-train', title: 'Trasporti', sub: riepilogoTrasportiAltro(trip), to: '/altro/trasporti' },
     { icon: 'i-sez-ticket', title: 'Prenotazioni', sub: riepilogoPrenotazioni(trip), to: '/altro/prenotazioni' },
+    { icon: 'i-sez-ticket', title: 'Documenti', sub: riepilogoDocumenti(trip), to: '/altro/documenti' },
     { icon: 'i-con-organizzazione', title: 'Checklist', sub: riepilogoChecklist(trip), to: '/altro/checklist' },
     { icon: 'i-con-spese', title: 'Budget', sub: riepilogoBudget(r.speso, r.limit, trip.baseCurrency), to: '/spese/budget' },
     { icon: 'i-azi-swap', title: 'Cambio valuta', sub: riepilogoCambio(trip), onPress: () => setFx(true) },

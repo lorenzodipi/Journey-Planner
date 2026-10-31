@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Booking, ChecklistItem, TicketCode, TicketKind } from '../types'
+import type { Booking, ChecklistItem, DocKind, TicketCode, TicketKind, Visibilita } from '../types'
 import { cacheBookingFile, removeBookingFile, uploadBookingFile } from './bookingFiles'
 import { client } from './db'
 import { bookingColumns, checklistColumns, type BookingInput, type ChecklistInput } from './planningData'
@@ -14,6 +14,10 @@ export function queryPlanning(db: SupabaseClient) {
     // prima della migrazione 0023 la tabella non esiste: l'app funziona lo stesso, senza codici
     // prima della migrazione 0026 niente spunte personali: `data: null` dice all'app di usare le colonne di prima
     db.from('checklist_checks').select('*').then((r) => (r.error && /checklist_checks|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: null, error: null } : r)),
+    // prima della migrazione 0030 niente documenti con visibilità: `data: null` = l'app usa i file delle prenotazioni come prima
+    db.from('documents').select('*').order('created_at').then((r) => (r.error && /documents|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: null, error: null } : r)),
+    db.from('document_access').select('*').then((r) => (r.error ? { ...r, data: [], error: null } : r)),
+    db.from('document_links').select('*').then((r) => (r.error ? { ...r, data: [], error: null } : r)),
     db.from('ticket_codes').select('*').then((r) => (r.error && /ticket_codes|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: [], error: null } : r)),
   ])
 }
@@ -135,4 +139,73 @@ export async function duplicateChecklist(tripId: string, from: ChecklistItem[], 
   if (rows.length === 0) return
   const { error } = await client().from('checklist_items').insert(rows)
   if (error) throw error
+}
+
+// ---------- documenti (#52) ----------
+
+const MIGRATION_0030 = "Manca la migrazione 0030 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0030_documenti.sql)."
+const needs0030 = (e: { message: string }) => (/documents|document_access|document_links|schema cache|does not exist/i.test(e.message) ? new Error(MIGRATION_0030) : e)
+
+export interface DocumentoInput {
+  file: File
+  name: string
+  visibility: Visibilita
+  access: string[]
+  link?: { kind: DocKind; refId: string }
+}
+
+/** Carica il file una volta e crea il documento con visibilità e (se c'è) il primo collegamento. Serve la rete. */
+export async function createDocument(tripId: string, input: DocumentoInput): Promise<void> {
+  const db = client()
+  const id = crypto.randomUUID()
+  const path = await uploadBookingFile(tripId, input.file, `doc/${id}`)
+  const fail = async (e: { message: string }) => {
+    await removeBookingFile(path).catch(() => undefined) // niente file orfani
+    throw needs0030(e)
+  }
+  const ins = await db.from('documents').insert({ id, trip_id: tripId, file_path: path, name: input.name.trim() || input.file.name, mime_type: input.file.type || null, size_bytes: input.file.size, visibility: input.visibility })
+  if (ins.error) return fail(ins.error)
+  if (input.visibility === 'selected' && input.access.length > 0) {
+    const a = await db.from('document_access').insert(input.access.map((traveler_id) => ({ document_id: id, traveler_id })))
+    if (a.error) return fail(a.error)
+  }
+  if (input.link) {
+    const l = await db.from('document_links').insert({ document_id: id, kind: input.link.kind, ref_id: input.link.refId })
+    if (l.error) return fail(l.error)
+  }
+}
+
+/** Cambia la visibilità (solo chi ha caricato il file: lo garantisce il database); la modifica è registrata. */
+export async function updateDocumentVisibility(id: string, visibility: Visibilita, access: string[], userId: string | undefined): Promise<void> {
+  const db = client()
+  const up = await db.from('documents').update({ visibility, visibility_changed_at: new Date().toISOString(), visibility_changed_by: userId ?? null }).eq('id', id)
+  if (up.error) throw needs0030(up.error)
+  const del = await db.from('document_access').delete().eq('document_id', id)
+  if (del.error) throw del.error
+  if (visibility === 'selected' && access.length > 0) {
+    const ins = await db.from('document_access').insert(access.map((traveler_id) => ({ document_id: id, traveler_id })))
+    if (ins.error) throw ins.error
+  }
+}
+
+export async function renameDocument(id: string, name: string): Promise<void> {
+  const { error } = await client().from('documents').update({ name: name.trim() }).eq('id', id)
+  if (error) throw needs0030(error)
+}
+
+export async function deleteDocument(id: string, path: string): Promise<void> {
+  const { error } = await client().from('documents').delete().eq('id', id)
+  if (error) throw needs0030(error)
+  await removeBookingFile(path).catch(() => undefined)
+}
+
+/** Collega un documento già caricato a un'altra voce: nessuna copia del file. */
+export async function linkDocument(id: string, kind: DocKind, refId: string): Promise<void> {
+  const { error } = await client().from('document_links').upsert({ document_id: id, kind, ref_id: refId }, { onConflict: 'document_id,kind,ref_id' })
+  if (error) throw needs0030(error)
+}
+
+export async function unlinkDocument(id: string, kind: DocKind, refId: string): Promise<void> {
+  const { error } = await client().from('document_links').delete().eq('document_id', id).eq('kind', kind).eq('ref_id', refId)
+  if (error) throw needs0030(error)
 }

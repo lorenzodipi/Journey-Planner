@@ -322,6 +322,27 @@ export interface RimborsoConfermato {
   amount: number
 }
 
+/** Chi può vedere un documento (#52). */
+export type Visibilita = 'all' | 'selected' | 'private'
+export type DocKind = 'booking' | 'day_item' | 'place' | 'stay' | 'flight' | 'transport'
+
+/** Un file caricato una volta, con visibilità e collegamenti a più punti dell'app. */
+export interface Documento {
+  id: string
+  path: string
+  name: string
+  mime?: string
+  size?: number
+  /** Account di chi l'ha caricato: solo lui ne cambia la visibilità. */
+  ownerId?: string
+  visibility: Visibilita
+  /** Viaggiatori che lo vedono quando è «selected». */
+  access: string[]
+  links: { kind: DocKind; refId: string }[]
+  createdAt: string
+  changedAt?: string
+}
+
 export type ExpenseSourceKind = 'day_item' | 'stay' | 'flight' | 'transport' | 'booking'
 
 export type ChecklistKind = 'todo' | 'packing' | 'docs'
@@ -436,6 +457,8 @@ export interface Trip {
   expenses: Expense[]
   /** Miei rimborsi (dichiarati o ricevuti), con lo stato. Mancano se il database non ha la migrazione 0029. */
   settlements?: Rimborso[]
+  /** Documenti che posso vedere. Mancano se il database non ha la migrazione 0030. */
+  documents?: Documento[]
   /** Rimborsi confermati di tutti: cambiano i saldi di chiunque. */
   settled?: RimborsoConfermato[]
   checklist: ChecklistItem[]
