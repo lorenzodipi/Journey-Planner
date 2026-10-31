@@ -1,6 +1,7 @@
 // Fogli «Nuovo luogo» e «Modifica luogo» (#33) nello stile del design system: ricerca su OpenStreetMap,
 // link di Google Maps, nome, nome locale, città, categoria, stato, durata, note, orari strutturati,
 // indirizzo e posizione (con il pin da aggiustare sulla mappa).
+import { ora } from '../../lib/formati'
 import { useEffect, useRef, useState } from 'react'
 import { formatDuration, parseDuration } from '../../lib/duration'
 import { searchPlaces, type GeoResult } from '../../lib/geocode'
@@ -358,7 +359,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
             <ul className="fa-list">
               {visite.map((v) => (
                 <li key={v.itemId} className="fa-row" style={{ minHeight: 44 }}>
-                  <span className="t">{formatShort(v.date)}{v.time ? ` · ${v.time}` : ''}</span>
+                  <span className="t">{formatShort(v.date)}{v.time ? ` · ${ora(v.time)}` : ''}</span>
                   <span className="s">{v.city}</span>
                 </li>
               ))}

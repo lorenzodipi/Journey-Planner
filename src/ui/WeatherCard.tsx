@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { gradi } from '../lib/formati'
 import { daysBetween, formatShort } from '../lib/dates'
 import type { DaySun } from '../lib/sun'
 import { FORECAST_DAYS, forecastAvailableFrom, inForecastRange, rainWindow, weatherLabel, weatherSymbol, windFrom, type HourWeather } from '../lib/weather'
@@ -86,11 +87,11 @@ export function WeatherCard({ forecast, date, today, city, sun, nowMin }: Props)
       <div className="tr">
         <div>
           <p style={{ font: '500 40px/44px var(--font-display)', letterSpacing: '-.02em' }} className="num">
-            {big}°
+            {gradi(big)}
           </p>
           <p className="b-bold">{headline}</p>
           <p className="b-sm muted num">
-            Minima {day.min}° · massima {day.max}°
+            Minima {gradi(day.min)} · massima {gradi(day.max)}
           </p>
         </div>
         <Ic name={weatherSymbol(code)} size={56} />
@@ -117,7 +118,7 @@ export function WeatherCard({ forecast, date, today, city, sun, nowMin }: Props)
                 <div className={`wc${c.now ? ' now' : ''}`} key={c.hour.h}>
                   <span className="tm">{c.now ? 'Ora' : clock(c.min)}</span>
                   <Ic name={weatherSymbol(c.hour.code)} size={28} />
-                  <b className="tp">{c.hour.t}°</b>
+                  <b className="tp">{gradi(c.hour.t)}</b>
                   <span className="col">
                     <i style={{ height: `${colHeight(c.hour.t)}px` }} />
                   </span>
@@ -134,7 +135,7 @@ export function WeatherCard({ forecast, date, today, city, sun, nowMin }: Props)
           {ref.feels != null && (
             <div>
               <p className="cap muted">Percepita</p>
-              <p className="b-bold num">{ref.feels}°</p>
+              <p className="b-bold num">{gradi(ref.feels)}</p>
             </div>
           )}
           {ref.wind != null && (

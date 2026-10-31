@@ -1,6 +1,7 @@
 // Impostazioni (mock Fa-46, #45): aspetto, notifiche, lingua, versione ed «Esci dall'account».
 import { useAuth } from '../../lib/auth'
 import { NOTIFICHE_TESTI, LINGUE, useNotifichePrefs } from '../../lib/prefs'
+import { useFormati } from '../../lib/formati'
 import { useThemePref, type ThemePref } from '../../lib/theme'
 import { Interruttore, Pulsante, Segmenti } from '../../faraway/base'
 import { Sv } from '../../faraway/icons'
@@ -19,6 +20,7 @@ const TEMI: { value: ThemePref; label: string }[] = [
 export function ImpostazioniPage() {
   const auth = useAuth()
   const [tema, setTema] = useThemePref()
+  const [fmt, setFmt] = useFormati()
   const [notif, setNotif] = useNotifichePrefs()
   const build = typeof __BUILD_TIME__ === 'string' ? __BUILD_TIME__ : ''
   const lingua = LINGUE[0]
@@ -41,6 +43,12 @@ export function ImpostazioniPage() {
       <h2 className="fa-h3" style={{ margin: 0 }}>Aspetto</h2>
       <Segmenti label="Aspetto dell'app" value={tema} options={TEMI} onChange={setTema} />
       <p className="fa-m" style={{ margin: 0 }}>Con Automatico segue il tema del telefono.</p>
+
+      <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Ora e unità</h2>
+      <Segmenti label="Formato dell'ora" value={String(fmt.ore)} options={[{ value: '24', label: '24 ore' }, { value: '12', label: '12 ore (AM/PM)' }]} onChange={(v) => setFmt({ ore: v === '12' ? 12 : 24 })} />
+      <Segmenti label="Distanze" value={fmt.distanza} options={[{ value: 'km', label: 'Chilometri' }, { value: 'mi', label: 'Miglia' }]} onChange={(v) => setFmt({ distanza: v })} />
+      <Segmenti label="Temperatura" value={fmt.temperatura} options={[{ value: 'C', label: '°C' }, { value: 'F', label: '°F' }]} onChange={(v) => setFmt({ temperatura: v })} />
+      <p className="fa-m" style={{ margin: 0 }}>Valgono per tutta l’app, su questo telefono.</p>
 
       <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Notifiche</h2>
       <div className="fa-card xl pad" style={{ display: 'grid', gap: 12 }}>

@@ -1,5 +1,6 @@
 // Giorni (mock Fa-08, issue #31): riga meteo per città, gruppi per città/viaggio/rientro,
 // calendarietti del componente SelettoreGiorni (passato grigio, oggi, futuro, libero).
+import { gradi } from '../lib/formati'
 import { useMemo, useState } from 'react'
 import { useLocation } from 'wouter'
 import { groupDays, type DayCell } from '../lib/dayGroups'
@@ -108,7 +109,7 @@ export function Giorni() {
               <li className="chip" key={city} aria-label={`${city}, ${w!.t} gradi`}>
                 <Wx kind={wxKind(w!.code)} size={24} />
                 <span>
-                  <b>{city}</b> {w!.t}°
+                  <b>{city}</b> {gradi(w!.t)}
                 </span>
               </li>
             ))}

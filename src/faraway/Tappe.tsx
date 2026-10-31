@@ -2,6 +2,7 @@
 // binario con i nodi, stato a destra, spostamenti tra una tappa e l'altra, una card aperta in linea
 // con orari, apertura, indirizzo, Maps, costo, menu «Stato della tappa» e Modifica · Sposta · Elimina.
 // La usa la pagina Giorno e «Il programma di oggi» in Oggi (#29).
+import { ora } from '../lib/formati'
 import type { ReactNode } from 'react'
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { categoryIcon } from '../lib/categoryIcon'
@@ -272,7 +273,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                     <div className="r">
                       {item.time ? (
                         <span className="time">
-                          {item.time}
+                          {ora(item.time)}
                           <G name="g-chev" cls="chv" />
                         </span>
                       ) : (

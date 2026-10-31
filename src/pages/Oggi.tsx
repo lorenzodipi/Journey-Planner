@@ -1,4 +1,7 @@
 // Oggi (mock Fa-03…Fa-07, Fa-52…Fa-55; issue #28, #29, #30): prima, durante e dopo il viaggio.
+import { ora, useRiferimento } from '../lib/formati'
+import { Foglio } from '../faraway/Foglio'
+import { Chip, Pulsante } from '../faraway/base'
 import { RimborsiOggi } from './spese/Rimborsi'
 import { oggiNelViaggio } from '../lib/paesi'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -143,7 +146,10 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
   const [openId, setOpenId] = useState<string | null>(null)
   const autoOpened = useRef(false)
   const day = trip.days.find((d) => d.date === today)
-  const city = day?.city || trip.destination
+  const [rif, setRif] = useRiferimento(trip.id)
+  const [sceltaCitta, setSceltaCitta] = useState(false)
+  const cittaViaggio = [...new Set(trip.days.map((d) => d.city).filter(Boolean))]
+  const city = (rif && cittaViaggio.includes(rif) ? rif : null) || day?.city || trip.destination
   const { segments } = useDaySegments(trip, day)
   const nowMin = minutesOfDay(now, trip.timezone)
   const ctx = { isToday: true, isPast: false, nowMin, timeZone: trip.timezone }
@@ -229,7 +235,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
                 Domani · {wdm(tomorrow.date)}
               </span>
               <span className="s" style={{ display: 'block' }}>
-                {[tomorrow.city, `${tomorrow.items.length} ${tomorrow.items.length === 1 ? 'tappa' : 'tappe'}`, firstTomorrow ? `si parte alle ${firstTomorrow.time}` : null].filter(Boolean).join(' · ')}
+                {[tomorrow.city, `${tomorrow.items.length} ${tomorrow.items.length === 1 ? 'tappa' : 'tappe'}`, firstTomorrow ? `si parte alle ${ora(firstTomorrow.time)}` : null].filter(Boolean).join(' · ')}
               </span>
             </span>
             <span className="end">
@@ -251,6 +257,22 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
           home={{ label: `${homeName}, ${momento(homeHour)}`, time: hhmmIn(now, homeTz), night: homeHour < 6 || homeHour >= 20 }}
         />
       ) : null}
+      {cittaViaggio.length > 1 ? (
+        <Pulsante color="tertiary" size="sm" iconLeading="pin" onPress={() => setSceltaCitta(true)}>
+          {rif && cittaViaggio.includes(rif) ? `Località scelta: ${rif}` : 'Cambia località di riferimento'}
+        </Pulsante>
+      ) : null}
+      <Foglio open={sceltaCitta} title="Località di riferimento" onClose={() => setSceltaCitta(false)}>
+        <div style={{ display: 'grid', gap: 12 }}>
+          <p className="fa-m" style={{ margin: 0 }}>Ora e meteo di Oggi seguono questa città, senza usare il GPS.</p>
+          <div className="fa-chips wrap">
+            <Chip on={!rif} onPress={() => (setRif(null), setSceltaCitta(false))}>Segui il giorno</Chip>
+            {cittaViaggio.map((c) => (
+              <Chip key={c} on={rif === c} onPress={() => (setRif(c), setSceltaCitta(false))}>{c}</Chip>
+            ))}
+          </div>
+        </div>
+      </Foglio>
       {oggiMeteo && ore.length > 0 ? (
         <MeteoCard
           city={city}
@@ -301,9 +323,9 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
             glyph={nextBooking.type === 'hotel' ? 'g-cat-stay' : nextBooking.type === 'train' ? 'g-tra-train' : nextBooking.type === 'flight' ? 'g-tra-plane' : 'g-cat-food'}
             title={nextBooking.title}
             sub={nextBooking.notes?.split('\n')[0]}
-            right={hhmmIn(new Date(nextBooking.validFrom as string), trip.timezone)}
+            right={ora(hhmmIn(new Date(nextBooking.validFrom as string), trip.timezone))}
             rightSub={nextBooking.code}
-            label={`${nextBooking.title}, ${hhmmIn(new Date(nextBooking.validFrom as string), trip.timezone)}`}
+            label={`${nextBooking.title}, ${ora(hhmmIn(new Date(nextBooking.validFrom as string), trip.timezone))}`}
             onPress={() => navigate(`/altro/prenotazioni?apri=${nextBooking.id}`)}
           />
         </section>

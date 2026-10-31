@@ -1,4 +1,5 @@
 // Calcoli di Oggi (#28, #29, #30): fase del viaggio, ore del meteo, alba/tramonto, pioggia, numeri del recap.
+import { gradi } from './formati'
 import { airportCity } from './airports'
 import { daysBetween, dateAddDays } from './dates'
 import { weatherLabel, type DayWeather, type HourWeather } from './weather'
@@ -58,7 +59,7 @@ export const notteAlle = isNight
 /** Descrizione: «Nuvoloso, minima 5°» (di notte «Notte limpida» col cielo sereno). */
 export function descrizione(code: number, min: number, night: boolean): string {
   const label = night && code <= 1 ? 'Notte limpida' : weatherLabel(code).label
-  return `${label}, minima ${min}°`
+  return `${label}, minima ${gradi(min)}`
 }
 
 /** Riga del sole: prima del tramonto «Tramonto tra», dopo «Alba tra» con la barra invertita. */

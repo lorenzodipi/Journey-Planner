@@ -1,3 +1,4 @@
+import { distanza } from './formati'
 // Mappa del giorno: tappe numerate, tutti gli spostamenti a piedi lungo le strade; la linea d'aria (tratteggiata)
 // compare solo per i trasporti del giorno (treno, metro…) e, in mancanza di un trasporto, per tratti troppo lunghi per andare a piedi.
 // Il calcolo dei percorsi a piedi usa OSRM (dati OpenStreetMap, senza chiave) e, per funzionare anche
@@ -268,10 +269,7 @@ export async function resolveWalkLegs(legs: Leg[], opts: ResolveOptions): Promis
   }
 }
 
-export function formatDistance(m: number): string {
-  if (m < 950) return `${Math.max(10, Math.round(m / 10) * 10)} m`
-  return `${(m / 1000).toLocaleString('it-IT', { maximumFractionDigits: 1 })} km`
-}
+export const formatDistance = distanza
 
 export const formatMinutes = (seconds: number) => `${Math.max(1, Math.round(seconds / 60))} min`
 

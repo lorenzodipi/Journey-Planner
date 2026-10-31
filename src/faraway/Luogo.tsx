@@ -1,6 +1,7 @@
 // Card del luogo (componenti Luoghi / LuoghiAperti, mock Fa-16…Fa-21): disco della categoria, nome, città,
 // stato, Maps sempre cliccabile; aperta in linea con durata, orari, note, «Aggiungi a una tappa» (scelta del
 // giorno in linea) o «Aggiunto al Giorno N · Cambia», Modifica ed Elimina.
+import { ora } from '../lib/formati'
 import type { ReactNode } from 'react'
 import { useRef, useState } from 'react'
 import { categoryIcon } from '../lib/categoryIcon'
@@ -165,7 +166,7 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
               </span>
               <div className="rx">
                 <div className="rm">Aggiunto al Giorno {tappa.dayIndex + 1}</div>
-                <div className="rs">{[wdm(trip.days[tappa.dayIndex].date), tappa.item.time].filter(Boolean).join(' · ')}</div>
+                <div className="rs">{[wdm(trip.days[tappa.dayIndex].date), ora(tappa.item.time)].filter(Boolean).join(' · ')}</div>
               </div>
               <button type="button" className="btn sec" onClick={onChangeDay}>
                 Cambia

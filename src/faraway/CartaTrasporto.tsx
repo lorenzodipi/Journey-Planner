@@ -1,6 +1,7 @@
 // Biglietto orizzontale di un trasporto (componente TicketOrizzontale, mock Fa-40 e Fa-41, #37): intestazione con nome, data,
 // fermate e stato (Pagato / Non pagato); percorso con orari, durata e «Maps» su partenza e arrivo. Aperto in linea:
 // prezzo, a testa, codice, passeggeri, nota e azioni. «Mostra il codice» compare solo se c'è un codice salvato (#38).
+import { ora } from '../lib/formati'
 import { formatWhen, transportWhen } from '../lib/logistics'
 import { formatMoney } from '../lib/money'
 import { MODE_NOME, durataTrasporto, fermate, nomeTrasporto, prezzoDi } from '../lib/trasporti'
@@ -73,7 +74,7 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
           </button>
           <div className="hz">
             <div className="hs l">
-              <span className="tm">{w.depart?.time || '—'}</span>
+              <span className="tm">{ora(w.depart?.time) || '—'}</span>
               <b>{t.from}</b>
               <a className="btn mp" href={maps(t, 'from')} target="_blank" rel="noreferrer" aria-label={`Apri ${t.from} su Maps`}>
                 <Sv name="pin" size={20} />
@@ -85,7 +86,7 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
               <span aria-hidden="true" className="hl" />
             </div>
             <div className="hs r">
-              <span className="tm">{w.arrive?.time || '—'}</span>
+              <span className="tm">{ora(w.arrive?.time) || '—'}</span>
               <b>{t.to}</b>
               <a className="btn mp" href={maps(t, 'to')} target="_blank" rel="noreferrer" aria-label={`Apri ${t.to} su Maps`}>
                 <Sv name="pin" size={20} />

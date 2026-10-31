@@ -1,5 +1,6 @@
 // Componenti di Oggi (mock Fa-03…Fa-07, Fa-52…Fa-55): Copertina (saluto), conto alla rovescia (Ticket),
 // ChecklistHome, Orologio, Meteo, Biglietto, ValutaPiccola, Riepilogo.
+import { gradi } from '../lib/formati'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { Link } from 'wouter'
@@ -305,7 +306,7 @@ export function MeteoCard({ city, t, code, night, desc, hours, sun }: { city: st
         <div className="wc-top">
           <div>
             <div className="loc">{city}</div>
-            <div className="deg">{t}°</div>
+            <div className="deg">{gradi(t)}</div>
             <div className="dsc">{desc}</div>
           </div>
           <div className="big-ic">
@@ -318,7 +319,7 @@ export function MeteoCard({ city, t, code, night, desc, hours, sun }: { city: st
             <li key={i} className={cx('hr', h.now && 'now', h.rain && !h.now && 'rn')}>
               <span className="t">{h.label}</span>
               <Wx kind={wxKind(h.code, h.night)} size={32} />
-              <span className="d">{h.t}°</span>
+              <span className="d">{gradi(h.t)}</span>
             </li>
           ))}
         </ul>
