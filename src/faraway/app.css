@@ -163,3 +163,6 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 [data-theme="dark"] .logo.lt{display:none}
 [data-theme="light"] .logo.dk{display:none}
 .fa-in input:focus-visible,.fa-in textarea:focus-visible{outline:none}
+
+.fa-tab .pill{position:relative}
+.fa-tbn{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:9999px;background:var(--azzurro-solid);color:var(--on-azzurro-solid);font:600 11px/18px var(--font-sans);text-align:center}

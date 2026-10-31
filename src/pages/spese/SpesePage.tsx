@@ -17,6 +17,7 @@ import { DueValori, Riepilogo, SaldoPersone } from '../../faraway/Home'
 import { Ricevuta } from '../../faraway/Ricevuta'
 import { BarraGrande, Schermata } from '../../faraway/shell'
 import { SpesaSheet } from './SpesaSheet'
+import { DichiaraSheet, RimborsiCard } from './Rimborsi'
 import { finoAl, inQuanti, intervallo } from './testi'
 
 /** «Aggiornato oggi alle 18:20» (ultima copia dei dati sul telefono). */
@@ -35,6 +36,7 @@ export function SpesePage() {
   const me = useMe(trip)
   const [, navigate] = useLocation()
   const [nuova, setNuova] = useState(false)
+  const [paga, setPaga] = useState<{ to: string; amount: number } | null>(null)
   const [ask, confirmNode] = useConferma()
   const today = tripToday(trip)
   const r = riassunto(trip, me?.id)
@@ -102,12 +104,16 @@ export function SpesePage() {
       overlay={
         <>
           {nuova ? <SpesaSheet trip={trip} open onClose={() => setNuova(false)} /> : null}
+          {paga ? <DichiaraSheet trip={trip} toId={paga.to} dovuto={paga.amount} onClose={() => setPaga(null)} /> : null}
           {confirmNode}
         </>
       }
     >
       <Riepilogo dove={trip.destination} speso={r.speso} currency={cur} limit={r.limit} onSetBudget={() => navigate('/spese/budget')} onOpenBudget={() => navigate('/spese/budget')} second={second} />
+      <RimborsiCard trip={trip} />
       <Ricevuta
+        me={me?.id}
+        onHoPagato={trip.settlements ? (x) => setPaga({ to: x.to, amount: x.amount }) : undefined}
         trip={trip}
         dati={dati}
         sub={[trip.destination, intervallo(trip.startDate, trip.endDate), inQuanti(n)].filter(Boolean).join(' · ')}
@@ -119,6 +125,11 @@ export function SpesePage() {
       <Pulsante color="secondary" iconTrailing="chevr" onPress={() => navigate('/spese/dettaglio')}>
         Vedi il dettaglio delle spese
       </Pulsante>
+      {n > 1 ? (
+        <Pulsante color="tertiary" iconTrailing="chevr" onPress={() => navigate('/spese/bilancio')}>
+          Il mio bilancio e i rimborsi
+        </Pulsante>
+      ) : null}
     </Schermata>
   )
 }

@@ -15,6 +15,9 @@ export function queryMoney(db: SupabaseClient) {
     // prima della migrazione 0028 queste tabelle non esistono: l'app funziona lo stesso (un solo pagante, nessuna ricevuta)
     db.from('expense_payers').select('*').then((r) => (r.error && /expense_payers|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: [], error: null } : r)),
     db.from('expense_files').select('*').order('created_at').then((r) => (r.error && /expense_files|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: [], error: null } : r)),
+    // prima della migrazione 0029 niente rimborsi: `data: null` = l'app non li mostra e i saldi restano quelli delle spese
+    db.from('settlements').select('*').order('created_at').then((r) => (r.error && /settlements|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: null, error: null } : r)),
+    db.rpc('my_confirmed_settlements').then((r) => (r.error ? { ...r, data: null, error: null } : r)),
   ])
 }
 
@@ -35,6 +38,44 @@ async function syncBudgetShares(tripId: string, itemId: string, input: BudgetInp
   if (input.travelerIds.length > 0) del = del.not('traveler_id', 'in', `(${input.travelerIds.join(',')})`)
   const res = await del
   if (res.error) throw res.error
+}
+
+// ---------- rimborsi (#51) ----------
+
+const MIGRATION_0029 = "Manca la migrazione 0029 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0029_rimborsi.sql)."
+const needs0029 = (e: { message: string }) => (/settlements|decide_settlement|cancel_settlement|balance_version|schema cache|does not exist/i.test(e.message) ? new Error(MIGRATION_0029) : e)
+
+/** Il debitore dichiara «Ho pagato»: resta in attesa di conferma, i saldi non cambiano. */
+export async function declareSettlement(input: { id?: string; tripId: string; fromId: string; toId: string; amount: number; currency: string; paidOn: string; corrects?: string }): Promise<void> {
+  const db = client()
+  const { error } = await db.from('settlements').insert({
+    ...(input.id ? { id: input.id } : {}),
+    trip_id: input.tripId,
+    from_traveler: input.fromId,
+    to_traveler: input.toId,
+    amount: input.amount,
+    currency: input.currency,
+    paid_on: input.paidOn,
+    ...(input.corrects ? { corrects: input.corrects } : {}),
+  })
+  if (error) throw needs0029(error)
+}
+
+export async function cancelSettlement(id: string): Promise<void> {
+  const { error } = await client().rpc('cancel_settlement', { _id: id })
+  if (error) throw needs0029(error)
+}
+
+/** Versione attuale dei saldi: la conferma vale solo se non è cambiata (COST-038). */
+export async function fetchBalanceVersion(tripId: string): Promise<string | null> {
+  const { data, error } = await client().rpc('balance_version', { _trip: tripId })
+  if (error) throw needs0029(error)
+  return (data as string | null) ?? null
+}
+
+export async function decideSettlement(id: string, accept: boolean, version: string | null): Promise<void> {
+  const { error } = await client().rpc('decide_settlement', { _id: id, _accept: accept, _version: version })
+  if (error) throw needs0029(error)
 }
 
 // ---------- ricevute (#50) ----------

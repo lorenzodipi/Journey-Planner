@@ -1,4 +1,5 @@
 // Oggi (mock Fa-03…Fa-07, Fa-52…Fa-55; issue #28, #29, #30): prima, durante e dopo il viaggio.
+import { RimborsiOggi } from './spese/Rimborsi'
 import { oggiNelViaggio } from '../lib/paesi'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'wouter'
@@ -358,6 +359,7 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
     <Schermata gap={15} rete={{ pill: false }}>
       <Saluto date={longIn(now)} greeting="Bentornato" name={firstName(me?.name)} />
       <Offline />
+      <RimborsiOggi trip={trip} />
       <Riepilogo
         dove={trip.destination}
         speso={r.speso}

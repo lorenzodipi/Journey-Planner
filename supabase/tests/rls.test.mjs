@@ -75,6 +75,8 @@ await runMigration('0027_inviti.sql')
 await runMigration('0027_inviti.sql') // si può rilanciare
 await runMigration('0028_spese_avanzate.sql')
 await runMigration('0028_spese_avanzate.sql') // si può rilanciare
+await runMigration('0029_rimborsi.sql')
+await runMigration('0029_rimborsi.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -490,6 +492,56 @@ await asUser(null, 'postgres')
   await db.query(`update expenses set category_id=null where id=$1`, [e1.id])
   await db.query(`update expense_categories set deleted_at=now() where id=$1`, [cat])
   check('0028 la categoria libera si elimina', (await db.query(`select deleted_at from expense_categories where id=$1`, [cat])).rows[0].deleted_at !== null)
+  await asUser(A)
+}
+
+// rimborsi (0029): dichiara il debitore, decide il destinatario, saldi uguali per tutti
+await asUser(null, 'postgres')
+{
+  await db.exec(`insert into auth.users values ('44444444-4444-4444-4444-444444444444','d@test.it') on conflict do nothing`)
+  const D = '44444444-4444-4444-4444-444444444444'
+  const tr = (await db.query(`insert into trips (title, owner_id) values ('Rimborsi', $1) returning id`, [A])).rows[0].id
+  for (const u of [B, D]) await db.query(`insert into trip_members (trip_id,user_id,role) values ($1,$2,'editor') on conflict do nothing`, [tr, u])
+  const ta = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'A',$2) returning id`, [tr, A])).rows[0].id
+  const tb = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'B',$2) returning id`, [tr, B])).rows[0].id
+  const td = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'D',$2) returning id`, [tr, D])).rows[0].id
+  await asUser(B)
+  await throws('0029 non si dichiara per conto di un altro', () => db.query(`insert into settlements (trip_id,from_traveler,to_traveler,amount,currency,paid_on) values ($1,$2,$3,10,'EUR','2026-11-28')`, [tr, ta, tb]))
+  await throws('0029 importo zero rifiutato', () => db.query(`insert into settlements (trip_id,from_traveler,to_traveler,amount,currency,paid_on) values ($1,$2,$3,0,'EUR','2026-11-28')`, [tr, tb, ta]))
+  const sid = (await db.query(`insert into settlements (trip_id,from_traveler,to_traveler,amount,currency,paid_on) values ($1,$2,$3,50,'EUR','2026-11-28') returning id`, [tr, tb, ta])).rows[0].id
+  await throws('0029 non si dichiara già confermato', () => db.query(`insert into settlements (trip_id,from_traveler,to_traveler,amount,currency,paid_on,status) values ($1,$2,$3,5,'EUR','2026-11-28','confermato')`, [tr, tb, ta]))
+  check('0029 il mittente vede la sua richiesta', (await db.query(`select 1 from settlements where id=$1`, [sid])).rows.length === 1)
+  await throws('0029 il mittente non conferma da sé', () => db.query(`select decide_settlement($1, true, null)`, [sid]))
+  await asUser(D)
+  check('0029 un terzo non vede il rimborso', (await db.query(`select 1 from settlements where id=$1`, [sid])).rows.length === 0)
+  await throws('0029 un terzo non lo decide', () => db.query(`select decide_settlement($1, true, null)`, [sid]))
+  check('0029 un terzo non vede nemmeno i confermati finché non lo sono', (await db.query(`select 1 from my_confirmed_settlements()`)).rows.length === 0)
+  await asUser(A)
+  const v = (await db.query(`select balance_version($1) v`, [tr])).rows[0].v
+  await throws('0029 conferma bloccata se i saldi sono cambiati', () => db.query(`select decide_settlement($1, true, 'versione-vecchia')`, [sid]))
+  check('0029 la richiesta resta in attesa', (await db.query(`select status from settlements where id=$1`, [sid])).rows[0].status === 'in_attesa')
+  await db.query(`select decide_settlement($1, true, $2)`, [sid, v])
+  await db.query(`select decide_settlement($1, true, $2)`, [sid, v])
+  const done = (await db.query(`select status, decided_by from settlements where id=$1`, [sid])).rows[0]
+  check('0029 confermato, con chi ha deciso', done.status === 'confermato' && done.decided_by === A)
+  check('0029 la conferma ripetuta non cambia nulla', (await db.query(`select count(*)::int n from my_confirmed_settlements()`)).rows[0].n === 1)
+  await throws('0029 una volta confermato non si rifiuta', () => db.query(`select decide_settlement($1, false, null)`, [sid]))
+  check('0029 la versione dei saldi cambia dopo la conferma', (await db.query(`select balance_version($1) v`, [tr])).rows[0].v !== v)
+  await asUser(D)
+  check('0029 i saldi di tutti vedono il confermato', (await db.query(`select 1 from my_confirmed_settlements()`)).rows.length === 1)
+  await asUser(B)
+  const s2 = (await db.query(`insert into settlements (trip_id,from_traveler,to_traveler,amount,currency,paid_on) values ($1,$2,$3,5,'EUR','2026-11-29') returning id`, [tr, tb, ta])).rows[0].id
+  await db.query(`select cancel_settlement($1)`, [s2])
+  check('0029 il mittente annulla', (await db.query(`select status from settlements where id=$1`, [s2])).rows[0].status === 'annullato')
+  await asUser(A)
+  await throws('0029 un annullato non si conferma', () => db.query(`select decide_settlement($1, true, null)`, [s2]))
+  await asUser(null, 'postgres')
+  const s3 = (await db.query(`insert into settlements (trip_id,from_traveler,to_traveler,amount,currency,paid_on) values ($1,$2,$3,7,'EUR','2026-11-30') returning id`, [tr, tb, ta])).rows[0].id
+  await asUser(A)
+  await db.query(`select decide_settlement($1, false, null)`, [s3])
+  check('0029 il destinatario rifiuta', (await db.query(`select status from settlements where id=$1`, [s3])).rows[0].status === 'rifiutato')
+  await asUser(C)
+  check('0029 un non membro non vede nulla', (await db.query(`select 1 from settlements where trip_id=$1`, [tr])).rows.length === 0 && (await db.query(`select balance_version($1) v`, [tr])).rows[0].v === null)
   await asUser(A)
 }
 

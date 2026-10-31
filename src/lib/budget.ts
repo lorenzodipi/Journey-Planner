@@ -354,6 +354,8 @@ export interface Balance {
   travelerId: string
   paid: number
   owed: number
+  /** rimborsi confermati: pagati (+) meno ricevuti (−) */
+  refunds?: number
   net: number // > 0: deve ricevere; < 0: deve dare
 }
 
@@ -392,7 +394,13 @@ export function settle(balances: Pick<Balance, 'travelerId' | 'net'>[]): Transfe
   return out
 }
 
-export function summarizeExpenses(expenses: Expense[], travelers: readonly Pick<Traveler, 'id'>[], fx: FxContext): ExpenseSummary {
+export function summarizeExpenses(
+  expenses: Expense[],
+  travelers: readonly Pick<Traveler, 'id'>[],
+  fx: FxContext,
+  /** Rimborsi confermati (#51): saldo = versato − quote + rimborsi pagati − rimborsi ricevuti (BR-23). */
+  settled: readonly { fromId: string; toId: string; amount: number }[] = [],
+): ExpenseSummary {
   const spent = new Map<string, number>(travelers.map((t) => [t.id, 0]))
   const paid = new Map<string, number>(travelers.map((t) => [t.id, 0]))
   const owedForBalance = new Map<string, number>(travelers.map((t) => [t.id, 0]))
@@ -416,7 +424,8 @@ export function summarizeExpenses(expenses: Expense[], travelers: readonly Pick<
   const balances = travelers.map((t) => {
     const p = paid.get(t.id) ?? 0
     const o = owedForBalance.get(t.id) ?? 0
-    return { travelerId: t.id, paid: p, owed: o, net: round2(p - o) }
+    const refunds = round2(settled.reduce((n, r) => n + (r.fromId === t.id ? r.amount : 0) - (r.toId === t.id ? r.amount : 0), 0))
+    return { travelerId: t.id, paid: p, owed: o, refunds, net: round2(p - o + refunds) }
   })
   return {
     total: round2(total),

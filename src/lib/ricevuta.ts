@@ -117,7 +117,7 @@ function sottotitolo(c: Omit<RigaCategoria, 'sub'>, currency: string): string {
 }
 
 export function ricevuta(
-  trip: Pick<Trip, 'stays' | 'flights' | 'transports' | 'bookings' | 'travelers' | 'budget' | 'baseCurrency'> & { expenseCategories: Category[] },
+  trip: Pick<Trip, 'stays' | 'flights' | 'transports' | 'bookings' | 'travelers' | 'budget' | 'baseCurrency' | 'settled'> & { expenseCategories: Category[] },
   spese: SpesaVista[],
   fx: FxContext,
 ): Ricevuta {
@@ -177,13 +177,13 @@ export function ricevuta(
     .sort((a, b) => order(a) - order(b) || a.label.localeCompare(b.label, 'it'))
     .map((c) => ({ ...c, sub: sottotitolo(c, trip.baseCurrency) }))
 
-  const summary = summarizeExpenses(spese, trip.travelers, fx)
+  const summary = summarizeExpenses(spese, trip.travelers, fx, trip.settled)
   summary.unconverted.forEach((u) => unconverted.add(u))
   const persone = trip.travelers.map((t) => {
     const bal = summary.balances.find((b) => b.travelerId === t.id)
     const quota = summary.spentBy.find((s) => s.travelerId === t.id)?.amount ?? 0
     const net = bal?.net ?? 0
-    return { travelerId: t.id, quota, net, paid: round2(net + quota) }
+    return { travelerId: t.id, quota, net, paid: round2(net - (bal?.refunds ?? 0) + quota) }
   })
   const sum = (f: (c: RigaCategoria) => number) => round2(categorie.reduce((n, c) => n + f(c), 0))
   return {

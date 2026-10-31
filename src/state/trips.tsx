@@ -127,6 +127,11 @@ interface TripsValue {
   setExpenseCategoryDeleted: (id: string, deleted: boolean) => Result
   setExpenseCategoryArchived: (id: string, archived: boolean) => Result
   removeExpenseFile: (id: string, path: string) => Result
+  /** Rimborsi (#51): servono la rete e la migrazione 0029. */
+  declareSettlement: (input: { tripId: string; fromId: string; toId: string; amount: number; currency: string; paidOn: string; corrects?: string }) => Result
+  cancelSettlement: (id: string) => Result
+  decideSettlement: (id: string, accept: boolean, version: string | null) => Result
+  balanceVersion: (tripId: string) => Promise<string | null>
   setExpenseCategoryPlanned: (tripId: string, label: string, planned: number | null) => Result
   setTripBudgetLimit: (tripId: string, limit: number | null) => Result
   updateBudgetItem: (tripId: string, item: BudgetItem, input: BudgetInput) => Result
@@ -630,6 +635,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
     setExpenseCategoryDeleted: (id, deleted) => run(() => money.setExpenseCategoryDeleted(id, deleted), ['money', 'expenseCategories']),
     setExpenseCategoryArchived: (id, archived) => run(() => money.setExpenseCategoryArchived(id, archived), ['money', 'expenseCategories']),
     removeExpenseFile: (id, path) => run(() => money.deleteExpenseFile(id, path), ['money']),
+    declareSettlement: (input) => run(() => money.declareSettlement(input), ['money']),
+    cancelSettlement: (id) => run(() => money.cancelSettlement(id), ['money']),
+    decideSettlement: (id, accept, version) => run(() => money.decideSettlement(id, accept, version), ['money']),
+    balanceVersion: (tripId) => money.fetchBalanceVersion(tripId).catch(() => null),
     setExpenseCategoryPlanned: (tripId, label, planned) => run(() => money.setExpenseCategoryPlanned(tripId, label, planned, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['expenseCategories']),
     setTripBudgetLimit: (tripId, limit) => run(() => api.setTripBudgetLimit(tripId, limit), ['trips']),
     setBudgetSharePaid: (shareId, paid) => run(() => money.setBudgetSharePaid(shareId, paid), ['money']),

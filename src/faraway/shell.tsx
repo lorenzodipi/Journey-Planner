@@ -7,6 +7,8 @@ import { cx } from './cx'
 import { Sv, TAB_PATHS } from './icons'
 import { PulsanteIcona } from './base'
 import { PillolaOffline, StatoRete } from './Rete'
+import { useRichiesteDaDecidere } from '../pages/spese/Rimborsi'
+import { useTrips } from '../state/trip'
 
 const TABS = [
   { href: '/', label: 'Oggi' },
@@ -31,6 +33,7 @@ export function tabFor(location: string): TabName {
 export function BarraSchede() {
   const [location] = useLocation()
   const active = tabFor(location)
+  const richieste = useRichiesteDaDecidere(useTrips().active).length
   return (
     <nav className="fa-tabs" aria-label="Sezioni">
       {TABS.map((t) => {
@@ -41,6 +44,7 @@ export function BarraSchede() {
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 {TAB_PATHS[t.label]}
               </svg>
+              {t.label === 'Spese' && richieste > 0 ? <span className="fa-tbn" role="img" aria-label={`${richieste} richieste di rimborso da confermare`}>{richieste}</span> : null}
             </span>
             <span className="tl">{t.label}</span>
           </Link>

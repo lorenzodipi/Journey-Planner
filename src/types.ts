@@ -294,6 +294,34 @@ export interface Expense {
   source?: { kind: ExpenseSourceKind; id: string }
 }
 
+/** Stato di un rimborso (#51). */
+export type StatoRimborso = 'in_attesa' | 'confermato' | 'rifiutato' | 'annullato'
+
+/** Rimborso tra due persone: lo vedono solo le due controparti. Importi nella valuta base del viaggio. */
+export interface Rimborso {
+  id: string
+  fromId: string
+  toId: string
+  amount: number
+  currency: string
+  paidOn: string // YYYY-MM-DD
+  status: StatoRimborso
+  createdBy?: string
+  createdAt: string
+  decidedBy?: string
+  decidedAt?: string
+  /** Rettifica: il rimborso confermato che corregge. */
+  corrects?: string
+}
+
+/** Rimborso confermato, visibile a tutti i partecipanti solo come importo (serve a calcolare i saldi). */
+export interface RimborsoConfermato {
+  id: string
+  fromId: string
+  toId: string
+  amount: number
+}
+
 export type ExpenseSourceKind = 'day_item' | 'stay' | 'flight' | 'transport' | 'booking'
 
 export type ChecklistKind = 'todo' | 'packing' | 'docs'
@@ -406,6 +434,10 @@ export interface Trip {
   flights: Flight[]
   budget: BudgetItem[]
   expenses: Expense[]
+  /** Miei rimborsi (dichiarati o ricevuti), con lo stato. Mancano se il database non ha la migrazione 0029. */
+  settlements?: Rimborso[]
+  /** Rimborsi confermati di tutti: cambiano i saldi di chiunque. */
+  settled?: RimborsoConfermato[]
   checklist: ChecklistItem[]
   bookings: Booking[]
   ticketCodes?: TicketCode[]

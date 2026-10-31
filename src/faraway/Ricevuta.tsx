@@ -22,6 +22,9 @@ interface Props {
   onPlanned: (c: RigaCategoria, planned: number | null) => Promise<string | null>
   onRename: (c: RigaCategoria, label: string) => Promise<string | null>
   onDelete: (c: RigaCategoria) => Promise<void>
+  /** Id del viaggiatore collegato all'account e azione «Ho pagato» sui miei debiti (#51). */
+  me?: string
+  onHoPagato?: (x: { from: string; to: string; amount: number }) => void
 }
 
 function RigaCat({ c, cur, open, onToggle, onPlanned, onRename, onDelete }: { c: RigaCategoria; cur: string; open: boolean; onToggle: () => void } & Pick<Props, 'onPlanned' | 'onRename' | 'onDelete'>) {
@@ -88,7 +91,7 @@ function RigaCat({ c, cur, open, onToggle, onPlanned, onRename, onDelete }: { c:
   )
 }
 
-export function Ricevuta({ trip, dati, sub, aggiornato, onPlanned, onRename, onDelete }: Props) {
+export function Ricevuta({ trip, dati, sub, aggiornato, onPlanned, onRename, onDelete, me, onHoPagato }: Props) {
   const cur = trip.baseCurrency
   const [open, setOpen] = useState<string | null>(null)
   const gruppo = trip.travelers.length > 1
@@ -166,6 +169,11 @@ export function Ricevuta({ trip, dati, sub, aggiornato, onPlanned, onRename, onD
               {dati.transfers.map((x, i) => (
                 <div key={i} className="t">
                   {nome(x.from)} dà {formatMoney(x.amount, cur)} a <b>{nome(x.to)}</b>
+                  {onHoPagato && me && x.from === me ? (
+                    <button type="button" className="fa-btn sm out" style={{ marginLeft: 8 }} onClick={() => onHoPagato(x)}>
+                      Ho pagato
+                    </button>
+                  ) : null}
                 </div>
               ))}
             </div>

@@ -1,4 +1,4 @@
-import type { BudgetItem, Day, Expense, ExpenseFile, ExpensePayer, ExpenseShare, Scope, ExpenseSourceKind, SplitMode } from '../types'
+import type { BudgetItem, Day, Expense, ExpenseFile, Rimborso, RimborsoConfermato, ExpensePayer, ExpenseShare, Scope, ExpenseSourceKind, SplitMode } from '../types'
 import { zonedToInstant } from './zoned'
 
 // Budget e spese: righe del database <-> tipi dell'app, e colonne da salvare dai moduli.
@@ -65,6 +65,53 @@ export interface ExpensePayerRow {
   trip_id: string
   traveler_id: string
   amount: number | string
+}
+
+export interface SettlementRow {
+  id: string
+  trip_id: string
+  from_traveler: string
+  to_traveler: string
+  amount: number | string
+  currency: string
+  paid_on: string
+  status: Rimborso['status']
+  created_by: string | null
+  created_at: string
+  decided_by: string | null
+  decided_at: string | null
+  corrects: string | null
+}
+
+export interface ConfirmedSettlementRow {
+  id: string
+  trip_id: string
+  from_traveler: string
+  to_traveler: string
+  amount: number | string
+}
+
+export function mapSettlements(rows: SettlementRow[], tripId: string): Rimborso[] {
+  return rows
+    .filter((r) => r.trip_id === tripId)
+    .map((r) => ({
+      id: r.id,
+      fromId: r.from_traveler,
+      toId: r.to_traveler,
+      amount: Number(r.amount),
+      currency: r.currency.trim(),
+      paidOn: r.paid_on,
+      status: r.status,
+      createdAt: r.created_at,
+      ...(r.created_by ? { createdBy: r.created_by } : {}),
+      ...(r.decided_by ? { decidedBy: r.decided_by } : {}),
+      ...(r.decided_at ? { decidedAt: r.decided_at } : {}),
+      ...(r.corrects ? { corrects: r.corrects } : {}),
+    }))
+}
+
+export function mapConfirmed(rows: ConfirmedSettlementRow[], tripId: string): RimborsoConfermato[] {
+  return rows.filter((r) => r.trip_id === tripId).map((r) => ({ id: r.id, fromId: r.from_traveler, toId: r.to_traveler, amount: Number(r.amount) }))
 }
 
 export interface ExpenseFileRow {

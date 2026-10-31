@@ -87,7 +87,7 @@ export interface Riassunto {
 export function riassunto(trip: Trip, me: string | undefined): Riassunto {
   const fx = fxOf(trip)
   const spese = tutteLeSpese(trip)
-  const summary = summarizeExpenses(spese, trip.travelers, fx)
+  const summary = summarizeExpenses(spese, trip.travelers, fx, trip.settled)
   const mine = me ? summary.balances.find((b) => b.travelerId === me) : undefined
   return {
     fx,

@@ -8,8 +8,8 @@ import { queryMoney } from './moneyApi'
 import { queryPlanning } from './planningApi'
 import { mapBookings, mapChecklist, mapTicketCodes } from './planningData'
 import type { BookingRow, CheckRow, ChecklistRow, TicketCodeRow } from './planningData'
-import { mapBudget, mapExpenses } from './moneyData'
-import type { BudgetItemRow, BudgetShareRow, ExpenseFileRow, ExpensePayerRow, ExpenseRow, ExpenseShareRow } from './moneyData'
+import { mapBudget, mapConfirmed, mapExpenses, mapSettlements } from './moneyData'
+import type { BudgetItemRow, BudgetShareRow, ConfirmedSettlementRow, SettlementRow, ExpenseFileRow, ExpensePayerRow, ExpenseRow, ExpenseShareRow } from './moneyData'
 import { mapFlights, mapStays, mapTransports } from './logistics'
 import type { FlightLegRow, FlightRow, StayRow, TransportRow } from './logistics'
 import { cleanRates } from './money'
@@ -170,6 +170,9 @@ interface Extras {
   expenseShares: ExpenseShareRow[]
   expensePayers?: ExpensePayerRow[]
   expenseFiles?: ExpenseFileRow[]
+  /** null = database senza la migrazione 0029 */
+  settlements?: SettlementRow[] | null
+  confirmedSettlements?: ConfirmedSettlementRow[] | null
   checklist: ChecklistRow[]
   bookings: BookingRow[]
   ticketCodes?: TicketCodeRow[]
@@ -323,6 +326,8 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     transports: mapTransports(extras.transports, row.id),
     flights: mapFlights(extras.flights, extras.legs, row.id),
     budget: mapBudget(extras.budgetItems, extras.budgetShares, row.id, expenseCategoryLabel),
+    ...(extras.settlements ? { settlements: mapSettlements(extras.settlements, row.id) } : {}),
+    ...(extras.confirmedSettlements ? { settled: mapConfirmed(extras.confirmedSettlements, row.id) } : {}),
     expenses: mapExpenses(extras.expenses, extras.expenseShares, row.id, expenseCategoryLabel, extras.expensePayers, extras.expenseFiles),
     checklist: mapChecklist(extras.checklist, row.id, extras.checks, myTravelerId),
     ...(extras.checks ? { checklistV2: true } : {}),
@@ -369,6 +374,7 @@ export function scopeOfTable(table: string): Scope | null {
     case 'expense_shares':
     case 'expense_payers':
     case 'expense_files':
+    case 'settlements':
       return 'money'
     case 'checklist_items':
     case 'bookings':
@@ -431,7 +437,7 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
   const results = [trips, places, categories, expenseCategories, items, ...(logisticsR ?? []), ...(moneyR ?? []), ...(planningR ?? [])]
   for (const r of results) if (r?.error) throw r.error
   const [stays, transports, flights, legs] = logisticsR ?? []
-  const [budgetItems, budgetShares, expenses, expenseShares, expensePayers, expenseFiles] = moneyR ?? []
+  const [budgetItems, budgetShares, expenses, expenseShares, expensePayers, expenseFiles, settlements, confirmedSettlements] = moneyR ?? []
   const [checklist, bookings, checks, ticketCodes] = planningR ?? []
   const old = prev?.extras
   const extras: Extras = {
@@ -449,6 +455,8 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
     expenseShares: keep(expenseShares, old?.expenseShares as ExpenseShareRow[]),
     expensePayers: keep(expensePayers, old?.expensePayers as ExpensePayerRow[]),
     expenseFiles: keep(expenseFiles, old?.expenseFiles as ExpenseFileRow[]),
+    settlements: keep(settlements, old?.settlements as SettlementRow[] | null),
+    confirmedSettlements: keep(confirmedSettlements, old?.confirmedSettlements as ConfirmedSettlementRow[] | null),
     checklist: keep(checklist, old?.checklist as ChecklistRow[]),
     bookings: keep(bookings, old?.bookings as BookingRow[]),
     ticketCodes: keep(ticketCodes, old?.ticketCodes as TicketCodeRow[]),

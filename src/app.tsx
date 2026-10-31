@@ -11,6 +11,7 @@ import { ViaggiatoriPage } from './pages/altro/ViaggiatoriPage'
 import { AltroPage } from './pages/altro/AltroPage'
 import { DatiTelefono } from './pages/altro/DatiTelefono'
 import { BudgetPage } from './pages/spese/BudgetPage'
+import { Bilancio } from './pages/spese/Bilancio'
 import { Dettaglio } from './pages/spese/Dettaglio'
 import { SpesePage } from './pages/spese/SpesePage'
 import { VoliPage } from './pages/voli/VoliPage'
@@ -117,6 +118,7 @@ export function App() {
           <Route path="/spese" component={SpesePage} />
           <Route path="/spese/budget" component={BudgetPage} />
           <Route path="/spese/dettaglio" component={Dettaglio} />
+          <Route path="/spese/bilancio" component={Bilancio} />
           <Route path="/altro/budget">
             <Redirect to="/spese" replace />
           </Route>
