@@ -104,7 +104,17 @@ export function Foglio({ open, title, onClose, children, footer, full, plain, he
           </div>
         )}
         <div className="fb">{children}</div>
-        {footer ? <div className="bt">{footer}</div> : null}
+        {footer ? (
+          <div
+            className="bt"
+            onClick={() =>
+              // se il salvataggio non va a buon fine, porta in vista il primo errore (il modulo può essere più lungo dello schermo)
+              window.setTimeout(() => sheet.current?.querySelector('.fb [aria-invalid="true"], .fb [role="alert"], .fb .fa-help.bad')?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 250)
+            }
+          >
+            {footer}
+          </div>
+        ) : null}
       </div>
     </dialog>
   )

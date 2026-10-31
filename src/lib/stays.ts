@@ -57,8 +57,15 @@ export function nottiInViaggio(trip: Pick<Trip, 'timezone' | 'flights' | 'transp
   }
   const ultimaPartenza: string[] = []
   for (const f of trip.flights) {
-    for (const l of f.legs) {
-      if (!l.departAt || !l.arriveAt) continue
+    const legs = f.legs.filter((l) => l.departAt && l.arriveAt)
+    // un volo con scali è un unico viaggio: la notte passata in aeroporto tra due tratte è coperta
+    if (legs.length > 0) {
+      const first = legs[0]
+      const last = legs[legs.length - 1]
+      cover(dateInZone(first.departAt, trip.timezone), dateInZone(last.arriveAt, trip.timezone))
+      cover(dateInZone(first.departAt, first.fromTz || trip.timezone), dateInZone(last.arriveAt, last.toTz || trip.timezone))
+    }
+    for (const l of legs) {
       const dep = dateInZone(l.departAt, l.fromTz || trip.timezone)
       cover(dep, dateInZone(l.arriveAt, l.toTz || trip.timezone))
       cover(dateInZone(l.departAt, trip.timezone), dateInZone(l.arriveAt, trip.timezone))

@@ -66,3 +66,20 @@ describe('notti coperte da mezzi notturni', () => {
     expect(nottiScoperte(trip)).toEqual(['2026-11-23', '2026-11-24'])
   })
 })
+
+describe('scalo di notte in aeroporto', () => {
+  it('arrivo in Cina alle 18:20 e ripartenza all’1:30: la notte dell’8/12 non è senza alloggio', () => {
+    const trip = {
+      startDate: '2026-11-21', endDate: '2026-12-09', timezone: 'Asia/Tokyo', transports: [],
+      stays: [{ checkIn: '2026-11-22', checkOut: '2026-12-08' }],
+      flights: [
+        { legs: [{ departAt: '2026-11-21T09:00:00Z', arriveAt: '2026-11-22T03:00:00Z', fromTz: 'Europe/Rome', toTz: 'Asia/Tokyo' }] },
+        { legs: [
+          { departAt: '2026-12-08T07:30:00Z', arriveAt: '2026-12-08T10:20:00Z', fromTz: 'Asia/Tokyo', toTz: 'Asia/Shanghai' },
+          { departAt: '2026-12-08T17:30:00Z', arriveAt: '2026-12-09T06:15:00Z', fromTz: 'Asia/Shanghai', toTz: 'Europe/Rome' },
+        ] },
+      ],
+    } as never
+    expect(nottiScoperte(trip)).toEqual([])
+  })
+})

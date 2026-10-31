@@ -44,6 +44,7 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
     const r = await t.respondInvite(id, accetta)
     setRispondendo(null)
     if (r.error) return showToast(r.error)
+    setInvito(false)
     if (!accetta) return showToast('Invito rifiutato')
     showToast(`Sei dentro: «${titolo}»`)
     if (r.tripId) apri(r.tripId)
