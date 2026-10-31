@@ -2,7 +2,8 @@
 import { esportaRiepilogo } from '../../lib/riepilogoImmagine'
 import { riepilogoViaggio } from '../../lib/ricerca'
 import { showToast } from '../../state/toast'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import { Sv, type SvName } from '../../faraway/icons'
 import { useLocation } from 'wouter'
 import { useAuth } from '../../lib/auth'
 import { loadSnapshot } from '../../lib/cache'
@@ -17,6 +18,13 @@ import { Simbolo } from '../../faraway/Home'
 import { Riga } from '../../faraway/Righe'
 import { BarraGrande, Schermata } from '../../faraway/shell'
 import { ViaggioSheet } from '../viaggio/ViaggioSheet'
+
+/** Disco colorato con il glifo, per le voci senza un disco nello sprite: ogni sezione ha il suo colore. */
+const disco = (glifo: SvName, colore: string) => (
+  <span aria-hidden="true" style={{ width: 44, height: 44, borderRadius: '50%', background: colore, color: 'var(--on-bright)', display: 'grid', placeItems: 'center', flex: 'none' }}>
+    <Sv name={glifo} size={22} />
+  </span>
+)
 
 export function AltroPage() {
   const trip = useTrip()
@@ -35,19 +43,19 @@ export function AltroPage() {
   const citta = cittaDelViaggio(trip)
   const people = trip.travelers.map((p) => ({ initials: initials(p.name), n: discOf(trip, p.id) }))
 
-  const righe: { icon: string; title: string; sub: string; to?: string; onPress?: () => void }[] = [
+  const righe: { icon: string | ReactNode; title: string; sub: string; to?: string; onPress?: () => void }[] = [
     { icon: 'i-sez-bed', title: 'Alloggi', sub: riepilogoAlloggi(trip), to: '/altro/alloggi' },
     { icon: 'i-tra-plane', title: 'Voli', sub: riepilogoVoli(trip), to: '/altro/voli' },
     { icon: 'i-tra-train', title: 'Trasporti', sub: riepilogoTrasportiAltro(trip), to: '/altro/trasporti' },
     { icon: 'i-sez-ticket', title: 'Prenotazioni', sub: riepilogoPrenotazioni(trip), to: '/altro/prenotazioni' },
-    { icon: 'i-sez-ticket', title: 'Documenti', sub: riepilogoDocumenti(trip), to: '/altro/documenti' },
-    { icon: 'i-azi-swap', title: 'Cerca nel viaggio', sub: 'Luoghi, tappe, prenotazioni…', to: '/altro/cerca' },
-    { icon: 'i-azi-swap', title: 'Esporta il riepilogo', sub: 'Immagine con statistiche e il tuo bilancio', onPress: () => void esportaRiepilogo(riepilogoViaggio(trip)).catch((e) => showToast(e instanceof Error ? e.message : 'Esportazione non riuscita')) },
-    { icon: 'i-azi-swap', title: 'Registro modifiche', sub: 'Chi ha cambiato cosa', to: '/altro/registro' },
-    { icon: 'i-con-organizzazione', title: 'Checklist', sub: riepilogoChecklist(trip), to: '/altro/checklist' },
+    { icon: disco('file', '#FF7C80'), title: 'Documenti', sub: riepilogoDocumenti(trip), to: '/altro/documenti' },
+    { icon: disco('search', '#83D670'), title: 'Cerca nel viaggio', sub: 'Luoghi, tappe, prenotazioni…', to: '/altro/cerca' },
+    { icon: disco('download', '#FFB45C'), title: 'Esporta il riepilogo', sub: 'Immagine con statistiche e il tuo bilancio', onPress: () => void esportaRiepilogo(riepilogoViaggio(trip)).catch((e) => showToast(e instanceof Error ? e.message : 'Esportazione non riuscita')) },
+    { icon: disco('clock', '#79A1FC'), title: 'Registro modifiche', sub: 'Chi ha cambiato cosa', to: '/altro/registro' },
+    { icon: 'i-sez-checklist', title: 'Checklist', sub: riepilogoChecklist(trip), to: '/altro/checklist' },
     { icon: 'i-con-spese', title: 'Budget', sub: riepilogoBudget(r.speso, r.limit, trip.baseCurrency), to: '/spese/budget' },
-    { icon: 'i-azi-swap', title: 'Cambio valuta', sub: riepilogoCambio(trip), onPress: () => setFx(true) },
-    { icon: 'i-sez-persone', title: 'Viaggiatori', sub: personeText(trip.travelers.length), to: '/altro/viaggiatori' },
+    { icon: disco('refresh', '#FFD23F'), title: 'Cambio valuta', sub: riepilogoCambio(trip), onPress: () => setFx(true) },
+    { icon: disco('user', '#D28AE8'), title: 'Viaggiatori', sub: personeText(trip.travelers.length), to: '/altro/viaggiatori' },
   ]
 
   return (
@@ -103,9 +111,9 @@ export function AltroPage() {
 
       <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Faraway</h2>
       <div className="fa-list">
-        <Riga icon="i-tra-plane" title="Tutti i viaggi" sub={viaggiText(t.trips.length)} onPress={() => navigate('/viaggi')} />
+        <Riga icon="i-sez-bag" title="Tutti i viaggi" sub={viaggiText(t.trips.length)} onPress={() => navigate('/viaggi')} />
         <Riga icon="i-azi-settings" title="Impostazioni" sub="Aspetto, notifiche e lingua" onPress={() => navigate('/altro/impostazioni')} />
-        <Riga icon="i-sez-cloud" title="Dati sul telefono" sub={t.pending > 0 ? `${t.pending === 1 ? '1 modifica' : `${t.pending} modifiche`} in coda` : savedTime ? `Aggiornati alle ${savedTime}` : 'Nessuna copia salvata'} onPress={() => navigate('/altro/dati')} />
+        <Riga icon={disco('wifi', '#F893BC')} title="Dati sul telefono" sub={t.pending > 0 ? `${t.pending === 1 ? '1 modifica' : `${t.pending} modifiche`} in coda` : savedTime ? `Aggiornati alle ${savedTime}` : 'Nessuna copia salvata'} onPress={() => navigate('/altro/dati')} />
       </div>
     </Schermata>
   )
