@@ -63,14 +63,17 @@ export function groupDays(trip: Pick<Trip, 'days' | 'flights'>, today: string): 
   let i = 0
   while (i <= lastIdx) {
     const d = days[i]
-    // ultimo giorno con un volo: rientro
-    if (i === lastIdx && i > 0 && flightOn(trip, d.date)) {
+    // ultimi giorni con un volo (anche la partenza del giorno prima): rientro
+    const finali = days.slice(i)
+    if (i > 0 && flightOn(trip, days[lastIdx].date) && finali.every((x, k) => flightOn(trip, x.date) && (k === finali.length - 1 || x.items.length === 0))) {
       const prevCity = days[i - 1]?.city || ''
-      const cell = cellFor(trip, d, today, null)
-      if (!d.title && d.items.length === 0) cell.label = prevCity && d.city && prevCity !== d.city ? `${prevCity} → ${d.city}` : prevCity ? `${prevCity} → casa` : 'Volo di rientro'
-      groups.push({ kind: 'return', title: 'Rientro', meta: `1 giorno · ${rangeText(d.date, d.date)}`, cells: [cell] })
-      i++
-      continue
+      const cells = finali.map((x, k) => {
+        const cell = cellFor(trip, x, today, k === 0 && finali.length > 1 ? 'out' : null)
+        if (k === finali.length - 1 && !x.title && x.items.length === 0) cell.label = prevCity && x.city && prevCity !== x.city ? `${prevCity} → ${x.city}` : prevCity ? `${prevCity} → casa` : 'Volo di rientro'
+        return cell
+      })
+      groups.push({ kind: 'return', title: 'Rientro', meta: `${plural(finali.length, 'giorno', 'giorni')} · ${rangeText(d.date, days[lastIdx].date)}`, cells })
+      break
     }
     // giorni di volo consecutivi (partenza e arrivo del giorno dopo)
     if (flightOn(trip, d.date) && d.items.length === 0) {

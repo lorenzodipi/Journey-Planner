@@ -177,3 +177,4 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-sheet>.grab,.fa-sheet>.hd,.fa-sheet>.st,.fa-sheet>.bt{flex:0 0 auto}
 .fa-sheet .frm{overflow:visible}
 .fa-sheet.full .bt{margin-top:12px}
+.fa-sheet{will-change:transform;backface-visibility:hidden}

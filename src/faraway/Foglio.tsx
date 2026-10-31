@@ -24,6 +24,14 @@ interface FoglioProps {
   className?: string
 }
 
+/** Il foglio e il suo contenitore non devono mai scorrere (scorre solo il corpo): un focus o un cambio di altezza non li sposta. */
+const noScroll = (e: React.UIEvent<HTMLElement>) => {
+  if (e.target === e.currentTarget && (e.currentTarget.scrollTop !== 0 || e.currentTarget.scrollLeft !== 0)) {
+    e.currentTarget.scrollTop = 0
+    e.currentTarget.scrollLeft = 0
+  }
+}
+
 export function Foglio({ open, title, onClose, children, footer, full, plain, headStart, className }: FoglioProps) {
   const ref = useRef<HTMLDialogElement>(null)
   const sheet = useRef<HTMLDivElement>(null)
@@ -37,6 +45,8 @@ export function Foglio({ open, title, onClose, children, footer, full, plain, he
       d.showModal()
       d.focus({ preventScroll: true })
       stampOpen(d)
+      // l'apertura non deve lasciare il foglio spostato dal focus automatico
+      for (const el of [d, sheet.current]) if (el) (el.scrollTop = 0, (el.scrollLeft = 0))
     }
     if (!open && d.open) d.close()
   }, [open])
@@ -76,11 +86,12 @@ export function Foglio({ open, title, onClose, children, footer, full, plain, he
       aria-label={title}
       tabIndex={-1}
       onClose={onClose}
+      onScroll={noScroll}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div ref={sheet} className={cx('fa-sheet', full && 'full', className)}>
+      <div ref={sheet} className={cx('fa-sheet', full && 'full', className)} onScroll={noScroll}>
         <div className="grab" aria-hidden="true" {...handle} />
         {plain ? (
           <div className="st" {...handle}>
