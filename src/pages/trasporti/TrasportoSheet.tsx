@@ -12,6 +12,7 @@ import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { Transport, TransportMode, Trip } from '../../types'
 import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
+import { ChiHaPagato } from '../../faraway/ChiHaPagato'
 import { cx } from '../../faraway/cx'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
@@ -62,7 +63,8 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
   const [currency, setCurrency] = useState(t?.currency ?? trip.localCurrency ?? trip.baseCurrency)
   const [scope, setScope] = useState<'per_person' | 'total'>(t?.scope ?? 'per_person')
   const [paid, setPaid] = useState(t?.bought ?? false)
-  const [paidBy, setPaidBy] = useState(t?.paidBy ?? (t ? '' : (me?.id ?? (all.length === 1 ? all[0] : ''))))
+  const [payers, setPayers] = useState<string[]>(() => (t?.payerIds?.length ? t.payerIds : t?.paidBy ? [t.paidBy] : t ? [] : me?.id ? [me.id] : all.length === 1 ? [all[0]] : []))
+  const paidBy = payers.length === 1 ? payers[0] : ''
   const [refCode, setRefCode] = useState(t?.refCode ?? '')
   const [operator, setOperator] = useState(t?.operator ?? '')
   const [platform, setPlatform] = useState(t?.platform ?? '')
@@ -82,7 +84,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
     if (!to.trim()) err.to = 'Scrivi dove arriva.'
     const amount = parseAmount(cost)
     if (cost.trim() && amount === null) err.cost = 'Il prezzo non è chiaro: scrivi per esempio 15,50.'
-    if (paid && amount && !paidBy) err.paidBy = 'Manca chi ha pagato. Scegli una persona.'
+    if (paid && amount && payers.length === 0) err.paidBy = 'Manca chi ha pagato. Scegli una persona.'
     if ((dt && !dd) || (at && !ad)) err.when = 'Con l’ora serve anche la data.'
     else if (isCompleteZoned(dd, dt) && isCompleteZoned(ad, at) && Date.parse(zonedToInstant(ad, at, trip.timezone)) <= Date.parse(zonedToInstant(dd, dt, trip.timezone))) err.when = 'L’arrivo è prima della partenza.'
     setErrors(err)
@@ -94,7 +96,8 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
       from, to, mode, departDate: dd, departTime: dt, arriveDate: ad, arriveTime: at, fromPos, toPos,
       cost: amount, currency, scope, bought: paid, refCode, notes,
       title, stops: stops === 'nd' ? null : Number(stops), operator, platform, terminal, baggage, policy,
-      paidBy: paid && amount ? paidBy || undefined : (t?.paidBy ?? undefined),
+      paidBy: paid && amount ? (payers.length === 1 ? paidBy : undefined) : (t?.paidBy ?? undefined),
+      payerIds: paid && amount && payers.length > 1 ? payers : paid && amount ? [] : (t?.payerIds ?? []),
       forTravelers: all.every((id) => people.includes(id)) ? [] : people,
       checkinAt: checkin.date && checkin.time ? zonedToInstant(checkin.date, checkin.time, trip.timezone) : '',
     }
@@ -186,15 +189,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
         </div>
         <Interruttore label="Pagato" hint={paid ? 'Con un prezzo, il trasporto diventa una spesa.' : 'Non pagato'} isSelected={paid} onChange={setPaid} />
         {paid && cost.trim() ? (
-          <div className="fa-fld" role="group" aria-label="Pagato da">
-            Pagato da
-            <div className="fa-chips wrap">
-              {trip.travelers.map((p) => (
-                <Chip key={p.id} on={paidBy === p.id} onPress={() => setPaidBy(p.id)}>{nome(p.id)}</Chip>
-              ))}
-            </div>
-            {errors.paidBy ? <Errore>{errors.paidBy}</Errore> : null}
-          </div>
+          <ChiHaPagato travelers={trip.travelers} value={payers} onChange={setPayers} error={errors.paidBy} />
         ) : null}
         <div className="fa-2c">
           <Campo label="Codice" value={refCode} onChange={(v) => setRefCode(v.toUpperCase())} autoComplete="off" />

@@ -61,6 +61,8 @@ export interface TransportRow {
   // dalla migrazione 0019
   paid_by?: string | null
   for_travelers?: string[] | null
+  // dalla migrazione 0039: più paganti
+  payer_ids?: string[] | null
   // dalla migrazione 0022
   title?: string | null
   stops?: number | null
@@ -86,6 +88,8 @@ export interface FlightRow {
   // dalla migrazione 0019
   paid_by?: string | null
   for_travelers?: string[] | null
+  // dalla migrazione 0039: più paganti
+  payer_ids?: string[] | null
   // dalla migrazione 0021
   baggage?: string | null
   policy?: string | null
@@ -175,6 +179,7 @@ export function mapTransports(rows: TransportRow[], tripId: string): Transport[]
       notes: r.notes ?? undefined,
       paidBy: r.paid_by ?? undefined,
       forTravelers: r.for_travelers?.length ? r.for_travelers : undefined,
+      payerIds: r.payer_ids?.length ? r.payer_ids : undefined,
       title: r.title ?? undefined,
       stops: r.stops ?? undefined,
       operator: r.operator ?? undefined,
@@ -202,6 +207,7 @@ export function mapFlights(rows: FlightRow[], legs: FlightLegRow[], tripId: stri
       notes: r.notes ?? undefined,
       paidBy: r.paid_by ?? undefined,
       forTravelers: r.for_travelers?.length ? r.for_travelers : undefined,
+      payerIds: r.payer_ids?.length ? r.payer_ids : undefined,
       baggage: r.baggage ?? undefined,
       policy: r.policy ?? undefined,
       checkinAt: r.checkin_at ?? undefined,
@@ -322,6 +328,8 @@ export interface TransportInput {
   notes: string
   paidBy?: string
   forTravelers?: string[]
+  /** Più paganti (migrazione 0039): il totale si divide in parti uguali. Con uno solo vale `paidBy`. */
+  payerIds?: string[]
   title?: string
   stops?: number | null
   operator?: string
@@ -342,6 +350,7 @@ export function transportExtras(i: TransportInput, old?: Transport) {
   }
   put('paid_by', i.paidBy, old?.paidBy)
   put('for_travelers', i.forTravelers, old?.forTravelers)
+  put('payer_ids', i.payerIds, old?.payerIds)
   put('title', i.title?.trim(), old?.title)
   put('stops', i.stops, old?.stops)
   put('operator', i.operator?.trim(), old?.operator)
@@ -462,6 +471,8 @@ export interface FlightInput {
   legs: LegInput[]
   paidBy?: string
   forTravelers?: string[]
+  /** Più paganti (migrazione 0039): il totale si divide in parti uguali. Con uno solo vale `paidBy`. */
+  payerIds?: string[]
   baggage?: string
   policy?: string
   /** apertura del check-in online (istante ISO), vuoto = nessun promemoria */
@@ -478,6 +489,7 @@ export function flightExtras(i: FlightInput, old?: Flight) {
   }
   put('paid_by', i.paidBy, old?.paidBy)
   put('for_travelers', i.forTravelers, old?.forTravelers)
+  put('payer_ids', i.payerIds, old?.payerIds)
   put('baggage', i.baggage?.trim(), old?.baggage)
   put('policy', i.policy?.trim(), old?.policy)
   put('checkin_at', i.checkinAt, old?.checkinAt)

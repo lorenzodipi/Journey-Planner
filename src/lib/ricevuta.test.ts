@@ -56,6 +56,18 @@ describe('ricevuta', () => {
     expect(lor.paid).toBe(40)
   })
 
+  it('volo pagato da due persone: 311,50 € a testa su 623 €, saldi pari', () => {
+    const trip = {
+      ...base,
+      flights: [{ id: 'f1', title: 'Andata', cost: 311.5, currency: 'EUR', scope: 'per_person', paid: true, legs: [], payerIds: ['a', 'b'] }],
+    } as unknown as Trip
+    const [spesa] = tutteLeSpese(trip)
+    expect(spesa.amount).toBe(623)
+    expect(spesa.payers).toEqual([{ travelerId: 'a', amount: 311.5 }, { travelerId: 'b', amount: 311.5 }])
+    const r = ricevuta(trip, [spesa], fx)
+    expect(r.transfers).toEqual([])
+  })
+
   it('previsto scritto a mano vince', () => {
     const trip = { ...base, expenseCategories: [{ id: 'c', label: 'cibo', planned: 600 }] } as unknown as Trip
     const r = ricevuta(trip, [], fx)

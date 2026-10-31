@@ -179,6 +179,8 @@ export interface Transport {
   notes?: string
   /** Chi l'ha pagato (#34): serve alla spesa automatica. */
   paidBy?: string
+  /** Più paganti (migrazione 0039): il totale si divide in parti uguali. */
+  payerIds?: string[]
   /** Per chi è (#34), vuoto = tutti. */
   forTravelers?: string[]
   /** dalla migrazione 0022 */
@@ -228,6 +230,8 @@ export interface Flight {
   legs: FlightLeg[]
   /** Chi l'ha pagato (#34): serve alla spesa automatica. */
   paidBy?: string
+  /** Più paganti (migrazione 0039): il totale si divide in parti uguali. */
+  payerIds?: string[]
   /** Per chi è (#34), vuoto = tutti. */
   forTravelers?: string[]
   /** dalla migrazione 0021 */

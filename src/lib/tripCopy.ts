@@ -87,7 +87,7 @@ export async function copiaComeModello(o: OpzioniModello): Promise<void> {
     check_in: nuovaData(r.check_in), check_out: nuovaData(r.check_out), total_cost: null, paid: false, booked: false, booking_code: null,
   })))
   await scrivi('transports', (await leggi('transports', o.vecchioId)).map((r) => ({
-    ...pulisci(r, 'paid_by', 'for_travelers'), id: uuid(), trip_id: o.nuovoId, day_id: r.day_id ? (giorno.get(String(r.day_id)) ?? null) : null,
+    ...pulisci(r, 'paid_by', 'for_travelers', 'payer_ids'), id: uuid(), trip_id: o.nuovoId, day_id: r.day_id ? (giorno.get(String(r.day_id)) ?? null) : null,
     depart_at: nuovoIstante(r.depart_at), arrive_at: nuovoIstante(r.arrive_at),
     ...('depart_date' in r ? { depart_date: nuovaData(r.depart_date), arrive_date: nuovaData(r.arrive_date) } : {}),
     ...('checkin_at' in r ? { checkin_at: null } : {}), cost: null, bought: false, ref_code: null,

@@ -16,6 +16,7 @@ import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { Flight, Trip } from '../../types'
 import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
+import { ChiHaPagato } from '../../faraway/ChiHaPagato'
 import { cx } from '../../faraway/cx'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
@@ -56,7 +57,8 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
   const [currency, setCurrency] = useState(flight?.currency ?? trip.baseCurrency)
   const [scope, setScope] = useState<'per_person' | 'total'>(flight?.scope ?? 'per_person')
   const [paid, setPaid] = useState(flight?.paid ?? false)
-  const [paidBy, setPaidBy] = useState(flight?.paidBy ?? (flight ? '' : (me?.id ?? (all.length === 1 ? all[0] : ''))))
+  const [payers, setPayers] = useState<string[]>(() => (flight?.payerIds?.length ? flight.payerIds : flight?.paidBy ? [flight.paidBy] : flight ? [] : me?.id ? [me.id] : all.length === 1 ? [all[0]] : []))
+  const paidBy = payers.length === 1 ? payers[0] : ''
   const [who, setWho] = useState<string[]>(flight?.forTravelers?.length ? flight.forTravelers : all)
   const [baggage, setBaggage] = useState(flight?.baggage ?? '')
   const [policy, setPolicy] = useState(flight?.policy ?? '')
@@ -96,7 +98,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
     if (!title.trim()) err.title = 'Dai un nome al volo (es. Andata).'
     const amount = parseAmount(cost)
     if (cost.trim() && amount === null) err.cost = 'Il costo non è chiaro: scrivi per esempio 623.'
-    if (amount && paid && !paidBy) err.paidBy = 'Manca chi ha pagato. Scegli una persona.'
+    if (amount && paid && payers.length === 0) err.paidBy = 'Manca chi ha pagato. Scegli una persona.'
     legs.forEach((l, i) => {
       const n = `Tratta ${i + 1}: `
       if (!isIata(l.from) || !isIata(l.to)) return void (err.legs[l.key] = `${n}scrivi i codici aeroporto di 3 lettere (es. MXP).`)
@@ -113,7 +115,8 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
     const input: FlightInput = {
       title, airline, bookingRef, cost: amount, currency, scope, paid, notes,
       baggage, policy, checkinAt,
-      paidBy: paid || amount ? paidBy || undefined : undefined,
+      paidBy: (paid || amount) && payers.length === 1 ? paidBy : undefined,
+      payerIds: (paid || amount) && payers.length > 1 ? payers : [],
       forTravelers: who.length === 0 || all.every((id) => who.includes(id)) ? [] : who,
       legs: legs.map(({ key: _k, fromTzAuto: _a, toTzAuto: _b, ...l }) => l),
     }
@@ -225,15 +228,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
         </div>
         <Interruttore label="Pagato" hint={paid ? 'Con un importo, il volo diventa una spesa.' : 'Non pagato'} isSelected={paid} onChange={setPaid} />
         {paid && cost.trim() ? (
-          <div className="fa-fld" role="group" aria-label="Pagato da">
-            Pagato da
-            <div className="fa-chips wrap">
-              {trip.travelers.map((p) => (
-                <Chip key={p.id} on={paidBy === p.id} onPress={() => setPaidBy(p.id)}>{nome(p.id)}</Chip>
-              ))}
-            </div>
-            {errors.paidBy ? <Errore>{errors.paidBy}</Errore> : null}
-          </div>
+          <ChiHaPagato travelers={trip.travelers} value={payers} onChange={setPayers} error={errors.paidBy} />
         ) : null}
 
         <Campo label="Bagaglio" value={baggage} onChange={setBaggage} placeholder="es. 1 bagaglio da 23 kg" />

@@ -25,6 +25,13 @@ export function tutteLeSpese(trip: Pick<Trip, 'expenses' | 'stays' | 'flights' |
     if (linked.has(`${kind}:${id}`)) return
     out.push({ ...e, id: `${kind}:${id}`, source: { kind, id }, derived: true })
   }
+  /** Più paganti: il totale si divide in parti uguali (l'ultimo prende i centesimi che avanzano). Un solo pagante = `paidBy`. */
+  const paganti = (ids: string[] | undefined, amount: number) => {
+    const list = Array.from(new Set(ids ?? [])).filter((id) => everyone.includes(id))
+    if (list.length < 2) return {}
+    const part = Math.floor((amount * 100) / list.length) / 100
+    return { payers: list.map((travelerId, i) => ({ travelerId, amount: i === list.length - 1 ? round2(amount - part * (list.length - 1)) : part })) }
+  }
   const total = (amount: number, scope: 'per_person' | 'total', people: number) => (scope === 'per_person' ? round2(amount * Math.max(1, people)) : amount)
   for (const s of trip.stays) {
     if (s.totalCost == null || !s.paid) continue
@@ -35,13 +42,15 @@ export function tutteLeSpese(trip: Pick<Trip, 'expenses' | 'stays' | 'flights' |
     if (f.cost == null || !f.paid) continue
     const who = f.forTravelers?.length ? f.forTravelers : everyone
     const at = f.legs[0]?.departAt ?? midday(trip.startDate, trip.timezone)
-    add('flight', f.id, { label: f.title, category: 'Voli', amount: total(f.cost, f.scope, who.length), currency: f.currency, paidBy: f.paidBy, spentAt: at, shares: who.map((travelerId) => ({ travelerId, weight: 1 })) })
+    const tot = total(f.cost, f.scope, who.length)
+    add('flight', f.id, { label: f.title, category: 'Voli', amount: tot, currency: f.currency, paidBy: f.paidBy, ...paganti(f.payerIds, tot), spentAt: at, shares: who.map((travelerId) => ({ travelerId, weight: 1 })) })
   }
   for (const t of trip.transports) {
     if (t.cost == null || !t.bought) continue
     const who = t.forTravelers?.length ? t.forTravelers : everyone
     const at = t.departAt ?? (t.departDate ? midday(t.departDate, trip.timezone) : midday(trip.startDate, trip.timezone))
-    add('transport', t.id, { label: `${t.from} → ${t.to}`, category: 'Trasporti', amount: total(t.cost, t.scope, who.length), currency: t.currency, paidBy: t.paidBy, spentAt: at, shares: who.map((travelerId) => ({ travelerId, weight: 1 })) })
+    const tot = total(t.cost, t.scope, who.length)
+    add('transport', t.id, { label: `${t.from} → ${t.to}`, category: 'Trasporti', amount: tot, currency: t.currency, paidBy: t.paidBy, ...paganti(t.payerIds, tot), spentAt: at, shares: who.map((travelerId) => ({ travelerId, weight: 1 })) })
   }
   for (const b of trip.bookings) {
     if (b.cost == null) continue
