@@ -168,7 +168,7 @@ export function Giorno({ params }: { params: { id: string } }) {
   // «Ottimizza percorso» (#18): le tappe senza orario sul tragitto più breve dall'ultima con orario o dall'alloggio
   const stays = dayStays(trip.stays, day.date)
   const homePoint = stays.night?.mapsUrl ? parseMapsUrl(stays.night.mapsUrl) : null
-  const plan = planRoute(day.items.map((i) => ({ id: i.id, position: i.position, time: i.time, lat: stopById.get(i.id)?.lat, lng: stopById.get(i.id)?.lng })), homePoint)
+  const plan = planRoute(day.items.map((i) => ({ id: i.id, position: i.position, time: i.timeLock === 'locked' ? (i.time ?? '00:00') : i.time, lat: stopById.get(i.id)?.lat, lng: stopById.get(i.id)?.lng })), homePoint)
   const optimize = async () => {
     if (!plan) return
     if (plan.changed.length === 0) return showToast('Il percorso è già il più corto')

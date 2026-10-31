@@ -81,6 +81,8 @@ await runMigration('0030_documenti.sql')
 await runMigration('0030_documenti.sql') // si può rilanciare
 await runMigration('0031_prenotazioni_tappe.sql')
 await runMigration('0031_prenotazioni_tappe.sql') // si può rilanciare
+await runMigration('0032_orari_vincolati.sql')
+await runMigration('0032_orari_vincolati.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -665,6 +667,18 @@ await asUser(A)
   await asUser(C)
   await throws('0031 un non membro non collega', () => db.query(`insert into booking_items (booking_id,day_item_id,trip_id) values ($1,gen_random_uuid(),$2)`, [bk, t8]))
   await asUser(A)
+}
+
+// orari vincolati (0032)
+await asUser(A)
+{
+  const d = (await db.query(`insert into days (trip_id,date,city) values ($1,'2026-12-02','Osaka') returning id`, [t8])).rows[0].id
+  const it = (await db.query(`insert into day_items (trip_id,day_id,title,position) values ($1,$2,'Cena',1) returning id, time_lock`, [t8, d])).rows[0]
+  check('0032 le tappe nascono flessibili', it.time_lock === 'flexible')
+  await db.query(`update day_items set time_lock='locked', lock_source='booking', lock_changed_by=$2, lock_changed_at=now() where id=$1`, [it.id, A])
+  check('0032 il proprietario vincola una tappa', (await db.query(`select 1 from day_items where id=$1 and time_lock='locked'`, [it.id])).rows.length === 1)
+  await throws('0032 valore di vincolo sconosciuto rifiutato', () => db.query(`update day_items set time_lock='boh' where id=$1`, [it.id]))
+  await throws('0032 tipo di orario sconosciuto rifiutato', () => db.query(`insert into bookings (trip_id,type,title,time_kind) values ($1,'other','X','boh')`, [t8]))
 }
 
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione

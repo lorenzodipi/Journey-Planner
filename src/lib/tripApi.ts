@@ -154,6 +154,10 @@ interface ItemRow {
   postponed_from_day_id?: string | null
   participants?: string[] | null
   category_id?: string | null
+  time_lock?: 'flexible' | 'locked' | null
+  lock_source?: 'manual' | 'booking' | null
+  lock_changed_by?: string | null
+  lock_changed_at?: string | null
 }
 interface Extras {
   places: PlaceRow[]
@@ -273,6 +277,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
       participants: it.participants && it.participants.length > 0 ? it.participants : undefined,
       categoryId: it.category_id ?? undefined,
       position: it.position,
+      ...(it.time_lock ? { timeLock: it.time_lock, lockSource: it.lock_source ?? undefined, lockChangedBy: it.lock_changed_by ?? undefined, lockChangedAt: it.lock_changed_at ?? undefined } : {}),
     })
     itemsByDay.set(it.day_id, list)
   }
@@ -1047,6 +1052,13 @@ export async function moveItemToDay(id: string, dayId: string, position: number,
 }
 
 /** Per chi è la tappa (vuoto = tutti). */
+/** Blocca o sblocca l'orario di una tappa (0032), con autore e ora. Senza la migrazione non fa nulla. */
+export async function setItemLock(id: string, lock: 'flexible' | 'locked', source: 'manual' | 'booking', userId?: string): Promise<void> {
+  if (!schema.timeLock) throw new Error("Manca la migrazione 0032 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0032_orari_vincolati.sql).")
+  const { error } = await client().from('day_items').update({ time_lock: lock, lock_source: lock === 'locked' ? source : null, lock_changed_by: userId ?? null, lock_changed_at: new Date().toISOString() }).eq('id', id)
+  if (error) throw error
+}
+
 export async function setItemParticipants(id: string, participants: string[]): Promise<void> {
   const { error } = await client().from('day_items').update({ participants }).eq('id', id)
   if (error) throw needs0017(error)

@@ -10,11 +10,13 @@ import { safeUrl, type BookingInput } from '../../lib/planningData'
 import { discOf, initials, useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
-import type { Booking, BookingStatus, BookingType, Trip } from '../../types'
+import { schema } from '../../lib/schema'
+import type { Booking, BookingStatus, BookingType, TimeKind, Trip } from '../../types'
 import { formatShort } from '../../lib/dates'
 import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
-import { Foglio } from '../../faraway/Foglio'
+import { Foglio, useConferma } from '../../faraway/Foglio'
+import { TIME_KIND_LABEL } from '../../lib/vincoli'
 import { Sv } from '../../faraway/icons'
 
 const Errore = ({ children }: { children: string }) => (
@@ -57,6 +59,8 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
   const [offline, setOffline] = useState(b?.keepOffline ?? true)
   const [notes, setNotes] = useState(b?.notes ?? '')
   const [status, setStatus] = useState<BookingStatus>(b?.status ?? 'confirmed')
+  const [timeKind, setTimeKind] = useState<TimeKind>(b?.timeKind ?? (b?.validFrom && oraPrenotazione(b, tz) ? 'fixed' : 'unspecified'))
+  const [ask, confirmNode] = useConferma()
   const [provider, setProvider] = useState(b?.provider ?? '')
   const [contact, setContact] = useState(b?.contact ?? '')
   const [policy, setPolicy] = useState(b?.cancellationPolicy ?? '')
@@ -92,14 +96,24 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
       time: date ? time : '', place, detail, partySize: n,
       paidBy: amount ? paidBy || undefined : (b?.paidBy ?? undefined),
       forTravelers: all.every((id) => people.includes(id)) ? [] : people,
-      status, provider, contact, cancellationPolicy: policy, participants: all.every((id) => people.includes(id)) ? [] : people,
+      status, provider, contact, timeKind: time ? timeKind : 'unspecified', cancellationPolicy: policy, participants: all.every((id) => people.includes(id)) ? [] : people,
       ...(richiedeTappa ? { itemIds: [tappa] } : {}),
     }
     // BOOK-025: la data cambia e la tappa sta in un altro giorno → scelta esplicita, la tappa non si sposta da sola
     const altro = b && !saltaAvviso && tappa ? tappeInAltroGiorno(trip, b.id, date).filter((t) => t.itemId === tappa) : []
     if (altro.length) return setAvvisoData(altro)
+    // DAY-020, BR-39: solo con ora prestabilita e solo su conferma si propone di vincolare l'orario della tappa
+    let vincola = false
+    const tp = tappa ? trip.days.flatMap((d) => d.items).find((i) => i.id === tappa) : undefined
+    if (schema.timeLock && tp && time && timeKind === 'fixed' && tp.timeLock !== 'locked') {
+      vincola = await ask({ title: 'Vincolare l’orario della tappa?', message: `«${tp.title}» ${tp.time ? `è alle ${tp.time}` : 'non ha un orario'}. Vincolandola resta alle ${time}, la prenotazione è a ora fissa. L’orario cambia solo se confermi.`, confirm: `Vincola alle ${time}`, cancel: 'No, lascia flessibile', destructive: false })
+    }
     setBusy(true)
     const message = b ? await tr.updateBooking(trip.id, b, input) : await tr.createBooking(trip.id, input)
+    if (!message && vincola && tp) {
+      const m2 = tp.time === time ? null : await tr.updateItem(tp.id, { title: tp.title, kind: tp.kind, startTime: time, endTime: tp.endTime ?? '', notes: tp.note ?? '', placeId: tp.placeId ?? null })
+      if (!m2) await tr.setItemLock(tp.id, 'locked', 'booking')
+    }
     setBusy(false)
     if (message) return setErrors({ form: message })
     showToast(b ? 'Prenotazione aggiornata' : 'Prenotazione salvata')
@@ -139,6 +153,16 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
           <Campo label="Persone" inputMode="numeric" value={party} onChange={setParty} placeholder="4" error={errors.party} />
         </div>
         {errors.when ? <Errore>{errors.when}</Errore> : null}
+        {time ? (
+          <div className="fa-fld" role="group" aria-label="Tipo di orario">
+            Tipo di orario
+            <div className="fa-chips wrap">
+              {(Object.keys(TIME_KIND_LABEL) as TimeKind[]).map((x) => (
+                <Chip key={x} on={timeKind === x} onPress={() => setTimeKind(x)}>{TIME_KIND_LABEL[x]}</Chip>
+              ))}
+            </div>
+          </div>
+        ) : null}
         <div className="fa-fld" role="group" aria-label="Stato">
           Stato
           <div className="fa-chips">
@@ -223,6 +247,7 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
         {errors.form ? <Errore>{errors.form}</Errore> : null}
         <datalist id="pr-valute">{tripCurrencies(trip, b?.currency).map((c) => <option key={c} value={c} />)}</datalist>
       </form>
+      {confirmNode}
       {avvisoData ? (
         <Foglio open title="La tappa è in un altro giorno" onClose={() => setAvvisoData(null)}>
           <p className="fa-m" style={{ margin: 0 }}>

@@ -106,6 +106,7 @@ interface TripsValue {
   /** Sposta la tappa in un altro giorno; con `postpone` diventa «Rimandata» dal giorno di partenza. */
   moveItemToDay: (tripId: string, id: string, toDayId: string, postpone?: boolean) => Result
   setItemParticipants: (id: string, participants: string[]) => Result
+  setItemLock: (id: string, lock: 'flexible' | 'locked', source: 'manual' | 'booking') => Result
   /** Costo della tappa = spesa collegata in Spese (#32): crea, aggiorna o (con `null`) elimina la spesa. */
   saveItemCost: (tripId: string, itemId: string, cost: ItemCost | null) => Result
   setItemDeleted: (id: string, deleted: boolean) => Result
@@ -614,6 +615,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       const e = expenseEntry(trip, input, linked)
       return queued(e.label, e.ops, e.local)
     },
+    setItemLock: (id, lock, source) => run(() => api.setItemLock(id, lock, source, auth.session?.user.id), ['items']),
     setItemParticipants: (id, participants) => run(() => api.setItemParticipants(id, participants), ['items']),
     setItemDone: (id, done) => queued('Tappa fatta', [{ k: 'update', table: 'day_items', id, patch: { done } }], { t: 'item.done', id, done }),
     setItemDeleted: (id, deleted) => run(() => api.setItemDeleted(id, deleted), ['items']),

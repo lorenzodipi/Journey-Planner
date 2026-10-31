@@ -1,4 +1,4 @@
-import type { Booking, BookingLink, BookingStatus, BookingType, ChecklistItem, ChecklistKind, DocKind, Documento, Scope, TicketCode, TicketKind } from '../types'
+import type { Booking, BookingLink, BookingStatus, BookingType, TimeKind, ChecklistItem, ChecklistKind, DocKind, Documento, Scope, TicketCode, TicketKind } from '../types'
 import { zonedToInstant } from './zoned'
 
 // Checklist e prenotazioni: righe del database <-> tipi dell'app, e colonne da salvare.
@@ -61,6 +61,8 @@ export interface BookingRow {
   contact?: string | null
   cancellation_policy?: string | null
   participants?: string[] | null
+  // dalla migrazione 0032
+  time_kind?: TimeKind | null
 }
 
 export interface BookingItemRow {
@@ -152,6 +154,7 @@ export function mapBookings(rows: BookingRow[], tripId: string): Booking[] {
       contact: r.contact?.trim() || undefined,
       cancellationPolicy: r.cancellation_policy?.trim() || undefined,
       participants: r.participants?.length ? r.participants : undefined,
+      timeKind: r.time_kind ?? undefined,
     }))
     .sort((a, b) => (a.validFrom ?? '9999').localeCompare(b.validFrom ?? '9999') || a.title.localeCompare(b.title, 'it'))
 }
@@ -240,6 +243,7 @@ export interface BookingInput {
   contact?: string
   cancellationPolicy?: string
   participants?: string[]
+  timeKind?: TimeKind
   /** tappe collegate (0031); assente = non toccare i collegamenti */
   itemIds?: string[]
   place?: string
@@ -281,6 +285,7 @@ export function bookingExtras(i: BookingInput, old?: Booking) {
   put('contact', i.contact?.trim(), old?.contact)
   put('cancellation_policy', i.cancellationPolicy?.trim(), old?.cancellationPolicy)
   put('participants', i.participants, old?.participants)
+  if (i.timeKind && (i.timeKind !== 'unspecified' || (old?.timeKind && old.timeKind !== 'unspecified'))) out.time_kind = i.timeKind
   if (i.status && (i.status !== 'confirmed' || (old?.status && old.status !== 'confirmed'))) out.status = i.status
   return out
 }

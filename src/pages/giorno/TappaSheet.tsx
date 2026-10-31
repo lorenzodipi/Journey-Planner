@@ -10,8 +10,10 @@ import { durata } from '../../lib/tappa'
 import { useTrips } from '../../state/trip'
 import { useMe } from '../../state/me'
 import type { Day, DayItem, Trip } from '../../types'
-import { Campo, Chip, Pulsante } from '../../faraway/base'
-import { Foglio } from '../../faraway/Foglio'
+import { schema } from '../../lib/schema'
+import { disallineamenti, prenotazioniFisse } from '../../lib/vincoli'
+import { Banner, Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
+import { Foglio, useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 
 const PARTS = ['', 'da solo', 'in due', 'in tre', 'in quattro', 'in cinque', 'in sei', 'in sette', 'in otto']
@@ -46,6 +48,10 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
   const [paidBy, setPaidBy] = useState(linked?.paidBy ?? me?.id ?? trip.travelers[0]?.id ?? '')
   const [who, setWho] = useState<string[]>(item?.participants ?? [])
   const [error, setError] = useState<string | null>(null)
+  const [vincolata, setVincolata] = useState(item?.timeLock === 'locked')
+  const [ask, confirmNode] = useConferma()
+  const fisse = item ? prenotazioniFisse(trip, item.id) : []
+  const diversi = item ? disallineamenti(trip, { id: item.id, time }) : []
   const [busy, setBusy] = useState(false)
   const [focusTitle, setFocusTitle] = useState(false)
 
@@ -95,6 +101,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
       ...(editing ? { participants: who } : {}),
     }
     let message = item ? await t.updateItem(item.id, input) : await t.createItem(trip.id, day.id, input)
+    if (!message && item && schema.timeLock && vincolata !== (item.timeLock === 'locked')) message = await t.setItemLock(item.id, vincolata && time ? 'locked' : 'flexible', 'manual')
     if (!message && item && (amount || linked)) {
       const catLabel = linked?.category || categoriaDaTappa(trip.categories.find((c) => c.id === categoryId)?.label ?? '')
       message = await t.saveItemCost(trip.id, item.id, amount ? { amount, currency, paidBy, travelerIds: who, category: catLabel, notes: linked?.notes } : null)
@@ -156,6 +163,25 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
           <Campo label="Ora" icon="clock" type="time" value={time} onChange={setTime} />
           <Campo label="Durata" value={duration} onChange={setDuration} placeholder={place?.visitMinutes ? durata(place.visitMinutes) : 'es. 1 h 30'} />
         </div>
+        {editing && time && schema.timeLock ? (
+          <Interruttore
+            label="Orario vincolato"
+            hint={vincolata ? 'Riordino e «Ottimizza percorso» non spostano questa tappa.' : 'Flessibile: può essere spostata dall’ottimizzazione.'}
+            isSelected={vincolata}
+            onChange={async (v) => {
+              if (!v && fisse.length) {
+                const ok = await ask({ title: 'Sbloccare l’orario?', message: `«${fisse[0].title}» è a ora fissa: sbloccando la tappa può andare in conflitto. La prenotazione non cambia.`, confirm: 'Sblocca', cancel: 'Lascia vincolato', destructive: false })
+                if (!ok) return
+              }
+              setVincolata(v)
+            }}
+          />
+        ) : null}
+        {diversi.map((d) => (
+          <Banner key={d.booking.id} tone="ac" icon="warn" title="Orari diversi" action={<Pulsante size="sm" color="secondary" onPress={() => setTime(d.oraPrenotazione)}>Verifica</Pulsante>}>
+            Tappa {d.oraTappa}, prenotazione «{d.booking.title}» {d.oraPrenotazione}. «Verifica» porta qui l’ora della prenotazione: l’orario cambia solo se salvi.
+          </Banner>
+        ))}
         {cats.length > 0 ? (
           <div className="fa-fld" role="group" aria-label="Categoria">
             Categoria
@@ -235,6 +261,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
           </span>
         ) : null}
       </form>
+      {confirmNode}
     </Foglio>
   )
 }

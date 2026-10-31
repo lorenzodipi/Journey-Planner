@@ -4,9 +4,12 @@
 export const schema = {
   /** 0017: day_items.status, participants, expenses.source_* */
   itemStatus: false,
+  /** 0032: day_items.time_lock */
+  timeLock: false,
 }
 
 /** Da chiamare con una riga qualsiasi di day_items appena letta. */
 export function noteItemRow(row: object | undefined): void {
   if (row && 'status' in row) schema.itemStatus = true
+  if (row && 'time_lock' in row) schema.timeLock = true
 }

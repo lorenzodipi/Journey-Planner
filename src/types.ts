@@ -100,6 +100,11 @@ export interface DayItem {
   /** Categoria propria della tappa; vuota = quella del luogo collegato. */
   categoryId?: string
   position?: number
+  /** dalla migrazione 0032 */
+  timeLock?: 'flexible' | 'locked'
+  lockSource?: 'manual' | 'booking'
+  lockChangedBy?: string
+  lockChangedAt?: string
 }
 
 export interface Day {
@@ -405,8 +410,10 @@ export interface Booking {
   contact?: string
   cancellationPolicy?: string
   participants?: string[]
+  timeKind?: TimeKind
 }
 
+export type TimeKind = 'fixed' | 'window' | 'indicative' | 'unspecified'
 export type BookingStatus = 'to_confirm' | 'confirmed' | 'cancelled'
 
 /** Collegamento prenotazione ↔ tappa (0031). */

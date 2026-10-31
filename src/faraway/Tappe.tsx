@@ -10,6 +10,7 @@ import { mapsLinkFor } from '../lib/mapsUrl'
 import { openingFor } from '../lib/opening'
 import { durata, fase, forseInRitardo, riepilogo, rigaOrario, statoOf, statusOf, TAPPA_STATI, toMin, type Fase, type Spostamento } from '../lib/tappa'
 import { itemDuration } from '../lib/duration'
+import { Sv } from './icons'
 import { discOf, initials } from '../state/me'
 import type { Day, DayItem, Expense, ItemStatus, Place, Trip } from '../types'
 import { cx } from './cx'
@@ -261,6 +262,12 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                     <div className="tt">
                       <div className="t">{item.title}</div>
                       <div className="m">{metaOf(trip, item)}</div>
+                      {item.time && item.timeLock ? (
+                        <div className="m" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {item.timeLock === 'locked' ? <Sv name="lock" size={14} /> : null}
+                          {item.timeLock === 'locked' ? 'Orario vincolato' : 'Orario flessibile'}
+                        </div>
+                      ) : null}
                     </div>
                     <div className="r">
                       {item.time ? (
