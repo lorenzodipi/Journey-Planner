@@ -48,6 +48,8 @@ interface Props {
   onDelete: (item: DayItem) => void
   /** Testo della seconda riga dell'indirizzo («8 min a piedi da qui»). */
   fromHere?: (item: DayItem) => string | null
+  /** Meteo della tappa, per la sua città e il suo orario («14° · nuvoloso alle 15:30»). */
+  meteoDi?: (item: DayItem) => string | null
   /** Id della tappa da evidenziare (tocco su un pin). */
   highlight?: string | null
   readOnly?: boolean
@@ -188,7 +190,7 @@ function Riga({ icon, main, sub, action }: { icon: string; main: ReactNode; sub?
   )
 }
 
-export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle, onStatus, onEdit, onMove, onDelete, fromHere, highlight, readOnly }: Props) {
+export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle, onStatus, onEdit, onMove, onDelete, fromHere, meteoDi, highlight, readOnly }: Props) {
   const items = day.items
   const sum = riepilogo(items, ctx)
   const payer = new Map(trip.travelers.map((p) => [p.id, p.name]))
@@ -263,6 +265,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                     <div className="tt">
                       <div className="t">{item.title}</div>
                       <div className="m">{metaOf(trip, item)}</div>
+                      {meteoDi?.(item) ? <div className="m">{meteoDi(item)}</div> : null}
                       {item.time && item.timeLock ? (
                         <div className="m" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           {item.timeLock === 'locked' ? <Sv name="lock" size={14} /> : null}

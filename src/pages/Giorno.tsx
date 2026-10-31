@@ -25,6 +25,9 @@ import { DaySheet, type DaySheetState } from '../ui/DaySheet'
 import { DayMapPanel } from '../ui/DayMapPanel'
 import { PulsanteIcona, Pulsante, Sezione } from '../faraway/base'
 import { useConferma } from '../faraway/Foglio'
+import { MeteoGiorno } from './giorno/MeteoGiorno'
+import { meteoDellaTappa, cittaTappa, cittaDelGiorno } from '../lib/meteoGiorno'
+import { useCityForecasts } from '../state/cityForecast'
 import { Sv } from '../faraway/icons'
 import { CartaAlloggio } from '../faraway/CartaAlloggio'
 import { Riga, useUnaAperta } from '../faraway/Righe'
@@ -107,6 +110,7 @@ export function Giorno({ params }: { params: { id: string } }) {
   const dayView = vistaDelGiorno(trip, day.date)
   const ctx = { isToday: day.date === today, isPast: day.date < today, nowMin: minutesOfDay(new Date(), dayView.timezone), timeZone: dayView.timezone }
   const city = day.city || trip.destination
+  const previsioniCitta = useCityForecasts(trip, cittaDelGiorno(trip, day).map((c) => c.city))
   const legs = [...segments.values()]
   const stopState = new Map(day.items.map((i) => {
     const f = fase(i, i.placeId ? trip.places.find((p) => p.id === i.placeId) : undefined, ctx)
@@ -230,6 +234,7 @@ export function Giorno({ params }: { params: { id: string } }) {
         </section>
       ) : null}
 
+      <MeteoGiorno trip={trip} day={day} />
       <div className="fa-stack" style={{ gap: 0 }}>
         <TappeLista
           trip={trip}
@@ -244,6 +249,7 @@ export function Giorno({ params }: { params: { id: string } }) {
           onMove={(item) => setSheet({ kind: 'move', item, postpone: false })}
           onDelete={(item) => void onDelete(item)}
           fromHere={fromHere}
+          meteoDi={(item) => meteoDellaTappa(previsioniCitta.get(cittaTappa(trip, day, item)), day.date, item.time)}
           highlight={highlight}
         />
         {day.items.length === 0 ? <p className="fa-m">Giornata ancora libera: aggiungi la prima tappa.</p> : null}

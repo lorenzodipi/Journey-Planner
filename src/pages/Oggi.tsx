@@ -1,4 +1,6 @@
 // Oggi (mock Fa-03…Fa-07, Fa-52…Fa-55; issue #28, #29, #30): prima, durante e dopo il viaggio.
+import { MeteoGiorno } from './giorno/MeteoGiorno'
+import { cittaDelGiorno, indiceCittaAdesso } from '../lib/meteoGiorno'
 import { ora, useRiferimento } from '../lib/formati'
 import { Foglio } from '../faraway/Foglio'
 import { Chip, Pulsante } from '../faraway/base'
@@ -149,7 +151,9 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
   const [rif, setRif] = useRiferimento(trip.id)
   const [sceltaCitta, setSceltaCitta] = useState(false)
   const cittaViaggio = [...new Set(trip.days.map((d) => d.city).filter(Boolean))]
-  const city = (rif && cittaViaggio.includes(rif) ? rif : null) || day?.city || trip.destination
+  const tratti = day ? cittaDelGiorno(trip, day) : []
+  const cittaProgramma = tratti.length ? tratti[indiceCittaAdesso(tratti, minutesOfDay(now, trip.timezone))].city : null
+  const city = (rif && cittaViaggio.includes(rif) ? rif : null) || cittaProgramma || day?.city || trip.destination
   const { segments } = useDaySegments(trip, day)
   const nowMin = minutesOfDay(now, trip.timezone)
   const ctx = { isToday: true, isPast: false, nowMin, timeZone: trip.timezone }
@@ -284,6 +288,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
           sun={rigaSole(sun, sunTomorrow, nowMin)}
         />
       ) : null}
+      {day && tratti.length > 1 && !(rif && cittaViaggio.includes(rif)) ? <MeteoGiorno trip={trip} day={day} /> : null}
       {rain ? <AvvisoPioggia title={rain.title} text={rain.text} /> : null}
 
       {finishedCard}
