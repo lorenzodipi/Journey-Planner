@@ -1,8 +1,8 @@
 // Pagina Alloggi (mock Fa-37, #39): biglietti lavanda raggruppati per città con le notti, aperti in linea uno alla volta, FAB «+ Alloggio».
 import { useMemo, useState } from 'react'
 import { notti, perCitta } from '../../lib/alloggi'
-import { formatShort } from '../../lib/dates'
-import { overlappingStays, uncoveredNights } from '../../lib/stays'
+import { overlappingStays, stayFuoriViaggio } from '../../lib/stays'
+import { AvvisoNotti } from '../../faraway/AvvisoNotti'
 import { showToast } from '../../state/toast'
 import { useTrip, useTrips } from '../../state/trip'
 import type { Stay } from '../../types'
@@ -21,7 +21,7 @@ export function AlloggiPage() {
   const open = useUnaAperta()
   const [sheet, setSheet] = useState<{ stay?: Stay } | null>(null)
   const gruppi = useMemo(() => perCitta(trip.stays), [trip.stays])
-  const gaps = uncoveredNights(trip.startDate, trip.endDate, trip.stays)
+  const fuori = stayFuoriViaggio(trip)
   const overlaps = overlappingStays(trip.stays)
 
   async function elimina(s: Stay) {
@@ -42,9 +42,10 @@ export function AlloggiPage() {
         </>
       }
     >
-      {gaps.length > 0 && gruppi.length > 0 ? (
-        <Banner tone="az" icon="info" title="Notti senza alloggio">
-          {gaps.map(formatShort).join(', ')}. Va bene se sei in volo o in treno di notte.
+      {gruppi.length > 0 ? <AvvisoNotti trip={trip} /> : null}
+      {fuori.length > 0 ? (
+        <Banner tone="ac" icon="warn" title="Date fuori dal viaggio">
+          {fuori.map((x) => x.name).join(', ')}.
         </Banner>
       ) : null}
       {overlaps.length > 0 ? (

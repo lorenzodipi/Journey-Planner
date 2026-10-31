@@ -147,6 +147,12 @@ export interface Stay {
   room?: string
   roomType?: string
   bookingCode?: string
+  /** dalla migrazione 0034 */
+  guests?: number
+  phone?: string
+  email?: string
+  /** Chi dorme qui: facoltativo e solo informativo. */
+  participants?: string[]
 }
 
 export interface Transport {

@@ -25,3 +25,18 @@ describe('alloggi', () => {
     expect(inclusi({ breakfast: true, dinner: false, kitchen: true })).toBe('Colazione, Cucina')
   })
 })
+
+import { intervalliNotti, nottiScoperte } from './stays'
+describe('notti scoperte (#57)', () => {
+  const trip = {
+    startDate: '2026-11-21', endDate: '2026-11-27', timezone: 'Asia/Tokyo', transports: [],
+    flights: [{ legs: [{ departAt: '2026-11-21T09:00:00Z', arriveAt: '2026-11-22T03:00:00Z' }] }],
+    stays: [{ checkIn: '2026-11-22', checkOut: '2026-11-24' }],
+  } as never
+  it('check-in incluso, check-out escluso, e la notte in volo non conta', () => {
+    expect(nottiScoperte(trip)).toEqual(['2026-11-24', '2026-11-25', '2026-11-26'])
+  })
+  it('raggruppa le notti consecutive', () => {
+    expect(intervalliNotti(['2026-11-24', '2026-11-25', '2026-11-27'])).toEqual([{ from: '2026-11-24', to: '2026-11-25', count: 2 }, { from: '2026-11-27', to: '2026-11-27', count: 1 }])
+  })
+})

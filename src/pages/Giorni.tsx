@@ -13,6 +13,8 @@ import { cx } from '../faraway/cx'
 import { BarraGrande, Schermata } from '../faraway/shell'
 import { Wx, wxKind } from '../faraway/Wx'
 import { Sv } from '../faraway/icons'
+import { AvvisoNotti } from '../faraway/AvvisoNotti'
+import { nottiScoperte } from '../lib/stays'
 import { Vuoto } from '../faraway/Stati'
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace('.', '')
@@ -24,13 +26,14 @@ function hourIn(timeZone: string): number {
   return Number(new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hourCycle: 'h23', timeZone }).format(new Date()))
 }
 
-function Calendarietto({ cell, onOpen }: { cell: DayCell; onOpen: () => void }) {
+function Calendarietto({ cell, onOpen, scoperta }: { cell: DayCell; onOpen: () => void; scoperta?: boolean }) {
   const d = parseYmd(cell.day.date)
   const w = cap(wk.format(d))
   const m = cap(mo.format(d))
   return (
-    <button type="button" className={cx('cl', cell.state !== 'future' && cell.state)} aria-label={`${w} ${d.getDate()} ${m}, ${cell.label}, ${cell.status}`} onClick={onOpen}>
+    <button type="button" className={cx('cl', cell.state !== 'future' && cell.state)} aria-label={`${w} ${d.getDate()} ${m}, ${cell.label}, ${cell.status}${scoperta ? ', notte senza alloggio' : ''}`} onClick={onOpen}>
       <span className="mo">{m}</span>
+      {scoperta ? <span style={{ position: 'absolute', top: 6, right: 8, display: 'inline-flex' }} title="Notte senza alloggio"><Sv name="moon" size={16} /></span> : null}
       <i className="rg1" />
       <i className="rg2" />
       <span className="bd">
@@ -48,6 +51,7 @@ function Calendarietto({ cell, onOpen }: { cell: DayCell; onOpen: () => void }) 
 
 export function Giorni() {
   const trip = useTrip()
+  const scoperte = new Set(nottiScoperte(trip))
   const [, navigate] = useLocation()
   const today = tripToday(trip)
   const [searching, setSearching] = useState(false)
@@ -112,6 +116,7 @@ export function Giorni() {
         </div>
       ) : null}
 
+      {trip.days.length > 0 ? <AvvisoNotti trip={trip} /> : null}
       {trip.days.length === 0 ? <Vuoto art="calendario" title="Nessun giorno" text="Imposta le date del viaggio da Altro → Modifica viaggio: i giorni si creano da soli." /> : null}
       {trip.days.length > 0 && shown.length === 0 ? <Vuoto art="calendario" title="Nessun giorno trovato" text="Prova con un'altra città o tappa." /> : null}
 
@@ -124,7 +129,7 @@ export function Giorni() {
           <div className="k-SelettoreGiorni">
             <div className="grid">
               {g.cells.map((c) => (
-                <Calendarietto key={c.day.id} cell={c} onOpen={() => open(c)} />
+                <Calendarietto key={c.day.id} cell={c} onOpen={() => open(c)} scoperta={scoperte.has(c.day.date)} />
               ))}
             </div>
           </div>

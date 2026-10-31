@@ -41,6 +41,10 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
   const [outInfo, setOutInfo] = useState(s?.checkOutInfo ?? '')
   const [room, setRoom] = useState(s?.room ?? '')
   const [roomType, setRoomType] = useState(s?.roomType ?? '')
+  const [guests, setGuests] = useState(s?.guests ? String(s.guests) : '')
+  const [phone, setPhone] = useState(s?.phone ?? '')
+  const [email, setEmail] = useState(s?.email ?? '')
+  const [dorme, setDorme] = useState<string[]>(s?.participants ?? [])
   const [code, setCode] = useState(s?.bookingCode ?? '')
   const [cost, setCost] = useState(amountToText(s?.totalCost))
   const [currency, setCurrency] = useState(s?.currency ?? trip.localCurrency ?? trip.baseCurrency)
@@ -51,7 +55,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
   const [dinner, setDinner] = useState(s?.dinner ?? false)
   const [kitchen, setKitchen] = useState(s?.kitchen ?? false)
   const [notes, setNotes] = useState(s?.notes ?? '')
-  const [errors, setErrors] = useState<{ name?: string; when?: string; cost?: string; paidBy?: string; form?: string }>({})
+  const [errors, setErrors] = useState<{ guests?: string; email?: string; name?: string; when?: string; cost?: string; paidBy?: string; form?: string }>({})
   const [busy, setBusy] = useState(false)
   const people = who.length === 0 ? all : who
   const nome = (id: string) => trip.travelers.find((p) => p.id === id)?.name.split(/\s+/)[0] ?? '—'
@@ -65,12 +69,15 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
     const amount = parseAmount(cost)
     if (cost.trim() && amount === null) err.cost = 'Il costo non è chiaro: scrivi per esempio 450,00.'
     if (paid && amount && !paidBy) err.paidBy = 'Manca chi ha pagato. Scegli una persona.'
+    const ospiti = guests.trim() ? Number(guests) : null
+    if (ospiti !== null && (!Number.isInteger(ospiti) || ospiti < 1 || ospiti > 99)) err.guests = 'Scrivi quanti ospiti, per esempio 2.'
+    if (email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim())) err.email = 'L’email non è valida: controlla la chiocciola e il dominio.'
     setErrors(err)
     if (Object.keys(err).length > 0) return
     const input: StayInput = {
       name, city, checkIn, checkOut, checkInInfo: inInfo, checkOutInfo: outInfo, address, mapsUrl,
       totalCost: amount, currency, breakfast, dinner, kitchen, booked: true, paid, notes,
-      room, roomType, bookingCode: code,
+      room, roomType, bookingCode: code, guests: ospiti, phone, email, participants: dorme,
       paidBy: paid && amount ? paidBy || undefined : (s?.paidBy ?? undefined),
       forTravelers: all.every((id) => people.includes(id)) ? [] : people,
     }
@@ -111,6 +118,9 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
         <div className="fa-2c">
           <Campo label="Camera" value={room} onChange={setRoom} placeholder="4" maxLength={10} />
           <Campo label="Tipo di camera" value={roomType} onChange={setRoomType} placeholder="Washitsu" />
+          <Campo label="Ospiti" inputMode="numeric" value={guests} onChange={setGuests} placeholder="2" error={errors.guests} />
+          <Campo label="Telefono" type="tel" value={phone} onChange={setPhone} placeholder="+81 75 …" />
+          <Campo label="Email" type="email" value={email} onChange={setEmail} placeholder="info@…" error={errors.email} />
         </div>
         <Campo label="Codice di prenotazione" value={code} onChange={(v) => setCode(v.toUpperCase())} autoComplete="off" />
         <div className="fa-2c">
@@ -145,6 +155,17 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
                 </Chip>
               ))}
             </div>
+          </div>
+        ) : null}
+        {trip.travelers.length > 1 ? (
+          <div className="fa-fld" role="group" aria-label="Chi dorme qui">
+            Chi dorme qui (facoltativo)
+            <div className="fa-chips wrap">
+              {trip.travelers.map((p) => (
+                <Chip key={p.id} on={dorme.includes(p.id)} onPress={() => setDorme(dorme.includes(p.id) ? dorme.filter((x) => x !== p.id) : [...dorme, p.id])}>{nome(p.id)}</Chip>
+              ))}
+            </div>
+            <span className="fa-help">Solo informativo: non cambia la copertura delle notti.</span>
           </div>
         ) : null}
         <div className="fa-fld" role="group" aria-label="Pasti e servizi">

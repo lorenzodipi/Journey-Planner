@@ -31,6 +31,10 @@ export interface StayRow {
   room?: string | null
   room_type?: string | null
   booking_code?: string | null
+  guests?: number | null
+  phone?: string | null
+  email?: string | null
+  participants?: string[] | null
 }
 
 export interface TransportRow {
@@ -137,6 +141,10 @@ export function mapStays(rows: StayRow[], tripId: string): Stay[] {
       room: r.room ?? undefined,
       roomType: r.room_type ?? undefined,
       bookingCode: r.booking_code ?? undefined,
+      guests: r.guests && r.guests > 0 ? r.guests : undefined,
+      phone: r.phone?.trim() || undefined,
+      email: r.email?.trim() || undefined,
+      participants: r.participants?.length ? r.participants : undefined,
     }))
     .sort((a, b) => a.checkIn.localeCompare(b.checkIn) || a.name.localeCompare(b.name, 'it'))
 }
@@ -244,6 +252,10 @@ export interface StayInput {
   room?: string
   roomType?: string
   bookingCode?: string
+  guests?: number | null
+  phone?: string
+  email?: string
+  participants?: string[]
 }
 
 const orNull = (s: string) => s.trim() || null
@@ -261,6 +273,10 @@ export function stayExtras(i: StayInput, old?: Stay) {
   put('room', i.room?.trim(), old?.room)
   put('room_type', i.roomType?.trim(), old?.roomType)
   put('booking_code', i.bookingCode?.trim(), old?.bookingCode)
+  put('guests', i.guests ?? undefined, old?.guests)
+  put('phone', i.phone?.trim(), old?.phone)
+  put('email', i.email?.trim(), old?.email)
+  put('participants', i.participants, old?.participants)
   return out
 }
 

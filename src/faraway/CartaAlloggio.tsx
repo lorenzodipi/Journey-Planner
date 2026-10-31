@@ -115,6 +115,30 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete 
                     </dd>
                   </div>
                 ) : null}
+                {s.guests ? (
+                  <div>
+                    <dt>Ospiti</dt>
+                    <dd>{s.guests}</dd>
+                  </div>
+                ) : null}
+                {s.participants?.length ? (
+                  <div>
+                    <dt>Dormono qui</dt>
+                    <dd>{s.participants.map((id) => trip.travelers.find((p) => p.id === id)?.name.split(/\s+/)[0]).filter(Boolean).join(', ')}</dd>
+                  </div>
+                ) : null}
+                {s.phone ? (
+                  <div>
+                    <dt>Telefono</dt>
+                    <dd><a className="fa-lnk" href={`tel:${s.phone.replace(/\s+/g, '')}`}>{s.phone}</a></dd>
+                  </div>
+                ) : null}
+                {s.email ? (
+                  <div>
+                    <dt>Email</dt>
+                    <dd><a className="fa-lnk" href={`mailto:${s.email}`}>{s.email}</a></dd>
+                  </div>
+                ) : null}
                 {pasti ? (
                   <div>
                     <dt>Pasti e servizi</dt>

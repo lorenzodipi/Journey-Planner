@@ -8,6 +8,7 @@ import { currencyName, formatMoney, round2 } from '../lib/money'
 import { dateAddDays, daysBetween, parseYmd } from '../lib/dates'
 import { groupDays, rangeText } from '../lib/dayGroups'
 import { alGiorno, riassunto } from '../lib/spese'
+import { AvvisoNotti } from '../faraway/AvvisoNotti'
 import { avvisoPioggia, descrizione, faseViaggio, momento, notteAlle, numeriViaggio, prossimeOre, rigaSole } from '../lib/oggi'
 import { isClosed, toMin } from '../lib/tappa'
 import { minutesOfDay, sunForDay } from '../lib/sun'
@@ -120,6 +121,7 @@ function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string 
       <Saluto date={longIn(now)} greeting="Ciao" name={firstName(me?.name)} />
       <Offline />
       <ContoAllaRovescia days={days} meta={meta} next={next} />
+      <AvvisoNotti trip={trip} />
       {checklist}
     </Schermata>
   )
