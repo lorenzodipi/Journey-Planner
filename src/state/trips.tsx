@@ -66,6 +66,8 @@ interface TripsValue {
   createTrip: (input: TripInput, people: TripPeople) => Result
   updateTrip: (id: string, input: TripInput) => Result
   deleteTrip: (id: string) => Result
+  archiveTrip: (id: string, archived: boolean) => Result
+  duplicateTripAsTemplate: (source: { id: string; startDate: string }, input: TripInput, people: TripPeople, conLogistica: boolean) => Result
   /** Crea un viaggio nuovo a partire da un file esportato (e lo rende quello attivo). */
   restoreTrip: (trip: Trip, title: string) => Result
   updateDay: (id: string, patch: { city: string; title: string; notes: string }) => Result
@@ -477,6 +479,12 @@ export function TripProvider({ children }: { children: ReactNode }) {
       }),
     updateTrip: (id, input) => run(() => api.updateTrip(id, input)),
     deleteTrip: (id) => run(() => api.deleteTrip(id)),
+    archiveTrip: (id, archived) => run(() => api.archiveTrip(id, archived)),
+    duplicateTripAsTemplate: (source, input, people, conLogistica) =>
+      run(async () => {
+        const id = await api.duplicateAsTemplate(source, input, people, conLogistica)
+        setActive(id)
+      }),
     restoreTrip: async (trip, title) => {
       if (demo) return DEMO_MESSAGE
       try {

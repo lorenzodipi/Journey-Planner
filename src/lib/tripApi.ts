@@ -16,6 +16,7 @@ import { cleanRates } from './money'
 import type { Op } from './outbox'
 import { DEFAULT_CENTER } from './tripForm'
 import { enumerateDates, planDays } from './tripDays'
+import { copiaComeModello } from './tripCopy'
 
 export { describeError } from './db'
 
@@ -203,6 +204,7 @@ interface TripRow {
   base_currency: string
   local_currency: string | null
   default_margin_min?: number | null
+  archived_at?: string | null
   fx_rate?: number | string | null
   fx_rates?: Record<string, number | string> | null
   budget_limit?: number | string | null
@@ -330,6 +332,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     theme: (['default', 'japan', 'iceland'].includes(row.theme) ? row.theme : 'default') as ThemeName,
     baseCurrency: row.base_currency.trim(),
     localCurrency: row.local_currency?.trim() || undefined,
+    ...(row.archived_at ? { archivedAt: row.archived_at } : {}),
     ...(row.default_margin_min != null ? { defaultMarginMin: row.default_margin_min } : {}),
     center: {
       lat: row.center_lat ?? DEFAULT_CENTER.lat,
@@ -652,6 +655,25 @@ export async function updateTrip(id: string, input: TripInput): Promise<void> {
     const res = await db.from('days').update({ deleted_at: new Date().toISOString() }).in('id', plan.hide)
     if (res.error) throw res.error
   }
+}
+
+/** Archivia o ripristina un viaggio (0036): reversibile, a differenza di eliminare. */
+export async function archiveTrip(id: string, archived: boolean): Promise<void> {
+  const { error } = await client().from('trips').update({ archived_at: archived ? new Date().toISOString() : null }).eq('id', id)
+  if (error) throw /archived_at/i.test(error.message) ? new Error("Manca la migrazione 0036 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0036_viaggi_archiviati.sql).") : error
+}
+
+/** Nuovo viaggio dal modello di un altro (TRIP-010): crea il viaggio con le nuove date e copia la struttura. Ritorna l'id. */
+export async function duplicateAsTemplate(source: { id: string; startDate: string }, input: TripInput, people: TripPeople, conLogistica: boolean): Promise<string> {
+  const id = await createTrip(input, people)
+  try {
+    await copiaComeModello({ nuovoId: id, vecchioId: source.id, vecchioInizio: source.startDate, nuovoInizio: input.startDate, nuovoFine: input.endDate, conLogistica })
+  } catch (e) {
+    // niente viaggio a metà: si elimina e si segnala l'errore
+    await client().from('trips').delete().eq('id', id)
+    throw e
+  }
+  return id
 }
 
 export async function deleteTrip(id: string): Promise<void> {

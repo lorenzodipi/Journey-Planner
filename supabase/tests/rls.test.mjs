@@ -89,6 +89,8 @@ await runMigration('0034_alloggi_ospiti_contatti.sql')
 await runMigration('0034_alloggi_ospiti_contatti.sql') // si può rilanciare
 await runMigration('0035_trasporti_terminal.sql')
 await runMigration('0035_trasporti_terminal.sql') // si può rilanciare
+await runMigration('0036_viaggi_archiviati.sql')
+await runMigration('0036_viaggi_archiviati.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -709,6 +711,15 @@ await asUser(A)
 {
   const tr = (await db.query(`insert into transports (trip_id,from_label,to_label,mode,terminal,platform,operator) values ($1,'Kyoto','Osaka','train','T2','4','JR') returning terminal`, [t8])).rows[0]
   check('0035 il terminal del trasporto si salva', tr.terminal === 'T2')
+}
+
+// viaggi archiviati (0036)
+await asUser(A)
+{
+  await db.query(`update trips set archived_at=now() where id=$1`, [t8])
+  check('0036 il proprietario archivia e vede ancora il viaggio', (await db.query(`select 1 from trips where id=$1 and archived_at is not null`, [t8])).rows.length === 1)
+  await db.query(`update trips set archived_at=null where id=$1`, [t8])
+  check('0036 ripristino', (await db.query(`select 1 from trips where id=$1 and archived_at is null`, [t8])).rows.length === 1)
 }
 
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione

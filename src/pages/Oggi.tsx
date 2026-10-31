@@ -8,6 +8,7 @@ import { currencyName, formatMoney, round2 } from '../lib/money'
 import { dateAddDays, daysBetween, parseYmd } from '../lib/dates'
 import { groupDays, rangeText } from '../lib/dayGroups'
 import { alGiorno, riassunto } from '../lib/spese'
+import { cittaPreviste } from '../lib/gestioneViaggio'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
 import { avvisoPioggia, descrizione, faseViaggio, momento, notteAlle, numeriViaggio, prossimeOre, rigaSole } from '../lib/oggi'
 import { isClosed, toMin } from '../lib/tappa'
@@ -122,6 +123,12 @@ function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string 
       <Offline />
       <ContoAllaRovescia days={days} meta={meta} next={next} />
       <AvvisoNotti trip={trip} />
+      {cittaPreviste(trip).length > 1 ? (
+        <section aria-label="Città previste" style={{ display: 'grid', gap: 4 }}>
+          <h2 className="fa-h3" style={{ margin: 0 }}>Città previste</h2>
+          <p className="fa-m" style={{ margin: 0 }}>{cittaPreviste(trip).join(' → ')}</p>
+        </section>
+      ) : null}
       {checklist}
     </Schermata>
   )

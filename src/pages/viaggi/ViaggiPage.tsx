@@ -18,6 +18,7 @@ import { Foglio } from '../../faraway/Foglio'
 import { BarraGrande, BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
 import { ViaggioSheet } from '../viaggio/ViaggioSheet'
+import { DuplicaSheet } from './DuplicaSheet'
 
 const SCENE = { tempio: ART.tempio, mare: ART.mare, citta: ART.citta, natura: ART.natura, panorama: ART.panorama }
 const TONO = { prossimo: 'soft', incorso: 'acq', concluso: 'mut' } as const
@@ -27,7 +28,11 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
   const [, navigate] = useLocation()
   const [nuovo, setNuovo] = useState(false)
   const [invito, setInvito] = useState(false)
-  const lista = ordinaViaggi(t.trips)
+  const tutti = ordinaViaggi(t.trips)
+  const lista = tutti.filter((x) => !x.archivedAt)
+  const archiviati = tutti.filter((x) => x.archivedAt)
+  const [duplica, setDuplica] = useState<Trip | null>(null)
+  const [mostraArch, setMostraArch] = useState(false)
   const [rispondendo, setRispondendo] = useState<string | null>(null)
   useEffect(() => {
     void t.refreshInvites()
@@ -48,6 +53,27 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
     t.setActive(id)
     onChosen?.()
     navigate('/')
+  }
+
+  async function archivia(trip: Trip, on: boolean) {
+    const m = await t.archiveTrip(trip.id, on)
+    showToast(m ?? (on ? `«${trip.title}» archiviato` : `«${trip.title}» ripristinato`), m || !on ? undefined : { label: 'Annulla', run: () => void t.archiveTrip(trip.id, false) })
+  }
+
+  function azioni(trip: Trip) {
+    if (trip.myRole !== undefined && trip.myRole !== 'owner') return null
+    return (
+      <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+        {trip.archivedAt ? (
+          <Pulsante size="sm" color="secondary" onPress={() => void archivia(trip, false)}>Ripristina</Pulsante>
+        ) : (
+          <>
+            <Pulsante size="sm" color="secondary" onPress={() => setDuplica(trip)}>Duplica come modello</Pulsante>
+            <Pulsante size="sm" color="tertiary" onPress={() => void archivia(trip, true)}>Archivia</Pulsante>
+          </>
+        )}
+      </span>
+    )
   }
 
   function card(trip: Trip) {
@@ -76,6 +102,13 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
     )
   }
 
+  const conAzioni = (trip: Trip) => (
+    <div key={trip.id}>
+      {card(trip)}
+      {azioni(trip)}
+    </div>
+  )
+
   return (
     <Schermata
       tabs={!scelta}
@@ -83,6 +116,7 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
       fab={lista.length ? { label: 'Viaggio', aria: 'Crea un viaggio', onPress: () => setNuovo(true) } : null}
       overlay={
         <>
+          {duplica ? <DuplicaSheet trip={duplica} onClose={() => setDuplica(null)} onDone={() => (setDuplica(null), onChosen?.(), navigate('/'))} /> : null}
           {nuovo ? <ViaggioSheet open onClose={() => setNuovo(false)} onDone={() => (onChosen?.(), navigate('/'))} /> : null}
           <Foglio open={invito} title="Ho un invito" onClose={() => setInvito(false)}>
             <div style={{ display: 'grid', gap: 12 }}>
@@ -141,7 +175,15 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
         />
       ) : (
         <>
-          {lista.map(card)}
+          {lista.map(conAzioni)}
+          {archiviati.length ? (
+            <section aria-label="Viaggi archiviati" style={{ display: 'grid', gap: 12 }}>
+              <button type="button" className="fa-lnk" style={{ justifySelf: 'start' }} aria-expanded={mostraArch} onClick={() => setMostraArch(!mostraArch)}>
+                {mostraArch ? 'Nascondi' : 'Mostra'} i viaggi archiviati ({archiviati.length})
+              </button>
+              {mostraArch ? archiviati.map(conAzioni) : null}
+            </section>
+          ) : null}
           <Pulsante color="tertiary" onPress={() => setInvito(true)}>
             Ho un invito
           </Pulsante>

@@ -471,6 +471,8 @@ export interface Trip {
   theme: ThemeName
   baseCurrency: string
   localCurrency?: string
+  /** Quando è stato archiviato (0036); assente = attivo. */
+  archivedAt?: string
   /** Margine tra le tappe (0033), minuti; assente = nessuno. */
   defaultMarginMin?: number
   center: { lat: number; lng: number }

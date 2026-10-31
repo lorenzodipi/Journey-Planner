@@ -13,6 +13,7 @@ import { TRAVELER_COLORS, cleanPeople, nameFromEmail, validateTrip } from '../..
 import type { TripInput, TripPeople } from '../../lib/tripApi'
 import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
+import { impattoDate } from '../../lib/gestioneViaggio'
 import type { Trip, TripCountry } from '../../types'
 import { Avatars, Banner, Campo, Pulsante } from '../../faraway/base'
 import { Foglio, useConferma } from '../../faraway/Foglio'
@@ -205,6 +206,14 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
       people = { self: { name: cleaned.self, color: TRAVELER_COLORS[0] }, others: cleaned.others.map((o, i) => ({ ...o, color: TRAVELER_COLORS[(i + 1) % TRAVELER_COLORS.length] })) }
     }
 
+    // TRIP-007: prima di cambiare le date, cosa cambia
+    if (editing && trip && (trip.startDate !== startDate || trip.endDate !== endDate)) {
+      const impatto = impattoDate(trip, startDate, endDate)
+      if (impatto.length) {
+        const ok = await ask({ title: 'Cambiare le date?', message: `${impatto.join('. ')}. Niente viene eliminato: i giorni tolti tornano se rimetti le date.`, confirm: 'Cambia le date', cancel: 'Non cambiare', destructive: false })
+        if (!ok) return
+      }
+    }
     setBusy(true)
     const message = editing && trip ? await t.updateTrip(trip.id, input) : await t.createTrip(input, people)
     setBusy(false)
