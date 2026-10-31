@@ -24,7 +24,7 @@ import type { BookingInput, ChecklistInput } from '../lib/planningData'
 import type { BudgetInput, ExpenseInput } from '../lib/moneyData'
 import type { FlightInput, StayInput, TransportInput } from '../lib/logistics'
 import type { InvitedInput, ItemInput, PlaceInput, TravelerInput, TripInput, TripPeople } from '../lib/tripApi'
-import type { Booking, BudgetItem, DocKind, Visibilita, ChecklistItem, Expense, Flight, ItemStatus, PlaceStatus, ReceivedInvite, Trip, Stay, TicketCode, TicketKind } from '../types'
+import type { Booking, BudgetItem, DocKind, Visibilita, ChecklistItem, Expense, Flight, ItemStatus, PlacePref, PlaceStatus, ReceivedInvite, Trip, Stay, TicketCode, TicketKind } from '../types'
 import { schema } from '../lib/schema'
 
 export type TripsStatus = 'loading' | 'ready' | 'error'
@@ -66,6 +66,8 @@ interface TripsValue {
   createTrip: (input: TripInput, people: TripPeople) => Result
   updateTrip: (id: string, input: TripInput) => Result
   deleteTrip: (id: string) => Result
+  archivePlace: (id: string, archived: boolean) => Result
+  setPlacePref: (placeId: string, pref: PlacePref | null) => Result
   archiveTrip: (id: string, archived: boolean) => Result
   duplicateTripAsTemplate: (source: { id: string; startDate: string }, input: TripInput, people: TripPeople, conLogistica: boolean) => Result
   /** Crea un viaggio nuovo a partire da un file esportato (e lo rende quello attivo). */
@@ -479,6 +481,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
       }),
     updateTrip: (id, input) => run(() => api.updateTrip(id, input)),
     deleteTrip: (id) => run(() => api.deleteTrip(id)),
+    archivePlace: (id, archived) => run(() => api.archivePlace(id, archived), ['places']),
+    setPlacePref: (placeId, pref) => run(() => api.setPlacePref(placeId, pref), ['planning']),
     archiveTrip: (id, archived) => run(() => api.archiveTrip(id, archived)),
     duplicateTripAsTemplate: (source, input, people, conLogistica) =>
       run(async () => {

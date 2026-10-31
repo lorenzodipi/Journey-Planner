@@ -23,6 +23,8 @@ export function queryPlanning(db: SupabaseClient) {
     // prima della migrazione 0037 niente registro
     db.from('activity_log').select('*').order('at', { ascending: false }).then((r) => (r.error ? { ...r, data: null, error: null } : r)),
     db.from('booking_items').select('*').then((r) => (r.error && /booking_items|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: null, error: null } : r)),
+    // la mia preferenza sui luoghi (0038); la riga è privata
+    db.from('place_prefs').select('*').then((r) => (r.error ? { ...r, data: null, error: null } : r)),
   ])
 }
 

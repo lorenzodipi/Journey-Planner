@@ -1,6 +1,6 @@
 import { cleanSpec, type OpeningSpec } from './opening'
 import { noteItemRow, schema } from './schema'
-import type { Category, Day, DayItem, ItemKind, ItemStatus, MemberRole, Place, PlaceStatus, ReceivedInvite, StatoInvito, ThemeName, Traveler, Trip, TripCountry } from '../types'
+import type { Category, Day, DayItem, ItemKind, ItemStatus, MemberRole, Place, PlacePref, PlaceStatus, ReceivedInvite, StatoInvito, ThemeName, Traveler, Trip, TripCountry } from '../types'
 import { todayYmd } from './dates'
 import { client } from './db'
 import { queryLogistics } from './logisticsApi'
@@ -140,6 +140,8 @@ interface PlaceRow {
   status: PlaceStatus
   notes: string | null
   visit_minutes?: number | null
+  website?: string | null
+  archived_at?: string | null
 }
 interface ItemRow {
   id: string
@@ -191,6 +193,7 @@ interface Extras {
   documentLinks?: DocumentLinkRow[]
   bookingItems?: BookingItemRow[] | null
   activity?: ActivityRow[] | null
+  placePrefs?: { place_id: string; pref: PlacePref }[] | null
   checks?: CheckRow[] | null
 }
 
@@ -242,9 +245,10 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     .map((c) => ({ id: c.id, label: c.label, color: c.color ?? undefined, ...(c.planned != null && Number(c.planned) >= 0 ? { planned: Number(c.planned) } : {}), ...(c.archived_at ? { archived: true } : {}) }))
   const expenseCategoryLabel = new Map(expenseCategories.map((c) => [c.id, c.label]))
 
-  const places: Place[] = extras.places
+  const allPlaces: (Place & { archived: boolean })[] = extras.places
     .filter((p) => p.trip_id === row.id)
     .map((p) => ({
+      archived: !!p.archived_at,
       id: p.id,
       name: p.name,
       nameLocal: p.name_local ?? undefined,
@@ -260,10 +264,13 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
       estCost: p.est_cost == null ? undefined : Number(p.est_cost),
       currency: p.currency?.trim() || undefined,
       visitMinutes: p.visit_minutes ?? undefined,
+      website: p.website?.trim() || undefined,
       lat: p.lat,
       lng: p.lng,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, 'it'))
+  const places: Place[] = allPlaces.filter((p) => !p.archived).map(({ archived: _a, ...p }) => p)
+  const archivedPlaces: Place[] = allPlaces.filter((p) => p.archived).map(({ archived: _a, ...p }) => p)
 
   noteItemRow(extras.items[0])
   const itemsByDay = new Map<string, DayItem[]>()
@@ -350,6 +357,8 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     transports: mapTransports(extras.transports, row.id),
     flights: mapFlights(extras.flights, extras.legs, row.id),
     budget: mapBudget(extras.budgetItems, extras.budgetShares, row.id, expenseCategoryLabel),
+    ...(extras.placePrefs ? { placePrefs: Object.fromEntries(extras.placePrefs.map((r) => [r.place_id, r.pref])) } : {}),
+    ...(archivedPlaces.length ? { archivedPlaces } : {}),
     ...(extras.activity ? { activity: mapActivity(extras.activity, row.id) } : {}),
     ...(extras.bookingItems ? { bookingLinks: mapBookingLinks(extras.bookingItems, row.id) } : {}),
     ...(extras.documents ? { documents: mapDocuments(extras.documents, extras.documentAccess ?? [], extras.documentLinks ?? [], row.id) } : {}),
@@ -410,6 +419,7 @@ export function scopeOfTable(table: string): Scope | null {
     case 'document_links':
     case 'ticket_codes':
     case 'booking_items':
+    case 'place_prefs':
     case 'activity_log':
     case 'checklist_checks':
       return 'planning'
@@ -470,7 +480,7 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
   for (const r of results) if (r?.error) throw r.error
   const [stays, transports, flights, legs] = logisticsR ?? []
   const [budgetItems, budgetShares, expenses, expenseShares, expensePayers, expenseFiles, settlements, confirmedSettlements] = moneyR ?? []
-  const [checklist, bookings, checks, documents, documentAccess, documentLinks, ticketCodes, activity, bookingItems] = planningR ?? []
+  const [checklist, bookings, checks, documents, documentAccess, documentLinks, ticketCodes, activity, bookingItems, placePrefs] = planningR ?? []
   const old = prev?.extras
   const extras: Extras = {
     places: keep(places, old?.places as PlaceRow[]),
@@ -495,6 +505,7 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
     documents: keep(documents, old?.documents as DocumentRow[] | null),
     documentAccess: keep(documentAccess, old?.documentAccess as DocumentAccessRow[]),
     documentLinks: keep(documentLinks, old?.documentLinks as DocumentLinkRow[]),
+    placePrefs: keep(placePrefs, old?.placePrefs as { place_id: string; pref: PlacePref }[] | null),
     activity: keep(activity, old?.activity as ActivityRow[] | null),
     bookingItems: keep(bookingItems, old?.bookingItems as BookingItemRow[] | null),
     checks: keep(checks, old?.checks as CheckRow[] | null),
@@ -795,6 +806,8 @@ export interface PlaceInput {
   visitMinutes?: number | null
   /** Orari strutturati (0018). `undefined` = non toccare la colonna. */
   openingSpec?: OpeningSpec | null
+  /** Sito ufficiale (0038). `undefined` = non toccare la colonna. */
+  website?: string
   lat: number | null
   lng: number | null
 }
@@ -842,11 +855,39 @@ function placeColumns(input: PlaceInput, categoryId: string | null) {
     // solo se serve: senza la migrazione 0015 la colonna non esiste e la richiesta fallirebbe
     ...(input.visitMinutes !== undefined ? { visit_minutes: input.visitMinutes } : {}),
     ...(input.openingSpec !== undefined ? { opening_spec: input.openingSpec } : {}),
+    ...(input.website !== undefined ? { website: input.website.trim() || null } : {}),
   }
+}
+
+/** Archivia o ripristina un luogo (0038); le tappe che lo usano restano. */
+export async function archivePlace(id: string, archived: boolean): Promise<void> {
+  const { error } = await client().from('places').update({ archived_at: archived ? new Date().toISOString() : null }).eq('id', id)
+  if (error) throw /archived_at/i.test(error.message) ? new Error("Manca la migrazione 0038 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0038_luoghi_account.sql).") : error
+}
+
+/** La mia preferenza su un luogo (privata, 0038); `null` la toglie. */
+export async function setPlacePref(placeId: string, pref: PlacePref | null): Promise<void> {
+  const db = client()
+  const r = pref ? await db.from('place_prefs').upsert({ place_id: placeId, pref }, { onConflict: 'place_id,user_id' }) : await db.from('place_prefs').delete().eq('place_id', placeId)
+  if (r.error) throw /place_prefs|schema cache/i.test(r.error.message) ? new Error("Manca la migrazione 0038 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0038_luoghi_account.sql).") : r.error
+}
+
+/** Le mie categorie di luoghi, uguali in tutti i miei viaggi (0038). Senza la migrazione: nessuna. */
+export async function accountCategories(): Promise<string[]> {
+  const r = await client().from('user_place_categories').select('label').order('label')
+  return r.error ? [] : ((r.data ?? []) as { label: string }[]).map((x) => x.label)
+}
+
+/** Ricorda una categoria nel mio elenco (senza errori se la migrazione manca). */
+export async function rememberCategory(label: string): Promise<void> {
+  const clean = label.trim().slice(0, 40)
+  if (!clean) return
+  await client().from('user_place_categories').upsert({ label: clean }, { onConflict: 'user_id,label', ignoreDuplicates: true })
 }
 
 export async function createPlace(tripId: string, input: PlaceInput, known: Category[]): Promise<string> {
   const categoryId = await resolveCategory(tripId, input.category, known)
+  void rememberCategory(input.category)
   const { data, error } = await client()
     .from('places')
     .insert({ trip_id: tripId, ...placeColumns(input, categoryId) })
@@ -862,6 +903,7 @@ export async function createPlace(tripId: string, input: PlaceInput, known: Cate
  */
 export async function updatePlace(id: string, tripId: string, input: PlaceInput, known: Category[], oldName?: string): Promise<void> {
   const categoryId = await resolveCategory(tripId, input.category, known)
+  void rememberCategory(input.category)
   const db = client()
   const { error } = await db.from('places').update(placeColumns(input, categoryId)).eq('id', id)
   if (error) throw needs0015(error)

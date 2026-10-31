@@ -93,6 +93,8 @@ await runMigration('0036_viaggi_archiviati.sql')
 await runMigration('0036_viaggi_archiviati.sql') // si può rilanciare
 await runMigration('0037_registro_modifiche.sql')
 await runMigration('0037_registro_modifiche.sql') // si può rilanciare
+await runMigration('0038_luoghi_account.sql')
+await runMigration('0038_luoghi_account.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -738,6 +740,20 @@ await asUser(A)
   await asUser(C)
   check('0037 un non membro non legge il registro', (await db.query(`select 1 from activity_log where trip_id=$1`, [t8])).rows.length === 0)
   await throws('0037 nessuno scrive nel registro a mano', () => db.query(`insert into activity_log (trip_id,table_name,row_id,action) values ($1,'places',gen_random_uuid(),'insert')`, [t8]))
+  await asUser(A)
+}
+
+// luoghi: categorie dell'account, preferenze private (0038)
+await asUser(A)
+{
+  await db.query(`insert into user_place_categories (label) values ('Onsen')`)
+  check('0038 la mia categoria si salva', (await db.query(`select 1 from user_place_categories where label='Onsen'`)).rows.length === 1)
+  const pl = (await db.query(`insert into places (trip_id,name,website) values ($1,'Gion','https://gion.example') returning id`, [t8])).rows[0].id
+  await db.query(`insert into place_prefs (place_id,pref) values ($1,'must')`, [pl])
+  await asUser(B)
+  check('0038 le categorie degli altri non si vedono', (await db.query(`select 1 from user_place_categories`)).rows.length === 0)
+  check('0038 la preferenza è privata', (await db.query(`select 1 from place_prefs`)).rows.length === 0)
+  await throws('0038 non scrivo la preferenza per un altro', () => db.query(`insert into place_prefs (place_id,user_id,pref) values ($1,$2,'if_time')`, [pl, A]))
   await asUser(A)
 }
 

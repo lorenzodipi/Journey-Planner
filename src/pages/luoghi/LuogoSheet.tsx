@@ -6,7 +6,11 @@ import { formatDuration, parseDuration } from '../../lib/duration'
 import { searchPlaces, type GeoResult } from '../../lib/geocode'
 import { parseMapsUrl } from '../../lib/mapsUrl'
 import { cleanSpec, type OpeningSpec } from '../../lib/opening'
-import type { PlaceInput } from '../../lib/tripApi'
+import { accountCategories, type PlaceInput } from '../../lib/tripApi'
+import { categorieUnite, possibiliDoppioni, prenotazioniDelLuogo, testoDoppione, visiteDelLuogo } from '../../lib/luoghiExtra'
+import { formatShort } from '../../lib/dates'
+import { showToast } from '../../state/toast'
+import type { PlacePref } from '../../types'
 import { useTrips } from '../../state/trip'
 import type { Place, PlaceStatus, Trip } from '../../types'
 import { SUGGESTED_CATEGORIES, uniqueCities } from '../../ui/placeMeta'
@@ -54,6 +58,8 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
   const [visit, setVisit] = useState(place?.visitMinutes ? formatDuration(place.visitMinutes) : '')
   const [spec, setSpec] = useState<OpeningSpec | null>(place?.openingSpec ?? null)
   const [address, setAddress] = useState(place?.address ?? '')
+  const [website, setWebsite] = useState(place?.website ?? '')
+  const [mie, setMie] = useState<string[]>([])
   const [mapsUrl, setMapsUrl] = useState(place?.mapsUrl ?? '')
   const [lat, setLat] = useState(place?.lat != null ? String(place.lat) : '')
   const [lng, setLng] = useState(place?.lng != null ? String(place.lng) : '')
@@ -82,7 +88,31 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
     if (open && focusPosition) window.setTimeout(() => posRef.current?.scrollIntoView({ block: 'start' }), 200)
   }, [open, focusPosition])
 
-  const cats = [...new Set([...trip.categories.map((c) => c.label), ...SUGGESTED_CATEGORIES.slice(0, 6)])]
+  useEffect(() => {
+    let active = true
+    void accountCategories().then((c) => active && setMie(c)).catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
+  const cats = categorieUnite(trip.categories.map((c) => c.label), mie, SUGGESTED_CATEGORIES.slice(0, 6))
+  const pref = place ? trip.placePrefs?.[place.id] : undefined
+  const doppioni = name.trim().length > 2 ? possibiliDoppioni(trip.places, { id: place?.id, name, lat: toNumber(lat) ?? null, lng: toNumber(lng) ?? null }).filter((d) => !Number.isNaN(d.place.lat ?? 0)) : []
+  const visite = place ? visiteDelLuogo(trip, place.id) : []
+  const prenotazioni = place ? prenotazioniDelLuogo(trip, place) : []
+
+  async function scegliPref(v: PlacePref) {
+    if (!place) return
+    const m = await t.setPlacePref(place.id, pref === v ? null : v)
+    if (m) showToast(m)
+  }
+  async function archivia() {
+    if (!place) return
+    const m = await t.archivePlace(place.id, true)
+    if (m) return showToast(m)
+    showToast(`«${place.name}» archiviato`, { label: 'Annulla', run: () => void t.archivePlace(place.id, false) })
+    onClose()
+  }
   const cities = [...new Set([...uniqueCities(trip.places), ...trip.days.map((d) => d.city).filter(Boolean)])]
 
   async function search() {
@@ -149,6 +179,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
       notes,
       address,
       mapsUrl,
+      website: website.trim() === '' && !place?.website ? undefined : website,
       openingHours: place?.openingHours ?? '',
       // le colonne nuove si toccano solo se servono (l'app funziona anche prima delle migrazioni)
       visitMinutes: visitN === null && !place?.visitMinutes ? undefined : visitN,
@@ -227,6 +258,12 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
         </div>
 
         <Campo label="Nome" value={name} onChange={setName} maxLength={120} placeholder="es. Ramen da Gokkei" />
+        {doppioni.length > 0 ? (
+          <span className="fa-help" role="status">
+            <Sv name="warn" size={16} />
+            {testoDoppione(name.trim(), doppioni[0])}. Puoi salvare lo stesso.
+          </span>
+        ) : null}
         <Campo label="Nome nella lingua del posto" value={nameLocal} onChange={setNameLocal} maxLength={120} hint="Da mostrare a un tassista" />
         <Campo label="Città" icon="pin" value={city} onChange={setCity} list="luogo-citta" autoComplete="off" placeholder="es. Kyoto" />
         <datalist id="luogo-citta">
@@ -267,6 +304,17 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
           <span className="fa-help">«In programma» si mette da solo quando il luogo è in una tappa.</span>
         </div>
 
+        <Campo label="Sito web" icon="link" type="url" inputMode="url" value={website} onChange={setWebsite} placeholder="https://…" autoComplete="off" />
+        {place ? (
+          <div className="fa-fld" role="group" aria-label="La mia preferenza">
+            La mia preferenza
+            <div className="fa-chips wrap">
+              <Chip on={pref === 'must'} onPress={() => void scegliPref('must')}>Da non perdere</Chip>
+              <Chip on={pref === 'if_time'} onPress={() => void scegliPref('if_time')}>Se c’è tempo</Chip>
+            </div>
+            <span className="fa-help">La vedi solo tu, gli altri non la vedono.</span>
+          </div>
+        ) : null}
         <Campo label="Quanto ci si ferma" icon="clock" value={visit} onChange={setVisit} placeholder="es. 1 h 30" />
         <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="Cosa ordinare, l'ora migliore, come arrivarci…" />
 
@@ -304,6 +352,36 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
             </button>
           )}
         </div>
+        {visite.length > 0 ? (
+          <div className="fa-fld" role="group" aria-label="Visite">
+            Visite
+            <ul className="fa-list">
+              {visite.map((v) => (
+                <li key={v.itemId} className="fa-row" style={{ minHeight: 44 }}>
+                  <span className="t">{formatShort(v.date)}{v.time ? ` · ${v.time}` : ''}</span>
+                  <span className="s">{v.city}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {prenotazioni.length > 0 ? (
+          <div className="fa-fld" role="group" aria-label="Prenotazioni">
+            Prenotazioni
+            <ul className="fa-list">
+              {prenotazioni.map((b) => (
+                <li key={b.id} className="fa-row" style={{ minHeight: 44 }}>
+                  <span className="t">{b.title}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {place ? (
+          <Pulsante color="tertiary" iconLeading="archive" onPress={() => void archivia()}>
+            Archivia il luogo
+          </Pulsante>
+        ) : null}
         {error ? (
           <span className="fa-help bad" role="alert">
             <Sv name="err" size={16} />

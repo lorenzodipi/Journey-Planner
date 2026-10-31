@@ -17,7 +17,7 @@ import { usePlacePhoto } from '../ui/usePlacePhoto'
 import { Ic } from '../ui/Sprite'
 import { Campo, Chip, Pulsante, PulsanteIcona, Segmenti } from '../faraway/base'
 import { cx } from '../faraway/cx'
-import { useConferma } from '../faraway/Foglio'
+import { Foglio, useConferma } from '../faraway/Foglio'
 import { Sv } from '../faraway/icons'
 import { discOfPlace, LuogoCard } from '../faraway/Luogo'
 import { useUnaAperta } from '../faraway/Righe'
@@ -166,6 +166,9 @@ function Elenco({ setVista }: { setVista: (v: Vista) => void }) {
   const [sel, setSel] = useState<Set<string>>(new Set())
   const card = useUnaAperta()
   const az = useAzioniLuogo(trip)
+  const [archOpen, setArchOpen] = useState(false)
+  const archiviati = trip.archivedPlaces ?? []
+  const t = useTrips()
 
   const visible = filterPlaces(places, filters, searchOpen ? text : '')
   const dayIndex = (id: string) => tappaDelLuogo(trip, id)?.dayIndex
@@ -339,6 +342,34 @@ function Elenco({ setVista }: { setVista: (v: Vista) => void }) {
           ))}
         </>
       )}
+      {archiviati.length > 0 ? (
+        <button type="button" className="fa-lnk" style={{ justifySelf: 'start' }} onClick={() => setArchOpen(true)}>
+          Archiviati ({archiviati.length})
+        </button>
+      ) : null}
+      <Foglio open={archOpen} title="Luoghi archiviati" onClose={() => setArchOpen(false)}>
+        <ul className="fa-list">
+          {archiviati.map((p) => (
+            <li key={p.id} className="fa-row" style={{ minHeight: 52, gridTemplateColumns: 'minmax(0,1fr) auto' }}>
+              <span style={{ minWidth: 0 }}>
+                <span className="t" style={{ display: 'block' }}>{p.name}</span>
+                {p.city ? <span className="s" style={{ display: 'block' }}>{p.city}</span> : null}
+              </span>
+              <Pulsante
+                size="sm"
+                color="secondary"
+                onPress={async () => {
+                  const m = await t.archivePlace(p.id, false)
+                  showToast(m ?? `«${p.name}» ripristinato`)
+                  if (!m && archiviati.length === 1) setArchOpen(false)
+                }}
+              >
+                Ripristina
+              </Pulsante>
+            </li>
+          ))}
+        </ul>
+      </Foglio>
     </Schermata>
   )
 }

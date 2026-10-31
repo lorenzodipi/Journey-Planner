@@ -73,6 +73,8 @@ export interface Place {
   estCost?: number
   /** Quanto fermarsi, in minuti (facoltativo). */
   visitMinutes?: number
+  /** dalla migrazione 0038 */
+  website?: string
   currency?: string
   lat: number | null
   lng: number | null
@@ -496,6 +498,10 @@ export interface Trip {
   settlements?: Rimborso[]
   /** Documenti che posso vedere. Mancano se il database non ha la migrazione 0030. */
   documents?: Documento[]
+  /** Luoghi archiviati (0038): fuori da elenchi, mappa e tappe, ripristinabili. */
+  archivedPlaces?: Place[]
+  /** La mia preferenza sui luoghi (0038), privata: id luogo → preferenza. */
+  placePrefs?: Record<string, PlacePref>
   /** Ultime modifiche ai contenuti condivisi (0037); assente = migrazione non ancora eseguita. */
   activity?: Attivita[]
   /** Collegamenti prenotazione ↔ tappa; assente = migrazione 0031 non ancora eseguita. */
@@ -533,3 +539,5 @@ export interface Attivita {
   at: string
   title: string
 }
+
+export type PlacePref = 'must' | 'if_time'
