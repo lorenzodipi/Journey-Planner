@@ -8,7 +8,7 @@ import { Link, useLocation, useSearch } from 'wouter'
 import { expenseBase, fxOf } from '../lib/budget'
 import { parseYmd } from '../lib/dates'
 import { formatDistance } from '../lib/dayRoute'
-import { dayExpenses, dayStays } from '../lib/dayView'
+import { dayExpenses, dayMovements, dayStays } from '../lib/dayView'
 import { prenotazioniDelGiorno } from '../lib/prenotazioni'
 import { formatMoney, round2 } from '../lib/money'
 import { parseMapsUrl } from '../lib/mapsUrl'
@@ -29,7 +29,7 @@ import { MeteoGiorno } from './giorno/MeteoGiorno'
 import { meteoDellaTappa, cittaTappa, cittaDelGiorno } from '../lib/meteoGiorno'
 import { useCityForecasts } from '../state/cityForecast'
 import { Sv } from '../faraway/icons'
-import { CartaAlloggio } from '../faraway/CartaAlloggio'
+import { RigaAlloggio } from '../faraway/CartaAlloggio'
 import { Riga, useUnaAperta } from '../faraway/Righe'
 import { AlloggioSheet } from './alloggi/AlloggioSheet'
 import { BarraIndietro, Schermata } from '../faraway/shell'
@@ -196,6 +196,7 @@ export function Giorno({ params }: { params: { id: string } }) {
   const total = round2(expenses.reduce((s, e) => s + (expenseBase(e, fx) ?? 0), 0))
   const bookings = prenotazioniDelGiorno(trip, day)
   const payer = new Map(trip.travelers.map((p) => [p.id, p.name]))
+  const spostamenti = dayMovements(trip, day).filter((e) => e.kind !== 'stay')
   const stayList = [...stays.checkOut, ...stays.checkIn.filter((s) => s.id !== stays.night?.id), ...(stays.night ? [stays.night] : [])]
 
   return (
@@ -265,14 +266,32 @@ export function Giorno({ params }: { params: { id: string } }) {
         </Pulsante>
       ) : null}
 
+      {spostamenti.length > 0 ? (
+        <section style={{ display: 'grid', gap: 12 }} aria-label="Voli e spostamenti">
+          <Sezione title="Voli e spostamenti" />
+          <div className="fa-list">
+            {spostamenti.map((e, i) => (
+              <Riga
+                key={`${e.ref?.id ?? i}-${e.at}`}
+                icon={e.kind === 'flight' ? 'i-tra-plane' : `i-tra-${e.mode && ['bus', 'car', 'ferry', 'metro', 'taxi', 'train', 'plane'].includes(e.mode) ? e.mode : 'train'}`}
+                title={e.title}
+                sub={[e.time ? (e.endTime ? `${e.time} → ${e.endTime}` : e.time) : null, e.sub].filter(Boolean).join(' · ')}
+                onPress={() => navigate(e.kind === 'flight' ? '/altro/voli' : '/altro/trasporti')}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {stayList.length > 0 ? (
         <section style={{ display: 'grid', gap: 12 }} aria-label="Alloggio">
           <Sezione title="Alloggio" right={<Link href="/altro/alloggi" className="fa-lnk">Tutti</Link>} />
           {stayList.map((s) => (
-            <CartaAlloggio
+            <RigaAlloggio
               key={s.id}
               trip={trip}
               stay={s}
+              date={day.date}
               open={stayOpen.isOpen(s.id)}
               onToggle={() => stayOpen.toggle(s.id)}
               onEdit={() => setStayEdit(s)}

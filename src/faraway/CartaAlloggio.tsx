@@ -12,6 +12,7 @@ import { Ic } from '../ui/Sprite'
 import { Pulsante } from './base'
 import { cx } from './cx'
 import { Sv } from './icons'
+import { RigaApribile } from './Righe'
 
 const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']
 
@@ -173,3 +174,51 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete 
   )
 }
 
+
+/** Versione compatta per la pagina del giorno: una riga («Check-in», «Check-out» o «Si dorme qui») che si apre sui dettagli essenziali. */
+export function RigaAlloggio({ stay: s, date, open, onToggle, onEdit, onDelete }: Omit<Props, 'stay'> & { stay: Stay; date: string }) {
+  const href = mappaAlloggio(s)
+  const ruolo = s.checkOut === date ? 'Check-out' : s.checkIn === date ? 'Check-in' : 'Si dorme qui'
+  const orario = s.checkOut === date ? orarioCheck(s.checkOutInfo, 'out') : s.checkIn === date ? orarioCheck(s.checkInInfo, 'in') : ''
+  return (
+    <RigaApribile icon="i-sez-bed" title={s.name} sub={[ruolo, orario || null, s.city && s.city !== s.name ? s.city : null].filter(Boolean).join(' · ')} open={open} onToggle={onToggle}>
+      <dl className="fa-dlc">
+        <div>
+          <dt>Soggiorno</dt>
+          <dd>{formatShort(s.checkIn)} → {formatShort(s.checkOut)} · {notti(nightsOf(s))}</dd>
+        </div>
+        {s.address ? (
+          <div>
+            <dt>Indirizzo</dt>
+            <dd>{s.address}</dd>
+          </div>
+        ) : null}
+        {s.bookingCode ? (
+          <div>
+            <dt>Codice</dt>
+            <dd>{s.bookingCode}</dd>
+          </div>
+        ) : null}
+        {cameraDi(s) !== '—' ? (
+          <div>
+            <dt>Camera</dt>
+            <dd>{cameraDi(s)}</dd>
+          </div>
+        ) : null}
+      </dl>
+      <div className="fa-acts">
+        {href ? (
+          <Pulsante size="sm" color="secondary" iconLeading="pin" href={href} target="_blank" aria-label={`Apri ${s.name} sulla mappa`}>
+            Mappa
+          </Pulsante>
+        ) : null}
+        <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
+          Modifica
+        </Pulsante>
+        <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete} aria-label={`Elimina ${s.name}`}>
+          Elimina
+        </Pulsante>
+      </div>
+    </RigaApribile>
+  )
+}

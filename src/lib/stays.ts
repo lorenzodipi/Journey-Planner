@@ -42,17 +42,44 @@ export function overlappingStays(stays: StayDates[]): [number, number][] {
 
 // ---- #57: notti scoperte, escluse quelle in viaggio ----
 
-/** Notti passate in volo, treno o bus: partono la sera e arrivano un altro giorno (nel fuso del viaggio). */
-export function nottiInViaggio(trip: Pick<Trip, 'timezone' | 'flights' | 'transports'>): Set<string> {
+const giornoDopo = (d: string) => toYmd(new Date(parseYmd(d).getTime() + 86400000))
+
+/**
+ * Notti passate in viaggio (volo, treno, bus, nave…): una notte «D» è coperta se un mezzo la attraversa, cioè
+ * parte il giorno D (o prima) e arriva il giorno D+1 (o dopo) — contando le date nel fuso del viaggio e in quelli
+ * degli aeroporti — e anche se il mezzo ha solo le date, senza orario. Inoltre dopo l'ultimo volo del viaggio
+ * (il ritorno) le notti restano coperte anche se atterra lo stesso giorno: si dorme a casa, non serve un alloggio.
+ */
+export function nottiInViaggio(trip: Pick<Trip, 'timezone' | 'flights' | 'transports'> & Partial<Pick<Trip, 'stays' | 'startDate' | 'endDate'>>): Set<string> {
   const out = new Set<string>()
-  const add = (dep?: string, arr?: string) => {
-    if (!dep || !arr) return
-    const a = dateInZone(dep, trip.timezone)
-    const b = dateInZone(arr, trip.timezone)
-    for (let d = a, i = 0; d < b && i < 40; i++, d = toYmd(new Date(parseYmd(d).getTime() + 86400000))) out.add(d)
+  const cover = (a: string, b: string) => {
+    for (let d = a, i = 0; d < b && i < 40; i++, d = giornoDopo(d)) out.add(d)
   }
-  for (const f of trip.flights) for (const l of f.legs) add(l.departAt, l.arriveAt)
-  for (const t of trip.transports) add(t.departAt, t.arriveAt)
+  const ultimaPartenza: string[] = []
+  for (const f of trip.flights) {
+    for (const l of f.legs) {
+      if (!l.departAt || !l.arriveAt) continue
+      const dep = dateInZone(l.departAt, l.fromTz || trip.timezone)
+      cover(dep, dateInZone(l.arriveAt, l.toTz || trip.timezone))
+      cover(dateInZone(l.departAt, trip.timezone), dateInZone(l.arriveAt, trip.timezone))
+      ultimaPartenza.push(dateInZone(l.departAt, trip.timezone), dep)
+    }
+  }
+  for (const t of trip.transports) {
+    if (t.departAt && t.arriveAt) cover(dateInZone(t.departAt, trip.timezone), dateInZone(t.arriveAt, trip.timezone))
+    const dep = t.departAt ? dateInZone(t.departAt, trip.timezone) : t.departDate
+    const arr = t.arriveAt ? dateInZone(t.arriveAt, trip.timezone) : t.arriveDate
+    if (dep && arr) cover(dep, arr)
+    if (t.mode === 'plane' && dep) ultimaPartenza.push(dep)
+  }
+  // ritorno: dopo l'ultima partenza in aereo, senza altri alloggi più avanti, le notti fino alla fine sono fuori dal viaggio
+  const last = ultimaPartenza.sort().pop()
+  if (last && trip.endDate && (!trip.startDate || last > trip.startDate)) {
+    const stays = trip.stays ?? []
+    for (let d = last, i = 0; d < trip.endDate && i < 40; i++, d = giornoDopo(d)) {
+      if (stays.every((s) => s.checkIn <= d)) out.add(d)
+    }
+  }
   return out
 }
 

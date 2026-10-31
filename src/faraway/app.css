@@ -166,3 +166,8 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 
 .fa-tab .pill{position:relative}
 .fa-tbn{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:9999px;background:var(--azzurro-solid);color:var(--on-azzurro-solid);font:600 11px/18px var(--font-sans);text-align:center}
+.fa-dlc{display:grid;gap:6px;margin:0}
+.fa-dlc>div{display:grid;grid-template-columns:84px 1fr;gap:var(--space-md);font:400 14px/20px var(--font-sans)}
+.fa-dlc dt{color:var(--ink-muted)}
+.fa-dlc dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.fa-acts{display:flex;flex-wrap:wrap;gap:8px}

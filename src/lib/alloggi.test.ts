@@ -40,3 +40,29 @@ describe('notti scoperte (#57)', () => {
     expect(intervalliNotti(['2026-11-24', '2026-11-25', '2026-11-27'])).toEqual([{ from: '2026-11-24', to: '2026-11-25', count: 2 }, { from: '2026-11-27', to: '2026-11-27', count: 1 }])
   })
 })
+
+describe('notti coperte da mezzi notturni', () => {
+  const base = { startDate: '2026-11-21', endDate: '2026-12-09', timezone: 'Asia/Tokyo', transports: [] as never[] }
+  const stays = [{ checkIn: '2026-11-22', checkOut: '2026-12-08' }]
+  const volo = (departAt: string, arriveAt: string, fromTz: string, toTz: string) => ({ legs: [{ departAt, arriveAt, fromTz, toTz }] })
+  it('volo di ritorno la notte dell’8/12: nessuna notte senza alloggio', () => {
+    const trip = { ...base, stays, flights: [volo('2026-11-21T09:00:00Z', '2026-11-22T03:00:00Z', 'Europe/Rome', 'Asia/Tokyo'), volo('2026-12-08T14:00:00Z', '2026-12-09T06:00:00Z', 'Asia/Tokyo', 'Europe/Rome')] } as never
+    expect(nottiScoperte(trip)).toEqual([])
+  })
+  it('ritorno che atterra lo stesso giorno: la notte a casa non è «senza alloggio»', () => {
+    const trip = { ...base, stays, flights: [volo('2026-11-21T09:00:00Z', '2026-11-22T03:00:00Z', 'Europe/Rome', 'Asia/Tokyo'), volo('2026-12-07T23:30:00Z', '2026-12-08T11:00:00Z', 'Asia/Tokyo', 'Europe/Rome')] } as never
+    expect(nottiScoperte(trip)).toEqual([])
+  })
+  it('un treno con le sole date copre la notte', () => {
+    const trip = { ...base, endDate: '2026-11-25', stays: [{ checkIn: '2026-11-21', checkOut: '2026-11-23' }, { checkIn: '2026-11-24', checkOut: '2026-11-25' }], flights: [], transports: [{ mode: 'train', departDate: '2026-11-23', arriveDate: '2026-11-24' }] } as never
+    expect(nottiScoperte(trip)).toEqual([])
+  })
+  it('un bus notturno con gli orari copre la notte', () => {
+    const trip = { ...base, endDate: '2026-11-25', stays: [{ checkIn: '2026-11-21', checkOut: '2026-11-23' }, { checkIn: '2026-11-24', checkOut: '2026-11-25' }], flights: [], transports: [{ mode: 'bus', departAt: '2026-11-23T13:00:00Z', arriveAt: '2026-11-23T20:00:00Z' }] } as never
+    expect(nottiScoperte(trip)).toEqual([])
+  })
+  it('senza mezzi la notte scoperta resta segnalata', () => {
+    const trip = { ...base, endDate: '2026-11-25', stays: [{ checkIn: '2026-11-21', checkOut: '2026-11-23' }], flights: [] } as never
+    expect(nottiScoperte(trip)).toEqual(['2026-11-23', '2026-11-24'])
+  })
+})
