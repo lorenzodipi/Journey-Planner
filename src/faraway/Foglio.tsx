@@ -103,7 +103,7 @@ export function Foglio({ open, title, onClose, children, footer, full, plain, he
             <span />
           </div>
         )}
-        {children}
+        <div className="fb">{children}</div>
         {footer ? <div className="bt">{footer}</div> : null}
       </div>
     </dialog>

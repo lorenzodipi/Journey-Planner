@@ -31,7 +31,7 @@ a.fa-row,a.fa-tab{text-decoration:none;color:inherit}
 /* fogli dal basso: <dialog> nativo (focus intrappolato, Esc, indietro di Android) */
 dialog.fa-dlg{position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;background:transparent;color:var(--ink);overflow:hidden}
 dialog.fa-dlg::backdrop{background:var(--scrim)}
-dialog.fa-dlg>.fa-sheet{position:absolute;max-height:calc(100% - max(env(safe-area-inset-top,0px),24px) - 16px);overflow:auto;overscroll-behavior:contain;transition:transform 180ms cubic-bezier(.32,.72,0,1)}
+dialog.fa-dlg>.fa-sheet{position:absolute;max-height:calc(100% - max(env(safe-area-inset-top,0px),24px) - 16px);display:flex;flex-direction:column;overflow:hidden;transition:transform 180ms cubic-bezier(.32,.72,0,1)}
 dialog.fa-dlg>.fa-sheet.full{max-height:none}
 dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 @keyframes fa-up{from{transform:translateY(100%)}to{transform:none}}
@@ -171,3 +171,9 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-dlc dt{color:var(--ink-muted)}
 .fa-dlc dd{margin:0;font-weight:600;overflow-wrap:anywhere}
 .fa-acts{display:flex;flex-wrap:wrap;gap:8px}
+
+/* corpo del foglio: l'intestazione e i pulsanti restano fermi, scorre solo il contenuto */
+.fa-sheet>.fb{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:4px;margin:-4px}
+.fa-sheet>.grab,.fa-sheet>.hd,.fa-sheet>.st,.fa-sheet>.bt{flex:0 0 auto}
+.fa-sheet .frm{overflow:visible}
+.fa-sheet.full .bt{margin-top:12px}
