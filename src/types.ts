@@ -185,6 +185,7 @@ export interface Transport {
   stops?: number
   operator?: string
   platform?: string
+  terminal?: string
   baggage?: string
   policy?: string
   checkinAt?: string

@@ -44,3 +44,18 @@ describe('notifiche', () => {
     expect(n.avvisoBudget(t, 100, 5000, 100, now).soglia).toBe(0)
   })
 })
+
+import { avvisiCheckin } from './notifiche'
+describe('promemoria check-in (#58)', () => {
+  const trip = {
+    flights: [{ id: 'f1', title: 'MXP → KIX', checkinAt: '2026-11-20T09:00:00Z' }, { id: 'f2', title: 'Passato', checkinAt: '2026-01-01T09:00:00Z' }],
+    transports: [{ id: 't1', from: 'Kyoto', to: 'Osaka', checkinAt: '2026-11-21T08:00:00Z' }, { id: 't2', from: 'A', to: 'B' }],
+  } as never
+  it('avvisa solo i check-in futuri, in ordine', () => {
+    const r = avvisiCheckin(trip, new Date('2026-11-01T00:00:00Z'))
+    expect(r.map((a) => a.title)).toEqual(['Check-in aperto: MXP → KIX', 'Check-in aperto: Kyoto → Osaka'])
+  })
+  it('non avvisa oltre i 30 giorni', () => {
+    expect(avvisiCheckin(trip, new Date('2026-10-01T00:00:00Z'))).toEqual([])
+  })
+})

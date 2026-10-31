@@ -65,6 +65,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
   const [refCode, setRefCode] = useState(t?.refCode ?? '')
   const [operator, setOperator] = useState(t?.operator ?? '')
   const [platform, setPlatform] = useState(t?.platform ?? '')
+  const [terminal, setTerminal] = useState(t?.terminal ?? '')
   const [baggage, setBaggage] = useState(t?.baggage ?? '')
   const [policy, setPolicy] = useState(t?.policy ?? '')
   const [checkin, setCheckin] = useState(() => (t?.checkinAt ? instantToZoned(t.checkinAt, trip.timezone) : { date: '', time: '' }))
@@ -91,7 +92,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
     const input: TransportInput = {
       from, to, mode, departDate: dd, departTime: dt, arriveDate: ad, arriveTime: at, fromPos, toPos,
       cost: amount, currency, scope, bought: paid, refCode, notes,
-      title, stops: stops === 'nd' ? null : Number(stops), operator, platform, baggage, policy,
+      title, stops: stops === 'nd' ? null : Number(stops), operator, platform, terminal, baggage, policy,
       paidBy: paid && amount ? paidBy || undefined : (t?.paidBy ?? undefined),
       forTravelers: all.every((id) => people.includes(id)) ? [] : people,
       checkinAt: checkin.date && checkin.time ? zonedToInstant(checkin.date, checkin.time, trip.timezone) : '',
@@ -192,6 +193,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
         <div className="fa-2c">
           <Campo label="Codice" value={refCode} onChange={(v) => setRefCode(v.toUpperCase())} autoComplete="off" />
           <Campo label="Operatore" value={operator} onChange={setOperator} placeholder="es. JR West" />
+          <Campo label="Terminal" value={terminal} onChange={setTerminal} maxLength={10} />
           <Campo label="Binario" value={platform} onChange={setPlatform} maxLength={10} />
           <Campo label="Bagaglio" value={baggage} onChange={setBaggage} />
         </div>

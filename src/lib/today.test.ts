@@ -72,3 +72,11 @@ describe('ora a destinazione', () => {
     expect(tripToday({ timezone: 'Asia/Tokyo' }, new Date('2026-11-21T20:00:00Z'))).toBe('2026-11-22')
   })
 })
+
+describe('trasporti su più giorni (#58)', () => {
+  it('un treno notturno compare nel giorno di partenza e in quello di arrivo', () => {
+    const trip = { timezone: 'Asia/Tokyo', flights: [], stays: [], transports: [{ id: 't1', from: 'Tokyo', to: 'Osaka', mode: 'train', bought: true, departAt: '2026-11-22T13:00:00Z', arriveAt: '2026-11-22T21:00:00Z', currency: 'JPY', scope: 'total' }] } as never
+    expect(eventsForDay(trip, '2026-11-22').map((e) => e.title)).toEqual(['Tokyo → Osaka'])
+    expect(eventsForDay(trip, '2026-11-23').map((e) => e.title)).toEqual(['Arrivo a Osaka'])
+  })
+})

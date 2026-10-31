@@ -56,6 +56,20 @@ export function avvisiTappe(trip: Trip, now: Date, giorni = 7, anticipoMin = 30)
   return out.sort((a, b) => a.at.getTime() - b.at.getTime())
 }
 
+/** Promemoria del check-in online (#58, MOVE-008): all'ora di apertura, per voli e trasporti, nei prossimi `giorni` giorni. */
+export function avvisiCheckin(trip: Trip, now: Date, giorni = 30): Avviso[] {
+  const limite = now.getTime() + giorni * 86_400_000
+  const out: Avviso[] = []
+  const add = (key: string, titolo: string, checkinAt: string | undefined, route: string) => {
+    const at = checkinAt ? new Date(checkinAt) : null
+    if (!at || Number.isNaN(at.getTime()) || at.getTime() <= now.getTime() || at.getTime() > limite) return
+    out.push({ id: idStabile(`checkin:${key}`), at, title: `Check-in aperto: ${titolo}`, body: 'Puoi fare il check-in online.', route })
+  }
+  for (const f of trip.flights) add(f.id, f.title, f.checkinAt, '/altro/voli')
+  for (const t of trip.transports) add(t.id, `${t.from} → ${t.to}`, t.checkinAt, '/altro/trasporti')
+  return out.sort((a, b) => a.at.getTime() - b.at.getTime())
+}
+
 /** Scadenze della checklist: una settimana prima (alle 9:00 del fuso del viaggio) di una voce non fatta che mi riguarda. */
 export function avvisiChecklist(trip: Trip, now: Date, meId?: string): Avviso[] {
   const out: Avviso[] = []
@@ -96,6 +110,7 @@ export function avvisoBudget(trip: Pick<Trip, 'id' | 'baseCurrency'>, speso: num
 export function pianoAvvisi(trip: Trip, prefs: NotifichePrefs, now: Date, ctx: { meId?: string; ore?: OraPrevista[]; city?: string }): Avviso[] {
   return [
     ...(prefs.tappa ? avvisiTappe(trip, now) : []),
+    ...(prefs.checkin ? avvisiCheckin(trip, now) : []),
     ...(prefs.checklist ? avvisiChecklist(trip, now, ctx.meId) : []),
     ...(prefs.pioggia && ctx.ore ? [avvisoPioggiaDelGiorno(ctx.ore, ctx.city ?? '', now, trip.timezone)].filter((x): x is Avviso => !!x) : []),
   ]

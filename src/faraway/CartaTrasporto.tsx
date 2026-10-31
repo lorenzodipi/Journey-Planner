@@ -43,6 +43,7 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
   const rows: [string, string][] = [
     ['Codice', t.refCode ?? ''],
     ['Operatore', t.operator ?? ''],
+    ['Terminal', t.terminal ?? ''],
     ['Binario', t.platform ?? ''],
     ['Passeggeri', people.map((p) => p.name.split(/\s+/)[0]).join(', ')],
     ['Prezzo', manca ? 'Non ancora inserito' : prezzo.persone > 1 && prezzo.aTesta !== null ? `${prezzo.persone} × ${formatMoney(prezzo.aTesta, cur)}` : formatMoney(prezzo.totale as number, cur)],

@@ -66,6 +66,7 @@ export interface TransportRow {
   stops?: number | null
   operator?: string | null
   platform?: string | null
+  terminal?: string | null
   baggage?: string | null
   policy?: string | null
   checkin_at?: string | null
@@ -178,6 +179,7 @@ export function mapTransports(rows: TransportRow[], tripId: string): Transport[]
       stops: r.stops ?? undefined,
       operator: r.operator ?? undefined,
       platform: r.platform ?? undefined,
+      terminal: r.terminal ?? undefined,
       baggage: r.baggage ?? undefined,
       policy: r.policy ?? undefined,
       checkinAt: r.checkin_at ?? undefined,
@@ -324,6 +326,7 @@ export interface TransportInput {
   stops?: number | null
   operator?: string
   platform?: string
+  terminal?: string
   baggage?: string
   policy?: string
   checkinAt?: string
@@ -343,6 +346,7 @@ export function transportExtras(i: TransportInput, old?: Transport) {
   put('stops', i.stops, old?.stops)
   put('operator', i.operator?.trim(), old?.operator)
   put('platform', i.platform?.trim(), old?.platform)
+  put('terminal', i.terminal?.trim(), old?.terminal)
   put('baggage', i.baggage?.trim(), old?.baggage)
   put('policy', i.policy?.trim(), old?.policy)
   put('checkin_at', i.checkinAt, old?.checkinAt)

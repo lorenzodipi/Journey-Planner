@@ -71,6 +71,10 @@ export function eventsForDay(trip: Pick<Trip, 'timezone' | 'flights' | 'stays' |
         flag: t.bought ? { text: 'Biglietto acquistato', ok: true } : { text: 'Biglietto non acquistato', ok: false },
       })
     }
+    // MOVE-006: un trasporto che arriva un altro giorno (notte in treno o bus) compare anche nel giorno dell'arrivo
+    if (t.departAt && t.arriveAt && dateInZone(t.arriveAt, trip.timezone) === ymd && dateInZone(t.departAt, trip.timezone) !== ymd) {
+      out.push({ at: t.arriveAt, time: formatInZone(t.arriveAt, trip.timezone), title: `Arrivo a ${t.to}`, sub: `${t.from} → ${t.to}`, kind: 'transport', ref: { type: 'transport', id: t.id }, mode: t.mode })
+    }
   }
   return out.sort((a, b) => a.at.localeCompare(b.at))
 }

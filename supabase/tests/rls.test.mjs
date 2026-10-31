@@ -87,6 +87,8 @@ await runMigration('0033_margini_alloggio_giorno.sql')
 await runMigration('0033_margini_alloggio_giorno.sql') // si può rilanciare
 await runMigration('0034_alloggi_ospiti_contatti.sql')
 await runMigration('0034_alloggi_ospiti_contatti.sql') // si può rilanciare
+await runMigration('0035_trasporti_terminal.sql')
+await runMigration('0035_trasporti_terminal.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -700,6 +702,13 @@ await asUser(A)
   const st = (await db.query(`insert into stays (trip_id,name,check_in,check_out,guests,phone,email) values ($1,'Ryokan','2026-12-01','2026-12-03',2,'+81 75 000','info@ryokan.jp') returning participants`, [t8])).rows[0]
   check('0034 ospiti e contatti salvati, partecipanti vuoti di default', Array.isArray(st.participants) && st.participants.length === 0)
   await throws('0034 ospiti fuori scala rifiutati', () => db.query(`insert into stays (trip_id,name,check_in,check_out,guests) values ($1,'X','2026-12-01','2026-12-03',0)`, [t8]))
+}
+
+// trasporti: terminal (0035)
+await asUser(A)
+{
+  const tr = (await db.query(`insert into transports (trip_id,from_label,to_label,mode,terminal,platform,operator) values ($1,'Kyoto','Osaka','train','T2','4','JR') returning terminal`, [t8])).rows[0]
+  check('0035 il terminal del trasporto si salva', tr.terminal === 'T2')
 }
 
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione
