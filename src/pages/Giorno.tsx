@@ -7,7 +7,8 @@ import { Link, useLocation, useSearch } from 'wouter'
 import { expenseBase, fxOf } from '../lib/budget'
 import { parseYmd } from '../lib/dates'
 import { formatDistance } from '../lib/dayRoute'
-import { dayBookings, dayExpenses, dayStays } from '../lib/dayView'
+import { dayExpenses, dayStays } from '../lib/dayView'
+import { prenotazioniDelGiorno } from '../lib/prenotazioni'
 import { formatMoney, round2 } from '../lib/money'
 import { parseMapsUrl } from '../lib/mapsUrl'
 import { planRoute } from '../lib/routeOrder'
@@ -184,7 +185,7 @@ export function Giorno({ params }: { params: { id: string } }) {
   const fx = fxOf(trip)
   const expenses = dayExpenses(trip, day)
   const total = round2(expenses.reduce((s, e) => s + (expenseBase(e, fx) ?? 0), 0))
-  const bookings = dayBookings(trip, day)
+  const bookings = prenotazioniDelGiorno(trip, day)
   const payer = new Map(trip.travelers.map((p) => [p.id, p.name]))
   const stayList = [...stays.checkOut, ...stays.checkIn.filter((s) => s.id !== stays.night?.id), ...(stays.night ? [stays.night] : [])]
 
@@ -296,8 +297,8 @@ export function Giorno({ params }: { params: { id: string } }) {
         <section style={{ display: 'grid', gap: 12 }} aria-label="Prenotazioni del giorno">
           <Sezione title="Prenotazioni del giorno" right={<Link href="/altro/prenotazioni" className="fa-lnk">Tutte</Link>} />
           <div className="fa-list">
-            {bookings.map((b) => (
-              <Riga key={b.id} icon="i-sez-ticket" title={b.title} sub={b.code ? `Codice ${b.code}` : 'Prenotazione'} onPress={() => setLegacy({ kind: 'edit-booking', booking: b })} />
+            {bookings.map(({ booking: b, tappa }) => (
+              <Riga key={b.id} icon="i-sez-ticket" title={b.title} sub={[tappa ? `Tappa: ${tappa.title}` : trip.bookingLinks ? 'Non collegata a una tappa' : '', b.code ? `Codice ${b.code}` : ''].filter(Boolean).join(' · ') || 'Prenotazione'} onPress={() => setLegacy({ kind: 'edit-booking', booking: b })} />
             ))}
           </div>
         </section>

@@ -51,9 +51,9 @@ describe('ricaricamento solo di ciò che cambia', () => {
     forgetFetched()
   })
 
-  it('il caricamento completo legge tutte le 25 tabelle e le persone di ogni viaggio', async () => {
+  it('il caricamento completo legge tutte le 26 tabelle e le persone di ogni viaggio', async () => {
     const trips = await fetchTrips()
-    expect(calls).toHaveLength(25)
+    expect(calls).toHaveLength(26)
     expect(rpcCalls).toBe(2)
     expect(trips[0].places.map((p) => p.name)).toEqual(['Senso-ji'])
   })
@@ -78,7 +78,7 @@ describe('ricaricamento solo di ciò che cambia', () => {
 
   it('senza una copia già scaricata ricarica tutto, anche se si chiede una parte', async () => {
     await fetchTrips(['places'])
-    expect(calls).toHaveLength(25)
+    expect(calls).toHaveLength(26)
   })
 
   it('le tabelle sconosciute non hanno un gruppo (quindi si ricarica tutto)', () => {

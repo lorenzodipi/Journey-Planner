@@ -163,6 +163,8 @@ interface TripsValue {
   duplicateChecklist: (tripId: string, fromTripId: string) => Result
   createBooking: (tripId: string, input: BookingInput) => Result
   updateBooking: (tripId: string, booking: Booking, input: BookingInput) => Result
+  /** Sostituisce le tappe collegate a una prenotazione (0031); scollegare non elimina nulla. */
+  setBookingItems: (tripId: string, bookingId: string, itemIds: string[]) => Result
   setBookingDeleted: (id: string, deleted: boolean) => Result
   /** Codice del biglietto (#38): salva o sostituisce l'immagine per un passeggero. */
   saveTicketCode: (tripId: string, kind: TicketKind, refId: string, travelerId: string | null, file: File, old?: TicketCode) => Result
@@ -711,6 +713,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         ? Promise.resolve(null)
         : queued('Checklist', [{ k: 'updateMany', table: 'checklist_items', ids, patch: deletedPatch(deleted) }], { t: 'checklist.deletedMany', ids, deleted }),
     addChecklistTemplate: (tripId) => run(() => planning.addChecklistTemplate(tripId, trips.find((x) => x.id === tripId)?.checklist ?? []), ['planning']),
+    setBookingItems: (tripId, bookingId, itemIds) => run(() => planning.setBookingItems(tripId, bookingId, itemIds), ['planning']),
     createBooking: (tripId, input) => run(() => planning.createBooking(tripId, input, trips.find((x) => x.id === tripId)?.timezone ?? 'UTC'), ['planning']),
     updateBooking: (tripId, booking, input) =>
       run(() => planning.updateBooking(booking, tripId, input, trips.find((x) => x.id === tripId)?.timezone ?? 'UTC'), ['planning']),

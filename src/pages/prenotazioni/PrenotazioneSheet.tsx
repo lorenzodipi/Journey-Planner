@@ -5,12 +5,13 @@ import { BOOKING_LABEL, BOOKING_NEW_TYPES } from '../../lib/bookingMeta'
 import { checkFile } from '../../lib/bookingFiles'
 import { dateInZone } from '../../lib/flights'
 import { amountToText, parseAmount, tripCurrencies } from '../../lib/money'
-import { oraPrenotazione } from '../../lib/prenotazioni'
+import { oraPrenotazione, STATO_LABEL, tappeDi, tappeInAltroGiorno, tappePerScelta } from '../../lib/prenotazioni'
 import { safeUrl, type BookingInput } from '../../lib/planningData'
 import { discOf, initials, useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
-import type { Booking, BookingType, Trip } from '../../types'
+import type { Booking, BookingStatus, BookingType, Trip } from '../../types'
+import { formatShort } from '../../lib/dates'
 import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
 import { Foglio } from '../../faraway/Foglio'
@@ -55,13 +56,21 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
   const [removeFile, setRemoveFile] = useState(false)
   const [offline, setOffline] = useState(b?.keepOffline ?? true)
   const [notes, setNotes] = useState(b?.notes ?? '')
-  const [errors, setErrors] = useState<{ title?: string; when?: string; url?: string; cost?: string; paidBy?: string; party?: string; file?: string; form?: string }>({})
+  const [status, setStatus] = useState<BookingStatus>(b?.status ?? 'confirmed')
+  const [provider, setProvider] = useState(b?.provider ?? '')
+  const [contact, setContact] = useState(b?.contact ?? '')
+  const [policy, setPolicy] = useState(b?.cancellationPolicy ?? '')
+  const richiedeTappa = !!trip.bookingLinks // senza la migrazione 0031 la tappa non c'è
+  const [tappa, setTappa] = useState<string>(b ? (tappeDi(trip, b.id)[0] ?? '') : '')
+  const [avvisoData, setAvvisoData] = useState<{ itemId: string; title: string; date: string }[] | null>(null)
+  const scelte = tappePerScelta(trip, date, place)
+  const [errors, setErrors] = useState<{ title?: string; when?: string; url?: string; cost?: string; paidBy?: string; party?: string; file?: string; tappa?: string; form?: string }>({})
   const [busy, setBusy] = useState(false)
   const people = who.length === 0 ? all : who
   const nome = (id: string) => trip.travelers.find((p) => p.id === id)?.name.split(/\s+/)[0] ?? '—'
   const hasFile = !!b?.filePath && !removeFile
 
-  async function submit(e: { preventDefault(): void }) {
+  async function submit(e: { preventDefault(): void }, saltaAvviso = false) {
     e.preventDefault()
     const err: typeof errors = {}
     if (!title.trim()) err.title = 'Scrivi un titolo, per esempio «Cena a Gion Karyo».'
@@ -74,6 +83,7 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
     const n = party.trim() ? Number(party) : null
     if (n !== null && (!Number.isInteger(n) || n < 1)) err.party = 'Scrivi un numero di persone, per esempio 4.'
     if (file) err.file = checkFile(file) ?? undefined
+    if (richiedeTappa && !tappa) err.tappa = 'Scegli la tappa a cui appartiene: la prenotazione sta sempre in una tappa.'
     setErrors(err)
     if (Object.values(err).some(Boolean)) return
     const input: BookingInput = {
@@ -82,7 +92,12 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
       time: date ? time : '', place, detail, partySize: n,
       paidBy: amount ? paidBy || undefined : (b?.paidBy ?? undefined),
       forTravelers: all.every((id) => people.includes(id)) ? [] : people,
+      status, provider, contact, cancellationPolicy: policy, participants: all.every((id) => people.includes(id)) ? [] : people,
+      ...(richiedeTappa ? { itemIds: [tappa] } : {}),
     }
+    // BOOK-025: la data cambia e la tappa sta in un altro giorno → scelta esplicita, la tappa non si sposta da sola
+    const altro = b && !saltaAvviso && tappa ? tappeInAltroGiorno(trip, b.id, date).filter((t) => t.itemId === tappa) : []
+    if (altro.length) return setAvvisoData(altro)
     setBusy(true)
     const message = b ? await tr.updateBooking(trip.id, b, input) : await tr.createBooking(trip.id, input)
     setBusy(false)
@@ -124,6 +139,33 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
           <Campo label="Persone" inputMode="numeric" value={party} onChange={setParty} placeholder="4" error={errors.party} />
         </div>
         {errors.when ? <Errore>{errors.when}</Errore> : null}
+        <div className="fa-fld" role="group" aria-label="Stato">
+          Stato
+          <div className="fa-chips">
+            {(Object.keys(STATO_LABEL) as BookingStatus[]).map((x) => (
+              <Chip key={x} on={status === x} onPress={() => setStatus(x)}>{STATO_LABEL[x]}</Chip>
+            ))}
+          </div>
+        </div>
+        {richiedeTappa ? (
+          <div className="fa-fld">
+            <label htmlFor="pr-tappa">Tappa</label>
+            <span className="fa-in">
+              <select id="pr-tappa" value={tappa} onChange={(e) => (setTappa(e.currentTarget.value), setErrors({ ...errors, tappa: undefined }))} aria-invalid={!!errors.tappa}>
+                <option value="">Scegli una tappa…</option>
+                {scelte.map((t) => (
+                  <option key={t.itemId} value={t.itemId}>{`${formatShort(t.date)}${t.time ? ` ${t.time}` : ''} · ${t.title}${t.stessoGiorno ? ' (stesso giorno)' : ''}`}</option>
+                ))}
+              </select>
+            </span>
+            {errors.tappa ? <Errore>{errors.tappa}</Errore> : <span className="fa-help">{scelte.length === 0 ? 'Non ci sono ancora tappe: aggiungila prima nel giorno.' : 'Le prime sono le tappe dello stesso giorno o luogo.'}</span>}
+          </div>
+        ) : null}
+        <div className="fa-2c">
+          <Campo label="Fornitore" value={provider} onChange={setProvider} placeholder="es. Gion Karyo" />
+          <Campo label="Contatto" value={contact} onChange={setContact} placeholder="Telefono o email" />
+        </div>
+        <Campo label="Politica di cancellazione (facoltativa)" value={policy} onChange={setPolicy} placeholder="es. gratis fino a 24 ore prima" />
         <Campo label="Codice di conferma" value={code} onChange={(v) => setCode(v.toUpperCase())} autoComplete="off" />
         <Campo label="Link" type="url" value={url} onChange={setUrl} placeholder="https://…" error={errors.url} />
         <div className="fa-2c">
@@ -181,6 +223,26 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
         {errors.form ? <Errore>{errors.form}</Errore> : null}
         <datalist id="pr-valute">{tripCurrencies(trip, b?.currency).map((c) => <option key={c} value={c} />)}</datalist>
       </form>
+      {avvisoData ? (
+        <Foglio open title="La tappa è in un altro giorno" onClose={() => setAvvisoData(null)}>
+          <p className="fa-m" style={{ margin: 0 }}>
+            «{avvisoData[0].title}» sta nel giorno {formatShort(avvisoData[0].date)}, la prenotazione ora è del {formatShort(date)}. La tappa non si sposta da sola.
+          </p>
+          <Pulsante
+            isDisabled={!trip.days.some((d) => d.date === date)}
+            onPress={async () => {
+              const dayId = trip.days.find((d) => d.date === date)?.id
+              if (dayId) await tr.moveItemToDay(trip.id, avvisoData[0].itemId, dayId)
+              setAvvisoData(null)
+              void submit({ preventDefault() {} }, true)
+            }}
+          >
+            Aggiorna la tappa
+          </Pulsante>
+          <Pulsante color="secondary" onPress={() => setAvvisoData(null)}>Collega diversamente</Pulsante>
+          <Pulsante color="tertiary" onPress={() => (setAvvisoData(null), void submit({ preventDefault() {} }, true))}>Mantieni con avviso</Pulsante>
+        </Foglio>
+      ) : null}
     </Foglio>
   )
 }

@@ -19,6 +19,8 @@ export function queryPlanning(db: SupabaseClient) {
     db.from('document_access').select('*').then((r) => (r.error ? { ...r, data: [], error: null } : r)),
     db.from('document_links').select('*').then((r) => (r.error ? { ...r, data: [], error: null } : r)),
     db.from('ticket_codes').select('*').then((r) => (r.error && /ticket_codes|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: [], error: null } : r)),
+    // prima della migrazione 0031 niente collegamenti alle tappe: `data: null` = la tappa non è richiesta
+    db.from('booking_items').select('*').then((r) => (r.error && /booking_items|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: null, error: null } : r)),
   ])
 }
 
@@ -62,11 +64,13 @@ const missingCostColumns = (error: { message?: string } | null) => /payer_ids|'c
 export async function createBooking(tripId: string, input: BookingInput, timeZone: string): Promise<void> {
   const db = client()
   const filePath = input.file ? await uploadBookingFile(tripId, input.file) : null
-  const { error } = await db.from('bookings').insert({ trip_id: tripId, file_path: filePath, ...bookingColumns(input, timeZone) })
+  const id = crypto.randomUUID()
+  const { error } = await db.from('bookings').insert({ id, trip_id: tripId, file_path: filePath, ...bookingColumns(input, timeZone) })
   if (error) {
     if (filePath) await removeBookingFile(filePath).catch(() => undefined) // niente file orfani
     throw input.cost !== null && missingCostColumns(error) ? new Error(MIGRATION_0010) : error
   }
+  if (input.itemIds) await setBookingItems(tripId, id, input.itemIds)
   if (filePath && input.keepOffline) await cacheBookingFile(filePath).catch(() => undefined)
 }
 
@@ -83,9 +87,28 @@ export async function updateBooking(booking: Booking, tripId: string, input: Boo
     if (uploaded) await removeBookingFile(uploaded).catch(() => undefined)
     throw (input.cost !== null || booking.cost != null) && missingCostColumns(error) ? new Error(MIGRATION_0010) : error
   }
+  if (input.itemIds) await setBookingItems(tripId, booking.id, input.itemIds)
   // il vecchio file si toglie solo dopo che la modifica è stata salvata
   if (booking.filePath && booking.filePath !== filePath) await removeBookingFile(booking.filePath).catch(() => undefined)
   if (filePath && input.keepOffline) await cacheBookingFile(filePath).catch(() => undefined)
+}
+
+/** Tappe collegate a una prenotazione (0031): sostituisce l'elenco. Scollegare non elimina nulla. */
+export async function setBookingItems(tripId: string, bookingId: string, itemIds: string[]): Promise<void> {
+  const db = client()
+  const cur = await db.from('booking_items').select('day_item_id').eq('booking_id', bookingId)
+  if (cur.error) throw new Error("Manca la migrazione 0031 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0031_prenotazioni_tappe.sql).")
+  const have = new Set((cur.data ?? []).map((r: { day_item_id: string }) => r.day_item_id))
+  const add = itemIds.filter((x) => !have.has(x))
+  const drop = [...have].filter((x) => !itemIds.includes(x))
+  if (add.length) {
+    const r = await db.from('booking_items').insert(add.map((day_item_id) => ({ booking_id: bookingId, day_item_id, trip_id: tripId })))
+    if (r.error) throw r.error
+  }
+  if (drop.length) {
+    const r = await db.from('booking_items').delete().eq('booking_id', bookingId).in('day_item_id', drop)
+    if (r.error) throw r.error
+  }
 }
 
 export async function setBookingDeleted(id: string, deleted: boolean): Promise<void> {

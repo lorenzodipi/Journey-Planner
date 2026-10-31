@@ -1,4 +1,4 @@
-import type { Booking, BookingType, ChecklistItem, ChecklistKind, DocKind, Documento, Scope, TicketCode, TicketKind } from '../types'
+import type { Booking, BookingLink, BookingStatus, BookingType, ChecklistItem, ChecklistKind, DocKind, Documento, Scope, TicketCode, TicketKind } from '../types'
 import { zonedToInstant } from './zoned'
 
 // Checklist e prenotazioni: righe del database <-> tipi dell'app, e colonne da salvare.
@@ -55,6 +55,18 @@ export interface BookingRow {
   detail?: string | null
   party_size?: number | null
   place?: string | null
+  // dalla migrazione 0031
+  status?: BookingStatus | null
+  provider?: string | null
+  contact?: string | null
+  cancellation_policy?: string | null
+  participants?: string[] | null
+}
+
+export interface BookingItemRow {
+  booking_id: string
+  day_item_id: string
+  trip_id: string
 }
 
 const BASE_CATEGORY: Record<ChecklistKind, string> = { docs: 'Documenti', packing: 'Valigia', todo: 'Altro' }
@@ -135,9 +147,17 @@ export function mapBookings(rows: BookingRow[], tripId: string): Booking[] {
       detail: r.detail?.trim() || undefined,
       partySize: r.party_size && r.party_size > 0 ? r.party_size : undefined,
       place: r.place?.trim() || undefined,
+      status: r.status ?? undefined,
+      provider: r.provider?.trim() || undefined,
+      contact: r.contact?.trim() || undefined,
+      cancellationPolicy: r.cancellation_policy?.trim() || undefined,
+      participants: r.participants?.length ? r.participants : undefined,
     }))
     .sort((a, b) => (a.validFrom ?? '9999').localeCompare(b.validFrom ?? '9999') || a.title.localeCompare(b.title, 'it'))
 }
+
+export const mapBookingLinks = (rows: BookingItemRow[], tripId: string): BookingLink[] =>
+  rows.filter((r) => r.trip_id === tripId).map((r) => ({ bookingId: r.booking_id, itemId: r.day_item_id }))
 
 export interface ChecklistInput {
   text: string
@@ -215,6 +235,13 @@ export interface BookingInput {
   forTravelers?: string[]
   detail?: string
   partySize?: number | null
+  status?: BookingStatus
+  provider?: string
+  contact?: string
+  cancellationPolicy?: string
+  participants?: string[]
+  /** tappe collegate (0031); assente = non toccare i collegamenti */
+  itemIds?: string[]
   place?: string
 }
 
@@ -250,6 +277,11 @@ export function bookingExtras(i: BookingInput, old?: Booking) {
   put('detail', i.detail?.trim(), old?.detail)
   put('party_size', i.partySize ?? undefined, old?.partySize)
   put('place', i.place?.trim(), old?.place)
+  put('provider', i.provider?.trim(), old?.provider)
+  put('contact', i.contact?.trim(), old?.contact)
+  put('cancellation_policy', i.cancellationPolicy?.trim(), old?.cancellationPolicy)
+  put('participants', i.participants, old?.participants)
+  if (i.status && (i.status !== 'confirmed' || (old?.status && old.status !== 'confirmed'))) out.status = i.status
   return out
 }
 

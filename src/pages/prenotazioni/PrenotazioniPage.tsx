@@ -7,14 +7,14 @@ import { codiciDi } from '../../lib/codici'
 import { formatShort } from '../../lib/dates'
 import { dateInZone } from '../../lib/flights'
 import { formatMoney } from '../../lib/money'
-import { FILTRI, nelFiltro, oraPrenotazione, perGiorno, sottotitolo, type FiltroPrenotazioni } from '../../lib/prenotazioni'
+import { FILTRI, FILTRI_VUOTI, filtraArchivio, giornoDellaTappa, mancanti, nelFiltro, oraPrenotazione, perGiorno, quando, sottotitolo, STATO_LABEL, statoDi, tappeDi, type FiltriArchivio, type FiltroPrenotazioni } from '../../lib/prenotazioni'
 import { CATEGORIE_BASE } from '../../lib/ricevuta'
 import { tripToday } from '../../lib/today'
 import { showToast } from '../../state/toast'
 import { useTrip, useTrips } from '../../state/trip'
 import type { Booking } from '../../types'
 import { Ic } from '../../ui/Sprite'
-import { Chip } from '../../faraway/base'
+import { Campo, Chip, Pillola } from '../../faraway/base'
 import { CodiceBiglietto } from '../../faraway/CodiceBiglietto'
 import { cx } from '../../faraway/cx'
 import { useConferma } from '../../faraway/Foglio'
@@ -35,10 +35,11 @@ export function PrenotazioniPage() {
   const [filtro, setFiltro] = useState<FiltroPrenotazioni>('all')
   const [sheet, setSheet] = useState<{ booking?: Booking } | null>(null)
   const [codice, setCodice] = useState<Booking | null>(null)
+  const [arch, setArch] = useState<FiltriArchivio>(FILTRI_VUOTI)
   const [offline, setOffline] = useState<Set<string>>(new Set())
   const today = tripToday(trip)
   const tz = trip.timezone
-  const shown = useMemo(() => trip.bookings.filter((b) => nelFiltro(b, filtro)), [trip.bookings, filtro])
+  const shown = useMemo(() => filtraArchivio(trip.bookings, arch).filter((b) => nelFiltro(b, filtro)), [trip.bookings, filtro, arch])
   const gruppi = useMemo(() => perGiorno(shown, tz), [shown, tz])
 
   useEffect(() => {
@@ -60,8 +61,13 @@ export function PrenotazioniPage() {
       showToast(e instanceof Error ? e.message : 'Non riesco ad aprire il file.')
     }
   }
+  async function scollega(b: Booking, itemId: string) {
+    // BOOK-027: scollegare non elimina né la prenotazione né la tappa
+    const m = await t.setBookingItems(trip.id, b.id, tappeDi(trip, b.id).filter((x) => x !== itemId))
+    showToast(m ?? 'Prenotazione scollegata')
+  }
   async function elimina(b: Booking) {
-    const ok = await ask({ title: 'Eliminare la prenotazione?', message: `${b.title} sparisce dalle prenotazioni${b.cost != null ? ' e dalle spese' : ''}. Puoi annullare subito dopo.`, confirm: 'Elimina la prenotazione', cancel: 'Tieni la prenotazione', destructive: true })
+    const ok = await ask({ title: 'Eliminare la prenotazione?', message: `${b.title} sparisce dalle prenotazioni${b.cost != null ? ' e dalle spese' : ''}${tappeDi(trip, b.id).length ? '; le tappe collegate restano' : ''}. Puoi annullare subito dopo.`, confirm: 'Elimina la prenotazione', cancel: 'Tieni la prenotazione', destructive: true })
     if (!ok) return
     const m = await t.setBookingDeleted(b.id, true)
     showToast(m ?? 'Prenotazione eliminata', m ? undefined : { label: 'Annulla', run: () => void t.setBookingDeleted(b.id, false) })
@@ -86,10 +92,22 @@ export function PrenotazioniPage() {
           ))}
         </div>
       ) : null}
+      {trip.bookings.length > 0 ? (
+        <>
+          <Campo label="Cerca" icon="search" value={arch.q} onChange={(q) => setArch({ ...arch, q })} placeholder="Titolo, luogo, fornitore, codice" />
+          <div className="fa-chips scroll" role="group" aria-label="Stato e allegati">
+            {(['to_confirm', 'confirmed', 'cancelled'] as const).map((x) => (
+              <Chip key={x} on={arch.stato === x} onPress={() => setArch({ ...arch, stato: arch.stato === x ? 'all' : x })}>{STATO_LABEL[x]}</Chip>
+            ))}
+            <Chip on={arch.allegati === 'con'} onPress={() => setArch({ ...arch, allegati: arch.allegati === 'con' ? 'all' : 'con' })}>Con file</Chip>
+            <Chip on={arch.allegati === 'senza'} onPress={() => setArch({ ...arch, allegati: arch.allegati === 'senza' ? 'all' : 'senza' })}>Senza file</Chip>
+          </div>
+        </>
+      ) : null}
       {trip.bookings.length === 0 ? (
         <Vuoto title="Nessuna prenotazione" text="Ristoranti, treni, noleggi e attività con codice, link e biglietto sempre a portata di mano." action="Aggiungi una prenotazione" onAction={() => setSheet({})} />
       ) : shown.length === 0 ? (
-        <VuotoFiltro title="Nessuna prenotazione di questo tipo" text="Prova con un altro tipo." action="Mostra tutte" onAction={() => setFiltro('all')} />
+        <VuotoFiltro title="Nessuna prenotazione trovata" text="Prova con un altro tipo o togli i filtri." action="Mostra tutte" onAction={() => (setFiltro('all'), setArch(FILTRI_VUOTI))} />
       ) : null}
       {gruppi.map((g) => (
         <section key={g.ymd || 'senza'} aria-label={g.ymd ? giornoSpese(g.ymd, today) : 'Da pianificare'} style={{ display: 'grid', gap: 8 }}>
@@ -111,6 +129,12 @@ export function PrenotazioniPage() {
                     <span style={{ minWidth: 0 }}>
                       <span className="t" style={{ display: 'block' }}>{b.title}</span>
                       <span className="s" style={{ display: 'block' }}>{sub}</span>
+                      {statoDi(b) !== 'confirmed' || quando(b, trip) === 'fuori-periodo' ? (
+                        <span style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+                          {statoDi(b) !== 'confirmed' ? <Pillola tone={statoDi(b) === 'cancelled' ? 'cor' : 'mut'}>{STATO_LABEL[statoDi(b)]}</Pillola> : null}
+                          {quando(b, trip) === 'fuori-periodo' ? <Pillola tone="mut">Fuori periodo</Pillola> : null}
+                        </span>
+                      ) : null}
                     </span>
                     <span className="end">
                       {ora || b.detail ? (
@@ -175,6 +199,41 @@ export function PrenotazioniPage() {
                           </div>
                         </div>
                       ) : null}
+                      {trip.bookingLinks ? (
+                        <div className="kv">
+                          <Sv name="pin" size={20} />
+                          <div>
+                            {tappeDi(trip, b.id).length === 0 ? (
+                              <>
+                                <div className="t">Non collegata a una tappa</div>
+                                <button type="button" className="fa-btn sm out" style={{ marginTop: 8 }} onClick={() => setSheet({ booking: b })}>Collega a una tappa</button>
+                              </>
+                            ) : (
+                              tappeDi(trip, b.id).map((id) => {
+                                const g = giornoDellaTappa(trip, id)
+                                return (
+                                  <div key={id}>
+                                    <div className="t">{g?.title ?? 'Tappa'}</div>
+                                    <div className="s">{g ? formatShort(g.date) : 'Tappa'}</div>
+                                    <button type="button" className="fa-btn sm out" style={{ marginTop: 8 }} onClick={() => void scollega(b, id)}>Scollega</button>
+                                  </div>
+                                )
+                              })
+                            )}
+                          </div>
+                        </div>
+                      ) : null}
+                      {b.provider || b.contact || b.cancellationPolicy ? (
+                        <div className="kv">
+                          <Sv name="user" size={20} />
+                          <div>
+                            {b.provider ? <div className="t">{b.provider}</div> : null}
+                            {b.contact ? <div className="s">{b.contact}</div> : null}
+                            {b.cancellationPolicy ? <div className="s">Cancellazione: {b.cancellationPolicy}</div> : null}
+                          </div>
+                        </div>
+                      ) : null}
+                      {mancanti(trip, b).length ? <div className="s" style={{ color: 'var(--fg-2, inherit)' }}>{mancanti(trip, b).join(' · ')}</div> : null}
                       {b.notes ? (
                         <div className="kv">
                           <Sv name="info" size={20} />

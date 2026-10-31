@@ -399,6 +399,20 @@ export interface Booking {
   detail?: string
   partySize?: number
   place?: string
+  /** dalla migrazione 0031 */
+  status?: BookingStatus
+  provider?: string
+  contact?: string
+  cancellationPolicy?: string
+  participants?: string[]
+}
+
+export type BookingStatus = 'to_confirm' | 'confirmed' | 'cancelled'
+
+/** Collegamento prenotazione ↔ tappa (0031). */
+export interface BookingLink {
+  bookingId: string
+  itemId: string
 }
 
 /** Codice del biglietto (#38): immagine del QR / codice a barre di un trasporto, volo o prenotazione, per passeggero. */
@@ -459,6 +473,8 @@ export interface Trip {
   settlements?: Rimborso[]
   /** Documenti che posso vedere. Mancano se il database non ha la migrazione 0030. */
   documents?: Documento[]
+  /** Collegamenti prenotazione ↔ tappa; assente = migrazione 0031 non ancora eseguita. */
+  bookingLinks?: BookingLink[]
   /** Rimborsi confermati di tutti: cambiano i saldi di chiunque. */
   settled?: RimborsoConfermato[]
   checklist: ChecklistItem[]

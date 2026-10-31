@@ -79,6 +79,8 @@ await runMigration('0029_rimborsi.sql')
 await runMigration('0029_rimborsi.sql') // si può rilanciare
 await runMigration('0030_documenti.sql')
 await runMigration('0030_documenti.sql') // si può rilanciare
+await runMigration('0031_prenotazioni_tappe.sql')
+await runMigration('0031_prenotazioni_tappe.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -646,6 +648,22 @@ await asUser(null, 'postgres')
   check('0027 il creatore rimuove un partecipante', (await db.query(`select 1 from trip_members where trip_id=$1 and user_id=$2`, [ti, B])).rows.length === 0)
   await asUser(B)
   check('0027 chi è rimosso non vede più il viaggio', (await db.query(`select 1 from trips where id=$1`, [ti])).rows.length === 0)
+  await asUser(A)
+}
+
+// prenotazioni ↔ tappe (0031)
+await asUser(A)
+{
+  const d = (await db.query(`insert into days (trip_id,date,city) values ($1,'2026-12-01','Kyoto') returning id`, [t8])).rows[0].id
+  const it = (await db.query(`insert into day_items (trip_id,day_id,title,position) values ($1,$2,'Cena',1) returning id`, [t8, d])).rows[0].id
+  const bk = (await db.query(`insert into bookings (trip_id,type,title,status,provider) values ($1,'restaurant','Tavolo','to_confirm','Gion Karyo') returning id`, [t8])).rows[0].id
+  await db.query(`insert into booking_items (booking_id,day_item_id,trip_id) values ($1,$2,$3)`, [bk, it, t8])
+  check('0031 il proprietario collega una prenotazione a una tappa', (await db.query(`select 1 from booking_items where trip_id=$1`, [t8])).rows.length === 1)
+  await throws('0031 stato sconosciuto rifiutato', () => db.query(`insert into bookings (trip_id,type,title,status) values ($1,'other','X','boh')`, [t8]))
+  await db.query(`delete from day_items where id=$1`, [it])
+  check('0031 eliminando la tappa resta la prenotazione', (await db.query(`select 1 from bookings where id=$1`, [bk])).rows.length === 1 && (await db.query(`select 1 from booking_items where booking_id=$1`, [bk])).rows.length === 0)
+  await asUser(C)
+  await throws('0031 un non membro non collega', () => db.query(`insert into booking_items (booking_id,day_item_id,trip_id) values ($1,gen_random_uuid(),$2)`, [bk, t8]))
   await asUser(A)
 }
 
