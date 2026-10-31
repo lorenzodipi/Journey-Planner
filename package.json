@@ -17,7 +17,7 @@
     "test:sql": "node supabase/tests/rls.test.mjs",
     "import:sheet": "node --env-file-if-exists=.env.local scripts/import-sheet/import.mjs",
     "build:native": "tsc --noEmit && vite build --mode native --outDir dist-native --emptyOutDir",
-    "assets:native": "capacitor-assets generate --iconBackgroundColor \"#C9E6FF\" --splashBackgroundColor \"#0b1b33\""
+    "assets:native": "capacitor-assets generate --iconBackgroundColor \"#D3E8F9\" --splashBackgroundColor \"#04355A\""
   },
   "dependencies": {
     "@capacitor-community/file-opener": "^8.0.1",
