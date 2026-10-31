@@ -1,5 +1,6 @@
 // Giorni (mock Fa-08, issue #31): riga meteo per città, gruppi per città/viaggio/rientro,
 // calendarietti del componente SelettoreGiorni (passato grigio, oggi, futuro, libero).
+import { paesiDi, paeseDelGiorno } from '../lib/paesi'
 import { gradi } from '../lib/formati'
 import { useMemo, useState } from 'react'
 import { useLocation } from 'wouter'
@@ -125,7 +126,7 @@ export function Giorni() {
         <section key={`${gi}-${g.cells[0].day.id}`} style={{ display: 'grid', gap: 12 }} aria-label={g.title}>
           <div className="fa-sech">
             <h2 className="fa-h3">{g.title}</h2>
-            <span className="fa-c">{g.meta}</span>
+            <span className="fa-c">{paesiDi(trip).length > 1 ? `${paeseDelGiorno(trip, g.cells[0].day.date).name} · ${g.meta}` : g.meta}</span>
           </div>
           <div className="k-SelettoreGiorni">
             <div className="grid">

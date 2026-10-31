@@ -1,5 +1,6 @@
 // Foglio «Nuovo trasporto» / «Modifica trasporto» (#37, #58): mezzo, nome o numero, percorso con orari, fermate, chi viaggia,
 // prezzo con «Pagato / Non pagato» e «Pagato da», codice, operatore, binario, bagaglio, politiche e note.
+import { paesiDi, paeseDelGiorno } from '../../lib/paesi'
 import { DocumentiCollegati } from '../documenti/DocumentiCollegati'
 import { useState } from 'react'
 import { amountToText, parseAmount, tripCurrencies } from '../../lib/money'
@@ -142,6 +143,11 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
           <Campo label="Arrivo, ora" type="time" icon="clock" value={at} onChange={setAt} />
         </div>
         {errors.when ? <Errore>{errors.when}</Errore> : null}
+        {paesiDi(trip).length > 1 && dd ? (
+          <span className="fa-help">
+            {ad && paeseDelGiorno(trip, ad).name !== paeseDelGiorno(trip, dd).name ? `Parte in ${paeseDelGiorno(trip, dd).name}, arriva in ${paeseDelGiorno(trip, ad).name}` : `Giorno in ${paeseDelGiorno(trip, dd).name}`}
+          </span>
+        ) : null}
         <div className="fa-fld" role="group" aria-label="Fermate">
           Fermate
           <div className="fa-chips scroll">

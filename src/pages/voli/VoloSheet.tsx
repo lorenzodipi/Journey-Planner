@@ -1,5 +1,6 @@
 // Foglio «Nuovo volo» / «Modifica volo» (#36, #58): compagnia, prenotazione, tratte con terminal, gate, imbarco e posti,
 // chi vola, costo con «Pagato / Non pagato» e «Pagato da», bagaglio, politiche e apertura del check-in.
+import { paesiDi, paeseDelGiorno } from '../../lib/paesi'
 import { DocumentiCollegati } from '../documenti/DocumentiCollegati'
 import { useState } from 'react'
 import { isIata, timezoneForAirport } from '../../lib/airports'
@@ -193,6 +194,11 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
               <Campo label="Posto" value={l.seats} onChange={(v) => patchLeg(l.key, { seats: v.toUpperCase() })} maxLength={20} />
             )}
             {errors.legs[l.key] ? <Errore>{errors.legs[l.key]}</Errore> : null}
+            {paesiDi(trip).length > 1 && l.departDate ? (
+              <span className="fa-help">
+                {l.arriveDate && paeseDelGiorno(trip, l.arriveDate).name !== paeseDelGiorno(trip, l.departDate).name ? `Parte in ${paeseDelGiorno(trip, l.departDate).name}, arriva in ${paeseDelGiorno(trip, l.arriveDate).name}` : `Giorno in ${paeseDelGiorno(trip, l.departDate).name}`}
+              </span>
+            ) : null}
             {legs.length > 1 ? (
               <Pulsante color="tertiary-destructive" size="sm" iconLeading="trash" onPress={() => setLegs(legs.filter((x) => x.key !== l.key))}>
                 Rimuovi tratta
