@@ -1,6 +1,7 @@
 // Fogli «Nuovo luogo» e «Modifica luogo» (#33) nello stile del design system: ricerca su OpenStreetMap,
 // link di Google Maps, nome, nome locale, città, categoria, stato, durata, note, orari strutturati,
 // indirizzo e posizione (con il pin da aggiustare sulla mappa).
+import { useConflitto } from '../../faraway/useConflitto'
 import { ora } from '../../lib/formati'
 import { useEffect, useRef, useState } from 'react'
 import { formatDuration, parseDuration } from '../../lib/duration'
@@ -47,6 +48,7 @@ interface Props {
 }
 
 export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props) {
+  const [procediConflitto, nodoConflitto] = useConflitto(trip, 'places', place?.id)
   const t = useTrips()
   const editing = Boolean(place)
   const [name, setName] = useState(place?.name ?? '')
@@ -169,6 +171,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
     if (bad) return setError('In un giorno manca l’ora di apertura o di chiusura.')
     const cleaned = spec ? (cleanSpec(spec) ?? null) : null
 
+    if (!(await procediConflitto())) return
     setBusy(true)
     setError(null)
     const input: PlaceInput = {
@@ -390,6 +393,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
           </span>
         ) : null}
       </form>
+    {nodoConflitto}
     </Foglio>
   )
 }

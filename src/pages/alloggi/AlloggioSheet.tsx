@@ -1,5 +1,6 @@
 // Foglio «Nuovo alloggio» / «Modifica alloggio» (#39, #58): nome, città, indirizzo, date e orari, camera, codice,
 // costo con «Pagato / Non pagato», «Pagato da», «Per chi», pasti e note.
+import { useConflitto } from '../../faraway/useConflitto'
 import { DocumentiCollegati } from '../documenti/DocumentiCollegati'
 import { useState } from 'react'
 import type { StayInput } from '../../lib/logistics'
@@ -28,6 +29,7 @@ interface Props {
 }
 
 export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
+  const [procediConflitto, nodoConflitto] = useConflitto(trip, 'stays', s?.id)
   const tr = useTrips()
   const me = useMe(trip)
   const all = trip.travelers.map((p) => p.id)
@@ -81,6 +83,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
       paidBy: paid && amount ? paidBy || undefined : (s?.paidBy ?? undefined),
       forTravelers: all.every((id) => people.includes(id)) ? [] : people,
     }
+    if (!(await procediConflitto())) return
     setBusy(true)
     const message = s ? await tr.updateStay(s.id, input, s) : await tr.createStay(trip.id, input)
     setBusy(false)
@@ -181,6 +184,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
         {errors.form ? <Errore>{errors.form}</Errore> : null}
         <datalist id="al-valute">{tripCurrencies(trip, s?.currency).map((c) => <option key={c} value={c} />)}</datalist>
       </form>
+    {nodoConflitto}
     </Foglio>
   )
 }

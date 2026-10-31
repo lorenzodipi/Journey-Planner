@@ -1,5 +1,6 @@
 // Foglio «Nuova prenotazione» / «Modifica prenotazione» (#40): tipo, titolo, luogo, dettaglio, persone, data e ora,
 // codice, link, costo con «Pagato da» e «Per chi», file allegato e «Disponibile offline».
+import { useConflitto } from '../../faraway/useConflitto'
 import { useState } from 'react'
 import { BOOKING_LABEL, BOOKING_NEW_TYPES } from '../../lib/bookingMeta'
 import { checkFile } from '../../lib/bookingFiles'
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
+  const [procediConflitto, nodoConflitto] = useConflitto(trip, 'bookings', b?.id)
   const tr = useTrips()
   const me = useMe(trip)
   const tz = trip.timezone
@@ -108,6 +110,7 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
     if (schema.timeLock && tp && time && timeKind === 'fixed' && tp.timeLock !== 'locked') {
       vincola = await ask({ title: 'Vincolare l’orario della tappa?', message: `«${tp.title}» ${tp.time ? `è alle ${tp.time}` : 'non ha un orario'}. Vincolandola resta alle ${time}, la prenotazione è a ora fissa. L’orario cambia solo se confermi.`, confirm: `Vincola alle ${time}`, cancel: 'No, lascia flessibile', destructive: false })
     }
+    if (!(await procediConflitto())) return
     setBusy(true)
     const message = b ? await tr.updateBooking(trip.id, b, input) : await tr.createBooking(trip.id, input)
     if (!message && vincola && tp) {
@@ -268,6 +271,7 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
           <Pulsante color="tertiary" onPress={() => (setAvvisoData(null), void submit({ preventDefault() {} }, true))}>Mantieni con avviso</Pulsante>
         </Foglio>
       ) : null}
+    {nodoConflitto}
     </Foglio>
   )
 }

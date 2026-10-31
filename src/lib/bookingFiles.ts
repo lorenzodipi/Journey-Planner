@@ -1,5 +1,6 @@
 import type { Trip } from '../types'
 import { client } from './db'
+import { cifra, decifra, dimenticaChiave } from './cifra'
 import { isDocOffline } from './documentiOffline'
 
 // File delle prenotazioni (biglietti, conferme) nel bucket privato "bookings" di Supabase Storage.
@@ -81,7 +82,27 @@ const webStore: Store = {
   },
 }
 
+/** Le copie sul dispositivo si cifrano (INT-10) e si decifrano alla lettura. */
+function cifrato(s: Store): Store {
+  return {
+    ...s,
+    async put(path, res) {
+      await s.put(path, new Response(await cifra(await res.blob())))
+    },
+    async get(path) {
+      const b = await s.get(path)
+      if (!b) return undefined
+      return decifra(b)
+    },
+  }
+}
+
 async function getStore(): Promise<Store | null> {
+  const s = await getStoreGrezzo()
+  return s ? cifrato(s) : null
+}
+
+async function getStoreGrezzo(): Promise<Store | null> {
   if (__NATIVE__) {
     const { fileStore } = await import('./nativeFiles')
     return {
@@ -144,7 +165,7 @@ export async function syncOfflineFiles(trips: Trip[]): Promise<void> {
 
 /** Dopo l'uscita dall'account i file non devono restare sul dispositivo. */
 export function clearBookingCache(): void {
-  void getStore().then((s) => s?.clear()).catch(() => undefined)
+  void getStore().then((s) => s?.clear()).catch(() => undefined).finally(dimenticaChiave)
 }
 
 /** Immagine del file come indirizzo da mostrare: dalla copia locale se c'è (anche in modalità aereo), altrimenti da un link temporaneo. */

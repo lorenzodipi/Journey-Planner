@@ -1,6 +1,7 @@
 // Fogli «Aggiungi tappa» e «Modifica tappa» (mock Fa-14, issue #32): luogo o attività (luoghi salvati o
 // testo libero), ora, durata, categoria a pillole, note; in modifica anche costo, «Pagato da» e per chi:
 // il costo diventa la spesa collegata in Spese.
+import { useConflitto } from '../../faraway/useConflitto'
 import { useMemo, useState } from 'react'
 import { formatDuration, parseDuration } from '../../lib/duration'
 import { formatMoney, parseAmount, round2, tripCurrencies } from '../../lib/money'
@@ -32,6 +33,7 @@ interface Props {
 }
 
 export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props) {
+  const [procediConflitto, nodoConflitto] = useConflitto(trip, 'day_items', item?.id)
   const t = useTrips()
   const editing = Boolean(item)
   const place0 = item?.placeId ? trip.places.find((p) => p.id === item.placeId) : undefined
@@ -87,6 +89,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
     if (Number.isNaN(minutes)) return setError('La durata non è chiara: scrivi per esempio 45 min o 1 h 30.')
     if (cost.trim() && (amount === null || amount < 0)) return setError("Il costo non è chiaro: scrivi un importo, per esempio 12,50.")
     if (amount && !paidBy) return setError('Manca chi ha pagato. Scegli una persona.')
+    if (!(await procediConflitto())) return
     setBusy(true)
     setError(null)
     // il luogo resta collegato solo se il titolo è ancora il suo
@@ -276,6 +279,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
         ) : null}
       </form>
       {confirmNode}
+    {nodoConflitto}
     </Foglio>
   )
 }
