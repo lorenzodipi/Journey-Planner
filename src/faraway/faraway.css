@@ -27,6 +27,11 @@
 .fa-bar{padding:0 16px 8px;flex:none}
 .fa-bar .tp{display:flex;justify-content:flex-end;gap:8px;height:44px;align-items:center}
 .fa-bar .tp.back{justify-content:space-between}
+.fa-bar{position:relative}
+.fa-bar .tp:empty{display:none}
+.fa-bar .tp:not(.back):not(:empty){position:absolute;top:0;right:16px;height:44px}
+.fa-bar .tp:not(.back):not(:empty)+h1{margin-top:3px;min-height:44px;display:flex;align-items:center;padding-right:120px}
+.fa-bar .tp:empty+h1{margin-top:0}
 .fa-bar h1{margin:8px 0 0;font:600 32px/38px var(--font-display);letter-spacing:-.01em}
 .fa-bar .sub{font:400 13px/18px var(--font-sans);color:var(--ink-muted)}
 .fa-bar .mid{font:600 20px/26px var(--font-display);text-align:center;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

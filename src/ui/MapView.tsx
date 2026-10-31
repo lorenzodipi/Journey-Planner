@@ -192,7 +192,7 @@ interface MapViewProps {
   selectedId: string | null
   /** `null` quando si tocca la mappa fuori dai pin. */
   onSelect: (id: string | null) => void
-  /** Stile del design system Faraway: niente controlli di MapLibre, pin a disco da 36px. */
+  /** Stile del design system Faraway: niente controlli di MapLibre, pin a disco da 24px. */
   bare?: boolean
   /** Raggruppa i pin troppo vicini in un pallino con il numero (mock Fa-21). */
   cluster?: boolean
@@ -200,7 +200,7 @@ interface MapViewProps {
   apiRef?: MutableRefObject<MapApi | null>
 }
 
-const CLUSTER_PX = 40
+const CLUSTER_PX = 28
 
 function faPinElement(p: MapPin, selected: boolean): HTMLElement {
   const el = document.createElement('button')

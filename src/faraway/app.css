@@ -100,10 +100,10 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-npnav .fa-ib{width:36px;height:36px;background:none}
 .fa-npnav .fa-ib:disabled{opacity:.35}
 .fa-map .maplibregl-ctrl-top-right{display:none}
-.fa-pin{display:block;width:36px;height:36px;padding:0;border:0;border-radius:50%;background:none;cursor:pointer;box-shadow:0 0 0 2px var(--surface-card),0 3px 8px rgba(0,0,0,.25);transition:width .15s cubic-bezier(.23,1,.32,1),height .15s cubic-bezier(.23,1,.32,1)}
+.fa-pin{display:block;width:24px;height:24px;padding:0;border:0;border-radius:50%;background:none;cursor:pointer;box-shadow:0 0 0 2px var(--surface-card),0 2px 5px rgba(0,0,0,.25);transition:width .15s cubic-bezier(.23,1,.32,1),height .15s cubic-bezier(.23,1,.32,1)}
 .fa-pin svg{display:block;width:100%;height:100%;pointer-events:none}
-.fa-pin.on{width:48px;height:48px;box-shadow:0 0 0 3px var(--azzurro-ink),0 4px 10px rgba(0,0,0,.28)}
-.fa-pinclu{width:40px;height:40px;border-radius:50%;border:0;padding:0;background:var(--azzurro-solid);color:var(--on-azzurro-solid);display:grid;place-items:center;font:600 16px/1 var(--font-sans);box-shadow:0 0 0 3px var(--surface-card);cursor:pointer}
+.fa-pin.on{width:34px;height:34px;box-shadow:0 0 0 3px var(--azzurro-ink),0 4px 10px rgba(0,0,0,.28)}
+.fa-pinclu{width:28px;height:28px;border-radius:50%;border:0;padding:0;background:var(--azzurro-solid);color:var(--on-azzurro-solid);display:grid;place-items:center;font:600 13px/1 var(--font-sans);box-shadow:0 0 0 3px var(--surface-card);cursor:pointer}
 .fa-pin:focus-visible,.fa-pinclu:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.fa-pin{transition:none}}
 
