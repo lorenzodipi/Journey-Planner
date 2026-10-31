@@ -105,6 +105,10 @@ interface DayRow {
   title: string | null
   notes: string | null
   deleted_at: string | null
+  margin_min?: number | null
+  start_stay_id?: string | null
+  end_stay_id?: string | null
+  exclude_stay?: boolean | null
 }
 interface CategoryRow {
   id: string
@@ -198,6 +202,7 @@ interface TripRow {
   theme: string
   base_currency: string
   local_currency: string | null
+  default_margin_min?: number | null
   fx_rate?: number | string | null
   fx_rates?: Record<string, number | string> | null
   budget_limit?: number | string | null
@@ -292,6 +297,10 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
       title: d.title ?? undefined,
       notes: d.notes ?? undefined,
       items: itemsByDay.get(d.id) ?? [],
+      ...(d.margin_min != null ? { marginMin: d.margin_min } : {}),
+      ...(d.start_stay_id ? { startStayId: d.start_stay_id } : {}),
+      ...(d.end_stay_id ? { endStayId: d.end_stay_id } : {}),
+      ...(d.exclude_stay ? { excludeStay: true } : {}),
     }))
 
   const myTravelerId = myId ? travelers.find((t) => t.userId === myId)?.id : undefined
@@ -321,6 +330,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     theme: (['default', 'japan', 'iceland'].includes(row.theme) ? row.theme : 'default') as ThemeName,
     baseCurrency: row.base_currency.trim(),
     localCurrency: row.local_currency?.trim() || undefined,
+    ...(row.default_margin_min != null ? { defaultMarginMin: row.default_margin_min } : {}),
     center: {
       lat: row.center_lat ?? DEFAULT_CENTER.lat,
       lng: row.center_lng ?? DEFAULT_CENTER.lng,
@@ -1053,6 +1063,33 @@ export async function moveItemToDay(id: string, dayId: string, position: number,
 
 /** Per chi è la tappa (vuoto = tutti). */
 /** Blocca o sblocca l'orario di una tappa (0032), con autore e ora. Senza la migrazione non fa nulla. */
+/** Piano del giorno (0033): margine, alloggio di partenza e di arrivo. `null` = tornare al predefinito. */
+export interface PianoGiorno {
+  marginMin?: number | null
+  startStayId?: string | null
+  endStayId?: string | null
+  excludeStay?: boolean
+  /** margine per tutto il viaggio */
+  tripMarginMin?: number | null
+}
+export async function setDayPlan(tripId: string, dayId: string, p: PianoGiorno): Promise<void> {
+  const db = client()
+  const col: Record<string, unknown> = {}
+  if (p.marginMin !== undefined) col.margin_min = p.marginMin
+  if (p.startStayId !== undefined) col.start_stay_id = p.startStayId
+  if (p.endStayId !== undefined) col.end_stay_id = p.endStayId
+  if (p.excludeStay !== undefined) col.exclude_stay = p.excludeStay
+  const miss = (e: { message: string }) => (/margin_min|stay_id|exclude_stay|default_margin_min|schema cache/i.test(e.message) ? new Error("Manca la migrazione 0033 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0033_margini_alloggio_giorno.sql).") : e)
+  if (Object.keys(col).length) {
+    const r = await db.from('days').update(col).eq('id', dayId)
+    if (r.error) throw miss(r.error)
+  }
+  if (p.tripMarginMin !== undefined) {
+    const r = await db.from('trips').update({ default_margin_min: p.tripMarginMin }).eq('id', tripId)
+    if (r.error) throw miss(r.error)
+  }
+}
+
 export async function setItemLock(id: string, lock: 'flexible' | 'locked', source: 'manual' | 'booking', userId?: string): Promise<void> {
   if (!schema.timeLock) throw new Error("Manca la migrazione 0032 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0032_orari_vincolati.sql).")
   const { error } = await client().from('day_items').update({ time_lock: lock, lock_source: lock === 'locked' ? source : null, lock_changed_by: userId ?? null, lock_changed_at: new Date().toISOString() }).eq('id', id)

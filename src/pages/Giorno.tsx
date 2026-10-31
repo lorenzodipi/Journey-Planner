@@ -35,6 +35,8 @@ import { SpostaSheet } from './giorno/SpostaSheet'
 import { SpesaSheet } from './spese/SpesaSheet'
 import { iconaSpesa } from '../lib/ricevuta'
 import { TappaSheet } from './giorno/TappaSheet'
+import { ControlloGiorno } from './giorno/ControlloGiorno'
+import { alloggiDelGiorno } from '../lib/fattibilita'
 
 const wdm = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
 const fmt = (ymd: string) => wdm.format(parseYmd(ymd)).replace(/\./g, '')
@@ -167,7 +169,9 @@ export function Giorno({ params }: { params: { id: string } }) {
 
   // «Ottimizza percorso» (#18): le tappe senza orario sul tragitto più breve dall'ultima con orario o dall'alloggio
   const stays = dayStays(trip.stays, day.date)
-  const homePoint = stays.night?.mapsUrl ? parseMapsUrl(stays.night.mapsUrl) : null
+  const casa = alloggiDelGiorno(trip, day)
+  const casaUrl = casa.escluso ? undefined : (casa.partenza ?? casa.arrivo ?? stays.night)?.mapsUrl
+  const homePoint = casaUrl ? parseMapsUrl(casaUrl) : null
   const plan = planRoute(day.items.map((i) => ({ id: i.id, position: i.position, time: i.timeLock === 'locked' ? (i.time ?? '00:00') : i.time, lat: stopById.get(i.id)?.lat, lng: stopById.get(i.id)?.lng })), homePoint)
   const optimize = async () => {
     if (!plan) return
@@ -243,6 +247,7 @@ export function Giorno({ params }: { params: { id: string } }) {
         />
         {day.items.length === 0 ? <p className="fa-m">Giornata ancora libera: aggiungi la prima tappa.</p> : null}
       </div>
+      {day.items.length > 0 ? <ControlloGiorno trip={trip} day={day} minutiSpostamento={(a, b) => (day.items.findIndex((i) => i.id === b) === day.items.findIndex((i) => i.id === a) + 1 ? (segments.get(b)?.minutes ?? null) : null)} /> : null}
 
       <Pulsante iconLeading="plus" onPress={() => setSheet({ kind: 'add' })}>
         Aggiungi tappa

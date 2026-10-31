@@ -83,6 +83,8 @@ await runMigration('0031_prenotazioni_tappe.sql')
 await runMigration('0031_prenotazioni_tappe.sql') // si può rilanciare
 await runMigration('0032_orari_vincolati.sql')
 await runMigration('0032_orari_vincolati.sql') // si può rilanciare
+await runMigration('0033_margini_alloggio_giorno.sql')
+await runMigration('0033_margini_alloggio_giorno.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -679,6 +681,15 @@ await asUser(A)
   check('0032 il proprietario vincola una tappa', (await db.query(`select 1 from day_items where id=$1 and time_lock='locked'`, [it.id])).rows.length === 1)
   await throws('0032 valore di vincolo sconosciuto rifiutato', () => db.query(`update day_items set time_lock='boh' where id=$1`, [it.id]))
   await throws('0032 tipo di orario sconosciuto rifiutato', () => db.query(`insert into bookings (trip_id,type,title,time_kind) values ($1,'other','X','boh')`, [t8]))
+}
+
+// margini e alloggio del giorno (0033)
+await asUser(A)
+{
+  const d = (await db.query(`insert into days (trip_id,date,city,margin_min) values ($1,'2026-12-03','Nara',15) returning id, exclude_stay`, [t8])).rows[0]
+  check('0033 margine del giorno e alloggio escluso di default a no', d.exclude_stay === false)
+  await db.query(`update trips set default_margin_min=30 where id=$1`, [t8])
+  await throws('0033 margine fuori scala rifiutato', () => db.query(`update days set margin_min=999 where id=$1`, [d.id]))
 }
 
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione

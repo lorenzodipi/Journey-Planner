@@ -114,6 +114,11 @@ export interface Day {
   title?: string
   notes?: string
   items: DayItem[]
+  /** dalla migrazione 0033 */
+  marginMin?: number
+  startStayId?: string
+  endStayId?: string
+  excludeStay?: boolean
 }
 
 export interface Stay {
@@ -459,6 +464,8 @@ export interface Trip {
   theme: ThemeName
   baseCurrency: string
   localCurrency?: string
+  /** Margine tra le tappe (0033), minuti; assente = nessuno. */
+  defaultMarginMin?: number
   center: { lat: number; lng: number }
   travelers: Traveler[]
   /** Ruolo di chi sta usando l'app in questo viaggio (se noto). */

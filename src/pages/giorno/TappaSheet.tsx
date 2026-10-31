@@ -9,7 +9,7 @@ import { categoriaDaTappa } from '../../lib/ricevuta'
 import { durata } from '../../lib/tappa'
 import { useTrips } from '../../state/trip'
 import { useMe } from '../../state/me'
-import type { Day, DayItem, Trip } from '../../types'
+import type { Day, DayItem, ItemKind, Trip } from '../../types'
 import { schema } from '../../lib/schema'
 import { disallineamenti, prenotazioniFisse } from '../../lib/vincoli'
 import { Banner, Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
@@ -48,6 +48,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
   const [paidBy, setPaidBy] = useState(linked?.paidBy ?? me?.id ?? trip.travelers[0]?.id ?? '')
   const [who, setWho] = useState<string[]>(item?.participants ?? [])
   const [error, setError] = useState<string | null>(null)
+  const [kind, setKind] = useState<ItemKind>(item?.kind ?? 'visit')
   const [vincolata, setVincolata] = useState(item?.timeLock === 'locked')
   const [ask, confirmNode] = useConferma()
   const fisse = item ? prenotazioniFisse(trip, item.id) : []
@@ -91,7 +92,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
     const keepPlace = place && place.name.trim().toLowerCase() === title.trim().toLowerCase() ? place.id : null
     const input: ItemInput = {
       title,
-      kind: item?.kind ?? 'visit',
+      kind,
       startTime: time,
       endTime: item?.endTime ?? '',
       notes,
@@ -159,6 +160,17 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
             </ul>
           ) : null}
         </div>
+        {kind === 'visit' || kind === 'meal' || kind === 'free' || kind === 'note' ? (
+          <div className="fa-fld" role="group" aria-label="Tipo di tappa">
+            Tipo
+            <div className="fa-chips wrap">
+              {([['visit', 'Luogo'], ['meal', 'Pasto'], ['free', 'Attività libera'], ['note', 'Nota']] as [ItemKind, string][]).map(([k, l]) => (
+                <Chip key={k} on={kind === k} onPress={() => setKind(k)}>{l}</Chip>
+              ))}
+            </div>
+            {kind === 'free' || kind === 'note' ? <span className="fa-help">Senza posizione: pause, pasti e note stanno nella lista ma non sulla mappa.</span> : null}
+          </div>
+        ) : null}
         <div className="fa-2c">
           <Campo label="Ora" icon="clock" type="time" value={time} onChange={setTime} />
           <Campo label="Durata" value={duration} onChange={setDuration} placeholder={place?.visitMinutes ? durata(place.visitMinutes) : 'es. 1 h 30'} />
