@@ -1,4 +1,5 @@
 // Pagina Trasporti (mock Fa-40, Fa-41, #37): biglietti orizzontali raggruppati per data, aperti in linea uno alla volta, FAB «+ Trasporto».
+import { conDipendenze, dipendenze } from '../../lib/registro'
 import { useMemo, useState } from 'react'
 import { nomeTrasporto, perData } from '../../lib/trasporti'
 import { showToast } from '../../state/toast'
@@ -22,7 +23,7 @@ export function TrasportiPage() {
   const gruppi = useMemo(() => perData(trip), [trip])
 
   async function elimina(x: Transport) {
-    const ok = await ask({ title: 'Eliminare il trasporto?', message: `${x.from} → ${x.to} sparisce dai trasporti e dalle spese. Puoi annullare subito dopo.`, confirm: 'Elimina il trasporto', cancel: 'Tieni il trasporto', destructive: true })
+    const ok = await ask({ title: 'Eliminare il trasporto?', message: conDipendenze(`${x.from} → ${x.to} sparisce dai trasporti e dalle spese. Puoi annullare subito dopo.`, dipendenze(trip, 'trasporto', x.id)), confirm: 'Elimina il trasporto', cancel: 'Tieni il trasporto', destructive: true })
     if (!ok) return
     const m = await t.setTransportDeleted(x.id, true)
     showToast(m ?? 'Trasporto eliminato', m ? undefined : { label: 'Annulla', run: () => void t.setTransportDeleted(x.id, false) })

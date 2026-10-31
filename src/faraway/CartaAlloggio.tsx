@@ -1,6 +1,7 @@
 // Biglietto lavanda di un alloggio (componente Biglietto, mock Fa-37, #39): «Alloggio · N notti», pillola Pagato / Non pagato,
 // nome grande, indirizzo · città; dopo la perforazione Check-in, Check-out e Camera, il codice di prenotazione e «Apri sulla mappa».
 // Al tocco si apre in linea: costo e chi ha pagato, pasti, note, Modifica, Elimina.
+import { UltimaModifica } from './UltimaModifica'
 import { cameraDi, inclusi, notti, orarioCheck } from '../lib/alloggi'
 import { formatShort } from '../lib/dates'
 import { convert, formatMoney, rateFor } from '../lib/money'
@@ -145,6 +146,10 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete 
                     <dd>{pasti}</dd>
                   </div>
                 ) : null}
+                <div>
+                  <dt>Ultima modifica</dt>
+                  <dd><UltimaModifica trip={trip} table="stays" rowId={s.id} /></dd>
+                </div>
                 {s.notes ? (
                   <div>
                     <dt>Nota</dt>

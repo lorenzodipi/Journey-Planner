@@ -1,4 +1,5 @@
 // Pagina Voli (mock Fa-38, Fa-39, Fa-57, #36): carte raggruppate in Andata, Ritorno e voli interni, aperte una alla volta, FAB «+ Volo».
+import { conDipendenze, dipendenze } from '../../lib/registro'
 import { useMemo, useState } from 'react'
 import { raggruppaVoli } from '../../lib/voli'
 import { showToast } from '../../state/toast'
@@ -23,7 +24,7 @@ export function VoliPage() {
   const gruppi = useMemo(() => raggruppaVoli(trip.flights, trip), [trip])
 
   async function elimina(f: Flight) {
-    const ok = await ask({ title: 'Eliminare il volo?', message: `${f.title} sparisce dai voli e dalle spese. Puoi annullare subito dopo.`, confirm: 'Elimina il volo', cancel: 'Tieni il volo', destructive: true })
+    const ok = await ask({ title: 'Eliminare il volo?', message: conDipendenze(`${f.title} sparisce dai voli e dalle spese. Puoi annullare subito dopo.`, dipendenze(trip, 'volo', f.id)), confirm: 'Elimina il volo', cancel: 'Tieni il volo', destructive: true })
     if (!ok) return
     const m = await t.setFlightDeleted(f.id, true)
     showToast(m ?? 'Volo eliminato', m ? undefined : { label: 'Annulla', run: () => void t.setFlightDeleted(f.id, false) })

@@ -10,11 +10,13 @@ import { formatMoney } from '../../lib/money'
 import { FILTRI, FILTRI_VUOTI, filtraArchivio, giornoDellaTappa, mancanti, nelFiltro, oraPrenotazione, perGiorno, quando, sottotitolo, STATO_LABEL, statoDi, tappeDi, type FiltriArchivio, type FiltroPrenotazioni } from '../../lib/prenotazioni'
 import { CATEGORIE_BASE } from '../../lib/ricevuta'
 import { tripToday } from '../../lib/today'
+import { conDipendenze, dipendenze } from '../../lib/registro'
 import { showToast } from '../../state/toast'
 import { useTrip, useTrips } from '../../state/trip'
 import type { Booking } from '../../types'
 import { Ic } from '../../ui/Sprite'
 import { Campo, Chip, Pillola } from '../../faraway/base'
+import { UltimaModifica } from '../../faraway/UltimaModifica'
 import { CodiceBiglietto } from '../../faraway/CodiceBiglietto'
 import { cx } from '../../faraway/cx'
 import { useConferma } from '../../faraway/Foglio'
@@ -67,7 +69,7 @@ export function PrenotazioniPage() {
     showToast(m ?? 'Prenotazione scollegata')
   }
   async function elimina(b: Booking) {
-    const ok = await ask({ title: 'Eliminare la prenotazione?', message: `${b.title} sparisce dalle prenotazioni${b.cost != null ? ' e dalle spese' : ''}${tappeDi(trip, b.id).length ? '; le tappe collegate restano' : ''}. Puoi annullare subito dopo.`, confirm: 'Elimina la prenotazione', cancel: 'Tieni la prenotazione', destructive: true })
+    const ok = await ask({ title: 'Eliminare la prenotazione?', message: conDipendenze(`${b.title} sparisce dalle prenotazioni${b.cost != null ? ' e dalle spese' : ''}; le tappe collegate restano. Puoi annullare subito dopo.`, dipendenze(trip, 'prenotazione', b.id)), confirm: 'Elimina la prenotazione', cancel: 'Tieni la prenotazione', destructive: true })
     if (!ok) return
     const m = await t.setBookingDeleted(b.id, true)
     showToast(m ?? 'Prenotazione eliminata', m ? undefined : { label: 'Annulla', run: () => void t.setBookingDeleted(b.id, false) })
@@ -242,6 +244,7 @@ export function PrenotazioniPage() {
                           </div>
                         </div>
                       ) : null}
+                      <UltimaModifica trip={trip} table="bookings" rowId={b.id} />
                       <div className="acts">
                         <button type="button" className="fa-btn sm out" onClick={() => setCodice(b)}>
                           <Sv name="qr" size={18} />

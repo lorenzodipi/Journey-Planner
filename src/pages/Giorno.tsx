@@ -1,6 +1,7 @@
 // Giorno (mock Fa-09…Fa-15, issue #32): mappa con «Percorso migliore», tappe con stati e spostamenti,
 // card aperta in linea, fogli Aggiungi / Modifica / Sposta / Elimina; sotto le tappe Alloggio, Spese e
 // Prenotazioni del giorno, e i giorni vicini.
+import { conDipendenze, dipendenze } from '../lib/registro'
 import { vistaDelGiorno } from '../lib/paesi'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useSearch } from 'wouter'
@@ -147,7 +148,7 @@ export function Giorno({ params }: { params: { id: string } }) {
     const exp = linkedExpense(trip, item)
     const ok = await ask({
       title: 'Eliminare la tappa?',
-      message: `${item.title} sparisce dal Giorno ${n}${exp ? ' e dalla spesa collegata' : ''}. Non si può annullare.`,
+      message: conDipendenze(`${item.title} sparisce dal Giorno ${n}${exp ? ' e dalla spesa collegata' : ''}. Non si può annullare.`, dipendenze(trip, 'tappa', item.id)),
       confirm: 'Elimina la tappa',
       cancel: 'Tieni la tappa',
     })
@@ -270,7 +271,7 @@ export function Giorno({ params }: { params: { id: string } }) {
               onToggle={() => stayOpen.toggle(s.id)}
               onEdit={() => setStayEdit(s)}
               onDelete={async () => {
-                const ok = await ask({ title: 'Eliminare l’alloggio?', message: `${s.name} sparisce dagli alloggi e dalle spese. Puoi annullare subito dopo.`, confirm: 'Elimina l’alloggio', cancel: 'Tieni l’alloggio', destructive: true })
+                const ok = await ask({ title: 'Eliminare l’alloggio?', message: conDipendenze(`${s.name} sparisce dagli alloggi e dalle spese. Puoi annullare subito dopo.`, dipendenze(trip, 'alloggio', s.id)), confirm: 'Elimina l’alloggio', cancel: 'Tieni l’alloggio', destructive: true })
                 if (!ok) return
                 const m = await t.setStayDeleted(s.id, true)
                 showToast(m ?? 'Alloggio eliminato', m ? undefined : { label: 'Annulla', run: () => void t.setStayDeleted(s.id, false) })

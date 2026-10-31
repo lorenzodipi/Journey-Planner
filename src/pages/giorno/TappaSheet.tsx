@@ -15,6 +15,7 @@ import { disallineamenti, prenotazioniFisse } from '../../lib/vincoli'
 import { Banner, Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
 import { Foglio, useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
+import { UltimaModifica } from '../../faraway/UltimaModifica'
 
 const PARTS = ['', 'da solo', 'in due', 'in tre', 'in quattro', 'in cinque', 'in sei', 'in sette', 'in otto']
 export const inQuanti = (n: number) => PARTS[n] ?? `in ${n}`
@@ -266,6 +267,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
           </>
         ) : null}
         <Campo label="Note" value={notes} onChange={setNotes} placeholder="Scarpe comode, ingresso dal lato nord…" />
+        {item ? <UltimaModifica trip={trip} table="day_items" rowId={item.id} /> : null}
         {error ? (
           <span className="fa-help bad" role="alert">
             <Sv name="err" size={16} />

@@ -6,8 +6,8 @@ import { client } from './db'
 import { queryLogistics } from './logisticsApi'
 import { queryMoney } from './moneyApi'
 import { queryPlanning } from './planningApi'
-import { mapBookingLinks, mapBookings, mapChecklist, mapDocuments, mapTicketCodes } from './planningData'
-import type { BookingItemRow, BookingRow, CheckRow, ChecklistRow, DocumentAccessRow, DocumentLinkRow, DocumentRow, TicketCodeRow } from './planningData'
+import { mapActivity, mapBookingLinks, mapBookings, mapChecklist, mapDocuments, mapTicketCodes } from './planningData'
+import type { ActivityRow, BookingItemRow, BookingRow, CheckRow, ChecklistRow, DocumentAccessRow, DocumentLinkRow, DocumentRow, TicketCodeRow } from './planningData'
 import { mapBudget, mapConfirmed, mapExpenses, mapSettlements } from './moneyData'
 import type { BudgetItemRow, BudgetShareRow, ConfirmedSettlementRow, SettlementRow, ExpenseFileRow, ExpensePayerRow, ExpenseRow, ExpenseShareRow } from './moneyData'
 import { mapFlights, mapStays, mapTransports } from './logistics'
@@ -190,6 +190,7 @@ interface Extras {
   documentAccess?: DocumentAccessRow[]
   documentLinks?: DocumentLinkRow[]
   bookingItems?: BookingItemRow[] | null
+  activity?: ActivityRow[] | null
   checks?: CheckRow[] | null
 }
 
@@ -349,6 +350,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     transports: mapTransports(extras.transports, row.id),
     flights: mapFlights(extras.flights, extras.legs, row.id),
     budget: mapBudget(extras.budgetItems, extras.budgetShares, row.id, expenseCategoryLabel),
+    ...(extras.activity ? { activity: mapActivity(extras.activity, row.id) } : {}),
     ...(extras.bookingItems ? { bookingLinks: mapBookingLinks(extras.bookingItems, row.id) } : {}),
     ...(extras.documents ? { documents: mapDocuments(extras.documents, extras.documentAccess ?? [], extras.documentLinks ?? [], row.id) } : {}),
     ...(extras.settlements ? { settlements: mapSettlements(extras.settlements, row.id) } : {}),
@@ -408,6 +410,7 @@ export function scopeOfTable(table: string): Scope | null {
     case 'document_links':
     case 'ticket_codes':
     case 'booking_items':
+    case 'activity_log':
     case 'checklist_checks':
       return 'planning'
     default:
@@ -467,7 +470,7 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
   for (const r of results) if (r?.error) throw r.error
   const [stays, transports, flights, legs] = logisticsR ?? []
   const [budgetItems, budgetShares, expenses, expenseShares, expensePayers, expenseFiles, settlements, confirmedSettlements] = moneyR ?? []
-  const [checklist, bookings, checks, documents, documentAccess, documentLinks, ticketCodes, bookingItems] = planningR ?? []
+  const [checklist, bookings, checks, documents, documentAccess, documentLinks, ticketCodes, activity, bookingItems] = planningR ?? []
   const old = prev?.extras
   const extras: Extras = {
     places: keep(places, old?.places as PlaceRow[]),
@@ -492,6 +495,7 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
     documents: keep(documents, old?.documents as DocumentRow[] | null),
     documentAccess: keep(documentAccess, old?.documentAccess as DocumentAccessRow[]),
     documentLinks: keep(documentLinks, old?.documentLinks as DocumentLinkRow[]),
+    activity: keep(activity, old?.activity as ActivityRow[] | null),
     bookingItems: keep(bookingItems, old?.bookingItems as BookingItemRow[] | null),
     checks: keep(checks, old?.checks as CheckRow[] | null),
   }

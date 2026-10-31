@@ -20,6 +20,8 @@ export function queryPlanning(db: SupabaseClient) {
     db.from('document_links').select('*').then((r) => (r.error ? { ...r, data: [], error: null } : r)),
     db.from('ticket_codes').select('*').then((r) => (r.error && /ticket_codes|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: [], error: null } : r)),
     // prima della migrazione 0031 niente collegamenti alle tappe: `data: null` = la tappa non è richiesta
+    // prima della migrazione 0037 niente registro
+    db.from('activity_log').select('*').order('at', { ascending: false }).then((r) => (r.error ? { ...r, data: null, error: null } : r)),
     db.from('booking_items').select('*').then((r) => (r.error && /booking_items|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: null, error: null } : r)),
   ])
 }

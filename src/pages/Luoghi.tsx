@@ -1,5 +1,6 @@
 // Scheda Luoghi (mock Fa-16…Fa-21, Fa-56, issue #33): Elenco | Mappa con filtri separati, pillole di stato,
 // card aperta in linea con «Aggiungi a una tappa», selezione multipla, FAB «+ Luogo».
+import { conDipendenze, dipendenze } from '../lib/registro'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useSearch } from 'wouter'
 import { countActive, EMPTY_FILTERS, filterPlaces, type PlaceFilters } from '../lib/placeFilter'
@@ -84,7 +85,7 @@ function useAzioniLuogo(trip: Trip) {
     const one = list.length === 1
     const ok = await ask({
       title: one ? `Eliminare «${list[0].name}»?` : `Eliminare ${list.length} luoghi?`,
-      message: used > 0 ? `${one ? 'Resta nelle tappe dei giorni' : 'Le tappe dei giorni restano'}, ma senza il luogo collegato. Puoi annullare subito dopo.` : 'Puoi annullare subito dopo.',
+      message: conDipendenze(used > 0 ? `${one ? 'Resta nelle tappe dei giorni' : 'Le tappe dei giorni restano'}, ma senza il luogo collegato. Puoi annullare subito dopo.` : 'Puoi annullare subito dopo.', one ? dipendenze(trip, 'luogo', list[0].id) : []),
       confirm: one ? 'Elimina il luogo' : `Elimina ${list.length} luoghi`,
       cancel: one ? 'Tieni il luogo' : 'Tieni i luoghi',
       destructive: true,

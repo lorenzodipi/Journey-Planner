@@ -91,6 +91,8 @@ await runMigration('0035_trasporti_terminal.sql')
 await runMigration('0035_trasporti_terminal.sql') // si può rilanciare
 await runMigration('0036_viaggi_archiviati.sql')
 await runMigration('0036_viaggi_archiviati.sql') // si può rilanciare
+await runMigration('0037_registro_modifiche.sql')
+await runMigration('0037_registro_modifiche.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -720,6 +722,23 @@ await asUser(A)
   check('0036 il proprietario archivia e vede ancora il viaggio', (await db.query(`select 1 from trips where id=$1 and archived_at is not null`, [t8])).rows.length === 1)
   await db.query(`update trips set archived_at=null where id=$1`, [t8])
   check('0036 ripristino', (await db.query(`select 1 from trips where id=$1 and archived_at is null`, [t8])).rows.length === 1)
+}
+
+// registro delle modifiche (0037)
+await asUser(A)
+{
+  const p = (await db.query(`insert into places (trip_id,name) values ($1,'Fushimi Inari') returning id`, [t8])).rows[0].id
+  await db.query(`update places set city='Kyoto' where id=$1`, [p])
+  await db.query(`update places set deleted_at=now() where id=$1`, [p])
+  const log = (await db.query(`select action, summary->>'title' as title from activity_log where row_id=$1 order by id`, [p])).rows
+  check('0037 inserimento, modifica ed eliminazione sono registrati', log.map((x) => x.action).join() === 'insert,update,delete' && log[0].title === 'Fushimi Inari')
+  await asUser(null, 'postgres')
+  await db.query(`insert into checklist_items (trip_id,text,owner_id) values ($1,'Segreto',$2)`, [t8, A])
+  check('0037 la checklist personale non finisce nel registro', (await db.query(`select 1 from activity_log where summary->>'title'='Segreto'`)).rows.length === 0)
+  await asUser(C)
+  check('0037 un non membro non legge il registro', (await db.query(`select 1 from activity_log where trip_id=$1`, [t8])).rows.length === 0)
+  await throws('0037 nessuno scrive nel registro a mano', () => db.query(`insert into activity_log (trip_id,table_name,row_id,action) values ($1,'places',gen_random_uuid(),'insert')`, [t8]))
+  await asUser(A)
 }
 
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione

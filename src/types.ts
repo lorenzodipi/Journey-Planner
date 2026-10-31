@@ -496,6 +496,8 @@ export interface Trip {
   settlements?: Rimborso[]
   /** Documenti che posso vedere. Mancano se il database non ha la migrazione 0030. */
   documents?: Documento[]
+  /** Ultime modifiche ai contenuti condivisi (0037); assente = migrazione non ancora eseguita. */
+  activity?: Attivita[]
   /** Collegamenti prenotazione ↔ tappa; assente = migrazione 0031 non ancora eseguita. */
   bookingLinks?: BookingLink[]
   /** Rimborsi confermati di tutti: cambiano i saldi di chiunque. */
@@ -518,4 +520,16 @@ export interface Trip {
   /** Paese di casa (codice ISO, es. «IT») e suo fuso: per l'ora di casa e il fuso di partenza di voli e trasporti. */
   originCountry?: string
   originTimezone?: string
+}
+
+/** Una riga del registro delle modifiche (0037). */
+export interface Attivita {
+  id: number
+  table: string
+  rowId: string
+  action: 'insert' | 'update' | 'delete' | 'restore'
+  /** user id di chi ha fatto la modifica */
+  actor?: string
+  at: string
+  title: string
 }

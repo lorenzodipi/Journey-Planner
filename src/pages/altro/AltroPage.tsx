@@ -38,6 +38,7 @@ export function AltroPage() {
     { icon: 'i-tra-train', title: 'Trasporti', sub: riepilogoTrasportiAltro(trip), to: '/altro/trasporti' },
     { icon: 'i-sez-ticket', title: 'Prenotazioni', sub: riepilogoPrenotazioni(trip), to: '/altro/prenotazioni' },
     { icon: 'i-sez-ticket', title: 'Documenti', sub: riepilogoDocumenti(trip), to: '/altro/documenti' },
+    { icon: 'i-azi-swap', title: 'Registro modifiche', sub: 'Chi ha cambiato cosa', to: '/altro/registro' },
     { icon: 'i-con-organizzazione', title: 'Checklist', sub: riepilogoChecklist(trip), to: '/altro/checklist' },
     { icon: 'i-con-spese', title: 'Budget', sub: riepilogoBudget(r.speso, r.limit, trip.baseCurrency), to: '/spese/budget' },
     { icon: 'i-azi-swap', title: 'Cambio valuta', sub: riepilogoCambio(trip), onPress: () => setFx(true) },

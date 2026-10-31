@@ -1,4 +1,4 @@
-import type { Booking, BookingLink, BookingStatus, BookingType, TimeKind, ChecklistItem, ChecklistKind, DocKind, Documento, Scope, TicketCode, TicketKind } from '../types'
+import type { Attivita, Booking, BookingLink, BookingStatus, BookingType, TimeKind, ChecklistItem, ChecklistKind, DocKind, Documento, Scope, TicketCode, TicketKind } from '../types'
 import { zonedToInstant } from './zoned'
 
 // Checklist e prenotazioni: righe del database <-> tipi dell'app, e colonne da salvare.
@@ -158,6 +158,19 @@ export function mapBookings(rows: BookingRow[], tripId: string): Booking[] {
     }))
     .sort((a, b) => (a.validFrom ?? '9999').localeCompare(b.validFrom ?? '9999') || a.title.localeCompare(b.title, 'it'))
 }
+
+export interface ActivityRow {
+  id: number
+  trip_id: string
+  table_name: string
+  row_id: string
+  action: Attivita['action']
+  actor: string | null
+  at: string
+  summary: { title?: string } | null
+}
+export const mapActivity = (rows: ActivityRow[], tripId: string): Attivita[] =>
+  rows.filter((r) => r.trip_id === tripId).map((r) => ({ id: r.id, table: r.table_name, rowId: r.row_id, action: r.action, actor: r.actor ?? undefined, at: r.at, title: r.summary?.title ?? '' }))
 
 export const mapBookingLinks = (rows: BookingItemRow[], tripId: string): BookingLink[] =>
   rows.filter((r) => r.trip_id === tripId).map((r) => ({ bookingId: r.booking_id, itemId: r.day_item_id }))

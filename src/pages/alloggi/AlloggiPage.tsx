@@ -1,4 +1,5 @@
 // Pagina Alloggi (mock Fa-37, #39): biglietti lavanda raggruppati per città con le notti, aperti in linea uno alla volta, FAB «+ Alloggio».
+import { conDipendenze, dipendenze } from '../../lib/registro'
 import { useMemo, useState } from 'react'
 import { notti, perCitta } from '../../lib/alloggi'
 import { overlappingStays, stayFuoriViaggio } from '../../lib/stays'
@@ -25,7 +26,7 @@ export function AlloggiPage() {
   const overlaps = overlappingStays(trip.stays)
 
   async function elimina(s: Stay) {
-    const ok = await ask({ title: 'Eliminare l’alloggio?', message: `${s.name} sparisce dagli alloggi e dalle spese. Puoi annullare subito dopo.`, confirm: 'Elimina l’alloggio', cancel: 'Tieni l’alloggio', destructive: true })
+    const ok = await ask({ title: 'Eliminare l’alloggio?', message: conDipendenze(`${s.name} sparisce dagli alloggi e dalle spese. Puoi annullare subito dopo.`, dipendenze(trip, 'alloggio', s.id)), confirm: 'Elimina l’alloggio', cancel: 'Tieni l’alloggio', destructive: true })
     if (!ok) return
     const m = await t.setStayDeleted(s.id, true)
     showToast(m ?? 'Alloggio eliminato', m ? undefined : { label: 'Annulla', run: () => void t.setStayDeleted(s.id, false) })
