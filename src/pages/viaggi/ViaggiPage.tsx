@@ -63,7 +63,7 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
   function azioni(trip: Trip) {
     if (trip.myRole !== undefined && trip.myRole !== 'owner') return null
     return (
-      <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+      <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '12px 16px 16px', borderTop: '1px solid var(--hairline)' }}>
         {trip.archivedAt ? (
           <Pulsante size="sm" color="secondary" onPress={() => void archivia(trip, false)}>Ripristina</Pulsante>
         ) : (
@@ -78,10 +78,9 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
 
   function card(trip: Trip) {
     const stato = statoViaggio(trip)
-    const attuale = trip.id === t.active?.id
     const people = trip.travelers.slice(0, 4).map((p) => ({ initials: initials(p.name), n: discOf(trip, p.id) }))
     return (
-      <button key={trip.id} type="button" className={cx('fa-card xl')} onClick={() => apri(trip.id)} aria-label={`${trip.title}, ${STATO_TESTO[stato]}`} style={{ padding: 0, overflow: 'hidden', textAlign: 'left', cursor: 'pointer', color: 'inherit', border: attuale ? '2px solid var(--focus)' : undefined, display: 'block', width: '100%' }}>
+      <button key={trip.id} type="button" onClick={() => apri(trip.id)} aria-label={`${trip.title}, ${STATO_TESTO[stato]}`} style={{ padding: 0, overflow: 'hidden', textAlign: 'left', cursor: 'pointer', color: 'inherit', background: 'none', border: 0, display: 'block', width: '100%' }}>
         <span style={{ position: 'relative', display: 'block', aspectRatio: '16/9', background: 'var(--tinta-azzurro)' }}>
           <img src={SCENE[scenaDelViaggio(trip)]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           <span style={{ position: 'absolute', left: 12, top: 12 }}>
@@ -102,8 +101,9 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
     )
   }
 
+  // una sola card: la copertina apre il viaggio, le azioni stanno nella stessa card
   const conAzioni = (trip: Trip) => (
-    <div key={trip.id}>
+    <div key={trip.id} className={cx('fa-card xl')} style={{ padding: 0, overflow: 'hidden', border: trip.id === t.active?.id ? '2px solid var(--focus)' : undefined }}>
       {card(trip)}
       {azioni(trip)}
     </div>
