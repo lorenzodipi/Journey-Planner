@@ -9,7 +9,6 @@ import { Ic } from '../ui/Sprite'
 import { Campo, Pulsante } from './base'
 import { cx } from './cx'
 import { Sv } from './icons'
-import { G } from './Tappe'
 
 const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']
 const segno = (n: number, cur: string) => `${n > 0.004 ? '+' : n < -0.004 ? '−' : ''}${formatMoney(Math.abs(n), cur)}`
@@ -18,7 +17,6 @@ interface Props {
   trip: Trip
   dati: Dati
   sub: string
-  aggiornato: string | null
   onPlanned: (c: RigaCategoria, planned: number | null) => Promise<string | null>
   onRename: (c: RigaCategoria, label: string) => Promise<string | null>
   onDelete: (c: RigaCategoria) => Promise<void>
@@ -91,7 +89,7 @@ function RigaCat({ c, cur, open, onToggle, onPlanned, onRename, onDelete }: { c:
   )
 }
 
-export function Ricevuta({ trip, dati, sub, aggiornato, onPlanned, onRename, onDelete, me, onHoPagato }: Props) {
+export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, me, onHoPagato }: Props) {
   const cur = trip.baseCurrency
   const [open, setOpen] = useState<string | null>(null)
   const gruppo = trip.travelers.length > 1
@@ -147,10 +145,6 @@ export function Ricevuta({ trip, dati, sub, aggiornato, onPlanned, onRename, onD
                     </div>
                     <div className="sd">
                       <span className="v">{segno(p.net, cur)}</span>
-                      <span className="w">
-                        <G name={tone === 'pos' ? 'g-plus' : tone === 'neg' ? 'g-minus' : 'g-check'} />
-                        {tone === 'pos' ? 'Da ricevere' : tone === 'neg' ? 'Da dare' : 'In pari'}
-                      </span>
                     </div>
                   </div>
                 )
@@ -179,7 +173,6 @@ export function Ricevuta({ trip, dati, sub, aggiornato, onPlanned, onRename, onD
             </div>
           ) : null}
           {dati.unconverted.length > 0 ? <div className="ft">Senza cambio, non contate nei totali: {dati.unconverted.join(', ')}</div> : null}
-          {aggiornato ? <div className="ft">{aggiornato}</div> : null}
         </div>
         <div className="rz" />
       </div>

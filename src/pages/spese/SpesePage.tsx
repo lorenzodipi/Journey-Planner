@@ -2,7 +2,6 @@
 // la ricevuta in linea con categorie (previsto modificabile), totali, saldi e «Per pareggiare», FAB «+ Spesa».
 import { useMemo, useState } from 'react'
 import { useLocation } from 'wouter'
-import { loadSnapshot } from '../../lib/cache'
 import { daysBetween } from '../../lib/dates'
 import { formatMoney, round2 } from '../../lib/money'
 import { ricevuta, type RigaCategoria } from '../../lib/ricevuta'
@@ -19,16 +18,6 @@ import { BarraGrande, Schermata } from '../../faraway/shell'
 import { SpesaSheet } from './SpesaSheet'
 import { DichiaraSheet, RimborsiCard } from './Rimborsi'
 import { finoAl, inQuanti, intervallo } from './testi'
-
-/** «Aggiornato oggi alle 18:20» (ultima copia dei dati sul telefono). */
-export function aggiornatoText(now = new Date()): string | null {
-  const at = loadSnapshot()?.savedAt
-  if (!at) return null
-  const d = new Date(at)
-  const hm = new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d)
-  const same = d.toDateString() === now.toDateString()
-  return same ? `Aggiornato oggi alle ${hm}` : `Aggiornato il ${new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short' }).format(d).replace(/\./g, '')} alle ${hm}`
-}
 
 export function SpesePage() {
   const trip = useTrip()
@@ -117,7 +106,6 @@ export function SpesePage() {
         trip={trip}
         dati={dati}
         sub={[trip.destination, intervallo(trip.startDate, trip.endDate), inQuanti(n)].filter(Boolean).join(' · ')}
-        aggiornato={aggiornatoText()}
         onPlanned={onPlanned}
         onRename={onRename}
         onDelete={onDelete}
