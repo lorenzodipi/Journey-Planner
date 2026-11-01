@@ -139,7 +139,9 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-wait{display:inline-flex;align-items:center;gap:8px;color:var(--azzurro-ink);font:600 13px/18px var(--font-sans);white-space:nowrap}
 
 /* ---- Alloggi: biglietto lavanda (#39) ---- */
-.fa-stay .hdl{all:unset;box-sizing:border-box;display:grid;gap:var(--space-sm);width:100%;cursor:pointer;position:relative;padding-right:32px}
+.fa-stay .hdl{all:unset;box-sizing:border-box;display:grid;gap:var(--space-sm);width:100%;cursor:pointer;position:relative}
+/* il chip Pagato/Non pagato occupa tutta la larghezza fino al bordo destro; solo nome e indirizzo lasciano posto alla freccia */
+.fa-stay .hdl .nm,.fa-stay .hdl .ad{padding-right:32px}
 .fa-stay .hdl:focus-visible{outline:2px solid var(--focus);outline-offset:4px;border-radius:var(--radius-md)}
 .fa-stay .hdl .chv{position:absolute;right:0;bottom:2px;transition:transform .2s}
 .fa-stay .hdl .chv.up{transform:rotate(180deg)}
