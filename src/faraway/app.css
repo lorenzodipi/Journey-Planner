@@ -296,3 +296,9 @@ html{overscroll-behavior:none}
 .sub,.st.s-todo,.st.s-plan,.st.s-done,.cdl,.c,.pn,span.sub{margin-top:0}
 .ok,.ok.td,.badge.pay,.nd.next,.next{padding-top:0;padding-bottom:0;line-height:24px}
 sup{margin-left:0}
+
+/* Light: i bottoni con sfondo molto chiaro (Aggiorna, Modifica, Aggiungi un altro pagante…) hanno un filo di bordo
+   appena più scuro dello sfondo, solo per staccarli. Ombra interna: nessuno spostamento di layout. */
+[data-theme="light"] .fa-btn.soft{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--azzurro-ink) 16%,var(--azzurro-soft))}
+[data-theme="light"] .fa-ib:not(.pri):not(.dng):not(.fa-npnav .fa-ib){box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--ink) 10%,var(--surface-high))}
+[data-theme="light"] .fa-mapctl .fa-ib{box-shadow:var(--shadow-card)}

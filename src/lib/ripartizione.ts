@@ -6,7 +6,7 @@ import { formatMoney, round2 } from './money'
 const cents = (n: number) => Math.round(n * 100)
 const euro = (c: number) => c / 100
 
-export const SPLIT_LABEL: Record<SplitMode, string> = { equal: 'In parti uguali', percent: 'Percentuali', fixed: 'Importi fissi' }
+export const SPLIT_LABEL: Record<SplitMode, string> = { equal: 'Parti uguali', percent: 'Percentuali', fixed: 'Importi fissi' }
 
 export interface Check {
   ok: boolean
