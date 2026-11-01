@@ -99,7 +99,7 @@ export function SpesePage() {
   return (
     <Schermata
       bar={<BarraGrande title="Spese" sub={[trip.destination, n > 1 ? `${n} persone` : ''].filter(Boolean).join(' · ')} />}
-      gap={15}
+      gap={16}
       fab={{ label: 'Spesa', aria: 'Aggiungi una spesa', onPress: () => setNuova(true) }}
       overlay={
         <>

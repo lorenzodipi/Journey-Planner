@@ -82,7 +82,7 @@ export function Giorni() {
 
   return (
     <Schermata
-      gap={15}
+      gap={16}
       bar={
         <BarraGrande
           title={trip.title}

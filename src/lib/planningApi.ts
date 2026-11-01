@@ -174,6 +174,8 @@ const MIGRATION_0030 = "Manca la migrazione 0030 sul database: eseguila nell'SQL
 const needs0030 = (e: { message: string }) => (/documents|document_access|document_links|schema cache|does not exist/i.test(e.message) ? new Error(MIGRATION_0030) : e)
 
 export interface DocumentoInput {
+  /** Id scelto da chi crea (serve per collegare subito una spesa). */
+  id?: string
   file: File
   name: string
   visibility: Visibilita
@@ -184,7 +186,7 @@ export interface DocumentoInput {
 /** Carica il file una volta e crea il documento con visibilità e (se c'è) il primo collegamento. Serve la rete. */
 export async function createDocument(tripId: string, input: DocumentoInput): Promise<void> {
   const db = client()
-  const id = crypto.randomUUID()
+  const id = input.id ?? crypto.randomUUID()
   const path = await uploadBookingFile(tripId, input.file, `doc/${id}`)
   const fail = async (e: { message: string }) => {
     await removeBookingFile(path).catch(() => undefined) // niente file orfani

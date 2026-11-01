@@ -284,3 +284,13 @@ html{overscroll-behavior:none}
 .fa-stay .avs span,.tv .avs span{margin:0!important}
 .k-Checklist .it .tx{display:grid;gap:8px;min-width:0}
 .fa-ib.dng{background:color-mix(in srgb,var(--danger) 12%,var(--surface-card));border:1.5px solid var(--danger);color:var(--danger);box-sizing:border-box}
+
+/* bottone di eliminazione da solo: largo come gli altri (nelle righe di azioni resta flessibile) */
+.fa-btn.del:not(.sm){width:100%}
+
+/* spaziature solo a multipli di 8: via i micro-scarti da 1-2px */
+.fa-tab,.fa-tab.on,.k-Tappa .tx,.k-Checklist .tx,.tx,.fa-swl,.sd,.hs.l,.hs.r,.rh{row-gap:0;column-gap:0}
+.fa-tab,.fa-tab.on{gap:0}
+.sub,.st.s-todo,.st.s-plan,.st.s-done,.cdl,.c,.pn,span.sub{margin-top:0}
+.ok,.ok.td,.badge.pay,.nd.next,.next{padding-top:0;padding-bottom:0;line-height:24px}
+sup{margin-left:0}

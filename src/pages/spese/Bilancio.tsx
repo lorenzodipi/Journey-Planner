@@ -28,7 +28,7 @@ export function Bilancio() {
   return (
     <Schermata
       bar={<BarraIndietro title="Il mio bilancio" back="/spese" />}
-      gap={15}
+      gap={16}
       overlay={correggi ? <DichiaraSheet trip={trip} toId={correggi.toId} dovuto={correggi.amount} corrects={correggi.corrects} onClose={() => setCorreggi(null)} /> : null}
     >
       <p style={{ margin: 0, font: '600 20px/1.3 var(--font-sans)' }}>

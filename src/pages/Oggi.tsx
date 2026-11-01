@@ -137,7 +137,7 @@ function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string 
   const checklist = useLeMieCose(trip, me?.id)
   const tappeViaggio = tappeDelViaggio(groups)
   return (
-    <Schermata gap={15} rete={{ pill: false }}>
+    <Schermata gap={16} rete={{ pill: false }}>
       <Saluto date={longIn(now)} greeting="Ciao" name={firstName(me?.name)} />
       <Offline />
       <ContoAllaRovescia days={days} meta={meta} next={next} />
@@ -261,7 +261,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
   ) : null
 
   return (
-    <Schermata gap={15} rete={{ pill: false }}>
+    <Schermata gap={16} rete={{ pill: false }}>
       <Saluto date={longIn(now, trip.timezone)} greeting="Ciao" name={firstName(me?.name)} />
       <Offline />
       {showClocks ? (
@@ -401,7 +401,7 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
   }
 
   return (
-    <Schermata gap={15} rete={{ pill: false }}>
+    <Schermata gap={16} rete={{ pill: false }}>
       <Saluto date={longIn(now)} greeting="Bentornato" name={firstName(me?.name)} />
       <Offline />
       <RimborsiOggi trip={trip} />

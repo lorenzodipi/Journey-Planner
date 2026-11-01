@@ -366,7 +366,7 @@ export interface Documento {
   changedAt?: string
 }
 
-export type ExpenseSourceKind = 'day_item' | 'stay' | 'flight' | 'transport' | 'booking'
+export type ExpenseSourceKind = 'day_item' | 'stay' | 'flight' | 'transport' | 'booking' | 'document'
 
 export type ChecklistKind = 'todo' | 'packing' | 'docs'
 
