@@ -259,7 +259,7 @@ export function RicevuteEditor({ trip, expenseId, files, added, onAdded, onRemov
           <Pulsante color="link-color" size="sm" iconLeading="file" onPress={() => void openBookingFile(f.path).catch((e: Error) => showToast(e.message))}>
             {f.name || 'Ricevuta'}
           </Pulsante>
-          <PulsanteIcona icon="trash" label={`Togli ${f.name || 'la ricevuta'}`} onPress={() => onRemove(f)} />
+          <PulsanteIcona className="dng" icon="trash" label={`Togli ${f.name || 'la ricevuta'}`} onPress={() => onRemove(f)} />
         </div>
       ))}
       <input ref={input} type="file" accept="image/*,application/pdf" hidden onChange={(e) => void pick(e.currentTarget.files)} />
