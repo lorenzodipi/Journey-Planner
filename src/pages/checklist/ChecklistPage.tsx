@@ -184,7 +184,7 @@ export function ChecklistPage() {
           back="/altro"
           right={
             vuota ? undefined : (
-              <PulsanteIcona icon={selecting ? 'close' : 'trash'} label={selecting ? 'Annulla la selezione' : 'Elimina delle voci'} onPress={() => (selecting ? (setSelecting(false), setSel(new Set())) : setSelecting(true))} />
+              <PulsanteIcona className={selecting ? undefined : 'dng'} icon={selecting ? 'close' : 'trash'} label={selecting ? 'Annulla la selezione' : 'Elimina delle voci'} onPress={() => (selecting ? (setSelecting(false), setSel(new Set())) : setSelecting(true))} />
             )
           }
         />

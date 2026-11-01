@@ -283,3 +283,4 @@ html{overscroll-behavior:none}
 .fa-stay .avs,.tv .avs{display:inline-flex;gap:8px;margin-right:8px;vertical-align:middle}
 .fa-stay .avs span,.tv .avs span{margin:0!important}
 .k-Checklist .it .tx{display:grid;gap:8px;min-width:0}
+.fa-ib.dng{background:color-mix(in srgb,var(--danger) 12%,var(--surface-card));border:1.5px solid var(--danger);color:var(--danger);box-sizing:border-box}
