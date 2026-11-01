@@ -302,3 +302,14 @@ sup{margin-left:0}
 [data-theme="light"] .fa-btn.soft{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--azzurro-ink) 16%,var(--azzurro-soft))}
 [data-theme="light"] .fa-ib:not(.pri):not(.dng):not(.fa-npnav .fa-ib){box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--ink) 10%,var(--surface-high))}
 [data-theme="light"] .fa-mapctl .fa-ib{box-shadow:var(--shadow-card)}
+
+/* Chip scorrevoli: la sfumatura sul bordo destro è di 32px e in fondo c'è abbastanza spazio (16 + gap 8 + 24)
+   perché l'ultima chip, scorrendo fino alla fine, esca del tutto dalla sfumatura. */
+.fa-chips.scroll::after{content:"";flex:none;width:24px;height:1px}
+
+/* Light: chip, tag e pillole con sfondo molto chiaro hanno un filo di bordo appena più scuro dello sfondo. */
+[data-theme="light"] .fa-chip:not(.on){box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--ink) 11%,var(--surface-soft))}
+[data-theme="light"] .fa-tag{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--ink) 11%,var(--surface-high))}
+[data-theme="light"] .fa-pillst:not(.soft):not(.acq):not(.cor){box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--ink) 11%,var(--surface-high))}
+[data-theme="light"] .fa-pillst.soft{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--azzurro-ink) 16%,var(--azzurro-soft))}
+[data-theme="light"] .fa-pillst.acq{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--acqua-ink) 16%,var(--acqua-soft))}

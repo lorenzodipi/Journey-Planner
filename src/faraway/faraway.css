@@ -76,7 +76,7 @@
 .fa-chip.on{background:var(--azzurro);color:var(--on-azzurro)}
 .fa-chip svg{width:18px;height:18px}
 .fa-chips{display:flex;gap:8px;overflow:hidden;margin:0 -16px;padding:8px 16px}
-.fa-chips.scroll{mask:linear-gradient(90deg,#000 88%,#0000)}
+.fa-chips.scroll{mask:linear-gradient(90deg,#000 calc(100% - 32px),#0000)}
 
 /* campi */
 .fa-fld{display:grid;gap:8px;font:600 14px/20px var(--font-sans)}
