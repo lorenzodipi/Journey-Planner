@@ -7,6 +7,7 @@ import { stampOpen } from '../ui/dialogStack'
 import { Pulsante } from './base'
 import { cx } from './cx'
 import { Sv } from './icons'
+import { useVaiAllErrore } from './useVaiAllErrore'
 
 interface FoglioProps {
   open: boolean
@@ -35,6 +36,8 @@ const noScroll = (e: React.UIEvent<HTMLElement>) => {
 export function Foglio({ open, title, onClose, children, footer, full, plain, headStart, className }: FoglioProps) {
   const ref = useRef<HTMLDialogElement>(null)
   const sheet = useRef<HTMLDivElement>(null)
+  const corpo = useRef<HTMLDivElement>(null)
+  useVaiAllErrore(corpo, open)
   const drag = useRef<{ startY: number; startAt: number; dy: number } | null>(null)
 
   useEffect(() => {
@@ -114,15 +117,9 @@ export function Foglio({ open, title, onClose, children, footer, full, plain, he
             <span />
           </div>
         )}
-        <div className="fb">{children}</div>
+        <div ref={corpo} className="fb">{children}</div>
         {footer ? (
-          <div
-            className="bt"
-            onClick={() =>
-              // se il salvataggio non va a buon fine, porta in vista il primo errore (il modulo può essere più lungo dello schermo)
-              window.setTimeout(() => sheet.current?.querySelector('.fb [aria-invalid="true"], .fb [role="alert"], .fb .fa-help.bad')?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 250)
-            }
-          >
+          <div className="bt">
             {footer}
           </div>
         ) : null}

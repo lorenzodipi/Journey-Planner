@@ -53,6 +53,9 @@ const MIGRATION_0009 =
   "Manca la migrazione 0009 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0009_transport_dates.sql). Senza, le date senza ora non si possono salvare."
 const missingDateColumns = (error: { message?: string } | null) => /depart_date|arrive_date/.test(error?.message ?? '')
 
+const MIGRATION_0039 = "Per salvare più persone che hanno pagato manca la migrazione 0039 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0039_voli_trasporti_piu_paganti.sql), poi riprova."
+const mancaPaganti = (e: { message?: string } | null) => (e && /payer_ids/i.test(e.message ?? '') ? new Error(MIGRATION_0039) : e)
+
 function withoutDateColumns<T extends { depart_date?: unknown; arrive_date?: unknown }>(columns: T): Omit<T, 'depart_date' | 'arrive_date'> {
   const { depart_date: _d, arrive_date: _a, ...rest } = columns
   return rest
@@ -68,7 +71,7 @@ async function saveTransport(columns: ReturnType<typeof transportColumns>, write
     if (columns.depart_date || columns.arrive_date) throw new Error(MIGRATION_0009)
     ;({ error } = await write(withoutDateColumns(columns)))
   }
-  if (error) throw error
+  if (error) throw mancaPaganti(error)
 }
 
 export async function createTransport(
@@ -106,7 +109,7 @@ export async function createFlight(tripId: string, input: FlightInput): Promise<
   const db = client()
   const legs = legColumns(input.legs) // calcola prima: se un orario è invalido non si crea nulla
   const { data, error } = await db.from('flights').insert({ trip_id: tripId, ...flightColumns(input) }).select('id').single()
-  if (error) throw error
+  if (error) throw mancaPaganti(error)
   const flightId = (data as { id: string }).id
   if (legs.length === 0) return
   const res = await db.from('flight_legs').insert(legs.map((l) => ({ ...l, trip_id: tripId, flight_id: flightId })))
@@ -124,7 +127,7 @@ export async function updateFlight(old: Flight, tripId: string, input: FlightInp
   const db = client()
   const legs = legColumns(input.legs, old.legs.some((l) => l.terminal || l.gate || l.boardingTime || l.seatsBy))
   const head = await db.from('flights').update(flightColumns(input, old)).eq('id', old.id)
-  if (head.error) throw head.error
+  if (head.error) throw mancaPaganti(head.error)
   const del = await db.from('flight_legs').delete().eq('flight_id', old.id)
   if (del.error) throw del.error
   if (legs.length === 0) return

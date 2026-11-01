@@ -1,9 +1,10 @@
 // Struttura delle schermate Faraway: barra in alto (grande o con «indietro»), contenuto,
 // barra delle schede (BarraSchede) e pulsante volante «+ …» (FAB), come nel mock.
 import type { CSSProperties, ReactNode } from 'react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link, useLocation } from 'wouter'
 import { cx } from './cx'
+import { useVaiAllErrore } from './useVaiAllErrore'
 import { Sv, TAB_PATHS } from './icons'
 import { PulsanteIcona } from './base'
 import { PillolaOffline, StatoRete } from './Rete'
@@ -117,6 +118,8 @@ interface ScreenProps {
 
 /** Una schermata dell'app: la «cornice del telefono» del mock è la pagina intera. */
 export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, overlay, className, bare, rete = true }: ScreenProps) {
+  const main = useRef<HTMLElement>(null)
+  useVaiAllErrore(main)
   useEffect(() => {
     const root = document.documentElement
     if (tabs) root.removeAttribute('data-no-tabs')
@@ -129,7 +132,7 @@ export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, ove
       {bare ? (
         children
       ) : (
-        <main className="fa-main" style={{ ...(gap ? { gap } : null), ...mainStyle }}>
+        <main ref={main} className="fa-main" style={{ ...(gap ? { gap } : null), ...mainStyle }}>
           {rete ? <StatoRete /> : null}
           {children}
           {rete === true ? <PillolaOffline /> : null}
