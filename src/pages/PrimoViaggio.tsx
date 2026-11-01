@@ -12,7 +12,7 @@ export function PrimoViaggio() {
   return (
     <main className="screen">
       <div style={{ paddingTop: '8px' }}>
-        <img className="sym" src={ART.symbol} alt="" width="52" height="63" style={{ marginBottom: '20px' }} />
+        <img className="sym" src={ART.symbol} alt="" width="52" height="63" style={{ marginBottom: '24px' }} />
         <h1 className="d-lg">Dove si va?</h1>
         <p className="b-sm muted" style={{ marginTop: '8px' }}>
           Dai un nome al viaggio e scegli le date. Il resto lo aggiungi dopo.

@@ -13,7 +13,7 @@ const SPEC: Record<Kind, { cls: string; size: number }> = {
 /** «Apri in Maps»: il pin su un disco verde acqua (Design System v3). Si apre in Google Maps. */
 export function MapsPill({ href, label, text, kind = 'pill' }: { href: string; label: string; text?: string; kind?: Kind }) {
   const { cls, size } = SPEC[kind]
-  const t = text ?? (kind === 'big' ? 'Apri in Google Maps' : kind === 'pill' ? 'Apri sulla mappa' : 'Maps')
+  const t = text ?? (kind === 'big' ? 'Maps' : 'Maps')
   return (
     <a className={cls} href={href} target="_blank" rel="noopener noreferrer" aria-label={`Apri in Google Maps: ${label}`}>
       <Ic name="i-nav-pin-out" size={size} />

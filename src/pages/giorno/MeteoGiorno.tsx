@@ -45,7 +45,7 @@ export function MeteoGiorno({ trip, day }: { trip: Trip; day: Day }) {
 
   return (
     <section aria-label="Meteo del giorno" style={{ display: 'grid', gap: 8 }}>
-      <div ref={riga} role="group" aria-label="Meteo per città, scorri in orizzontale" tabIndex={0} style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', overscrollBehaviorX: 'contain', paddingBottom: 4 }}>
+      <div ref={riga} role="group" aria-label="Meteo per città, scorri in orizzontale" tabIndex={0} style={{ display: 'flex', gap: 16, overflowX: 'auto', scrollSnapType: 'x mandatory', overscrollBehaviorX: 'contain', paddingBottom: 8 }}>
         {card.map(({ t, g, h, salvata, sole, vento, i }) => (
           <div key={t.city} ref={i === adesso ? principale : undefined} className="fa-card xl pad" style={{ flex: '0 0 ' + (card.length > 1 ? '86%' : '100%'), scrollSnapAlign: 'start', display: 'grid', gap: 8 }}>
             <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -54,7 +54,7 @@ export function MeteoGiorno({ trip, day }: { trip: Trip; day: Day }) {
             </span>
             {g ? (
               <>
-                <span style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                   <span style={{ font: '500 36px/40px var(--font-display)' }}>{gradi(h?.t ?? g.max)}</span>
                   <span className="fa-m">{weatherLabel(h?.code ?? g.code).label} · min {gradi(g.min)} · max {gradi(g.max)}</span>
                 </span>

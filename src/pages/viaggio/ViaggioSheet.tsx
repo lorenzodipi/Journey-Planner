@@ -275,21 +275,21 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
 
         <Campo label="Nome del viaggio (facoltativo)" value={title} onChange={setTitle} placeholder="Se vuoto, il paese principale" maxLength={80} />
 
-        <section style={{ display: 'grid', gap: 12 }}>
+        <section style={{ display: 'grid', gap: 16 }}>
           <h2 className="fa-h3">Da dove parti</h2>
           <Campo label="Paese di partenza" icon="globe" value={origin} onChange={cambiaCasa} list="paesi-elenco" autoComplete="off" placeholder="Scegli il paese" />
           <Campo label="Valuta di casa" icon="bag" value={home} onChange={(v) => setHome(v.trim().toUpperCase().slice(0, 3))} placeholder="EUR" maxLength={3} hint={`${/^[A-Z]{3}$/.test(home) ? `${nomeValuta(home)}. ` : ''}Gli importi del viaggio si convertono in questa valuta.`} />
         </section>
 
-        <section style={{ display: 'grid', gap: 12 }}>
+        <section style={{ display: 'grid', gap: 16 }}>
           <h2 className="fa-h3">Dove vai</h2>
           {paesi.map((p, i) => {
             const stessa = !p.currency || p.currency === home
             const n = parseRate(p.rate)
             return (
-              <div key={p.id} className="fa-card xl" style={{ display: 'grid', gap: 12, padding: 16 }}>
+              <div key={p.id} className="fa-card xl" style={{ display: 'grid', gap: 16, padding: 16 }}>
                 {p.name && countryByName(p.name) ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                     <span style={{ display: 'grid', placeItems: 'center', width: 44, height: 44, borderRadius: '50%', background: 'var(--azzurro-soft)', color: 'var(--azzurro-ink)' }}>
                       <Sv name="globe" size={22} />
                     </span>
@@ -314,8 +314,8 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
                   </div>
                 )}
                 {p.name && countryByName(p.name) ? (
-                  <div style={{ display: 'grid', gap: 4, borderTop: '1px solid var(--hairline)', paddingTop: 12 }}>
-                    <button type="button" aria-expanded={p.quando} onClick={() => setPaese(p.id, { quando: !p.quando })} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, background: 'none', border: 0, padding: '4px 0', minHeight: 32, font: 'inherit', color: 'inherit', textAlign: 'left' }}>
+                  <div style={{ display: 'grid', gap: 8, borderTop: '1px solid var(--hairline)', paddingTop: 16 }}>
+                    <button type="button" aria-expanded={p.quando} onClick={() => setPaese(p.id, { quando: !p.quando })} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, background: 'none', border: 0, padding: '8px 0', minHeight: 32, font: 'inherit', color: 'inherit', textAlign: 'left' }}>
                       <span className="fa-m">Quando</span>
                       <span className="fa-b">{intervallo(p.startDate, p.endDate)}{paesi.some((x, j) => j !== i && x.startDate <= p.endDate && x.endDate >= p.startDate && p.startDate === x.endDate) ? ' · scalo' : ''}</span>
                     </button>
@@ -327,7 +327,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
                     ) : null}
                     {!stessa ? (
                       <>
-                        <button type="button" aria-expanded={p.cambio} onClick={() => setPaese(p.id, { cambio: !p.cambio })} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, background: 'none', border: 0, padding: '4px 0', minHeight: 32, font: 'inherit', color: 'inherit', textAlign: 'left' }}>
+                        <button type="button" aria-expanded={p.cambio} onClick={() => setPaese(p.id, { cambio: !p.cambio })} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, background: 'none', border: 0, padding: '8px 0', minHeight: 32, font: 'inherit', color: 'inherit', textAlign: 'left' }}>
                           <span className="fa-m">Cambio</span>
                           <span className="fa-b" style={{ fontVariantNumeric: 'tabular-nums' }}>{n ? `1 ${casaSym} = ${p.rate} ${symbolOf(p.currency)}` : p.fonte === 'attesa' ? 'Lo leggo…' : 'Da scrivere'}</span>
                         </button>
@@ -360,7 +360,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
           </Pulsante>
         </section>
 
-        <section style={{ display: 'grid', gap: 12 }}>
+        <section style={{ display: 'grid', gap: 16 }}>
           <h2 className="fa-h3">Quando</h2>
           <div className="fa-2c">
             <Campo label="Dal" type="date" icon="cal" value={startDate} onChange={(v) => cambiaDate(v, endDate)} />
@@ -368,20 +368,20 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
           </div>
         </section>
 
-        <section style={{ display: 'grid', gap: 12 }}>
+        <section style={{ display: 'grid', gap: 16 }}>
           <h2 className="fa-h3">Budget</h2>
           <Campo label="Budget (facoltativo)" icon="bag" inputMode="decimal" value={budget} onChange={setBudget} placeholder={`es. 3.000 ${casaSym}`} maxLength={12} />
         </section>
 
-        <section style={{ display: 'grid', gap: 12 }}>
+        <section style={{ display: 'grid', gap: 16 }}>
           <h2 className="fa-h3">Chi viene</h2>
           {!editing ? <Campo label="Il tuo nome" value={selfName} onChange={setSelfName} maxLength={40} autoComplete="off" /> : null}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <Avatars people={persone} />
             <span className="fa-m" style={{ color: 'var(--ink-muted)' }}>{persone.length === 1 ? 'Solo tu' : `Tu e altre ${persone.length - 1 === 1 ? 'una persona' : `${persone.length - 1} persone`}`}</span>
           </div>
           {invito ? (
-            <div className="fa-card xl" style={{ display: 'grid', gap: 12, padding: 16 }}>
+            <div className="fa-card xl" style={{ display: 'grid', gap: 16, padding: 16 }}>
               <Campo label="Email dell'account" type="email" inputMode="email" value={invito.email} onChange={(v) => setInvito({ ...invito, email: v })} autoComplete="off" placeholder="Email del suo account" autoFocus />
               <Campo label="Nome (facoltativo)" value={invito.name} onChange={(v) => setInvito({ ...invito, name: v })} maxLength={40} autoComplete="off" />
               <div style={{ display: 'flex', gap: 8 }}>
@@ -402,7 +402,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
         </section>
 
         <Pulsante type="submit" isLoading={busy}>
-          {busy ? 'Salvataggio…' : editing ? 'Salva modifiche' : 'Crea il viaggio'}
+          {editing ? 'Salva modifiche' : 'Crea il viaggio'}
         </Pulsante>
 
         {editing && organizza ? (

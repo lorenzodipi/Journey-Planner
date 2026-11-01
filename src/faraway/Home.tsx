@@ -213,7 +213,7 @@ export function ChecklistHome({ done, total, items, rest, onToggle, onOpen, onCr
           <button type="button" className="btn lnk" onClick={onOpen}>
             {left === 0 ? 'Rivedi la checklist' : left === 1 ? 'Vai alla checklist' : 'Vedi tutta la checklist'}
             {left > 1 && rest > 0 ? (
-              <span className="cnt" style={{ marginLeft: 6 }}>
+              <span className="cnt" style={{ marginLeft: 8 }}>
                 altre {rest}
               </span>
             ) : null}
@@ -480,7 +480,7 @@ export function Riepilogo({ dove, speso, currency, limit, onSetBudget, onOpenBud
   const pct = limit ? Math.round((speso / limit) * 100) : 0
   const open = limit && onOpenBudget ? onOpenBudget : undefined
   return (
-    <div className="k-Riepilogo" style={{ display: 'grid', gap: 15 }}>
+    <div className="k-Riepilogo" style={{ display: 'grid', gap: 16 }}>
       <div
         className={cx('hero', open && 'fa-tap')}
         {...(open

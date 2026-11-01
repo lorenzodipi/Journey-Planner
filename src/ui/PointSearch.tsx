@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Loader } from '../faraway/Loader'
 import { searchPlaces, type GeoResult } from '../lib/geocode'
 import { parseMapsUrl } from '../lib/mapsUrl'
 
@@ -106,7 +107,7 @@ export function PointSearch({ label, fallbackQuery, near, value, onChange }: Pro
           onClick={() => void search()}
           className="min-h-12 shrink-0 rounded-full bg-accent px-4 text-sm font-extrabold text-accent-ink disabled:opacity-50"
         >
-          {busy ? 'Cerco…' : 'Cerca'}
+          {busy ? <Loader size={16} label="Ricerca in corso" /> : 'Cerca'}
         </button>
       </div>
       {error && (

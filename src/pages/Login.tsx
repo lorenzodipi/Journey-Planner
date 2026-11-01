@@ -32,7 +32,7 @@ export function Login() {
 
   return (
     <Schermata tabs={false} rete={false} mainStyle={{ paddingTop: 56 }}>
-      <form onSubmit={onSubmit} noValidate style={{ display: 'grid', gap: 20 }}>
+      <form onSubmit={onSubmit} noValidate style={{ display: 'grid', gap: 24 }}>
         <div style={{ display: 'grid', gap: 8 }}>
           <img className="logo lt" src={ART.lockup} alt="Faraway" width="232" height="58" />
           <img className="logo dk" src={ART.lockupReverse} alt="Faraway" width="232" height="58" />
@@ -51,7 +51,7 @@ export function Login() {
           </Banner>
         ) : null}
 
-        <div style={{ display: 'grid', gap: 12 }}>
+        <div style={{ display: 'grid', gap: 16 }}>
           <Campo
             label="Email"
             type="email"
@@ -74,15 +74,10 @@ export function Login() {
           />
         </div>
 
-        <div style={{ display: 'grid', gap: 12 }}>
+        <div style={{ display: 'grid', gap: 16 }}>
           <Pulsante type="submit" isLoading={busy} isDisabled={!online || !email || !password}>
             Accedi
           </Pulsante>
-          {busy ? (
-            <p className="fa-m" role="status" style={{ margin: 0, textAlign: 'center' }}>
-              Accesso in corso. Ci mette qualche secondo.
-            </p>
-          ) : null}
         </div>
       </form>
     </Schermata>

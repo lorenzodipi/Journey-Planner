@@ -100,7 +100,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="alloggio-form" isLoading={busy}>
-          {busy ? 'Salvataggio…' : s ? 'Salva le modifiche' : 'Salva l’alloggio'}
+          {s ? 'Salva le modifiche' : 'Salva l’alloggio'}
         </Pulsante>
       }
     >
@@ -131,7 +131,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
           <div className="fa-fld">
             <label htmlFor="al-val">Valuta</label>
             <span className="fa-in">
-              <input id="al-val" list="al-valute" value={currency} onChange={(e) => setCurrency(e.currentTarget.value.toUpperCase().slice(0, 3))} maxLength={3} />
+              <input placeholder="EUR" id="al-val" list="al-valute" value={currency} onChange={(e) => setCurrency(e.currentTarget.value.toUpperCase().slice(0, 3))} maxLength={3} />
             </span>
           </div>
         </div>

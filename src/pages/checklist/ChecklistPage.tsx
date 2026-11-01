@@ -145,10 +145,10 @@ export function ChecklistPage() {
             ) : null}
           </div>
           {isOpen ? (
-            <div style={{ display: 'grid', gap: 10, paddingBottom: 8 }}>
+            <div style={{ display: 'grid', gap: 8, paddingBottom: 8 }}>
               {i.description ? <span className="fa-m" style={{ whiteSpace: 'pre-line' }}>{i.description}</span> : null}
               {multi ? (
-                <span role="group" aria-label={`Pezzi a posto: ${i.text}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+                <span role="group" aria-label={`Pezzi a posto: ${i.text}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 16 }}>
                   <PulsanteIcona icon="minus" label={`Meno: ${i.text}`} onPress={() => void setCount(i, have - 1)} />
                   <b aria-live="polite">{have}/{i.quantity}</b>
                   <PulsanteIcona icon="plus" label={`Più: ${i.text}`} onPress={() => void setCount(i, have + 1)} />
@@ -159,7 +159,7 @@ export function ChecklistPage() {
                   Apri il link
                 </a>
               ) : null}
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div className="fa-acts">
                 <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => setSheet({ item: i })}>
                   Modifica
                 </Pulsante>
@@ -219,7 +219,7 @@ export function ChecklistPage() {
           ) : null}
         </>
       ) : (
-        <div className="k-Checklist" style={{ display: 'grid', gap: 12 }}>
+        <div className="k-Checklist" style={{ display: 'grid', gap: 16 }}>
           {v2 && !selecting ? (
             <Segmenti
               label="Lista"

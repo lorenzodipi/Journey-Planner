@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { useId } from 'react'
 import { Button as AriaButton, Link as AriaLink, Switch as AriaSwitch } from 'react-aria-components'
 import { cx } from './cx'
+import { Loader } from './Loader'
 import { Sv, type SvName } from './icons'
 
 /* ---------------------------------------------------------------- Pulsante (Button) */
@@ -43,10 +44,10 @@ const icon = (i: SvName | ReactNode) => (typeof i === 'string' ? <Sv name={i as 
 
 /** Pulsante del design system (Untitled UI `Button`): `primary` azzurro, uno per schermata. */
 export function Pulsante({ children, color = 'primary', size = 'md', iconLeading, iconTrailing, onPress, isDisabled, isLoading, type = 'button', href, target, className, form, ...aria }: ButtonProps) {
-  const cls = cx('fa-btn', COLOR_CLASS[color], size === 'sm' && 'sm', (isDisabled || isLoading) && 'dis', className)
+  const cls = cx('fa-btn', COLOR_CLASS[color], size === 'sm' && 'sm', !children && 'ico', (isDisabled || isLoading) && 'dis', className)
   const body = (
     <>
-      {iconLeading ? icon(iconLeading) : null}
+      {isLoading ? <Loader size={20} label="Operazione in corso" /> : iconLeading ? icon(iconLeading) : null}
       {children}
       {iconTrailing ? icon(iconTrailing) : null}
     </>
@@ -106,23 +107,50 @@ interface InputProps {
   hideLabel?: boolean
 }
 
+/** Segnaposto di riserva: ogni campo vuoto dice cosa scrivere o scegliere, anche dove chi lo usa non ne ha dato uno. */
+export function segnaposto(label: string, type: string, textarea: boolean): string {
+  const l = label.toLowerCase()
+  if (type === 'date') return 'Data'
+  if (type === 'time') return 'Ora'
+  if (/codice/.test(l)) return 'es. AB12CD'
+  if (/terminal/.test(l)) return 'es. T1'
+  if (/gate/.test(l)) return 'es. B12'
+  if (/posto/.test(l)) return 'es. 14A'
+  if (/binario/.test(l)) return 'es. 5'
+  if (/bagaglio/.test(l)) return 'es. 1 bagaglio da 23 kg'
+  if (/cambio|rimborso/.test(l)) return 'es. Cambio gratuito fino a 24 ore prima'
+  if (/indirizzo/.test(l)) return 'Via, numero, città'
+  if (/latitudine/.test(l)) return 'es. 35.6762'
+  if (/longitudine/.test(l)) return 'es. 139.6503'
+  if (/importo|prezzo|costo/.test(l)) return '0,00'
+  if (/e-?mail/.test(l) || type === 'email') return 'nome@esempio.it'
+  if (type === 'password') return 'La tua password'
+  if (/password/.test(l)) return 'La tua password'
+  if (/nome/.test(l)) return 'Scrivi il nome'
+  if (/nota|note|descrizione/.test(l)) return textarea ? 'Scrivi qui' : 'Scrivi una nota'
+  return textarea ? 'Scrivi qui' : 'Scrivi qui'
+}
+
 /** Campo del design system (Untitled UI `Input`): 56px, etichetta sopra, aiuto o errore sotto. */
 export function Campo({ label, value, onChange, placeholder, type = 'text', inputMode, icon: ic, hint, error, positive, textarea, trailing, hideLabel, ...rest }: InputProps) {
   const id = useId()
   const helpId = `${id}-h`
   const described = error || hint || positive ? helpId : undefined
+  const ph = placeholder ?? segnaposto(label, type, !!textarea)
+  const pickerVuoto = (type === 'date' || type === 'time') && !value
   return (
     <div className="fa-fld">
       <label htmlFor={id} className={hideLabel ? 'sr-only' : undefined}>
         {label}
       </label>
-      <span className={cx('fa-in', textarea && 'ta', error && 'bad')}>
+      <span className={cx('fa-in', textarea && 'ta', error && 'bad', pickerVuoto && 'vuoto')}>
         {ic ? <Sv name={ic} size={20} /> : null}
         {textarea ? (
-          <textarea id={id} value={value} placeholder={placeholder} onChange={(e) => onChange(e.currentTarget.value)} aria-invalid={error ? true : undefined} aria-describedby={described} maxLength={rest.maxLength} rows={3} />
+          <textarea id={id} value={value} placeholder={ph} onChange={(e) => onChange(e.currentTarget.value)} aria-invalid={error ? true : undefined} aria-describedby={described} maxLength={rest.maxLength} rows={3} />
         ) : (
-          <input id={id} type={type} inputMode={inputMode} value={value} placeholder={placeholder} onChange={(e) => onChange(e.currentTarget.value)} aria-invalid={error ? true : undefined} aria-describedby={described} {...rest} />
+          <input id={id} type={type} inputMode={inputMode} value={value} placeholder={ph} onChange={(e) => onChange(e.currentTarget.value)} aria-invalid={error ? true : undefined} aria-describedby={described} {...rest} />
         )}
+        {pickerVuoto ? <span className="ph" aria-hidden="true">{ph}</span> : null}
         {trailing}
       </span>
       {error ? (

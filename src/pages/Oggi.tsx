@@ -11,9 +11,9 @@ import { useLocation } from 'wouter'
 import { countryByCode } from '../lib/countries'
 import { currencyName, formatMoney, round2 } from '../lib/money'
 import { dateAddDays, daysBetween, parseYmd } from '../lib/dates'
-import { groupDays, rangeText } from '../lib/dayGroups'
+import { groupDays, rangeText, type DayGroup } from '../lib/dayGroups'
 import { alGiorno, riassunto } from '../lib/spese'
-import { cittaPreviste } from '../lib/gestioneViaggio'
+import { StepperViaggio, type TappaViaggio } from '../faraway/StepperViaggio'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
 import { avvisoPioggia, descrizione, faseViaggio, momento, notteAlle, numeriViaggio, prossimeOre, rigaSole } from '../lib/oggi'
 import { isClosed, toMin } from '../lib/tappa'
@@ -113,6 +113,19 @@ function useLeMieCose(trip: Trip, me: string | undefined) {
 
 /* ------------------------------------------------------------------ prima del viaggio (#28) */
 
+/** Città del viaggio in ordine, con date e notti: la fine di una città è l'arrivo nella successiva. */
+function tappeDelViaggio(groups: DayGroup[]): TappaViaggio[] {
+  const citta = groups.filter((g) => g.kind === 'city')
+  const colori = new Map<string, string>()
+  return citta.map((g) => {
+    if (!colori.has(g.title)) colori.set(g.title, CITY_DISCS[colori.size % CITY_DISCS.length])
+    const inizio = g.cells[0].day.date
+    const ultimo = g.cells[g.cells.length - 1].day.date
+    const fine = groups[groups.indexOf(g) + 1]?.cells[0].day.date ?? ultimo
+    return { nome: g.title, date: rangeText(inizio, fine), notti: Math.max(0, daysBetween(inizio, fine)), disco: colori.get(g.title) ?? CITY_DISCS[0] }
+  })
+}
+
 function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string }) {
   const me = useMe(trip)
   const days = daysBetween(today, trip.startDate)
@@ -122,19 +135,15 @@ function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string 
   const leg = legs[0]
   const next = leg ? { from: leg.from, to: (trip.flights.find((f) => f.legs.includes(leg))?.legs.slice(-1)[0] ?? leg).to, date: longIn(new Date(leg.departAt), leg.fromTz) } : undefined
   const checklist = useLeMieCose(trip, me?.id)
+  const tappeViaggio = tappeDelViaggio(groups)
   return (
     <Schermata gap={15} rete={{ pill: false }}>
       <Saluto date={longIn(now)} greeting="Ciao" name={firstName(me?.name)} />
       <Offline />
       <ContoAllaRovescia days={days} meta={meta} next={next} />
       <AvvisoNotti trip={trip} />
-      {cittaPreviste(trip).length > 1 ? (
-        <section aria-label="Città previste" style={{ display: 'grid', gap: 4 }}>
-          <h2 className="fa-h3" style={{ margin: 0 }}>Città previste</h2>
-          <p className="fa-m" style={{ margin: 0 }}>{cittaPreviste(trip).join(' → ')}</p>
-        </section>
-      ) : null}
       {checklist}
+      {tappeViaggio.length > 1 ? <StepperViaggio tappe={tappeViaggio} /> : null}
     </Schermata>
   )
 }
@@ -218,7 +227,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
 
   const finishedCard = finished ? (
     <section className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }}>
-      <div style={{ padding: '16px 16px 12px', display: 'grid', gap: 8 }}>
+      <div style={{ padding: '16px 16px 16px', display: 'grid', gap: 8 }}>
         <div className="fa-sech" style={{ minHeight: 0 }}>
           <h2 className="fa-h3">Giornata finita</h2>
           <span className="fa-c">
@@ -267,7 +276,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
         </Pulsante>
       ) : null}
       <Foglio open={sceltaCitta} title="Località di riferimento" onClose={() => setSceltaCitta(false)}>
-        <div style={{ display: 'grid', gap: 12 }}>
+        <div style={{ display: 'grid', gap: 16 }}>
           <p className="fa-m" style={{ margin: 0 }}>Ora e meteo di Oggi seguono questa città, senza usare il GPS.</p>
           <div className="fa-chips wrap">
             <Chip on={!rif} onPress={() => (setRif(null), setSceltaCitta(false))}>Segui il giorno</Chip>
@@ -567,7 +576,7 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
 
       {cityGroups.length > 0 ? (
         <section className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 16px 4px' }}>
+          <div style={{ padding: '16px 16px 8px' }}>
             <h2 className="fa-h3">Rivedi i giorni</h2>
           </div>
           {cityGroups.map((g, i) => {

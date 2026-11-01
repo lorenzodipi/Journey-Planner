@@ -125,7 +125,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="tappa-form" isLoading={busy}>
-          {busy ? 'Salvataggio…' : editing ? 'Salva modifiche' : `Aggiungi al Giorno ${dayNumber}`}
+          {editing ? 'Salva modifiche' : `Aggiungi al Giorno ${dayNumber}`}
         </Pulsante>
       }
     >

@@ -1,5 +1,6 @@
 // Scheda Luoghi (mock Fa-16…Fa-21, Fa-56, issue #33): Elenco | Mappa con filtri separati, pillole di stato,
 // card aperta in linea con «Aggiungi a una tappa», selezione multipla, FAB «+ Luogo».
+import { Loader } from '../faraway/Loader'
 import { conDipendenze, dipendenze } from '../lib/registro'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useSearch } from 'wouter'
@@ -393,7 +394,7 @@ function CreditoFoto({ trip, place }: { trip: Trip; place: Place }) {
   const photo = usePlacePhoto(place, isJapanTrip(trip) ? ['ja'] : [])
   if (photo.status !== 'ready') return null
   return (
-    <p className="fa-c" style={{ marginTop: 12 }}>
+    <p className="fa-c" style={{ marginTop: 16 }}>
       Foto:{' '}
       <a href={photo.photo.page} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>
         Wikimedia Commons
@@ -555,7 +556,7 @@ function Mappa({ setVista }: { setVista: (v: Vista) => void }) {
           <View pins={pins} center={trip.center} selectedId={selectedId} onSelect={select} bare cluster onCluster={(ids) => (setSelectedId(null), setNoPos(null), setClusterIds(ids))} apiRef={api} />
         ) : (
           <p className="fa-m fa-mapmsg" role="status">
-            {loadError ? 'Non riesco a caricare la mappa: serve la connessione la prima volta.' : 'Carico la mappa…'}
+            {loadError ? 'Non riesco a caricare la mappa: serve la connessione la prima volta.' : <Loader size={32} label="Caricamento della mappa" />}
           </p>
         )}
         <div className="fa-mapctl">
@@ -584,7 +585,7 @@ function Mappa({ setVista }: { setVista: (v: Vista) => void }) {
               </div>
             ) : clusterIds ? (
               <div className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }}>
-                <div className="fa-sech" style={{ padding: '12px 16px 4px' }}>
+                <div className="fa-sech" style={{ padding: '16px 16px 8px' }}>
                   <h2 className="fa-h3">{n(clusterIds.length, 'luogo qui', 'luoghi qui')}</h2>
                   <button type="button" className="fa-lnk" onClick={() => (api.current?.zoomTo(clusterIds), setClusterIds(null))}>
                     Ingrandisci
@@ -614,8 +615,8 @@ function Mappa({ setVista }: { setVista: (v: Vista) => void }) {
                 })}
               </div>
             ) : np && nopos ? (
-              <div className="fa-card xl pad" style={{ display: 'grid', gap: 12, justifyItems: 'start' }}>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center', width: '100%' }}>
+              <div className="fa-card xl pad" style={{ display: 'grid', gap: 16, justifyItems: 'start' }}>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', width: '100%' }}>
                   <Ic name="i-nav-no-pin" size={44} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="fa-b">{np.name}</div>

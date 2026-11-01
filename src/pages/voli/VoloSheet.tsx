@@ -8,7 +8,6 @@ import { legDuration } from '../../lib/flights'
 import { legToForm, type FlightInput, type LegInput } from '../../lib/logistics'
 import { amountToText, parseAmount, tripCurrencies } from '../../lib/money'
 import { defaultDepartureTz } from '../../lib/origin'
-import { timezoneOptions } from '../../lib/timezones'
 import { isValidTimezone } from '../../lib/tripForm'
 import { instantToZoned, isCompleteZoned, zonedToInstant } from '../../lib/zoned'
 import { discOf, initials, useMe } from '../../state/me'
@@ -16,6 +15,7 @@ import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { Flight, Trip } from '../../types'
 import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
+import { CampoFuso } from '../../faraway/CampoFuso'
 import { ChiHaPagato } from '../../faraway/ChiHaPagato'
 import { cx } from '../../faraway/cx'
 import { Foglio } from '../../faraway/Foglio'
@@ -128,7 +128,6 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
     onClose()
   }
 
-  const tz = timezoneOptions(trip.timezone)
   const nome = (id: string) => trip.travelers.find((p) => p.id === id)?.name.split(/\s+/)[0] ?? '—'
 
   return (
@@ -139,7 +138,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="volo-form" isLoading={busy}>
-          {busy ? 'Salvataggio…' : flight ? 'Salva le modifiche' : 'Salva il volo'}
+          {flight ? 'Salva le modifiche' : 'Salva il volo'}
         </Pulsante>
       }
     >
@@ -165,8 +164,8 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
         ) : null}
 
         {legs.map((l, i) => (
-          <fieldset key={l.key} className="fa-card xl" style={{ display: 'grid', gap: 12, padding: 16, margin: 0 }}>
-            <legend className="fa-b" style={{ padding: '0 6px' }}>Tratta {i + 1}</legend>
+          <fieldset key={l.key} className="fa-card xl" style={{ display: 'grid', gap: 16, padding: 16, margin: 0 }}>
+            <legend className="fa-b" style={{ padding: '0 8px' }}>Tratta {i + 1}</legend>
             <div className="fa-2c">
               <Campo label="Da" value={l.from} onChange={(v) => setAirport(l, 'from', v)} placeholder="MXP" autoComplete="off" />
               <Campo label="A" value={l.to} onChange={(v) => setAirport(l, 'to', v)} placeholder="DXB" autoComplete="off" />
@@ -180,8 +179,8 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
             </div>
             <span className="fa-m">Ogni orario è quello locale dell'aeroporto indicato.</span>
             <div className="fa-2c">
-              <Campo label="Fuso di partenza" value={l.fromTz} onChange={(v) => patchLeg(l.key, { fromTz: v, fromTzAuto: false })} list="volo-fusi" autoComplete="off" />
-              <Campo label="Fuso di arrivo" value={l.toTz} onChange={(v) => patchLeg(l.key, { toTz: v, toTzAuto: false })} list="volo-fusi" autoComplete="off" />
+              <CampoFuso label="Fuso di partenza" value={l.fromTz} onChange={(v) => patchLeg(l.key, { fromTz: v, fromTzAuto: false })} usati={[trip.timezone]} />
+              <CampoFuso label="Fuso di arrivo" value={l.toTz} onChange={(v) => patchLeg(l.key, { toTz: v, toTzAuto: false })} usati={[trip.timezone]} />
               <Campo label="Classe" value={l.cabin} onChange={(v) => patchLeg(l.key, { cabin: v })} placeholder="Economy" />
               <Campo label="Imbarco, ora" type="time" icon="clock" value={l.boardingTime ?? ''} onChange={(v) => patchLeg(l.key, { boardingTime: v })} />
               <Campo label="Terminal" value={l.terminal ?? ''} onChange={(v) => patchLeg(l.key, { terminal: v })} maxLength={10} />
@@ -218,7 +217,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
           <div className="fa-fld">
             <label htmlFor="volo-val">Valuta</label>
             <span className="fa-in">
-              <input id="volo-val" list="volo-valute" value={currency} onChange={(e) => setCurrency(e.currentTarget.value.toUpperCase().slice(0, 3))} maxLength={3} />
+              <input placeholder="EUR" id="volo-val" list="volo-valute" value={currency} onChange={(e) => setCurrency(e.currentTarget.value.toUpperCase().slice(0, 3))} maxLength={3} />
             </span>
           </div>
         </div>
@@ -240,7 +239,6 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
         <Campo label="Note" textarea value={notes} onChange={setNotes} />
         {flight ? <DocumentiCollegati trip={trip} kind={'flight'} refId={flight.id} /> : null}
         {errors.form ? <Errore>{errors.form}</Errore> : null}
-        <datalist id="volo-fusi">{tz.map((z) => <option key={z.value} value={z.value} />)}</datalist>
         <datalist id="volo-valute">{tripCurrencies(trip, flight?.currency).map((c) => <option key={c} value={c} />)}</datalist>
       </form>
     </Foglio>

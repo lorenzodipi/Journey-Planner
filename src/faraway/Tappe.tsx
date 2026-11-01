@@ -2,6 +2,7 @@
 // binario con i nodi, stato a destra, spostamenti tra una tappa e l'altra, una card aperta in linea
 // con orari, apertura, indirizzo, Maps, costo, menu «Stato della tappa» e Modifica · Sposta · Elimina.
 // La usa la pagina Giorno e «Il programma di oggi» in Oggi (#29).
+import { Pulsante } from './base'
 import { ora } from '../lib/formati'
 import type { ReactNode } from 'react'
 import { Fragment, useEffect, useRef, useState } from 'react'
@@ -197,7 +198,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
   const phases = items.map((i) => fase(i, placeOf(trip, i), ctx))
 
   return (
-    <div className="k-Tappa" style={{ display: 'grid', gap: 15 }}>
+    <div className="k-Tappa" style={{ display: 'grid', gap: 16 }}>
       {header ? (
         <header>
           <h2>{header.title}</h2>
@@ -267,7 +268,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                       <div className="m">{metaOf(trip, item)}</div>
                       {meteoDi?.(item) ? <div className="m">{meteoDi(item)}</div> : null}
                       {item.time && item.timeLock ? (
-                        <div className="m" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <div className="m" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           {item.timeLock === 'locked' ? <Sv name="lock" size={14} /> : null}
                           {item.timeLock === 'locked' ? 'Orario vincolato' : 'Orario flessibile'}
                         </div>
@@ -327,16 +328,14 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                       {readOnly ? null : (
                         <>
                           <StatoMenu item={item} onPick={(s) => onStatus(item, s)} />
-                          <div style={{ background: 'none', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 4 }}>
-                            <button type="button" className="fa-btn sm out" style={{ padding: '0 8px' }} onClick={() => onEdit(item)}>
+                          <div className="fa-acts">
+                            <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => onEdit(item)}>
                               Modifica
-                            </button>
-                            <button type="button" className="fa-btn sm out" style={{ padding: '0 8px' }} onClick={() => onMove(item)}>
+                            </Pulsante>
+                            <Pulsante size="sm" color="secondary" iconLeading="move" onPress={() => onMove(item)}>
                               Sposta
-                            </button>
-                            <button type="button" className="fa-btn sm del" style={{ padding: '0 8px', color: 'var(--danger)' }} onClick={() => onDelete(item)}>
-                              Elimina
-                            </button>
+                            </Pulsante>
+                            <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={() => onDelete(item)} aria-label={`Elimina ${item.title}`} />
                           </div>
                         </>
                       )}

@@ -39,7 +39,6 @@ import { SpostaSheet } from './giorno/SpostaSheet'
 import { SpesaSheet } from './spese/SpesaSheet'
 import { iconaSpesa } from '../lib/ricevuta'
 import { TappaSheet } from './giorno/TappaSheet'
-import { ControlloGiorno } from './giorno/ControlloGiorno'
 import { alloggiDelGiorno } from '../lib/fattibilita'
 
 const wdm = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -118,7 +117,7 @@ export function Giorno({ params }: { params: { id: string } }) {
   }))
   const percorso = riepilogoPercorso(day.items.length, legs)
 
-  // «Apri in Maps»: percorso con tutte le tappe in ordine (fino a 10 punti)
+  // «Maps»: percorso con tutte le tappe in ordine (fino a 10 punti)
   const ll = (s: { lat: number; lng: number }) => encodeURIComponent(`${s.lat},${s.lng}`)
   const rs = route.stops
   const routeHref =
@@ -201,7 +200,7 @@ export function Giorno({ params }: { params: { id: string } }) {
 
   return (
     <Schermata
-      gap={15}
+      gap={32}
       bar={<BarraIndietro title="Giorni" back="/giorni" right={<PulsanteIcona icon="dots" label="Modifica il giorno" onPress={() => setLegacy({ kind: 'day', day })} />} />}
     >
       {day.items.length > 0 || route.transports.length > 0 ? (
@@ -214,7 +213,7 @@ export function Giorno({ params }: { params: { id: string } }) {
               </span>
             ) : null}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '16px 16px' }}>
             <div>
               <div className="fa-b">{percorso.title}</div>
               {percorso.sub ? (
@@ -228,7 +227,7 @@ export function Giorno({ params }: { params: { id: string } }) {
             {routeHref ? (
               <a className="fa-btn sm out" href={routeHref} target="_blank" rel="noopener noreferrer">
                 <Sv name="pin" size={18} />
-                Apri in Maps
+                Maps
               </a>
             ) : null}
           </div>
@@ -255,7 +254,6 @@ export function Giorno({ params }: { params: { id: string } }) {
         />
         {day.items.length === 0 ? <p className="fa-m">Giornata ancora libera: aggiungi la prima tappa.</p> : null}
       </div>
-      {day.items.length > 0 ? <ControlloGiorno trip={trip} day={day} minutiSpostamento={(a, b) => (day.items.findIndex((i) => i.id === b) === day.items.findIndex((i) => i.id === a) + 1 ? (segments.get(b)?.minutes ?? null) : null)} /> : null}
 
       <Pulsante iconLeading="plus" onPress={() => setSheet({ kind: 'add' })}>
         Aggiungi tappa
@@ -267,7 +265,7 @@ export function Giorno({ params }: { params: { id: string } }) {
       ) : null}
 
       {spostamenti.length > 0 ? (
-        <section style={{ display: 'grid', gap: 12 }} aria-label="Voli e spostamenti">
+        <section style={{ display: 'grid', gap: 16 }} aria-label="Voli e spostamenti">
           <Sezione title="Voli e spostamenti" />
           <div className="fa-list">
             {spostamenti.map((e, i) => (
@@ -284,8 +282,9 @@ export function Giorno({ params }: { params: { id: string } }) {
       ) : null}
 
       {stayList.length > 0 ? (
-        <section style={{ display: 'grid', gap: 12 }} aria-label="Alloggio">
+        <section style={{ display: 'grid', gap: 16 }} aria-label="Alloggio">
           <Sezione title="Alloggio" right={<Link href="/altro/alloggi" className="fa-lnk">Tutti</Link>} />
+          <div className="fa-list">
           {stayList.map((s) => (
             <RigaAlloggio
               key={s.id}
@@ -303,11 +302,12 @@ export function Giorno({ params }: { params: { id: string } }) {
               }}
             />
           ))}
+          </div>
         </section>
       ) : null}
 
       {expenses.length > 0 ? (
-        <section style={{ display: 'grid', gap: 12 }} aria-label="Spese del giorno">
+        <section style={{ display: 'grid', gap: 16 }} aria-label="Spese del giorno">
           <Sezione title="Spese del giorno" right={<span className="fa-c">{formatMoney(total, trip.baseCurrency)}</span>} />
           <div className="fa-list">
             {expenses.map((e) => (
@@ -325,7 +325,7 @@ export function Giorno({ params }: { params: { id: string } }) {
       ) : null}
 
       {bookings.length > 0 ? (
-        <section style={{ display: 'grid', gap: 12 }} aria-label="Prenotazioni del giorno">
+        <section style={{ display: 'grid', gap: 16 }} aria-label="Prenotazioni del giorno">
           <Sezione title="Prenotazioni del giorno" right={<Link href="/altro/prenotazioni" className="fa-lnk">Tutte</Link>} />
           <div className="fa-list">
             {bookings.map(({ booking: b, tappa }) => (
@@ -336,7 +336,7 @@ export function Giorno({ params }: { params: { id: string } }) {
       ) : null}
 
       {prev || next ? (
-        <nav aria-label="Giorni vicini" style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+        <nav aria-label="Giorni vicini" style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
           {prev ? (
             <Link href={`/giorni/${prev.id}`} className="fa-btn sm out" aria-label={`Giorno precedente, ${fmt(prev.date)}`}>
               <Sv name="back" size={18} />

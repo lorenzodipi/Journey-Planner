@@ -232,7 +232,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="spesa-form" isLoading={busy}>
-          {busy ? 'Salvataggio…' : expense ? 'Salva le modifiche' : 'Salva la spesa'}
+          {expense ? 'Salva le modifiche' : 'Salva la spesa'}
         </Pulsante>
       }
     >

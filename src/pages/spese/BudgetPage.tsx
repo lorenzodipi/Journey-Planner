@@ -90,7 +90,7 @@ export function BudgetPage() {
       }
     >
       {!limit ? (
-        <section className="fa-card xl pad" style={{ display: 'grid', gap: 12 }}>
+        <section className="fa-card xl pad" style={{ display: 'grid', gap: 16 }}>
           <h2 className="fa-h2">Nessun budget impostato</h2>
           <p className="fa-lead" style={{ color: 'var(--ink-muted)' }}>
             Con un budget vedi quanto manca e ricevi un avviso prima di superarlo.
@@ -107,7 +107,7 @@ export function BudgetPage() {
               </span>
             </div>
           ) : null}
-          <section className="fa-card xl pad" style={{ display: 'grid', gap: 12 }}>
+          <section className="fa-card xl pad" style={{ display: 'grid', gap: 16 }}>
             {editing ? (
               form
             ) : (
@@ -139,7 +139,7 @@ export function BudgetPage() {
               <div className="fa-sech">
                 <h2 className="fa-h3">Per categoria</h2>
               </div>
-              <section className="fa-card xl" style={{ overflow: 'hidden', padding: '4px 0' }}>
+              <section className="fa-card xl" style={{ overflow: 'hidden', padding: '8px 0' }}>
                 {cats.map((c, i) => {
                   const ratio = c.planned > 0 ? c.spent / c.planned : c.spent > 0 ? 2 : 0
                   const oltre = round2(c.spent - c.planned)
@@ -149,9 +149,9 @@ export function BudgetPage() {
                   return (
                     <div key={c.key}>
                       {i > 0 ? <div className="fa-hr" /> : null}
-                      <div style={{ display: 'grid', gridTemplateColumns: '44px 1fr', gap: 12, alignItems: 'center', padding: '12px 16px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '44px 1fr', gap: 16, alignItems: 'center', padding: '16px 16px' }}>
                         <Ic name={iconaSezione(c.label)} size={44} />
-                        <div style={{ display: 'grid', gap: 6, minWidth: 0 }}>
+                        <div style={{ display: 'grid', gap: 8, minWidth: 0 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                             <span className="fa-b">{c.label}</span>
                             <span className="fa-amt">{formatMoney(c.spent, cur)}</span>

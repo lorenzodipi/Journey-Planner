@@ -50,7 +50,7 @@ export function DichiaraSheet({ trip, toId, dovuto, onClose, corrects }: { trip:
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="rimborso-form" isLoading={busy}>
-          {busy ? 'Invio…' : `Dichiara a ${first(trip, toId)}`}
+          {`Dichiara a ${first(trip, toId)}`}
         </Pulsante>
       }
     >
@@ -130,7 +130,7 @@ export function RimborsiCard({ trip }: { trip: Trip }) {
     showToast(m ?? 'Richiesta annullata')
   }
   return (
-    <div style={{ display: 'grid', gap: 10 }}>
+    <div style={{ display: 'grid', gap: 8 }}>
       {dec.map((r) => (
         <Banner key={r.id} tone="az" icon="info" action={<Pulsante size="sm" onPress={() => setAperta(r)}>Rispondi</Pulsante>}>
           {testoRichiesta(r, trip.travelers)}

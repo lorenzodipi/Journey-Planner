@@ -119,7 +119,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="trasporto-form" isLoading={busy}>
-          {busy ? 'Salvataggio…' : t ? 'Salva le modifiche' : 'Salva il trasporto'}
+          {t ? 'Salva le modifiche' : 'Salva il trasporto'}
         </Pulsante>
       }
     >
@@ -179,7 +179,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
           <div className="fa-fld">
             <label htmlFor="tr-val">Valuta</label>
             <span className="fa-in">
-              <input id="tr-val" list="tr-valute" value={currency} onChange={(e) => setCurrency(e.currentTarget.value.toUpperCase().slice(0, 3))} maxLength={3} />
+              <input placeholder="EUR" id="tr-val" list="tr-valute" value={currency} onChange={(e) => setCurrency(e.currentTarget.value.toUpperCase().slice(0, 3))} maxLength={3} />
             </span>
           </div>
         </div>

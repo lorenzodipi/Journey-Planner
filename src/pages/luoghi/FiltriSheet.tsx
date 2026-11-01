@@ -34,13 +34,13 @@ export function FiltriSheet({ trip, places, open, filters, view, onApply, onClos
       title="Filtri"
       onClose={onClose}
       headStart={
-        <button type="button" className="fa-btn soft" style={{ height: 40, padding: '0 14px', width: 'auto' }} onClick={() => (setF(EMPTY_FILTERS), setV(view ? { groupBy: 'city', sortBy: 'name' } : undefined))}>
+        <button type="button" className="fa-btn soft" style={{ height: 40, padding: '0 16px', width: 'auto' }} onClick={() => (setF(EMPTY_FILTERS), setV(view ? { groupBy: 'city', sortBy: 'name' } : undefined))}>
           Azzera
         </button>
       }
       footer={<Pulsante onPress={() => (onApply(f, v), onClose())}>{count === 1 ? 'Mostra 1 luogo' : `Mostra ${count} luoghi`}</Pulsante>}
     >
-      <div className="frm" style={{ gap: 12 }}>
+      <div className="frm" style={{ gap: 16 }}>
         <div className="fa-fld" role="group" aria-label="Stato">
           Stato
           <div className="fa-chips wrap">

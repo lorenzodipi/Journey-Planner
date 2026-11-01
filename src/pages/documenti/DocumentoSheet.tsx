@@ -80,7 +80,7 @@ export function NuovoDocumentoSheet({ trip, link, passeggeri, onClose }: { trip:
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="doc-form" isLoading={busy} isDisabled={!online}>
-          {busy ? 'Caricamento…' : 'Salva il documento'}
+          {'Salva il documento'}
         </Pulsante>
       }
     >

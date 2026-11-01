@@ -12,7 +12,7 @@ import { initials, discOf } from '../../state/me'
 import { useTrips } from '../../state/trip'
 import type { Trip } from '../../types'
 import { ART } from '../../ui/art'
-import { Avatars, Pillola, Pulsante } from '../../faraway/base'
+import { Avatars, Campo, Pillola, Pulsante } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
 import { Foglio } from '../../faraway/Foglio'
 import { BarraGrande, BarraIndietro, Schermata } from '../../faraway/shell'
@@ -29,8 +29,12 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
   const [nuovo, setNuovo] = useState(false)
   const [invito, setInvito] = useState(false)
   const tutti = ordinaViaggi(t.trips)
-  const lista = tutti.filter((x) => !x.archivedAt)
-  const archiviati = tutti.filter((x) => x.archivedAt)
+  const [cerca, setCerca] = useState('')
+  const q = cerca.trim().toLowerCase()
+  const corrisponde = (x: Trip) => !q || `${x.title} ${x.destination}`.toLowerCase().includes(q)
+  const lista = tutti.filter((x) => !x.archivedAt && corrisponde(x))
+  const archiviati = tutti.filter((x) => x.archivedAt && corrisponde(x))
+  const conRicerca = tutti.length >= 3
   const [duplica, setDuplica] = useState<Trip | null>(null)
   const [mostraArch, setMostraArch] = useState(false)
   const [rispondendo, setRispondendo] = useState<string | null>(null)
@@ -64,7 +68,7 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
   function azioni(trip: Trip) {
     if (trip.myRole !== undefined && trip.myRole !== 'owner') return null
     return (
-      <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '12px 16px 16px', borderTop: '1px solid var(--hairline)' }}>
+      <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '16px 16px 16px', borderTop: '1px solid var(--hairline)' }}>
         {trip.archivedAt ? (
           <Pulsante size="sm" color="secondary" onPress={() => void archivia(trip, false)}>Ripristina</Pulsante>
         ) : (
@@ -88,9 +92,9 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
             <Pillola tone={TONO[stato]}>{STATO_TESTO[stato]}</Pillola>
           </span>
         </span>
-        <span style={{ display: 'grid', gap: 6, padding: 16 }}>
+        <span style={{ display: 'grid', gap: 8, padding: 16 }}>
           <span className="fa-h3">{trip.title}</span>
-          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
             <span className="fa-m">{periodo(trip)}</span>
             {people.length ? <Avatars people={people} /> : null}
           </span>
@@ -113,14 +117,14 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
   return (
     <Schermata
       tabs={!scelta}
-      bar={scelta ? <BarraGrande title="Viaggi" sub={viaggiText(lista.length)} /> : <BarraIndietro title="Viaggi" back="/altro" />}
-      fab={lista.length ? { label: 'Viaggio', aria: 'Crea un viaggio', onPress: () => setNuovo(true) } : null}
+      bar={scelta ? <BarraGrande title="Viaggi" sub={viaggiText(tutti.filter((x) => !x.archivedAt).length)} /> : <BarraIndietro title="Viaggi" back="/altro" />}
+      fab={tutti.some((x) => !x.archivedAt) ? { label: 'Viaggio', aria: 'Crea un viaggio', onPress: () => setNuovo(true) } : null}
       overlay={
         <>
           {duplica ? <DuplicaSheet trip={duplica} onClose={() => setDuplica(null)} onDone={() => (setDuplica(null), onChosen?.(), navigate('/'))} /> : null}
           {nuovo ? <ViaggioSheet open onClose={() => setNuovo(false)} onDone={() => (onChosen?.(), navigate('/'))} /> : null}
           <Foglio open={invito} title="Ho un invito" onClose={() => setInvito(false)}>
-            <div style={{ display: 'grid', gap: 12 }}>
+            <div style={{ display: 'grid', gap: 16 }}>
               <p className="fa-m" style={{ margin: 0 }}>Gli inviti arrivano qui: entra con l’indirizzo email a cui sono stati mandati e li trovi in «Inviti ricevuti», da accettare o rifiutare.</p>
               <Pulsante
                 iconLeading="refresh"
@@ -137,10 +141,10 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
       }
     >
       {t.receivedInvites.length > 0 ? (
-        <section aria-label="Inviti ricevuti" style={{ display: 'grid', gap: 12 }}>
+        <section aria-label="Inviti ricevuti" style={{ display: 'grid', gap: 16 }}>
           <h2 className="fa-h3" style={{ margin: 0 }}>Inviti ricevuti</h2>
           {t.receivedInvites.map((i) => (
-            <div key={i.id} className="fa-card xl pad" style={{ display: 'grid', gap: 10 }}>
+            <div key={i.id} className="fa-card xl pad" style={{ display: 'grid', gap: 8 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Sv name="mail" size={20} />
                 <span className="fa-h3">{i.title}</span>
@@ -161,7 +165,13 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
           ))}
         </section>
       ) : null}
-      {lista.length === 0 ? (
+      {conRicerca ? (
+        <Campo label="Cerca un viaggio" hideLabel icon="search" type="search" value={cerca} onChange={setCerca} placeholder="Cerca un viaggio per nome o destinazione" enterKeyHint="search" />
+      ) : null}
+      {lista.length === 0 && q && !archiviati.length ? (
+        <p className="fa-m" role="status" style={{ margin: 0, textAlign: 'center' }}>Nessun viaggio corrisponde a «{cerca.trim()}».</p>
+      ) : null}
+      {tutti.every((x) => x.archivedAt) && !q ? (
         <Vuoto
           art="vuotoViaggi"
           title="Nessun viaggio ancora"
@@ -178,7 +188,7 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
         <>
           {lista.map(conAzioni)}
           {archiviati.length ? (
-            <section aria-label="Viaggi archiviati" style={{ display: 'grid', gap: 12 }}>
+            <section aria-label="Viaggi archiviati" style={{ display: 'grid', gap: 16 }}>
               <button type="button" className="fa-lnk" style={{ justifySelf: 'start' }} aria-expanded={mostraArch} onClick={() => setMostraArch(!mostraArch)}>
                 {mostraArch ? 'Nascondi' : 'Mostra'} i viaggi archiviati ({archiviati.length})
               </button>

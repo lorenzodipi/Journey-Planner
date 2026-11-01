@@ -1,5 +1,6 @@
 // Luoghi senza posizione (senza pin sulla mappa): l'app la cerca da sola su OpenStreetMap, un luogo alla volta,
 // e mostra l'avanzamento. Compare solo se c'è qualcosa da fare o un lavoro in corso.
+import { Loader } from '../../faraway/Loader'
 import { missingPosition, startPositionJob, stopPositionJob, usePositionJob } from '../../state/positionJob'
 import { useTrips } from '../../state/trips'
 import { Barra, Pulsante } from '../../faraway/base'
@@ -19,9 +20,9 @@ export function TrovaPosizioni() {
 
   if (mine?.running) {
     return (
-      <section className="fa-card pad" style={{ display: 'grid', gap: 12 }} aria-live="polite">
-        <div style={{ display: 'grid', gap: 4 }}>
-          <h2 className="fa-h3">Cerco le posizioni…</h2>
+      <section className="fa-card pad" style={{ display: 'grid', gap: 16 }} aria-live="polite">
+        <div style={{ display: 'grid', gap: 8 }}>
+          <h2 className="fa-h3" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Loader size={20} label="Ricerca in corso" />Posizioni dei luoghi</h2>
           <p className="fa-m">
             {mine.done} di {mine.total} · {plural(mine.found, 'trovato', 'trovati')}
             {mine.current ? ` · ora: ${mine.current}` : ''}
@@ -38,8 +39,8 @@ export function TrovaPosizioni() {
 
   const left = mine && !mine.running ? mine.notFound.length : 0
   return (
-    <section className="fa-card pad" style={{ display: 'grid', gap: 12 }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+    <section className="fa-card pad" style={{ display: 'grid', gap: 16 }}>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
         <svg className="ic" width="44" height="44" aria-hidden="true">
           <use href="#i-nav-no-pin" />
         </svg>
@@ -61,7 +62,7 @@ export function TrovaPosizioni() {
       {mine && left > 0 ? (
         <details className="fa-m">
           <summary style={{ cursor: 'pointer', fontWeight: 600, minHeight: 32 }}>Vedi quali</summary>
-          <ul style={{ maxHeight: 160, overflow: 'auto', paddingLeft: 20, listStyle: 'disc' }}>
+          <ul style={{ maxHeight: 160, overflow: 'auto', paddingLeft: 24, listStyle: 'disc' }}>
             {mine.notFound.map((p) => (
               <li key={p.id}>{p.name}</li>
             ))}

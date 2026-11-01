@@ -123,7 +123,7 @@ export function Giorni() {
       {trip.days.length > 0 && shown.length === 0 ? <Vuoto art="calendario" title="Nessun giorno trovato" text="Prova con un'altra città o tappa." /> : null}
 
       {shown.map((g, gi) => (
-        <section key={`${gi}-${g.cells[0].day.id}`} style={{ display: 'grid', gap: 12 }} aria-label={g.title}>
+        <section key={`${gi}-${g.cells[0].day.id}`} style={{ display: 'grid', gap: 16 }} aria-label={g.title}>
           <div className="fa-sech">
             <h2 className="fa-h3">{g.title}</h2>
             <span className="fa-c">{paesiDi(trip).length > 1 ? `${paeseDelGiorno(trip, g.cells[0].day.date).name} · ${g.meta}` : g.meta}</span>

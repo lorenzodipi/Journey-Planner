@@ -131,7 +131,7 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="prenotazione-form" isLoading={busy}>
-          {busy ? 'Salvataggio…' : b ? 'Salva le modifiche' : 'Salva la prenotazione'}
+          {b ? 'Salva le modifiche' : 'Salva la prenotazione'}
         </Pulsante>
       }
     >
@@ -200,7 +200,7 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
           <div className="fa-fld">
             <label htmlFor="pr-val">Valuta</label>
             <span className="fa-in">
-              <input id="pr-val" list="pr-valute" value={currency} onChange={(e) => setCurrency(e.currentTarget.value.toUpperCase().slice(0, 3))} maxLength={3} />
+              <input placeholder="EUR" id="pr-val" list="pr-valute" value={currency} onChange={(e) => setCurrency(e.currentTarget.value.toUpperCase().slice(0, 3))} maxLength={3} />
             </span>
           </div>
         </div>

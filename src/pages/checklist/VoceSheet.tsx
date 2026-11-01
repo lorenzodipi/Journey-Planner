@@ -70,7 +70,7 @@ export function VoceSheet({ trip, item, where = 'all', open, onClose }: Props) {
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="voce-form" isLoading={busy}>
-          {busy ? 'Salvataggio…' : item ? 'Salva le modifiche' : 'Aggiungi alla checklist'}
+          {item ? 'Salva le modifiche' : 'Aggiungi alla checklist'}
         </Pulsante>
       }
     >

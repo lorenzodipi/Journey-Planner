@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Loader } from '../faraway/Loader'
 import type { DayRoute } from '../state/dayRoute'
 import { TRANSPORT_COLOR } from '../state/dayRoute'
 import type { Trip } from '../types'
@@ -63,7 +64,7 @@ export function DayMapPanel({
           <View stops={stopState ? stops.map((x) => ({ ...x, state: stopState.get(x.id) })) : stops} lines={lines} ends={ends} center={stops[0] ?? transports[0]?.from ?? center} selectedId={selectedId} onSelect={onSelect} />
         ) : (
           <p className="b-sm muted" style={{ display: 'grid', height: '100%', placeItems: 'center', padding: '0 24px', textAlign: 'center' }} role="status">
-            {loadError ? 'Non riesco a caricare la mappa: serve la connessione la prima volta.' : 'Carico la mappa…'}
+            {loadError ? 'Non riesco a caricare la mappa: serve la connessione la prima volta.' : <Loader size={32} label="Caricamento della mappa" />}
           </p>
         )}
       </div>

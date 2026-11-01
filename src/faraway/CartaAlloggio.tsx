@@ -85,7 +85,7 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete 
             </span>
             {href ? (
               <Pulsante size="sm" color="secondary" iconLeading="pin" href={href} target="_blank" aria-label={`Apri ${s.name} sulla mappa`}>
-                Apri sulla mappa
+                Maps
               </Pulsante>
             ) : null}
           </div>
@@ -159,12 +159,8 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete 
                 ) : null}
               </dl>
               <div className="acts2">
-                <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
-                  Modifica
-                </Pulsante>
-                <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
-                  Elimina
-                </Pulsante>
+                <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit} aria-label="Modifica" />
+                <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete} aria-label="Elimina" />
               </div>
             </div>
           ) : null}
@@ -209,15 +205,11 @@ export function RigaAlloggio({ stay: s, date, open, onToggle, onEdit, onDelete }
       <div className="fa-acts">
         {href ? (
           <Pulsante size="sm" color="secondary" iconLeading="pin" href={href} target="_blank" aria-label={`Apri ${s.name} sulla mappa`}>
-            Mappa
+            Maps
           </Pulsante>
         ) : null}
-        <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
-          Modifica
-        </Pulsante>
-        <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete} aria-label={`Elimina ${s.name}`}>
-          Elimina
-        </Pulsante>
+        <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit} aria-label="Modifica" />
+        <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete} aria-label={`Elimina ${s.name}`} />
       </div>
     </RigaApribile>
   )

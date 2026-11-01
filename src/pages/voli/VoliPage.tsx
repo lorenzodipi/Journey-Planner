@@ -46,7 +46,7 @@ export function VoliPage() {
         <Vuoto title="Nessun volo" text="Aggiungi i voli del viaggio: li trovi qui come carte d'imbarco, con gli scali." action="Aggiungi un volo" onAction={() => setSheet({})} />
       ) : null}
       {gruppi.map((g) => (
-        <section key={g.key} aria-label={g.title} style={{ display: 'grid', gap: 12 }}>
+        <section key={g.key} aria-label={g.title} style={{ display: 'grid', gap: 16 }}>
           <div className="fa-sech">
             <h2 className="fa-h3">{g.title}</h2>
           </div>

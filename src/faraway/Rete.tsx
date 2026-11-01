@@ -1,5 +1,6 @@
 // Stati di sistema (mock Fa-49, Fa-50, Fa-07, issue #25 e #49): avvio con gli scheletri, errore con «Riprova»
 // e «Usa i dati salvati», modifiche in coda, voci non salvate e la pillola «Sei offline».
+import { Loader } from './Loader'
 import { useEffect, useState } from 'react'
 import { useOnline, savedAtText } from '../state/online'
 import { useTrips } from '../state/trip'
@@ -26,7 +27,7 @@ export function SchermataErrore({ title, onRetry, onSaved }: { title: string; on
   const at = savedAtText()
   return (
     <Schermata bar={<BarraGrande title={title} />} rete={false}>
-      <section className="fa-card xl pad fa-errcard" role="alert" style={{ display: 'grid', gap: 12 }}>
+      <section className="fa-card xl pad fa-errcard" role="alert" style={{ display: 'grid', gap: 16 }}>
         <Sv name={online ? 'err' : 'wifi'} size={28} className="ei" />
         <h2 className="fa-h3">{online ? 'Non riesco a caricare il viaggio' : 'Sei offline'}</h2>
         <p className="fa-m">
@@ -95,8 +96,8 @@ function InvioPillola({ count }: { count: number }) {
   if (!visible || count === 0) return null
   return (
     <p className="fa-sending" role="status">
-      <Sv name="refresh" size={16} />
-      Invio di {count} {count === 1 ? 'modifica' : 'modifiche'}…
+      <Loader size={16} label={`Invio di ${count} ${count === 1 ? 'modifica' : 'modifiche'}`} />
+      {count}
     </p>
   )
 }

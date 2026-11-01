@@ -3,7 +3,9 @@ import { useAuth } from '../../lib/auth'
 import { NOTIFICHE_TESTI, LINGUE, useNotifichePrefs } from '../../lib/prefs'
 import { useFormati } from '../../lib/formati'
 import { useThemePref, type ThemePref } from '../../lib/theme'
-import { Interruttore, Pulsante, Segmenti } from '../../faraway/base'
+import { Chip, Interruttore, Pulsante, Segmenti } from '../../faraway/base'
+import { MARGINI_RAPIDI } from '../../lib/fattibilita'
+import { useTrip, useTrips } from '../../state/trip'
 import { Sv } from '../../faraway/icons'
 import { Riga } from '../../faraway/Righe'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
@@ -19,6 +21,13 @@ const TEMI: { value: ThemePref; label: string }[] = [
 
 export function ImpostazioniPage() {
   const auth = useAuth()
+  const trip = useTrip()
+  const trips = useTrips()
+  const margine = trip.defaultMarginMin ?? 0
+  async function setMargine(min: number) {
+    const m = await trips.setDayPlan(trip.id, trip.days[0]?.id ?? '', { tripMarginMin: min })
+    showToast(m ?? (min === 0 ? 'Margine tolto' : `Margine tra tappe: ${min} min`))
+  }
   const [tema, setTema] = useThemePref()
   const [fmt, setFmt] = useFormati()
   const [notif, setNotif] = useNotifichePrefs()
@@ -49,9 +58,18 @@ export function ImpostazioniPage() {
       <Segmenti label="Distanze" value={fmt.distanza} options={[{ value: 'km', label: 'Chilometri' }, { value: 'mi', label: 'Miglia' }]} onChange={(v) => setFmt({ distanza: v })} />
       <Segmenti label="Temperatura" value={fmt.temperatura} options={[{ value: 'C', label: '°C' }, { value: 'F', label: '°F' }]} onChange={(v) => setFmt({ temperatura: v })} />
       <p className="fa-m" style={{ margin: 0 }}>Valgono per tutta l’app, su questo telefono.</p>
+      <div className="fa-fld" role="group" aria-label="Margine tra tappe">
+        Margine tra tappe
+        <div className="fa-chips">
+          {[0, ...MARGINI_RAPIDI].map((m) => (
+            <Chip key={m} on={margine === m} onPress={() => void setMargine(m)}>{m === 0 ? 'Nessuno' : `${m} min`}</Chip>
+          ))}
+        </div>
+        <span className="fa-help">Per tutto il viaggio: si somma agli spostamenti quando l’app controlla che gli orari reggano.</span>
+      </div>
 
       <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Notifiche</h2>
-      <div className="fa-card xl pad" style={{ display: 'grid', gap: 12 }}>
+      <div className="fa-card xl pad" style={{ display: 'grid', gap: 16 }}>
         {NOTIFICHE_TESTI.map((n) => (
           <Interruttore key={n.tipo} label={n.titolo} hint={n.testo} isSelected={notif[n.tipo]} onChange={(on) => void cambia(n.tipo, on)} />
         ))}

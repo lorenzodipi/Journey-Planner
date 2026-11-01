@@ -19,7 +19,7 @@ interface Props {
   open: boolean
   onToggle: () => void
   onEdit: () => void
-  /** «Mostra il codice» (#38): compare solo se il volo ha un codice salvato. */
+  /** «Codice» (#38): compare solo se il volo ha un codice salvato. */
   onCode?: () => void
   onDelete: () => void
 }
@@ -152,26 +152,22 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
               </div>
             ) : null}
             {flight.baggage || flight.policy ? (
-              <div style={{ display: 'grid', gap: 4, marginTop: 12 }}>
+              <div style={{ display: 'grid', gap: 8, marginTop: 16 }}>
                 {flight.baggage ? <span className="fa-m">Bagaglio · {flight.baggage}</span> : null}
                 {flight.policy ? <span className="fa-m">Cambio e rimborso · {flight.policy}</span> : null}
               </div>
             ) : null}
-            <div className="acts" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
+            <div className="fa-acts">
               <Pulsante size="sm" color="secondary" iconLeading="pin" href={maps} target="_blank">
-                Apri il terminal in Maps
+                Maps
               </Pulsante>
               {onCode ? (
                 <Pulsante size="sm" color="secondary" iconLeading="qr" onPress={onCode}>
-                  Mostra il codice
+                  Codice
                 </Pulsante>
               ) : null}
-              <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
-                Modifica
-              </Pulsante>
-              <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
-                Elimina
-              </Pulsante>
+              <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit} aria-label="Modifica" />
+              <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete} aria-label="Elimina" />
             </div>
           </div>
         ) : null}

@@ -11,7 +11,7 @@ export function AvatarStack({ people }: { people: Traveler[] }) {
   return (
     <div style={{ display: 'flex' }}>
       {people.slice(0, 4).map((p, i) => (
-        <span key={p.id} style={i === 0 ? undefined : { marginLeft: '-6px' }}>
+        <span key={p.id} style={i === 0 ? undefined : { marginLeft: '-8px' }}>
           <span className="av" style={{ background: avColor(i) }} aria-hidden="true">
             {initialOf(p.name)}
           </span>

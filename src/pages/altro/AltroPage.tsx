@@ -71,19 +71,19 @@ export function AltroPage() {
         </>
       }
     >
-      <section aria-label="Viaggio attuale" style={{ position: 'relative', display: 'grid', gap: 6, padding: 20, borderRadius: 'var(--radius-xl)', background: 'var(--tinta-azzurro)', color: 'var(--on-tinta)', border: '1px solid var(--bordo-azzurro)' }}>
+      <section aria-label="Viaggio attuale" style={{ position: 'relative', display: 'grid', gap: 8, padding: 24, borderRadius: 'var(--radius-xl)', background: 'var(--tinta-azzurro)', color: 'var(--on-tinta)', border: '1px solid var(--bordo-azzurro)' }}>
         <Simbolo style={{ position: 'absolute', right: 18, top: 16, width: 46, height: 54 }} />
         <p className="fa-m" style={{ margin: 0, color: 'var(--on-tinta-muted)' }}>Viaggio attuale</p>
         <h2 style={{ margin: 0, paddingRight: 56, font: '500 32px/36px var(--font-display)' }}>{trip.title}</h2>
         <p style={{ margin: 0, font: '600 15px/22px var(--font-sans)' }}>{periodo(trip)}</p>
         {citta ? <p style={{ margin: 0, font: '400 14px/20px var(--font-sans)', color: 'var(--on-tinta-muted)' }}>{citta}</p> : null}
         <p style={{ margin: 0, font: '400 14px/20px var(--font-sans)', color: 'var(--on-tinta-muted)' }}>{rigaBudgetValute(trip)}</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
           <Avatars people={people.slice(0, 4)} />
           <span style={{ font: '600 14px/20px var(--font-sans)' }}>{personeText(trip.travelers.length)}</span>
         </div>
         {owner ? (
-          <div style={{ marginTop: 10 }}>
+          <div style={{ marginTop: 8 }}>
             <Pulsante color="secondary" iconLeading="pencil" onPress={() => setEdit(true)}>
               Modifica dati del viaggio
             </Pulsante>

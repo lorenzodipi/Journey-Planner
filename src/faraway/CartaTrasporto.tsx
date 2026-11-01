@@ -13,11 +13,10 @@ import { cx } from './cx'
 import { Sv } from './icons'
 
 const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']
-const maps = (t: Transport, side: 'from' | 'to') => {
-  const lat = side === 'from' ? t.fromLat : t.toLat
-  const lng = side === 'from' ? t.fromLng : t.toLng
-  const label = side === 'from' ? t.from : t.to
-  return `https://www.google.com/maps/search/?api=1&query=${lat != null && lng != null ? `${lat},${lng}` : encodeURIComponent(label)}`
+/** Un solo «Maps» per il tragitto: indicazioni da partenza ad arrivo (con le coordinate, se ci sono). */
+const direzioni = (t: Transport) => {
+  const pt = (lat: number | undefined, lng: number | undefined, nome: string) => encodeURIComponent(lat != null && lng != null ? `${lat},${lng}` : nome)
+  return `https://www.google.com/maps/dir/?api=1&origin=${pt(t.fromLat, t.fromLng, t.from)}&destination=${pt(t.toLat, t.toLng, t.to)}`
 }
 
 interface Props {
@@ -72,26 +71,26 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
               <Sv name="chev" size={20} />
             </span>
           </button>
-          <div className="hz">
+          <div className="hz2">
             <div className="hs l">
               <span className="tm">{ora(w.depart?.time) || '—'}</span>
               <b>{t.from}</b>
-              <a className="btn mp" href={maps(t, 'from')} target="_blank" rel="noreferrer" aria-label={`Apri ${t.from} su Maps`}>
-                <Sv name="pin" size={20} />
-                Maps
-              </a>
             </div>
-            <div className="hm">
-              <span className="hd2">{dur}</span>
-              <span aria-hidden="true" className="hl" />
+            <div className="rt2" aria-hidden="true">
+              <span className="rl">
+                <i className="dot" />
+                <span className="ln" />
+                <span className="pl">
+                  <MovementIcon event={{ kind: 'transport', mode: t.mode, title: '' }} size={18} />
+                </span>
+                <span className="ln" />
+                <i className="hole" />
+              </span>
+              <span className="dr">{dur}</span>
             </div>
             <div className="hs r">
               <span className="tm">{ora(w.arrive?.time) || '—'}</span>
               <b>{t.to}</b>
-              <a className="btn mp" href={maps(t, 'to')} target="_blank" rel="noreferrer" aria-label={`Apri ${t.to} su Maps`}>
-                <Sv name="pin" size={20} />
-                Maps
-              </a>
             </div>
           </div>
         </div>
@@ -116,6 +115,11 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
                   </span>
                 </div>
               </div>
+              {manca ? (
+                <Pulsante size="sm" iconLeading="plus" onPress={() => onEdit('prezzo')}>
+                  Aggiungi prezzo
+                </Pulsante>
+              ) : null}
             </div>
             <dl className="dl">
               {rows
@@ -128,20 +132,14 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
                 ))}
             </dl>
             <div className="acts2">
-              {manca ? (
-                <Pulsante size="sm" iconLeading="plus" onPress={() => onEdit('prezzo')}>
-                  Aggiungi prezzo
-                </Pulsante>
-              ) : null}
+              <Pulsante size="sm" color="secondary" iconLeading="pin" href={direzioni(t)} target="_blank" aria-label={`Maps: da ${t.from} a ${t.to}`}>
+                Maps
+              </Pulsante>
               <Pulsante size="sm" color="secondary" iconLeading="qr" onPress={onCode}>
-                Mostra il codice
+                Codice
               </Pulsante>
-              <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => onEdit()}>
-                Modifica
-              </Pulsante>
-              <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
-                Elimina
-              </Pulsante>
+              <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => onEdit()} aria-label="Modifica il trasporto" />
+              <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete} aria-label="Elimina il trasporto" />
             </div>
           </div>
         ) : null}

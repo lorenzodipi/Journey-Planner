@@ -88,7 +88,7 @@ export function ViaggiatoriPage() {
               </Pulsante>
             }
           >
-            <div style={{ display: 'grid', gap: 12 }}>
+            <div style={{ display: 'grid', gap: 16 }}>
               <Campo label="Email" type="email" inputMode="email" icon="mail" value={email} onChange={(v) => (setEmail(v), setError(null))} error={error ?? undefined} placeholder="nome@esempio.it" autoFocus />
               <p className="fa-m" style={{ margin: 0 }}>
                 Chi accetta entra come partecipante e può modificare il viaggio. L’invito vale 7 giorni. La persona lo trova dentro l’app, in Viaggi, appena entra con questo indirizzo: non mandiamo email.

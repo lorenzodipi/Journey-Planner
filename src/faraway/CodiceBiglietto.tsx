@@ -120,7 +120,7 @@ export function CodiceBiglietto({ trip, kind, refId, title, when, detail, travel
       <div style={{ display: 'grid', gap: 16, justifyItems: 'center', textAlign: 'center' }}>
         <div>
           <h2 className="fa-h3" style={{ margin: 0 }}>{title}</h2>
-          {when ? <p className="fa-m" style={{ margin: '2px 0 0' }}>{when}</p> : null}
+          {when ? <p className="fa-m" style={{ margin: '2.0px 0 0' }}>{when}</p> : null}
         </div>
         {multi ? (
           <div className="fa-chips scroll" role="group" aria-label={nBiglietti(people.length)} style={{ justifySelf: 'stretch', justifyContent: 'center' }}>

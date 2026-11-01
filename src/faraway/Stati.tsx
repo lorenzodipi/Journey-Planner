@@ -1,10 +1,10 @@
 // Stati di sistema del design system (mock Fa-19, Fa-49, Fa-50, issue #49): vuoto con
 // illustrazione, vuoto da filtro, caricamento a scheletro, errore, offline.
+import { Loader } from './Loader'
 import type { ReactNode } from 'react'
 import { ART } from '../ui/art'
 import { Pulsante } from './base'
 import type { SvName } from './icons'
-import { Sv } from './icons'
 
 type ArtName = keyof typeof ART
 
@@ -24,7 +24,7 @@ export function Vuoto({ art, title, text, action, onAction, actionIcon = 'plus',
         </p>
       </div>
       {action || secondary ? (
-        <div style={{ padding: '8px 16px 16px', display: 'grid', gap: 12 }}>
+        <div style={{ padding: '8px 16px 16px', display: 'grid', gap: 16 }}>
           {action ? (
             <Pulsante iconLeading={actionIcon} onPress={onAction}>
               {action}
@@ -57,7 +57,7 @@ export function Caricamento({ text = 'Sto caricando il viaggio', rows = 4 }: { t
   return (
     <>
       <div role="status" aria-busy="true" aria-label={text} style={{ display: 'grid', gap: 16 }}>
-        <div aria-hidden="true" className="fa-card xl pad" style={{ display: 'grid', gap: 12 }}>
+        <div aria-hidden="true" className="fa-card xl pad" style={{ display: 'grid', gap: 16 }}>
           {bar(20, '40%')}
           {bar(44, '70%', 12)}
           {bar(14, '55%')}
@@ -65,7 +65,7 @@ export function Caricamento({ text = 'Sto caricando il viaggio', rows = 4 }: { t
         </div>
         <div className="fa-list" aria-hidden="true">
           {Array.from({ length: rows }, (_, i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '44px 1fr', gap: 12, padding: '10px 16px', alignItems: 'center' }}>
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '44px 1fr', gap: 16, padding: '8px 16px', alignItems: 'center' }}>
               {bar(44, '44px', 9999)}
               <div style={{ display: 'grid', gap: 8 }}>
                 {bar(16, '60%')}
@@ -75,9 +75,8 @@ export function Caricamento({ text = 'Sto caricando il viaggio', rows = 4 }: { t
           ))}
         </div>
       </div>
-      <div className="fa-off" style={{ justifyContent: 'center' }}>
-        <Sv name="clock" size={16} />
-        {text}
+      <div style={{ display: 'grid', justifyContent: 'center', padding: '16px 0' }}>
+        <Loader size={40} label={text} />
       </div>
     </>
   )

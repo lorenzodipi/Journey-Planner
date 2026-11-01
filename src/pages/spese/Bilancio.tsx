@@ -44,7 +44,7 @@ export function Bilancio() {
       ) : (
         <div className="fa-list">
           {lista.map((x) => (
-            <div key={x.id} className="fa-row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 6 }}>
+            <div key={x.id} className="fa-row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 8 }}>
               <span className="t">{testoCronologia(x, trip.travelers, me?.id)}</span>
               <span style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 <StatoPillola stato={x.status} />

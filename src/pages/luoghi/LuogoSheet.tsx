@@ -1,6 +1,7 @@
 // Fogli «Nuovo luogo» e «Modifica luogo» (#33) nello stile del design system: ricerca su OpenStreetMap,
 // link di Google Maps, nome, nome locale, città, categoria, stato, durata, note, orari strutturati,
 // indirizzo e posizione (con il pin da aggiustare sulla mappa).
+import { Loader } from '../../faraway/Loader'
 import { useConflitto } from '../../faraway/useConflitto'
 import { ora } from '../../lib/formati'
 import { useEffect, useRef, useState } from 'react'
@@ -205,7 +206,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="luogo-form" isLoading={busy}>
-          {busy ? 'Salvataggio…' : editing ? 'Salva modifiche' : 'Aggiungi luogo'}
+          {editing ? 'Salva modifiche' : 'Aggiungi luogo'}
         </Pulsante>
       }
     >
@@ -226,8 +227,8 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
               }
             }}
             trailing={
-              <button type="button" className="fa-btn soft sm" style={{ height: 36, padding: '0 12px' }} disabled={searching || !query.trim()} onClick={() => void search()}>
-                {searching ? 'Cerco…' : 'Cerca'}
+              <button type="button" className="fa-btn soft sm" style={{ height: 36, padding: '0 16px' }} disabled={searching || !query.trim()} onClick={() => void search()}>
+                {searching ? <Loader size={16} label="Ricerca in corso" /> : 'Cerca'}
               </button>
             }
           />
@@ -345,7 +346,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
                   />
                 </div>
               ) : (
-                <span className="fa-help">Carico la mappa…</span>
+                <Loader size={24} label="Caricamento della mappa" />
               )}
               <span className="fa-help">Trascina il pin o tocca la mappa per correggere la posizione.</span>
             </div>

@@ -12,11 +12,11 @@
 .fa-seg button{display:flex;align-items:center;justify-content:center;border-radius:9999px;font:600 14px/20px var(--font-sans);color:var(--ink-muted);border:0;background:none;cursor:pointer;min-height:40px}
 .fa-seg button.on{background:var(--azzurro-solid);color:var(--on-azzurro-solid)}
 .fa-sw{cursor:pointer;width:100%}
-.fa-swl{display:grid;gap:2px;min-width:0}
+.fa-swl{display:grid;gap:2.0px;min-width:0}
 .fa-sw[data-focus-visible] .fa-tr{outline:3px solid var(--focus);outline-offset:2px}
 .fa-sw[data-disabled]{opacity:.4}
 .fa-ib{position:relative}
-.fa-ibn{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:9999px;background:var(--azzurro-solid);color:var(--on-azzurro-solid);font:600 11px/18px var(--font-sans)}
+.fa-ibn{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 8px;border-radius:9999px;background:var(--azzurro-solid);color:var(--on-azzurro-solid);font:600 11px/18px var(--font-sans)}
 .fa-chip{cursor:pointer;position:relative}
 .fa-chip::after{content:"";position:absolute;inset:-4px 0}
 .fa-btn[data-pressed]:not(.txt):not(.del){transform:scale(.97)}
@@ -49,14 +49,14 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-toasts>*{pointer-events:auto}
 .fa-phone:not(.has-tabs)~.fa-toasts,html[data-no-tabs] .fa-toasts{bottom:calc(env(safe-area-inset-bottom,0px) + 16px)}
 
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1.0px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .fa-bar .tp h1.mid{margin:0}
 .fa-2c{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .fa-fld,.fa-2c>*{min-width:0}
 .fa-sheet{box-sizing:border-box;width:100%}
 .fa-in input[type=time],.fa-in input[type=date]{-webkit-appearance:none;appearance:none;min-height:0;background:none}
 .fa-in select{-webkit-appearance:none;appearance:none;background:none;border:0;cursor:pointer}
-.fa-in select:not([aria-label="Valuta"]){padding-right:4px}
+.fa-in select:not([aria-label="Valuta"]){padding-right:8px}
 .fa-fld>*{min-width:0}
 .fa-in input,.fa-in textarea{width:0}
 .fa-in select[aria-label="Valuta"]{flex:none;width:auto}
@@ -68,7 +68,6 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .jp-hit[data-state=next] .jp-num{background:var(--surface-card);color:var(--ink);border:2px solid var(--border-strong)}
 .jp-hit[data-state=now] .jp-num{background:var(--azzurro-solid);color:var(--on-azzurro-solid);box-shadow:0 0 0 3px var(--surface-card),0 0 0 5px var(--azzurro-ink);transform:scale(1.2)}
 /* nel tema scuro «Elimina» resta leggibile */
-[data-theme=dark] .k-Tappa .fa-btn.del{color:#FF9AA5!important}
 /* ValutaPiccola: il campo attivo è un vero input, l'altro un pulsante per scrivere in quella valuta */
 .k-ValutaPiccola .fd{width:100%;box-sizing:border-box;text-align:left;font:inherit;color:inherit;cursor:pointer;display:block}
 .k-ValutaPiccola .fd .fl2{display:block}
@@ -80,11 +79,11 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-cbx{width:24px;height:24px;border-radius:6px;border:1.5px solid var(--border-strong);background:var(--surface-card);display:grid;place-items:center;flex:none;box-sizing:border-box;color:var(--on-azzurro-solid)}
 .fa-cbx.on{background:var(--azzurro-solid);border-color:var(--azzurro-solid)}
 .fa-cbx svg,.fa-cbx .ic{width:16px;height:16px}
-.k-Luoghi .tg .fa-cbx{margin:0 10px}
+.k-Luoghi .tg .fa-cbx{margin:0 8px}
 .k-Luoghi .pl.fa-sel{border-color:var(--azzurro-ink);box-shadow:0 0 0 1px var(--azzurro-ink)}
-.fa-selall{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 16px;width:100%;text-align:left;cursor:pointer;color:inherit;font:inherit}
+.fa-selall{display:flex;align-items:center;gap:16px;min-height:56px;padding:0 16px;width:100%;text-align:left;cursor:pointer;color:inherit;font:inherit}
 .fa-selall .t{flex:1;font:600 15px/20px var(--font-sans)}
-.fa-selbar{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;z-index:40;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--canvas);border-top:1px solid var(--hairline)}
+.fa-selbar{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;z-index:40;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--canvas);border-top:1px solid var(--hairline)}
 .fa-selbar .fa-btn{border:1.5px solid var(--danger);width:100%;height:48px}
 .fa-phone.fa-selmode .fa-main{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .k-Luoghi .tg{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -96,7 +95,7 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-mapmsg{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center}
 .fa-mapcard{max-height:calc(100% - 88px);overflow:auto;overscroll-behavior:contain;border-radius:16px}
 .fa-mapres{position:absolute;top:60px;left:0;right:0;z-index:20;box-shadow:var(--shadow-card)}
-.fa-npnav{display:flex;align-items:center;gap:2px;flex:none}
+.fa-npnav{display:flex;align-items:center;gap:2.0px;flex:none}
 .fa-npnav .fa-ib{width:36px;height:36px;background:none}
 .fa-npnav .fa-ib:disabled{opacity:.35}
 .fa-map .maplibregl-ctrl-top-right{display:none}
@@ -108,15 +107,15 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 @media (prefers-reduced-motion:reduce){.fa-pin{transition:none}}
 
 .fa-orari{display:grid}
-.fa-orari .od{display:grid;grid-template-columns:40px minmax(0,1fr);gap:8px;padding:10px 12px;align-items:start}
+.fa-orari .od{display:grid;grid-template-columns:40px minmax(0,1fr);gap:8px;padding:8px 16px;align-items:start}
 .fa-orari .od+.od{border-top:1px solid var(--hairline)}
 .fa-orari .dn{font:600 15px/40px var(--font-sans)}
-.fa-orari .fs{display:grid;gap:6px;min-width:0}
-.fa-orari .f{display:flex;gap:6px;align-items:center;min-width:0}
+.fa-orari .fs{display:grid;gap:8px;min-width:0}
+.fa-orari .f{display:flex;gap:8px;align-items:center;min-width:0}
 .fa-orari .f input{flex:1;min-width:0;width:0;height:40px;box-sizing:border-box;border:1.5px solid var(--border-strong);border-radius:8px;padding:0 8px;background:var(--surface-card);color:var(--ink);font:500 16px/20px var(--font-sans)}
 .fa-orari .cl{font:400 15px/40px var(--font-sans);color:var(--ink-muted)}
-.fa-orari .ac{display:flex;flex-wrap:wrap;gap:0 4px;margin-left:-6px}
-.fa-orari .ac button{min-height:36px;padding:0 6px;border:0;background:none;color:var(--azzurro-ink);font:600 13px/18px var(--font-sans);cursor:pointer}
+.fa-orari .ac{display:flex;flex-wrap:wrap;gap:0 8px;margin-left:-8px}
+.fa-orari .ac button{min-height:36px;padding:0 8px;border:0;background:none;color:var(--azzurro-ink);font:600 13px/18px var(--font-sans);cursor:pointer}
 .k-Luoghi .tg svg.d{width:44px;height:44px}
 .fa-phone .fa-pinclu{color:var(--on-azzurro-solid)}
 .fa-foto{position:relative;width:44px;height:44px;border-radius:50%;overflow:hidden;flex:none;display:block}
@@ -128,7 +127,7 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .k-Ricevuta .fa-rcat .cat{all:unset;box-sizing:border-box;display:grid;grid-template-columns:32px minmax(0,1fr);gap:var(--space-md);align-items:start;width:100%;text-align:left;cursor:pointer;border-radius:8px}
 .k-Ricevuta .fa-rcat .cat:focus-visible{outline:3px solid var(--focus);outline-offset:4px}
 .k-Ricevuta .cat svg.ic,.k-Ricevuta .cat .ic{width:32px;height:32px}
-.k-Ricevuta .fa-rcat-ed{display:grid;gap:12px;margin:12px 0 0 44px}
+.k-Ricevuta .fa-rcat-ed{display:grid;gap:16px;margin:16px 0 0 48px}
 .k-Ricevuta .fa-rcat-ed .acts{display:flex;gap:8px;flex-wrap:wrap;margin:0}
 .k-Ricevuta .fa-rcat-ed .fa-btn{width:auto}
 .k-Ricevuta .ok svg{flex:none}
@@ -136,11 +135,11 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 /* Stati di sistema (#25, #49) */
 .fa-errcard{border:1.5px solid var(--danger)}
 .fa-errcard .ei{color:var(--danger)}
-.fa-sending{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:60;display:inline-flex;align-items:center;gap:6px;margin:0;padding:6px 12px;border-radius:9999px;background:var(--surface-card);color:var(--ink);box-shadow:var(--shadow-card);font:600 13px/18px var(--font-sans);white-space:nowrap}
-.fa-wait{display:inline-flex;align-items:center;gap:4px;color:var(--azzurro-ink);font:600 13px/18px var(--font-sans);white-space:nowrap}
+.fa-sending{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:60;display:inline-flex;align-items:center;gap:8px;margin:0;padding:8px 16px;border-radius:9999px;background:var(--surface-card);color:var(--ink);box-shadow:var(--shadow-card);font:600 13px/18px var(--font-sans);white-space:nowrap}
+.fa-wait{display:inline-flex;align-items:center;gap:8px;color:var(--azzurro-ink);font:600 13px/18px var(--font-sans);white-space:nowrap}
 
 /* ---- Alloggi: biglietto lavanda (#39) ---- */
-.fa-stay .hdl{all:unset;box-sizing:border-box;display:grid;gap:var(--space-sm);width:100%;cursor:pointer;position:relative;padding-right:28px}
+.fa-stay .hdl{all:unset;box-sizing:border-box;display:grid;gap:var(--space-sm);width:100%;cursor:pointer;position:relative;padding-right:32px}
 .fa-stay .hdl:focus-visible{outline:2px solid var(--focus);outline-offset:4px;border-radius:var(--radius-md)}
 .fa-stay .hdl .chv{position:absolute;right:0;bottom:2px;transition:transform .2s}
 .fa-stay .hdl .chv.up{transform:rotate(180deg)}
@@ -156,7 +155,7 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-stay .dl dt{color:var(--on-tinta-muted)}
 .fa-stay .dl dd{margin:0;color:var(--on-tinta);font-weight:600}
 .fa-stay .avs{display:inline-flex}
-.fa-stay .avs span{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;font:600 10px/1 var(--font-sans);color:var(--on-bright);margin-right:-6px;border:2px solid var(--tk)}
+.fa-stay .avs span{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;font:600 10px/1 var(--font-sans);color:var(--on-bright);margin-right:-8px;border:2px solid var(--tk)}
 .fa-stay .acts2{display:flex;gap:var(--space-sm)}
 
 /* Accesso (#48): un solo logo, quello del tema */
@@ -165,16 +164,61 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-in input:focus-visible,.fa-in textarea:focus-visible{outline:none}
 
 .fa-tab .pill{position:relative}
-.fa-tbn{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:9999px;background:var(--azzurro-solid);color:var(--on-azzurro-solid);font:600 11px/18px var(--font-sans);text-align:center}
-.fa-dlc{display:grid;gap:6px;margin:0}
+.fa-tbn{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 8px;border-radius:9999px;background:var(--azzurro-solid);color:var(--on-azzurro-solid);font:600 11px/18px var(--font-sans);text-align:center}
+.fa-dlc{display:grid;gap:8px;margin:0}
 .fa-dlc>div{display:grid;grid-template-columns:84px 1fr;gap:var(--space-md);font:400 14px/20px var(--font-sans)}
 .fa-dlc dt{color:var(--ink-muted)}
 .fa-dlc dd{margin:0;font-weight:600;overflow-wrap:anywhere}
 .fa-acts{display:flex;flex-wrap:wrap;gap:8px}
 
 /* corpo del foglio: l'intestazione e i pulsanti restano fermi, scorre solo il contenuto */
-.fa-sheet>.fb{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:4px;margin:-4px}
+.fa-sheet>.fb{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:8px;margin:-8px}
 .fa-sheet>.grab,.fa-sheet>.hd,.fa-sheet>.st,.fa-sheet>.bt{flex:0 0 auto}
 .fa-sheet .frm{overflow:visible}
-.fa-sheet.full .bt{margin-top:12px}
+.fa-sheet.full .bt{margin-top:16px}
 .fa-sheet{will-change:transform;backface-visibility:hidden}
+
+/* ---- v2: bottoni in una riga, elimina come bottone rosso, rotta dei trasporti, niente scorrimento laterale ---- */
+.fa-btn.del{background:color-mix(in srgb,var(--danger) 12%,var(--surface-card));border:1.5px solid var(--danger);color:var(--danger);width:auto;padding:0 16px;height:44px;box-shadow:none}
+.fa-btn.ico{width:44px;min-width:44px;padding:0;flex:0 0 44px}
+.acts2,.fa-acts{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;margin-top:16px}
+.acts2 .fa-btn,.fa-acts .fa-btn{white-space:nowrap;min-width:0;flex:1 1 auto;padding:0 16px}
+.acts2 .fa-btn.ico,.fa-acts .fa-btn.ico{flex:0 0 44px;width:44px;padding:0}
+.fa-main{overflow-x:clip}
+.k-TicketOrizzontale,.k-TicketOrizzontale .tk{max-width:100%;min-width:0}
+.k-TicketOrizzontale .hz2{display:grid;grid-template-columns:auto minmax(64px,1fr) auto;gap:16px;align-items:start;padding:0 24px 16px}
+.k-TicketOrizzontale .hz2 .hs .tm{white-space:nowrap}
+.k-TicketOrizzontale .rt2{display:grid;gap:8px;justify-items:center;padding-top:8px}
+.k-TicketOrizzontale .rt2 .rl{display:flex;align-items:center;gap:8px;width:100%}
+.k-TicketOrizzontale .rt2 .ln{flex:1;min-width:0;border-top:3px dotted var(--border-strong)}
+.k-TicketOrizzontale .hz2 .hs b{overflow-wrap:anywhere}
+.k-TicketOrizzontale .pr{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.k-TicketOrizzontale .rt2 .dot{width:8px;height:8px;border-radius:50%;background:var(--azzurro-solid);flex:none}
+.k-TicketOrizzontale .rt2 .hole{width:12px;height:12px;border-radius:50%;border:3px solid var(--corallo);box-sizing:border-box;flex:none}
+.k-TicketOrizzontale .rt2 .pl{width:32px;height:32px;border-radius:50%;background:#FFFFFF;color:var(--azzurro-ink);display:grid;place-items:center;flex:none}
+.k-TicketOrizzontale .rt2 .dr{font:500 13px/16px var(--font-sans);color:var(--fgm);white-space:nowrap}
+.tm,.time,.amt{white-space:nowrap}
+
+/* data e ora vuote: il segnaposto sostituisce «--:--» / «gg/mm/aaaa» finché non si sceglie */
+.fa-in{position:relative}
+.fa-in.vuoto .ph{position:absolute;left:48px;right:48px;top:50%;transform:translateY(-50%);color:var(--ink-muted);pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:400 16px/24px var(--font-sans)}
+.fa-in.vuoto:not(:focus-within) input::-webkit-datetime-edit{color:transparent}
+.fa-in.vuoto:focus-within .ph{display:none}
+
+/* loader */
+.fa-spin{display:inline-grid;place-items:center;color:var(--azzurro-ink);flex:none}
+.fa-spin svg{animation:fa-giro 800ms linear infinite}
+@keyframes fa-giro{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.fa-spin svg{animation-duration:2.4s}}
+.fa-btn .fa-spin{color:currentColor}
+.fa-sending{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+
+/* Il viaggio (Home prima della partenza): stepper delle città, non interattivo */
+.fa-stepv{display:grid;gap:16px}
+.fa-stepv ol{list-style:none;margin:0;padding:0;display:grid}
+.fa-stepv li{position:relative;display:grid;grid-template-columns:24px 1fr;column-gap:16px;padding-bottom:24px}
+.fa-stepv li:last-child{padding-bottom:0}
+.fa-stepv li i{grid-row:1/3;width:24px;height:24px;border-radius:50%;display:block}
+.fa-stepv li:not(:last-child)::before{content:"";position:absolute;left:11px;top:32px;bottom:8px;border-left:2px dashed var(--border-strong)}
+.fa-stepv .nm{font:600 20px/24px var(--font-sans);color:var(--ink);overflow-wrap:anywhere}
+.fa-stepv .dt{font:400 14px/24px var(--font-sans);color:var(--ink-muted);white-space:nowrap}

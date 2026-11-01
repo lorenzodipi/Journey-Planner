@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { BOOKING_BUDGET_CATEGORY, BOOKING_LABEL } from '../../lib/bookingMeta'
 import { isFileCached, openBookingFile } from '../../lib/bookingFiles'
-import { codiciDi } from '../../lib/codici'
 import { formatShort } from '../../lib/dates'
 import { dateInZone } from '../../lib/flights'
 import { formatMoney } from '../../lib/money'
@@ -123,7 +122,6 @@ export function PrenotazioniPage() {
               const sub = sottotitolo(b, tz) || BOOKING_LABEL[b.type]
               const payer = trip.travelers.find((p) => p.id === b.paidBy)
               const cached = !!b.filePath && offline.has(b.filePath)
-              const haCodice = codiciDi(trip, 'booking', b.id).length > 0
               return (
                 <div key={b.id} className={cx('fa-xr', isOpen && 'open')}>
                   <button type="button" className="fa-row" aria-expanded={isOpen} onClick={() => open.toggle(b.id)}>
@@ -132,7 +130,7 @@ export function PrenotazioniPage() {
                       <span className="t" style={{ display: 'block' }}>{b.title}</span>
                       <span className="s" style={{ display: 'block' }}>{sub}</span>
                       {statoDi(b) !== 'confirmed' || quando(b, trip) === 'fuori-periodo' ? (
-                        <span style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+                        <span style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                           {statoDi(b) !== 'confirmed' ? <Pillola tone={statoDi(b) === 'cancelled' ? 'cor' : 'mut'}>{STATO_LABEL[statoDi(b)]}</Pillola> : null}
                           {quando(b, trip) === 'fuori-periodo' ? <Pillola tone="mut">Fuori periodo</Pillola> : null}
                         </span>
@@ -248,7 +246,7 @@ export function PrenotazioniPage() {
                       <div className="acts">
                         <button type="button" className="fa-btn sm out" onClick={() => setCodice(b)}>
                           <Sv name="qr" size={18} />
-                          {haCodice ? 'Mostra il codice' : 'Codice del biglietto'}
+                          Codice
                         </button>
                         <button type="button" className="fa-btn sm out" onClick={() => setSheet({ booking: b })}>
                           <Sv name="pencil" size={18} />
