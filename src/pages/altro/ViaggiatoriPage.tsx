@@ -127,11 +127,10 @@ export function ViaggiatoriPage() {
               icon={<Avatar initials={initials(p.name)} n={discOf(trip, p.id)} large />}
               title={`${p.name}${sono ? ' (tu)' : ''}`}
               sub={p.email ?? (p.userId ? undefined : 'Senza account · da collegare')}
-              end={<span className="fa-m">{ruoloTesto(p)}</span>}
               open={open.isOpen(p.id)}
               onToggle={() => open.toggle(p.id)}
             >
-              <KV icon="user" title={p.role === 'owner' ? 'Ha creato il viaggio' : 'Può modificare il viaggio'} sub={p.role === 'owner' ? 'Invita e toglie le persone, elimina il viaggio' : undefined} />
+              <KV icon="user" title={ruoloTesto(p)} sub={p.role === 'owner' ? 'Ha creato il viaggio: invita e toglie le persone, elimina il viaggio' : 'Può modificare il viaggio'} />
               {creatore || sono ? (
                 <Azioni>
                   <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => setRinomina({ id: p.id, nome: p.name })}>

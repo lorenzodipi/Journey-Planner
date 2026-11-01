@@ -257,3 +257,29 @@ html{overscroll-behavior:none}
 .fa-in select,.fa-in select:focus,.fa-in select:focus-visible,.fa-in input:focus,.fa-in input:focus-visible,.fa-in textarea:focus,.fa-in textarea:focus-visible{outline:0!important;box-shadow:none!important;-webkit-tap-highlight-color:transparent}
 .fa-in select:has(option[value=""]:checked){color:var(--ink-muted)}
 .fa-in select option,.fa-in select optgroup{color:var(--ink)}
+
+/* Luoghi: barra di selezione con il bottone al centro */
+.fa-selbar{display:flex;justify-content:center}
+.fa-selbar .fa-btn{width:auto;min-width:240px}
+
+/* Maps in Luoghi e nelle tappe: testo più piccolo, icona più grande */
+.k-Luoghi .btn.mp,.k-Tappa .btn.mp,.k-LuoghiAperti .btn.mp{font:600 13px/18px var(--font-sans);gap:8px}
+.k-Luoghi .btn.mp .ic,.k-Luoghi .btn.mp svg,.k-Tappa .btn.mp .ic,.k-Tappa .btn.mp svg,.k-LuoghiAperti .btn.mp .ic,.k-LuoghiAperti .btn.mp svg{width:28px;height:28px;flex:none}
+
+/* testi lunghi (email) a capo dentro la riga, mai sopra al resto */
+.fa-row .t,.fa-row .s{overflow-wrap:anywhere}
+.fa-row>span:nth-child(2){min-width:0}
+
+/* select: elenco leggibile anche con il browser in scuro */
+.fa-in select option,.fa-in select optgroup{background:var(--surface-card);color:var(--ink)}
+.fa-in select{color-scheme:inherit}
+
+/* schede colorate (biglietti): pillole e bottoni sempre chiari, azzurrino con bordo acceso, anche in scuro */
+.k-Biglietto .ok:not(.td),.k-Ticket .ok:not(.td),.k-TicketOrizzontale .ok:not(.td){background:#EAF4FC;color:#075A99;border:1.5px solid #0866AD}
+.k-Biglietto .fa-btn.out,.k-Ticket .fa-btn.out,.k-TicketOrizzontale .fa-btn.out{background:#EAF4FC;color:#075A99;border:1.5px solid #0866AD;box-shadow:none}
+.k-Biglietto .fa-btn.del,.k-Ticket .fa-btn.del,.k-TicketOrizzontale .fa-btn.del{background:#FFF1F1;color:#822328;border:1.5px solid #A82C34}
+
+/* persone («Per chi»): pallini staccati tra loro e dal testo */
+.fa-stay .avs,.tv .avs{display:inline-flex;gap:8px;margin-right:8px;vertical-align:middle}
+.fa-stay .avs span,.tv .avs span{margin:0!important}
+.k-Checklist .it .tx{display:grid;gap:8px;min-width:0}

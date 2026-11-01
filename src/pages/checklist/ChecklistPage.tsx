@@ -119,43 +119,50 @@ export function ChecklistPage() {
             </span>
           )}
           {i.description ? <span className="fa-m" style={{ display: 'block', whiteSpace: 'pre-line' }}>{i.description}</span> : null}
-          <div className="mt">
-            {i.private ? (
-              <span className="tag">
-                <Sv name="lock" size={12} className="ic" />
-                Solo io
-              </span>
-            ) : null}
-            {i.dueDate ? <span className="tag" style={late ? { color: 'var(--danger)' } : undefined}>entro {formatShort(i.dueDate)}</span> : null}
-            {multi && !selecting ? (
-              <span role="group" aria-label={`Pezzi a posto: ${i.text}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <PulsanteIcona icon="minus" label={`Meno: ${i.text}`} isDisabled={pending.has(i.id) || have <= 0} onPress={() => void setCount(i, have - 1)} />
-                <b aria-live="polite">{have}/{i.quantity}</b>
-                <PulsanteIcona icon="plus" label={`Più: ${i.text}`} isDisabled={pending.has(i.id) || have >= (i.quantity ?? 1)} onPress={() => void setCount(i, have + 1)} />
-              </span>
-            ) : null}
-            {multi && selecting ? <span className="cnt">{have}/{i.quantity}</span> : null}
-            {mostraPersone ? (
-              <>
-                <span className="pp" aria-hidden="true">
-                  {trip.travelers.map((p) => {
-                    const on = p.id === trip.myTravelerId ? i.done : !!i.others?.find((o) => o.travelerId === p.id)?.done
-                    return (
-                      <span key={p.id} className={cx('pe', on ? 'y' : 'o')} style={{ ['--c' as string]: `var(--disco-${COL[(discOf(trip, p.id) - 1) % 5]})` }}>
-                        {initials(p.name)}
-                        {on ? (
-                          <em>
-                            <Sv name="check" size={10} className="ic" />
-                          </em>
-                        ) : null}
-                      </span>
-                    )
-                  })}
+          {i.private || i.dueDate ? (
+            <div className="mt">
+              {i.private ? (
+                <span className="tag">
+                  <Sv name="lock" size={12} className="ic" />
+                  Solo io
                 </span>
-                <span className="cnt">{s.done} di {s.total}</span>
-              </>
-            ) : null}
-          </div>
+              ) : null}
+              {i.dueDate ? <span className="tag" style={late ? { color: 'var(--danger)' } : undefined}>entro {formatShort(i.dueDate)}</span> : null}
+            </div>
+          ) : null}
+          {multi ? (
+            <div className="mt">
+              {selecting ? (
+                <span className="cnt">{have}/{i.quantity}</span>
+              ) : (
+                <span role="group" aria-label={`Pezzi a posto: ${i.text}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <PulsanteIcona icon="minus" label={`Meno: ${i.text}`} isDisabled={pending.has(i.id) || have <= 0} onPress={() => void setCount(i, have - 1)} />
+                  <b aria-live="polite">{have}/{i.quantity}</b>
+                  <PulsanteIcona icon="plus" label={`Più: ${i.text}`} isDisabled={pending.has(i.id) || have >= (i.quantity ?? 1)} onPress={() => void setCount(i, have + 1)} />
+                </span>
+              )}
+            </div>
+          ) : null}
+          {mostraPersone ? (
+            <div className="mt">
+              <span className="pp" aria-hidden="true">
+                {trip.travelers.map((p) => {
+                  const on = p.id === trip.myTravelerId ? i.done : !!i.others?.find((o) => o.travelerId === p.id)?.done
+                  return (
+                    <span key={p.id} className={cx('pe', on ? 'y' : 'o')} style={{ ['--c' as string]: `var(--disco-${COL[(discOf(trip, p.id) - 1) % 5]})` }}>
+                      {initials(p.name)}
+                      {on ? (
+                        <em>
+                          <Sv name="check" size={10} className="ic" />
+                        </em>
+                      ) : null}
+                    </span>
+                  )
+                })}
+              </span>
+              <span className="cnt">{s.done} di {s.total}</span>
+            </div>
+          ) : null}
           {i.url && !selecting ? (
             <a className="fa-lnk" href={i.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14 }}>
               Apri il link

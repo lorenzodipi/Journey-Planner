@@ -227,8 +227,8 @@ function Elenco({ setVista }: { setVista: (v: Vista) => void }) {
           <PulsanteIcona icon="search" label="Cerca un luogo" pressed={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />
         ) : (
           <>
-            <PulsanteIcona icon="check" label="Seleziona luoghi" onPress={() => startSelecting()} />
             <PulsanteIcona icon="search" label="Cerca un luogo" pressed={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />
+            <PulsanteIcona icon="trash" label="Elimina dei luoghi" onPress={() => startSelecting()} />
           </>
         )
       }
