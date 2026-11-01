@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { currencyName, extraCurrencies, formatMoney, parseRate } from '../lib/money'
 import { fetchFxRate } from '../lib/moneyApi'
 import type { Trip } from '../types'
-import { FormError, PrimaryButton, SecondaryButton, TextField } from './Field'
+import { Campo, Pulsante } from '../faraway/base'
+import { Sv } from '../faraway/icons'
 
 interface Props {
   trip: Trip
@@ -73,64 +74,63 @@ export function FxForm({ trip, onSubmit, onDone }: Props) {
   }
 
   return (
-    <form className="space-y-4" onSubmit={submit} noValidate>
-      <p className="text-sm text-muted">
+    <form style={{ display: 'grid', gap: 16 }} onSubmit={submit} noValidate>
+      <p className="fa-m" style={{ margin: 0 }}>
         {multi
           ? `Servono a mettere nella stessa valuta (${base}) le voci in valuta estera. Le spese possono avere un cambio proprio, che ha la precedenza.`
           : `Serve a mettere nella stessa valuta (${base}) le voci in ${local}. Le spese possono avere un cambio proprio, che ha la precedenza.`}
       </p>
-      <TextField label={`1 ${local} = ? ${base}`} value={rate} onChange={setRate} inputMode="decimal" placeholder="0,0056" />
-      {value ? (
-        <p className="-mt-2 text-xs text-muted">
-          {formatMoney(10_000, local)} ≈ {formatMoney(Math.round(10_000 * value * 100) / 100, base)}
-        </p>
-      ) : null}
+      <Campo label={`1 ${local} = ? ${base}`} value={rate} onChange={setRate} inputMode="decimal" placeholder="0,0056" hint={value ? `${formatMoney(10_000, local)} ≈ ${formatMoney(Math.round(10_000 * value * 100) / 100, base)}` : undefined} />
 
       {extras.map((x, i) => {
         const v = parseRate(x.text)
         return (
-          <div key={x.code} className="space-y-1">
-            <div className="flex items-end gap-3">
-              <div className="min-w-0 flex-1">
-                <TextField
-                  label={`1 ${x.code} = ? ${base}`}
-                  value={x.text}
-                  onChange={(t) => setExtras(extras.map((y, j) => (j === i ? { ...y, text: t } : y)))}
-                  inputMode="decimal"
-                  placeholder="0,00065"
-                />
-              </div>
-              <button type="button" onClick={() => setExtras(extras.filter((_, j) => j !== i))} aria-label={`Togli ${x.code}`} className="min-h-12 px-1 text-sm font-extrabold text-danger">
-                Togli
-              </button>
-            </div>
-            <p className="text-xs text-muted">
-              {[currencyName(x.code), v ? `${formatMoney(10_000, x.code)} ≈ ${formatMoney(Math.round(10_000 * v * 100) / 100, base)}` : ''].filter(Boolean).join(' · ')}
-            </p>
+          <div key={x.code} style={{ display: 'grid', gap: 8 }}>
+            <Campo
+              label={`1 ${x.code} = ? ${base}`}
+              value={x.text}
+              onChange={(t) => setExtras(extras.map((y, j) => (j === i ? { ...y, text: t } : y)))}
+              inputMode="decimal"
+              placeholder="0,00065"
+              hint={[currencyName(x.code), v ? `${formatMoney(10_000, x.code)} ≈ ${formatMoney(Math.round(10_000 * v * 100) / 100, base)}` : ''].filter(Boolean).join(' · ') || undefined}
+            />
+            <Pulsante color="tertiary-destructive" iconLeading="trash" onPress={() => setExtras(extras.filter((_, j) => j !== i))}>
+              Togli {x.code}
+            </Pulsante>
           </div>
         )
       })}
 
       {adding ? (
-        <div className="flex items-end gap-3">
-          <div className="min-w-0 flex-1">
-            <TextField label="Codice della valuta (3 lettere)" value={newCode} onChange={(v) => setNewCode(v.toUpperCase())} maxLength={3} autoComplete="off" placeholder="KRW" />
+        <div style={{ display: 'grid', gap: 8 }}>
+          <Campo label="Codice della valuta (3 lettere)" value={newCode} onChange={(v) => setNewCode(v.toUpperCase())} maxLength={3} autoComplete="off" placeholder="KRW" />
+          <div className="fa-btns">
+            <Pulsante color="secondary" onPress={() => (setAdding(false), setNewCode(''))}>
+              Annulla
+            </Pulsante>
+            <Pulsante color="secondary-soft" iconLeading="plus" onPress={addCurrency}>
+              Aggiungi
+            </Pulsante>
           </div>
-          <button type="button" onClick={addCurrency} className="min-h-12 rounded-full border-2 border-accent px-4 text-sm font-extrabold text-accent">
-            Aggiungi
-          </button>
         </div>
       ) : (
-        <button type="button" onClick={() => setAdding(true)} className="min-h-11 text-sm font-extrabold text-pale">
-          + Aggiungi valuta…
-        </button>
+        <Pulsante color="secondary-soft" iconLeading="plus" onPress={() => setAdding(true)}>
+          Aggiungi valuta
+        </Pulsante>
       )}
 
-      <SecondaryButton onClick={() => void fetchRates()}>
-        {loading ? 'Leggo il cambio…' : multi ? 'Prendi i cambi di oggi (BCE)' : 'Prendi il cambio di oggi (BCE)'}
-      </SecondaryButton>
-      <FormError message={error} />
-      <PrimaryButton busy={busy}>{busy ? 'Salvataggio…' : multi ? 'Salva cambi' : 'Salva cambio'}</PrimaryButton>
+      <Pulsante color="secondary" iconLeading="refresh" isLoading={loading} onPress={() => void fetchRates()}>
+        {multi ? 'Prendi i cambi di oggi (BCE)' : 'Prendi il cambio di oggi (BCE)'}
+      </Pulsante>
+      {error ? (
+        <span className="fa-help bad" role="alert" data-errore>
+          <Sv name="err" size={16} />
+          {error}
+        </span>
+      ) : null}
+      <Pulsante type="submit" isLoading={busy}>
+        {multi ? 'Salva cambi' : 'Salva cambio'}
+      </Pulsante>
     </form>
   )
 }

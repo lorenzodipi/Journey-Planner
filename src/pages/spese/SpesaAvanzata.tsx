@@ -63,11 +63,9 @@ export function PagantiEditor({ trip, total, currency, rows, onRows, single, onS
           ))}
         </div>
         {ppl.length > 1 ? (
-          <div>
-            <Pulsante color="link-color" size="sm" iconLeading="plus" onPress={() => onRows([{ id: single, text: total ? txt(total) : '' }, { id: '', text: '' }])}>
-              Aggiungi un altro pagante
-            </Pulsante>
-          </div>
+          <Pulsante color="secondary-soft" iconLeading="plus" onPress={() => onRows([{ id: single, text: total ? txt(total) : '' }, { id: '', text: '' }])}>
+            Aggiungi un altro pagante
+          </Pulsante>
         ) : null}
         {error ? <span className="fa-help bad" role="alert"><Sv name="err" size={16} />{error}</span> : null}
       </div>
@@ -104,11 +102,9 @@ export function PagantiEditor({ trip, total, currency, rows, onRows, single, onS
         </div>
       ))}
       {used.size < ppl.length && !rows.some((r) => !r.id) ? (
-        <div>
-          <Pulsante color="link-color" size="sm" iconLeading="plus" onPress={() => onRows([...rows, { id: '', text: '' }])}>
-            Aggiungi un altro pagante
-          </Pulsante>
-        </div>
+        <Pulsante color="secondary-soft" iconLeading="plus" onPress={() => onRows([...rows, { id: '', text: '' }])}>
+          Aggiungi un altro pagante
+        </Pulsante>
       ) : null}
       {rows.some((r) => !r.id) ? <span className="fa-help bad" role="alert"><Sv name="err" size={16} />Scegli chi è il pagante che hai aggiunto, oppure toglilo.</span> : <Help check={check} />}
       {check.ok && total !== null && !error && rows.every((r) => r.id) ? <span className="fa-help ok">I versamenti fanno {txt(total)} {currency}</span> : null}
@@ -209,17 +205,19 @@ export function CambioRiga({ base, other, rate, source, at, manual, setBy, busy,
     )
   }
   return (
-    <div className="fa-help" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-      <span>
+    <div style={{ display: 'grid', gap: 8 }}>
+      <span className="fa-help">
         Cambio {fmtRate(per)} {other} per 1 {base}
         {trace ? ` · ${trace}` : ''}
       </span>
-      <Pulsante size="sm" color="link-color" isLoading={busy} onPress={onRefresh}>
-        Aggiorna
-      </Pulsante>
-      <Pulsante size="sm" color="link-color" onPress={() => (setText(fmtRate(per)), setEdit(true))}>
-        Modifica
-      </Pulsante>
+      <div className="fa-btns">
+        <Pulsante color="secondary-soft" iconLeading="refresh" isLoading={busy} onPress={onRefresh}>
+          Aggiorna
+        </Pulsante>
+        <Pulsante color="secondary-soft" iconLeading="pencil" onPress={() => (setText(fmtRate(per)), setEdit(true))}>
+          Modifica
+        </Pulsante>
+      </div>
     </div>
   )
 }
@@ -265,11 +263,9 @@ export function RicevuteEditor({ trip, expenseId, files, added, onAdded, onRemov
         </div>
       ))}
       <input ref={input} type="file" accept="image/*,application/pdf" hidden onChange={(e) => void pick(e.currentTarget.files)} />
-      <div>
-        <Pulsante color="secondary" size="sm" iconLeading="camera" isLoading={busy} isDisabled={!online} onPress={() => input.current?.click()}>
-          Aggiungi foto o PDF
-        </Pulsante>
-      </div>
+      <Pulsante color="secondary" iconLeading="camera" isLoading={busy} isDisabled={!online} onPress={() => input.current?.click()}>
+        Aggiungi foto o PDF
+      </Pulsante>
       {!online ? <span className="fa-help">Sei offline: aggiungi la ricevuta quando c’è rete.</span> : null}
     </div>
   )

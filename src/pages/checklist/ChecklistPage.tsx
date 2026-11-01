@@ -12,7 +12,6 @@ import { Pulsante, PulsanteIcona, Segmenti } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
 import { Foglio, useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
-import { useUnaAperta } from '../../faraway/Righe'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
 import { VoceSheet } from './VoceSheet'
@@ -24,7 +23,6 @@ export function ChecklistPage() {
   const t = useTrips()
   const search = useSearch()
   const [ask, confirmNode] = useConferma()
-  const open = useUnaAperta()
   const v2 = !!trip.checklistV2
   const [lista, setLista] = useState<ListaChecklist>('all')
   const [sheet, setSheet] = useState<{ item?: ChecklistItem } | null>(() => (new URLSearchParams(search).get('nuova') ? {} : null))
@@ -87,7 +85,6 @@ export function ChecklistPage() {
     const multi = (i.quantity ?? 1) > 1
     const have = doneCount(i)
     const partial = multi && have > 0 && !i.done
-    const isOpen = open.isOpen(i.id) && !selecting
     const picked = selecting && sel.has(i.id)
     const late = !i.done && !!i.dueDate && i.dueDate < today
     const s = spunteDi(i, trip.travelers.length)
@@ -108,12 +105,20 @@ export function ChecklistPage() {
           </b>
         </button>
         <div className="tx">
-          <button type="button" aria-expanded={selecting ? undefined : isOpen} onClick={() => (selecting ? setSel((p) => (p.has(i.id) ? new Set([...p].filter((x) => x !== i.id)) : new Set(p).add(i.id))) : open.toggle(i.id))} style={{ all: 'unset', cursor: 'pointer', display: 'block' }}>
-            <span className="n">
+          {selecting ? (
+            <button type="button" onClick={() => setSel((p) => (p.has(i.id) ? new Set([...p].filter((x) => x !== i.id)) : new Set(p).add(i.id)))} style={{ all: 'unset', cursor: 'pointer', display: 'block' }}>
+              <span className="n">
+                {i.text}
+                {multi ? ` · ${i.quantity}${i.unit ? ` ${i.unit}` : ''}` : ''}
+              </span>
+            </button>
+          ) : (
+            <span className="n" style={{ display: 'block' }}>
               {i.text}
               {multi ? ` · ${i.quantity}${i.unit ? ` ${i.unit}` : ''}` : ''}
             </span>
-          </button>
+          )}
+          {i.description ? <span className="fa-m" style={{ display: 'block', whiteSpace: 'pre-line' }}>{i.description}</span> : null}
           <div className="mt">
             {i.private ? (
               <span className="tag">
@@ -122,7 +127,14 @@ export function ChecklistPage() {
               </span>
             ) : null}
             {i.dueDate ? <span className="tag" style={late ? { color: 'var(--danger)' } : undefined}>entro {formatShort(i.dueDate)}</span> : null}
-            {multi ? <span className="cnt">{have}/{i.quantity}</span> : null}
+            {multi && !selecting ? (
+              <span role="group" aria-label={`Pezzi a posto: ${i.text}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <PulsanteIcona icon="minus" label={`Meno: ${i.text}`} isDisabled={pending.has(i.id) || have <= 0} onPress={() => void setCount(i, have - 1)} />
+                <b aria-live="polite">{have}/{i.quantity}</b>
+                <PulsanteIcona icon="plus" label={`Più: ${i.text}`} isDisabled={pending.has(i.id) || have >= (i.quantity ?? 1)} onPress={() => void setCount(i, have + 1)} />
+              </span>
+            ) : null}
+            {multi && selecting ? <span className="cnt">{have}/{i.quantity}</span> : null}
             {mostraPersone ? (
               <>
                 <span className="pp" aria-hidden="true">
@@ -144,32 +156,13 @@ export function ChecklistPage() {
               </>
             ) : null}
           </div>
-          {isOpen ? (
-            <div style={{ display: 'grid', gap: 8, paddingBottom: 8 }}>
-              {i.description ? <span className="fa-m" style={{ whiteSpace: 'pre-line' }}>{i.description}</span> : null}
-              {multi ? (
-                <span role="group" aria-label={`Pezzi a posto: ${i.text}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 16 }}>
-                  <PulsanteIcona icon="minus" label={`Meno: ${i.text}`} onPress={() => void setCount(i, have - 1)} />
-                  <b aria-live="polite">{have}/{i.quantity}</b>
-                  <PulsanteIcona icon="plus" label={`Più: ${i.text}`} onPress={() => void setCount(i, have + 1)} />
-                </span>
-              ) : null}
-              {i.url ? (
-                <a className="fa-lnk" href={i.url} target="_blank" rel="noopener noreferrer">
-                  Apri il link
-                </a>
-              ) : null}
-              <div className="fa-acts">
-                <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => setSheet({ item: i })}>
-                  Modifica
-                </Pulsante>
-                <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={() => void elimina([i])}>
-                  Elimina
-                </Pulsante>
-              </div>
-            </div>
+          {i.url && !selecting ? (
+            <a className="fa-lnk" href={i.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14 }}>
+              Apri il link
+            </a>
           ) : null}
         </div>
+        {selecting ? null : <PulsanteIcona icon="pencil" label={`Modifica: ${i.text}`} onPress={() => setSheet({ item: i })} />}
       </li>
     )
   }
@@ -179,11 +172,12 @@ export function ChecklistPage() {
     <Schermata
       bar={
         <BarraIndietro
+          senzaIndietro={selecting}
           title={selecting ? (chosen.length === 0 ? 'Tocca le voci' : chosen.length === 1 ? '1 selezionata' : `${chosen.length} selezionate`) : 'Checklist'}
           back="/altro"
           right={
             vuota ? undefined : (
-              <PulsanteIcona icon={selecting ? 'close' : 'check'} label={selecting ? 'Annulla la selezione' : 'Seleziona'} onPress={() => (selecting ? (setSelecting(false), setSel(new Set())) : setSelecting(true))} />
+              <PulsanteIcona icon={selecting ? 'close' : 'trash'} label={selecting ? 'Annulla la selezione' : 'Elimina delle voci'} onPress={() => (selecting ? (setSelecting(false), setSel(new Set())) : setSelecting(true))} />
             )
           }
         />
@@ -228,7 +222,7 @@ export function ChecklistPage() {
                 { value: 'all', label: 'Tutti' },
                 { value: 'mine', label: 'Solo mie' },
               ]}
-              onChange={(v) => (setLista(v), open.setOpen(null))}
+              onChange={setLista}
             />
           ) : null}
           {!selecting ? (

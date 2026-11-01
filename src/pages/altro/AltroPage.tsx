@@ -59,13 +59,11 @@ export function AltroPage() {
           {edit ? <ViaggioSheet key={trip.id} trip={trip} open onClose={() => setEdit(false)} /> : null}
           {fx ? (
             <Foglio open title="Cambio delle valute" onClose={() => setFx(false)}>
-              <div className="legacy">
-                <FxForm
+              <FxForm
                   trip={trip}
                   onSubmit={(rate, extra) => (Object.keys(extra).length === 0 && !trip.fxRates ? t.setFxRate(trip.id, rate) : t.setFxRates(trip.id, rate, extra))}
                   onDone={() => setFx(false)}
                 />
-              </div>
             </Foglio>
           ) : null}
         </>

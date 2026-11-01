@@ -16,7 +16,10 @@ if (!__NATIVE__) registerSW({ immediate: true })
 else {
   // App Android: gesto/tasto "indietro"; app iOS: swipe dal bordo sinistro
   void import('@capacitor/core').then(({ Capacitor }) => {
-    if (Capacitor.getPlatform() === 'ios') void import('./lib/swipeBack').then((m) => m.setupSwipeBack())
+    if (Capacitor.getPlatform() === 'ios') {
+      void import('./lib/swipeBack').then((m) => m.setupSwipeBack())
+      void import('./lib/tastiera').then((m) => m.setupTastiera())
+    }
     else void import('./lib/nativeBack').then((m) => m.setupNativeBack())
   })
 }

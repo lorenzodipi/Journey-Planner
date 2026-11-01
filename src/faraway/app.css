@@ -222,3 +222,38 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-stepv li:not(:last-child)::before{content:"";position:absolute;left:11px;top:32px;bottom:8px;border-left:2px dashed var(--border-strong)}
 .fa-stepv .nm{font:600 20px/24px var(--font-sans);color:var(--ink);overflow-wrap:anywhere}
 .fa-stepv .dt{font:400 14px/24px var(--font-sans);color:var(--ink-muted);white-space:nowrap}
+
+/* tastiera aperta (iOS nativo): --kb = altezza della tastiera */
+.fa-phone .fa-main{padding-bottom:calc(24px + var(--kb,0px))}
+.fa-phone.has-tabs .fa-main{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px) + 24px + var(--kb,0px))}
+.fa-phone.has-fab .fa-main{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px) + 96px + var(--kb,0px))}
+dialog.fa-dlg{height:calc(100% - var(--kb,0px))}
+html{overscroll-behavior:none}
+
+/* tratteggio delle tappe: trattini uniformi (non pallini che si sovrappongono) */
+.k-Tappa .stp.next .rail::before,.k-Tappa .seg.after .rail::before{background:repeating-linear-gradient(to bottom,var(--border-strong) 0 6px,transparent 6px 12px);border-left:0;width:3px}
+.k-Tappa .stp.now .rail::after{border-left:0;width:3px;background:repeating-linear-gradient(to bottom,var(--border-strong) 0 6px,transparent 6px 12px)}
+
+/* Segmenti: il selettore riempie la pillola e il testo sta al centro in verticale */
+.fa-seg{height:56px;align-items:stretch}
+.fa-seg button{min-height:0;height:100%;line-height:20px;padding:0 8px}
+
+/* chip in riga: scorrono in orizzontale con il dito, senza barra */
+.fa-chips{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.fa-chips::-webkit-scrollbar{display:none}
+.fa-chips>*{flex:none}
+.fa-chips.wrap>*{flex:0 1 auto}
+
+/* azioni «di testo» (Pulsante tertiary / link-color): bottone chiaro con bordo, non testo sottolineato */
+.fa-btn.txt{background:color-mix(in srgb,var(--azzurro) 12%,var(--surface-card));border:1.5px solid var(--azzurro-ink);color:var(--azzurro-ink);text-decoration:none;padding:0 16px;box-shadow:none}
+.fa-btns>.fa-btn{min-width:0;padding:0 16px}
+
+/* gruppi di azioni: i bottoni riempiono tutta la riga (due per riga, l'eventuale dispari a tutta larghezza) */
+.acts2,.fa-acts{flex-wrap:wrap}
+.acts2 .fa-btn,.fa-acts .fa-btn{flex:1 1 calc(50% - 4px);min-width:112px;padding:0 8px}
+.fa-ib[data-disabled]{opacity:.4}
+
+/* select: nessun secondo contorno, segnaposto dello stesso colore degli input */
+.fa-in select,.fa-in select:focus,.fa-in select:focus-visible,.fa-in input:focus,.fa-in input:focus-visible,.fa-in textarea:focus,.fa-in textarea:focus-visible{outline:0!important;box-shadow:none!important;-webkit-tap-highlight-color:transparent}
+.fa-in select:has(option[value=""]:checked){color:var(--ink-muted)}
+.fa-in select option,.fa-in select optgroup{color:var(--ink)}

@@ -68,13 +68,13 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
   function azioni(trip: Trip) {
     if (trip.myRole !== undefined && trip.myRole !== 'owner') return null
     return (
-      <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '16px 16px 16px', borderTop: '1px solid var(--hairline)' }}>
+      <span className="fa-acts" style={{ margin: 0, padding: 16, borderTop: '1px solid var(--hairline)' }}>
         {trip.archivedAt ? (
           <Pulsante size="sm" color="secondary" onPress={() => void archivia(trip, false)}>Ripristina</Pulsante>
         ) : (
           <>
             <Pulsante size="sm" color="secondary" onPress={() => setDuplica(trip)}>Duplica come modello</Pulsante>
-            <Pulsante size="sm" color="tertiary" onPress={() => void archivia(trip, true)}>Archivia</Pulsante>
+            <Pulsante size="sm" color="secondary-soft" iconLeading="archive" onPress={() => void archivia(trip, true)}>Archivia</Pulsante>
           </>
         )}
       </span>

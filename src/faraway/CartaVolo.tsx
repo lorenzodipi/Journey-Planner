@@ -166,8 +166,12 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
                   Codice
                 </Pulsante>
               ) : null}
-              <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit} aria-label="Modifica" />
-              <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete} aria-label="Elimina" />
+              <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
+                Modifica
+              </Pulsante>
+              <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
+                Elimina
+              </Pulsante>
             </div>
           </div>
         ) : null}

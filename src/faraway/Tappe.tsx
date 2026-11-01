@@ -335,7 +335,9 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                             <Pulsante size="sm" color="secondary" iconLeading="move" onPress={() => onMove(item)}>
                               Sposta
                             </Pulsante>
-                            <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={() => onDelete(item)} aria-label={`Elimina ${item.title}`} />
+                            <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={() => onDelete(item)}>
+                              Elimina
+                            </Pulsante>
                           </div>
                         </>
                       )}

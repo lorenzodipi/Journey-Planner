@@ -303,11 +303,6 @@ export function Dettaglio() {
           </div>
         </section>
       ))}
-      {gruppo ? (
-        <p className="fa-m" style={{ margin: '8px 0 0', textAlign: 'center' }}>
-          Le spese di altre persone che non ti riguardano non compaiono qui.
-        </p>
-      ) : null}
     </Schermata>
   )
 }

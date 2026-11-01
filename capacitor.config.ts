@@ -13,6 +13,10 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
   },
+  plugins: {
+    // iOS: la tastiera copre la finestra senza restringerla (vedi src/lib/tastiera.ts)
+    Keyboard: { resize: 'none' },
+  },
   ios: {
     contentInset: 'never',
   },

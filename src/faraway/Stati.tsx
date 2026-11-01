@@ -40,12 +40,12 @@ export function Vuoto({ art, title, text, action, onAction, actionIcon = 'plus',
 /** Vuoto dovuto a un filtro: card piccola con l'azione per tornare a vedere tutto. */
 export function VuotoFiltro({ title, text, action, onAction }: { title: string; text: ReactNode; action: string; onAction: () => void }) {
   return (
-    <div className="fa-card pad" style={{ display: 'grid', gap: 8, justifyItems: 'start' }}>
+    <div className="fa-card pad" style={{ display: 'grid', gap: 8 }}>
       <h2 className="fa-h3">{title}</h2>
       <p className="fa-m">{text}</p>
-      <button type="button" className="fa-btn soft" style={{ width: 'auto', height: 44, padding: '0 16px', fontSize: 14 }} onClick={onAction}>
+      <Pulsante color="secondary-soft" onPress={onAction}>
         {action}
-      </button>
+      </Pulsante>
     </div>
   )
 }

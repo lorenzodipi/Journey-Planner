@@ -66,9 +66,9 @@ export function Pulsante({ children, color = 'primary', size = 'md', iconLeading
 }
 
 /** Pulsante rotondo con sola icona (44px): `surface-high`, il principale in azzurro. Ha sempre un'etichetta. */
-export function PulsanteIcona({ icon: name, label, onPress, primary, className, expanded, pressed, badge }: { icon: SvName; label: string; onPress?: () => void; primary?: boolean; className?: string; expanded?: boolean; pressed?: boolean; badge?: number }) {
+export function PulsanteIcona({ icon: name, label, onPress, primary, className, expanded, pressed, badge, isDisabled }: { icon: SvName; label: string; onPress?: () => void; primary?: boolean; className?: string; expanded?: boolean; pressed?: boolean; badge?: number; isDisabled?: boolean }) {
   return (
-    <AriaButton className={cx('fa-ib', primary && 'pri', className)} aria-label={label} onPress={onPress} aria-expanded={expanded} aria-pressed={pressed}>
+    <AriaButton className={cx('fa-ib', primary && 'pri', className)} isDisabled={isDisabled} aria-label={label} onPress={onPress} aria-expanded={expanded} aria-pressed={pressed}>
       <Sv name={name} />
       {badge ? <span className="fa-ibn">{badge}</span> : null}
     </AriaButton>

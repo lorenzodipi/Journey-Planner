@@ -138,8 +138,12 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
               <Pulsante size="sm" color="secondary" iconLeading="qr" onPress={onCode}>
                 Codice
               </Pulsante>
-              <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => onEdit()} aria-label="Modifica il trasporto" />
-              <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete} aria-label="Elimina il trasporto" />
+              <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => onEdit()}>
+                Modifica
+              </Pulsante>
+              <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
+                Elimina
+              </Pulsante>
             </div>
           </div>
         ) : null}

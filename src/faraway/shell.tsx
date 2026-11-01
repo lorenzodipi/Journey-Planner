@@ -76,12 +76,12 @@ export function useBack(fallback: string) {
 }
 
 /** Barra delle pagine secondarie: «indietro» a sinistra, titolo al centro, azione a destra. */
-export function BarraIndietro({ title, back, right }: { title: ReactNode; back: string; right?: ReactNode }) {
+export function BarraIndietro({ title, back, right, senzaIndietro }: { title: ReactNode; back: string; right?: ReactNode; senzaIndietro?: boolean }) {
   const goBack = useBack(back)
   return (
     <div className="fa-bar">
       <div className="tp back">
-        <PulsanteIcona icon="back" label="Indietro" onPress={goBack} />
+        {senzaIndietro ? <span aria-hidden="true" style={{ minWidth: 44 }} /> : <PulsanteIcona icon="back" label="Indietro" onPress={goBack} />}
         <h1 className="mid">{title}</h1>
         <span style={{ display: 'flex', gap: 8, minWidth: 44, justifyContent: 'flex-end' }}>{right}</span>
       </div>

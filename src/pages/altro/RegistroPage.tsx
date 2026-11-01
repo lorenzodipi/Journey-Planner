@@ -19,7 +19,7 @@ export function RegistroPage() {
       ) : (
         <div className="fa-list">
           {righe.map((a) => (
-            <div key={a.id} className="fa-row" style={{ cursor: 'default' }}>
+            <div key={a.id} className="fa-row" style={{ cursor: 'default', gridTemplateColumns: 'minmax(0,1fr)' }}>
               <span style={{ minWidth: 0 }}>
                 <span className="t" style={{ display: 'block' }}>{rigaRegistro(trip, a, me?.userId)}</span>
                 <span className="s" style={{ display: 'block' }}>{quandoModifica(a.at, new Date(), trip.timezone)}</span>

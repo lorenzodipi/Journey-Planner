@@ -159,8 +159,12 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete 
                 ) : null}
               </dl>
               <div className="acts2">
-                <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit} aria-label="Modifica" />
-                <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete} aria-label="Elimina" />
+                <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
+                  Modifica
+                </Pulsante>
+                <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
+                  Elimina
+                </Pulsante>
               </div>
             </div>
           ) : null}
@@ -208,8 +212,12 @@ export function RigaAlloggio({ stay: s, date, open, onToggle, onEdit, onDelete }
             Maps
           </Pulsante>
         ) : null}
-        <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit} aria-label="Modifica" />
-        <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete} aria-label={`Elimina ${s.name}`} />
+        <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
+                  Modifica
+                </Pulsante>
+        <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
+          Elimina
+        </Pulsante>
       </div>
     </RigaApribile>
   )
