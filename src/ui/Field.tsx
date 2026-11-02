@@ -1,4 +1,5 @@
 import type React from 'react'
+import { apriSelettore } from '../lib/picker'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { currencyName, extraCurrencies } from '../lib/money'
@@ -51,7 +52,7 @@ export function TextField({ label, value, onChange, type = 'text', list, optiona
         {list ? (
           <input type="text" list={list} {...common} />
         ) : type === 'time' ? (
-          <input type="time" {...common} />
+          <input type="time" {...common} onClick={(e) => apriSelettore(e.currentTarget)} />
         ) : (
           <input type="text" {...common} />
         )}

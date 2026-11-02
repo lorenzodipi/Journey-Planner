@@ -31,6 +31,9 @@ interface Props {
   onClose: () => void
 }
 
+/** Vuoto o «HH:MM»: si può scegliere con il selettore; i testi scritti a mano prima («17:00–22:00») restano un campo di testo. */
+const soloOra = (v: string) => v === '' || /^\d{2}:\d{2}$/.test(v)
+
 export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
   const [procediConflitto, nodoConflitto] = useConflitto(trip, 'stays', s?.id)
   const tr = useTrips()
@@ -142,9 +145,9 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
         <Campo label="Link alla mappa (facoltativo)" type="url" value={mapsUrl} onChange={(v) => void leggiLink(v)} placeholder="Incolla il link di Google Maps" hint={mapsInfo || 'Incollalo e compilo nome, città e indirizzo.'} />
         <div className="fa-2c">
           <Campo label="Check-in, data" type="date" icon="cal" value={checkIn} onChange={(v) => (setCheckIn(v), !checkOut || checkOut <= v ? setCheckOut('') : null)} />
-          <Campo label="Check-in, orario" value={inInfo} onChange={setInInfo} placeholder="15:00" />
+          <Campo label="Check-in, orario" icon="clock" type={soloOra(inInfo) ? 'time' : 'text'} value={inInfo} onChange={setInInfo} hint={soloOra(inInfo) ? undefined : 'Testo scritto prima: cancellalo per scegliere un orario.'} />
           <Campo label="Check-out, data" type="date" icon="cal" value={checkOut} onChange={setCheckOut} min={checkIn || undefined} />
-          <Campo label="Check-out, orario" value={outInfo} onChange={setOutInfo} placeholder="11:00" />
+          <Campo label="Check-out, orario" icon="clock" type={soloOra(outInfo) ? 'time' : 'text'} value={outInfo} onChange={setOutInfo} hint={soloOra(outInfo) ? undefined : 'Testo scritto prima: cancellalo per scegliere un orario.'} />
         </div>
         {errors.when ? <Errore>{errors.when}</Errore> : null}
         <div className="fa-2c">

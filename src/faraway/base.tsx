@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { useId } from 'react'
 import { Button as AriaButton, Link as AriaLink, Switch as AriaSwitch } from 'react-aria-components'
 import { cx } from './cx'
+import { apriSelettore } from '../lib/picker'
 import { Loader } from './Loader'
 import { Sv, type SvName } from './icons'
 
@@ -148,7 +149,7 @@ export function Campo({ label, value, onChange, placeholder, type = 'text', inpu
         {textarea ? (
           <textarea id={id} value={value} placeholder={ph} onChange={(e) => onChange(e.currentTarget.value)} aria-invalid={error ? true : undefined} aria-describedby={described} maxLength={rest.maxLength} rows={3} />
         ) : (
-          <input id={id} type={type} inputMode={inputMode} value={value} placeholder={ph} onChange={(e) => onChange(e.currentTarget.value)} aria-invalid={error ? true : undefined} aria-describedby={described} {...rest} />
+          <input id={id} type={type} inputMode={inputMode} value={value} placeholder={ph} onChange={(e) => onChange(e.currentTarget.value)} onClick={type === 'time' ? (e) => apriSelettore(e.currentTarget) : undefined} aria-invalid={error ? true : undefined} aria-describedby={described} {...rest} />
         )}
         {pickerVuoto ? <span className="ph" aria-hidden="true">{ph}</span> : null}
         {trailing}

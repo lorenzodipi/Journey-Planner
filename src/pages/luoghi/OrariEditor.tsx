@@ -1,5 +1,6 @@
 // Editor degli orari strutturati di un luogo (#33): per ogni giorno le fasce di apertura, «Chiuso»,
 // «Copia su tutti i giorni» e una nota (es. «Ultimo ingresso alle 16:30»).
+import { apriSelettore } from '../../lib/picker'
 import { WEEKDAYS, type Fascia, type OpeningSpec } from '../../lib/opening'
 import { Campo } from '../../faraway/base'
 import { Sv } from '../../faraway/icons'
@@ -46,9 +47,9 @@ export function OrariEditor({ value, onChange, legacyText }: { value: OpeningSpe
                 {f.length === 0 ? <span className="cl">Chiuso</span> : null}
                 {f.map((x, i) => (
                   <span key={i} className="f">
-                    <input type="time" aria-label={`${d.long}, apre alle`} value={x.from} onChange={(e) => setDay(d.n, f.map((y, j) => (j === i ? { ...y, from: e.currentTarget.value } : y)))} />
+                    <input type="time" onClick={(e) => apriSelettore(e.currentTarget)} aria-label={`${d.long}, apre alle`} value={x.from} onChange={(e) => setDay(d.n, f.map((y, j) => (j === i ? { ...y, from: e.currentTarget.value } : y)))} />
                     <span aria-hidden="true">–</span>
-                    <input type="time" aria-label={`${d.long}, chiude alle`} value={x.to} onChange={(e) => setDay(d.n, f.map((y, j) => (j === i ? { ...y, to: e.currentTarget.value } : y)))} />
+                    <input type="time" onClick={(e) => apriSelettore(e.currentTarget)} aria-label={`${d.long}, chiude alle`} value={x.to} onChange={(e) => setDay(d.n, f.map((y, j) => (j === i ? { ...y, to: e.currentTarget.value } : y)))} />
                     <button type="button" className="fa-ib" style={{ background: 'none', width: 36, height: 36 }} aria-label={`Togli la fascia ${x.from}–${x.to} di ${d.long}`} onClick={() => setDay(d.n, f.filter((_, j) => j !== i))}>
                       <Sv name="close" size={18} />
                     </button>
