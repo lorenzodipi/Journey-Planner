@@ -1,6 +1,6 @@
 // Meteo del Giorno: la stessa card della Home (temperatura, ora per ora, alba e tramonto), per il giorno aperto.
 // Oggi parte dall'ora attuale; per gli altri giorni mostra tutte le ore del giorno. Un giorno con più città ha una card per città.
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { MeteoCard } from '../../faraway/Home'
 import { descrizione, notteAlle, rigaSole } from '../../lib/oggi'
 import { cittaDelGiorno, indiceCittaAdesso, oraDelMeteo } from '../../lib/meteoGiorno'
@@ -22,12 +22,15 @@ export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Day }) {
   const nowMin = minutesOfDay(new Date(), trip.timezone)
   const adesso = indiceCittaAdesso(tratti, oggi ? nowMin : null)
   const riga = useRef<HTMLDivElement>(null)
-  const principale = useRef<HTMLDivElement>(null)
+  const [attiva, setAttiva] = useState(adesso)
+  const vaA = (i: number, liscio: boolean) => {
+    const r = riga.current
+    if (r) r.scrollTo({ left: i * r.clientWidth, behavior: liscio ? 'smooth' : 'auto' })
+  }
   // si parte dalla città di adesso (oggi) o dalla prima
   useEffect(() => {
-    const r = riga.current
-    const p = principale.current
-    if (r && p) r.scrollTo({ left: p.offsetLeft - r.offsetLeft, behavior: 'auto' })
+    setAttiva(adesso)
+    vaA(adesso, false)
   }, [adesso, citta.join('|')]) // eslint-disable-line react-hooks/exhaustive-deps
   const multi = citta.length > 1
   const cards = (
@@ -62,7 +65,7 @@ export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Day }) {
           />
         )
         return multi ? (
-          <div key={c} ref={idx === adesso ? principale : undefined} className="fa-meteo-slide">
+          <div key={c} className="fa-meteo-slide" aria-hidden={idx !== attiva} role="group" aria-label={`${c}, ${idx + 1} di ${citta.length}`}>
             {card}
           </div>
         ) : (
@@ -73,8 +76,23 @@ export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Day }) {
   )
   if (!multi) return cards
   return (
-    <section aria-label="Meteo del giorno, una card per città: scorri in orizzontale" style={{ display: 'grid', gap: 8 }}>
-      <div ref={riga} className="fa-meteo-slider" role="group" tabIndex={0} aria-label="Meteo per città, scorri in orizzontale">
+    <section aria-label="Meteo del giorno per città" style={{ display: 'grid', gap: 12 }}>
+      <div className="fa-chips" role="tablist" aria-label="Città">
+        {citta.map((c, i) => (
+          <button key={c} type="button" role="tab" aria-selected={i === attiva} className={`fa-chip${i === attiva ? ' on' : ''}`} onClick={() => { setAttiva(i); vaA(i, true) }}>
+            {c}
+          </button>
+        ))}
+      </div>
+      <div
+        ref={riga}
+        className="fa-meteo-slider"
+        onScroll={(e) => {
+          const r = e.currentTarget
+          const i = Math.round(r.scrollLeft / Math.max(1, r.clientWidth))
+          if (i !== attiva) setAttiva(Math.min(citta.length - 1, Math.max(0, i)))
+        }}
+      >
         {cards}
       </div>
     </section>
