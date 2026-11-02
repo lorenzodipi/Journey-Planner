@@ -6,7 +6,7 @@ import { useConflitto } from '../../faraway/useConflitto'
 import { ora } from '../../lib/formati'
 import { useEffect, useRef, useState } from 'react'
 import { formatDuration, parseDuration } from '../../lib/duration'
-import { searchPlaces, type GeoResult } from '../../lib/geocode'
+import { reverseGeocode, searchPlaces, type GeoResult } from '../../lib/geocode'
 import { parseMapsUrl } from '../../lib/mapsUrl'
 import { cleanSpec, type OpeningSpec } from '../../lib/opening'
 import { accountCategories, type PlaceInput } from '../../lib/tripApi'
@@ -153,6 +153,16 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
       setLng(String(info.lng))
       if (!name.trim() && info.name) setName(info.name)
       setLinkHint({ ok: true, text: 'Posizione letta dal link' })
+      // città e indirizzo dalle coordinate (solo i campi ancora vuoti)
+      if (!city.trim() || !address.trim()) {
+        reverseGeocode(info.lat, info.lng)
+          .then((r) => {
+            if (!city.trim() && r.city) setCity(r.city)
+            if (!address.trim() && r.address) setAddress(r.address)
+            if (r.city || r.address) setLinkHint({ ok: true, text: 'Posizione, città e indirizzo letti dal link: controlla che siano giusti.' })
+          })
+          .catch(() => undefined)
+      }
     } else {
       setLinkHint({ ok: false, text: 'Non trovo la posizione in questo link. I link corti (maps.app.goo.gl) non si leggono: aprilo e incolla quello lungo dalla barra del browser, oppure cerca il luogo qui sopra.' })
     }
@@ -262,7 +272,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
           <Campo label="…oppure incolla un link di Google Maps" icon="link" value={mapsUrl} onChange={onLink} placeholder="https://www.google.com/maps/…" autoComplete="off" positive={linkHint?.ok ? linkHint.text : undefined} hint={linkHint && !linkHint.ok ? linkHint.text : undefined} />
         </div>
 
-        <Campo label="Nome" value={name} onChange={setName} maxLength={120} placeholder="es. Ramen da Gokkei" />
+        <Campo label="Nome" value={name} onChange={setName} maxLength={120} placeholder="Nome del luogo" />
         {doppioni.length > 0 ? (
           <span className="fa-help" role="status">
             <Sv name="warn" size={16} />
@@ -294,7 +304,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
               Altra…
             </Chip>
           </div>
-          {otherCat ? <Campo label="Nuova categoria" hideLabel value={category} onChange={setCategory} placeholder="es. Onsen" maxLength={40} autoFocus /> : null}
+          {otherCat ? <Campo label="Nuova categoria" hideLabel value={category} onChange={setCategory} placeholder="Nome della categoria" maxLength={40} autoFocus /> : null}
         </div>
 
         <div className="fa-fld" role="group" aria-label="Stato">
@@ -321,7 +331,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
           </div>
         ) : null}
         <Campo label="Quanto ci si ferma" icon="clock" value={visit} onChange={setVisit} placeholder="es. 1 h 30" />
-        <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="Cosa ordinare, l'ora migliore, come arrivarci…" />
+        <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="Appunti sul luogo" />
 
         <OrariEditor value={spec} onChange={setSpec} legacyText={place?.openingHours} />
 
