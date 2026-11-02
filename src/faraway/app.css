@@ -313,3 +313,13 @@ sup{margin-left:0}
 [data-theme="light"] .fa-pillst:not(.soft):not(.acq):not(.cor){box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--ink) 11%,var(--surface-high))}
 [data-theme="light"] .fa-pillst.soft{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--azzurro-ink) 16%,var(--azzurro-soft))}
 [data-theme="light"] .fa-pillst.acq{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--acqua-ink) 16%,var(--acqua-soft))}
+
+/* Card «Da dare» / «Da ricevere» (una per spesa) */
+.fa-dbt{display:grid;gap:16px;padding:16px}
+.fa-dbt+.fa-dbt{border-top:1px solid var(--hairline)}
+.fa-dbt .top{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:16px;align-items:center}
+.fa-dbt .t{display:block;font:600 16px/24px var(--font-sans);letter-spacing:.16px;overflow-wrap:anywhere}
+.fa-dbt .s{display:block;font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
+.fa-dbt .amt{font:600 16px/24px var(--font-sans);font-variant-numeric:tabular-nums;white-space:nowrap}
+.fa-dbt .bt{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.fa-dbt .fa-btn{justify-self:stretch;width:100%}

@@ -9,6 +9,7 @@ import { riassunto } from '../../lib/spese'
 import { useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrip, useTrips } from '../../state/trip'
+import { DebitiSpesa } from './DebitiSpesa'
 import { DichiaraSheet, RimborsiCard, StatoPillola } from './Rimborsi'
 
 export function Bilancio() {
@@ -35,6 +36,7 @@ export function Bilancio() {
         {saldo === null ? 'Collega il tuo account a un viaggiatore per vedere il bilancio.' : Math.abs(saldo) < 0.005 ? 'Sei in pari' : saldo > 0 ? `Devi ricevere ${formatMoney(saldo, cur)}` : `Devi dare ${formatMoney(-saldo, cur)}`}
       </p>
       <RimborsiCard trip={trip} />
+      <DebitiSpesa trip={trip} spese={r.spese} fx={r.fx} me={me?.id} abilitaPagamento={trip.settlements !== undefined} />
       {dati.transfers.filter((x) => x.from === me?.id || x.to === me?.id).length === 0 && saldo !== null ? <p className="fa-m" style={{ margin: 0 }}>Nessun rimborso necessario.</p> : null}
       <h2 style={{ margin: '8px 0 0', font: '600 16px/1.3 var(--font-sans)' }}>Cronologia dei rimborsi</h2>
       {trip.settlements === undefined ? (
