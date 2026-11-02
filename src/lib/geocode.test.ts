@@ -37,10 +37,11 @@ describe('parseNominatim', () => {
 
 describe('parseReverse', () => {
   it('via e civico, città', () => {
-    expect(parseReverse({ address: { road: 'Via Roma', house_number: '12', town: 'Siena' } })).toEqual({ address: 'Via Roma 12', city: 'Siena' })
+    expect(parseReverse({ address: { road: 'Via Roma', house_number: '12', postcode: '53100', town: 'Siena', country: 'Italia' } })).toEqual({ address: 'Via Roma 12, 53100 Siena, Italia', city: 'Siena' })
+    expect(parseReverse({ address: { road: 'Hrunavegur', postcode: '846', village: 'Flúðir', country: 'Islanda' } })).toEqual({ address: 'Hrunavegur, 846 Flúðir, Islanda', city: 'Flúðir' })
   })
   it('senza via usa il quartiere; risposta vuota non rompe', () => {
-    expect(parseReverse({ address: { suburb: 'Asakusa', city: 'Taito' } })).toEqual({ address: 'Asakusa', city: 'Taito' })
+    expect(parseReverse({ address: { suburb: 'Asakusa', city: 'Taito' } })).toEqual({ address: 'Asakusa, Taito', city: 'Taito' })
     expect(parseReverse(null)).toEqual({ address: '', city: '' })
   })
 })

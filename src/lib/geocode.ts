@@ -84,14 +84,14 @@ interface NominatimReverse {
   address?: Record<string, string>
 }
 
-/** Indirizzo «Via, numero» e città da una risposta di Nominatim /reverse. */
+/** Indirizzo completo come lo scrive Google («Via 12, 846 Flúðir, Islanda») e città da una risposta di Nominatim /reverse. */
 export function parseReverse(item: NominatimReverse | null | undefined): { address: string; city: string } {
   const a = item?.address ?? {}
-  const via = a.road || a.pedestrian || a.footway || a.path || a.square || a.neighbourhood || ''
-  const civico = a.house_number || ''
-  // in Italia e in gran parte d'Europa il civico segue la via; altrove (es. Giappone) il quartiere basta
-  const address = via ? `${via}${civico ? ` ${civico}` : ''}` : [a.suburb, a.quarter].filter(Boolean)[0] || ''
   const city = a.city || a.town || a.village || a.municipality || a.suburb || a.county || ''
+  const via = a.road || a.pedestrian || a.footway || a.path || a.square || a.neighbourhood || ''
+  const strada = via ? `${via}${a.house_number ? ` ${a.house_number}` : ''}` : a.suburb || a.quarter || ''
+  const zona = [a.postcode, city].filter(Boolean).join(' ')
+  const address = [strada, zona, a.country].filter(Boolean).join(', ')
   return { address, city }
 }
 
