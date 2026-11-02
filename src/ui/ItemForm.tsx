@@ -1,8 +1,9 @@
+import { durataComeOra, oraComeDurata } from '../lib/durataOra'
 import { useState } from 'react'
 import { useConfirm } from './ConfirmDialog'
 import type { ItemInput } from '../lib/tripApi'
 import type { DayItem, ItemKind, Trip } from '../types'
-import { DURATION_CHIPS, formatDuration, parseDuration } from '../lib/duration'
+import { formatDuration, parseDuration } from '../lib/duration'
 import { FormError, PrimaryButton, SecondaryButton, TextArea, TextField } from './Field'
 import { KIND_LABEL } from './ItemRow'
 import { Select } from './Select'
@@ -105,17 +106,12 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
         <TextField label="Orario" type="time" value={startTime} onChange={onStartTime} />
         <TextField
           label="Durata"
-          value={duration}
-          onChange={setDuration}
-          list="durate-tappa"
+          type={durataComeOra(duration) === null ? 'text' : 'time'}
+          value={durataComeOra(duration) ?? duration}
+          onChange={(v) => setDuration(durataComeOra(duration) === null ? v : oraComeDurata(v))}
           placeholder={place?.visitMinutes ? formatDuration(place.visitMinutes) : '1h 30min'}
         />
       </div>
-      <datalist id="durate-tappa">
-        {DURATION_CHIPS.map((m) => (
-          <option value={formatDuration(m)} />
-        ))}
-      </datalist>
 
       <TextArea label="Nota" value={notes} onChange={setNotes} />
 

@@ -18,6 +18,7 @@ import { useTrips } from '../../state/trip'
 import type { Place, PlaceStatus, Trip } from '../../types'
 import { SUGGESTED_CATEGORIES } from '../../ui/placeMeta'
 import { Campo, Chip, Pulsante } from '../../faraway/base'
+import { CampoDurata } from '../../faraway/CampoDurata'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { OrariEditor } from './OrariEditor'
@@ -324,7 +325,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
             <span className="fa-help">La vedi solo tu, gli altri non la vedono.</span>
           </div>
         ) : null}
-        <Campo label="Quanto ci si ferma" icon="clock" value={visit} onChange={setVisit} placeholder="1h 30min" />
+        <CampoDurata label="Quanto ci si ferma" value={visit} onChange={setVisit} placeholder="1h 30min" />
         <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="Appunti sul luogo" />
 
         <OrariEditor value={spec} onChange={setSpec} legacyText={place?.openingHours} />

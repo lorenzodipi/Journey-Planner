@@ -14,6 +14,7 @@ import type { Day, DayItem, ItemKind, Trip } from '../../types'
 import { schema } from '../../lib/schema'
 import { disallineamenti, prenotazioniFisse } from '../../lib/vincoli'
 import { Banner, Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
+import { CampoDurata } from '../../faraway/CampoDurata'
 import { Foglio, useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { UltimaModifica } from '../../faraway/UltimaModifica'
@@ -177,7 +178,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
         ) : null}
         <div className="fa-2c">
           <Campo label="Ora" icon="clock" type="time" value={time} onChange={setTime} />
-          <Campo label="Durata" value={duration} onChange={setDuration} placeholder={place?.visitMinutes ? durata(place.visitMinutes) : '1h 30min'} />
+          <CampoDurata label="Durata" value={duration} onChange={setDuration} placeholder={place?.visitMinutes ? durata(place.visitMinutes) : '1h 30min'} />
         </div>
         {editing && time && schema.timeLock ? (
           <Interruttore
