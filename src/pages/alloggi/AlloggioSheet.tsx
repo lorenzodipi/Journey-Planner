@@ -9,6 +9,7 @@ import { discOf, initials, useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { Stay, Trip } from '../../types'
+import { luogoDaAlloggio, luogoEsistente } from '../../lib/luogoAlloggio'
 import { parseMapsUrl } from '../../lib/mapsUrl'
 import { reverseGeocode } from '../../lib/geocode'
 import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
@@ -112,6 +113,10 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
     const message = s ? await tr.updateStay(s.id, input, s) : await tr.createStay(trip.id, input)
     setBusy(false)
     if (message) return setErrors({ form: message })
+    // con il link di Maps l'alloggio diventa anche un luogo (categoria Alloggio): si vede in Luoghi e si aggiunge a un giorno
+    const esistente = luogoEsistente(trip.places, s?.name, name)
+    const luogo = luogoDaAlloggio({ name, city, address, mapsUrl }, esistente)
+    if (luogo) await (esistente ? tr.updatePlace(esistente.id, trip.id, luogo) : tr.createPlace(trip.id, luogo))
     showToast(s ? 'Alloggio aggiornato' : 'Alloggio salvato')
     onClose()
   }
