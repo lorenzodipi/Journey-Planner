@@ -329,3 +329,9 @@ sup{margin-left:0}
 
 /* Orario e data: l'icona è quella a sinistra del campo; tolgo quella del browser a destra (il selettore si apre cliccando il campo) */
 .fa-in input[type=time]::-webkit-calendar-picker-indicator,.fa-in input[type=date]::-webkit-calendar-picker-indicator{display:none}
+
+/* Meteo del Giorno con più città: una card per città, si scorre in orizzontale (la successiva fa capolino a destra) */
+.fa-meteo-slider{display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;margin:0 -16px;padding:0 16px;scroll-padding-inline:16px}
+.fa-meteo-slider::-webkit-scrollbar{display:none}
+.fa-meteo-slide{flex:0 0 88%;min-width:0;scroll-snap-align:start}
+.fa-meteo-slide:last-child{margin-right:16px}

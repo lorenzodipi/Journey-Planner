@@ -1,9 +1,9 @@
 // Meteo del Giorno: la stessa card della Home (temperatura, ora per ora, alba e tramonto), per il giorno aperto.
 // Oggi parte dall'ora attuale; per gli altri giorni mostra tutte le ore del giorno. Un giorno con più città ha una card per città.
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { MeteoCard } from '../../faraway/Home'
 import { descrizione, notteAlle, rigaSole } from '../../lib/oggi'
-import { cittaDelGiorno, oraDelMeteo } from '../../lib/meteoGiorno'
+import { cittaDelGiorno, indiceCittaAdesso, oraDelMeteo } from '../../lib/meteoGiorno'
 import { minutesOfDay, sunForDay } from '../../lib/sun'
 import { dateAddDays } from '../../lib/dates'
 import { tripToday } from '../../lib/today'
@@ -20,9 +20,19 @@ export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Day }) {
   const centri = cityCenters(trip, citta)
   const oggi = day.date === tripToday(trip)
   const nowMin = minutesOfDay(new Date(), trip.timezone)
-  return (
+  const adesso = indiceCittaAdesso(tratti, oggi ? nowMin : null)
+  const riga = useRef<HTMLDivElement>(null)
+  const principale = useRef<HTMLDivElement>(null)
+  // si parte dalla città di adesso (oggi) o dalla prima
+  useEffect(() => {
+    const r = riga.current
+    const p = principale.current
+    if (r && p) r.scrollTo({ left: p.offsetLeft - r.offsetLeft, behavior: 'auto' })
+  }, [adesso, citta.join('|')]) // eslint-disable-line react-hooks/exhaustive-deps
+  const multi = citta.length > 1
+  const cards = (
     <>
-      {citta.map((c) => {
+      {citta.map((c, idx) => {
         const giorni = previsioni.get(c)
         const g = giorni?.find((d) => d.date === day.date)
         const centro = centri.find((x) => x.city === c) ?? trip.center
@@ -34,12 +44,12 @@ export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Day }) {
         const notte = notteAlle(primo.h, sole)
         const luce = sole.sunrise !== null && sole.sunset !== null ? sole.sunset - sole.sunrise : null
         // oggi: stessa riga della Home; altri giorni: alba e tramonto di quel giorno con le ore di luce
-        const riga = oggi
+        const rigaSole_ = oggi
           ? rigaSole(sole, domani, nowMin)
           : sole.sunrise !== null && sole.sunset !== null
             ? { first: { k: 'Alba', v: hhmm(sole.sunrise), down: false }, second: { k: 'Tramonto', v: hhmm(sole.sunset), down: true }, next: 'Luce', inText: `${Math.floor((luce ?? 0) / 60)} h ${(luce ?? 0) % 60} min`, pct: 50, moon: false }
             : undefined
-        return (
+        const card = (
           <MeteoCard
             key={c}
             city={c}
@@ -48,10 +58,25 @@ export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Day }) {
             night={notte}
             desc={descrizione(primo.code, g.min, notte)}
             hours={ore.map((h, i) => ({ label: oggi && i === 0 ? 'Ora' : `${pad(h.h)}:00`, t: h.t, code: h.code, night: notteAlle(h.h, sole), rain: (h.rain ?? 0) >= 50 || (h.mm ?? 0) >= 0.5, now: oggi && i === 0 }))}
-            sun={riga}
+            sun={rigaSole_}
           />
+        )
+        return multi ? (
+          <div key={c} ref={idx === adesso ? principale : undefined} className="fa-meteo-slide">
+            {card}
+          </div>
+        ) : (
+          card
         )
       })}
     </>
+  )
+  if (!multi) return cards
+  return (
+    <section aria-label="Meteo del giorno, una card per città: scorri in orizzontale" style={{ display: 'grid', gap: 8 }}>
+      <div ref={riga} className="fa-meteo-slider" role="group" tabIndex={0} aria-label="Meteo per città, scorri in orizzontale">
+        {cards}
+      </div>
+    </section>
   )
 }
