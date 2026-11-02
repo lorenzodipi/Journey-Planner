@@ -323,3 +323,6 @@ sup{margin-left:0}
 .fa-dbt .amt{font:600 16px/24px var(--font-sans);font-variant-numeric:tabular-nums;white-space:nowrap}
 .fa-dbt .bt{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .fa-dbt .fa-btn{justify-self:stretch;width:100%}
+
+/* Dark: pulsante flottante e stati selezionati con l'azzurro pieno della palette scura (bianco su #375EB3 = 6,2:1) */
+[data-theme="dark"] .fa-fab{background:var(--azzurro-solid)}

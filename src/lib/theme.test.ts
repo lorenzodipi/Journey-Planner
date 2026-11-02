@@ -41,7 +41,7 @@ describe('tema', () => {
     applyTheme('dark')
     expect(root.dataset.theme).toBe('dark')
     expect(root.style.colorScheme).toBe('dark')
-    expect(metas[0].content).toBe('#10172B')
+    expect(metas[0].content).toBe('#142240')
     applyTheme('light')
     expect(metas[0].content).toBe('#FAF6EE')
   })
