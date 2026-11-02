@@ -181,7 +181,7 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-sheet{will-change:transform;backface-visibility:hidden}
 
 /* ---- v2: bottoni in una riga, elimina come bottone rosso, rotta dei trasporti, niente scorrimento laterale ---- */
-.fa-btn.del{background:color-mix(in srgb,var(--danger) 12%,var(--surface-card));border:1.5px solid var(--danger);color:var(--danger);width:auto;padding:0 16px;height:44px;box-shadow:none}
+.fa-btn.del{background:color-mix(in srgb,var(--danger) 10%,var(--surface-card));border:1.5px solid var(--danger);color:var(--danger);width:auto;padding:0 16px;height:44px;box-shadow:none}
 .fa-btn.ico{width:44px;min-width:44px;padding:0;flex:0 0 44px}
 .acts2,.fa-acts{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;margin-top:16px}
 .acts2 .fa-btn,.fa-acts .fa-btn{white-space:nowrap;min-width:0;flex:1 1 auto;padding:0 16px}
@@ -247,7 +247,7 @@ html{overscroll-behavior:none}
 .fa-chips.wrap>*{flex:0 1 auto}
 
 /* azioni «di testo» (Pulsante tertiary / link-color): bottone chiaro con bordo, non testo sottolineato */
-.fa-btn.txt{background:color-mix(in srgb,var(--azzurro) 12%,var(--surface-card));border:1.5px solid var(--azzurro-ink);color:var(--azzurro-ink);text-decoration:none;padding:0 16px;box-shadow:none}
+.fa-btn.txt{background:color-mix(in srgb,var(--azzurro) 10%,var(--surface-card));border:1.5px solid var(--azzurro-ink);color:var(--azzurro-ink);text-decoration:none;padding:0 16px;box-shadow:none}
 .fa-btns>.fa-btn{min-width:0;padding:0 16px}
 
 /* gruppi di azioni: i bottoni riempiono tutta la riga (due per riga, l'eventuale dispari a tutta larghezza) */
@@ -285,7 +285,7 @@ html{overscroll-behavior:none}
 .fa-stay .avs,.tv .avs{display:inline-flex;gap:8px;margin-right:8px;vertical-align:middle}
 .fa-stay .avs span,.tv .avs span{margin:0!important}
 .k-Checklist .it .tx{display:grid;gap:8px;min-width:0}
-.fa-ib.dng{background:color-mix(in srgb,var(--danger) 12%,var(--surface-card));border:1.5px solid var(--danger);color:var(--danger);box-sizing:border-box}
+.fa-ib.dng{background:color-mix(in srgb,var(--danger) 10%,var(--surface-card));border:1.5px solid var(--danger);color:var(--danger);box-sizing:border-box}
 
 /* bottone di eliminazione da solo: largo come gli altri (nelle righe di azioni resta flessibile) */
 .fa-btn.del:not(.sm){width:100%}
