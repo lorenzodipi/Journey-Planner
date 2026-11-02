@@ -336,7 +336,7 @@ export function MeteoCard({ city, t, code, night, desc, hours, sun }: { city: st
             </div>
             <div className="sm">
               <div className="nxt">
-                <span>{sun.next} tra</span>
+                <span>{sun.next === 'Luce' ? 'Ore di luce' : `${sun.next} tra`}</span>
                 <b>{sun.inText}</b>
               </div>
               <div aria-hidden="true" className="tr2">

@@ -25,7 +25,7 @@ import { DaySheet, type DaySheetState } from '../ui/DaySheet'
 import { DayMapPanel } from '../ui/DayMapPanel'
 import { PulsanteIcona, Pulsante, Sezione } from '../faraway/base'
 import { useConferma } from '../faraway/Foglio'
-import { MeteoGiorno } from './giorno/MeteoGiorno'
+import { MeteoGiornoCard } from './giorno/MeteoGiornoCard'
 import { meteoDellaTappa, cittaTappa, cittaDelGiorno } from '../lib/meteoGiorno'
 import { useCityForecasts } from '../state/cityForecast'
 import { Sv } from '../faraway/icons'
@@ -234,7 +234,7 @@ export function Giorno({ params }: { params: { id: string } }) {
         </section>
       ) : null}
 
-      <MeteoGiorno trip={trip} day={day} />
+      <MeteoGiornoCard trip={trip} day={day} />
       <div className="fa-stack" style={{ gap: 0 }}>
         <TappeLista
           trip={trip}

@@ -1,5 +1,6 @@
 import { createContext } from 'react'
 import type { ReactNode } from 'react'
+import { cittaDaAlloggi } from '../lib/cittaGiorno'
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { demoTrip } from '../demo/demoTrip'
 import { useAuth } from '../lib/auth'
@@ -227,7 +228,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const flushing = useRef(false)
   // le tappe di ogni giorno sono sempre nell'ordine mostrato (posizione + orario)
   const trips = useMemo(
-    () => applyQueue(serverTrips, queue).map((t) => ({ ...t, center: tripCenter(t), days: t.days.map((d) => ({ ...d, items: orderItems(d.items) })) })),
+    () => applyQueue(serverTrips, queue).map((t) => ({ ...t, center: tripCenter(t), days: t.days.map((d) => ({ ...d, city: d.city || cittaDaAlloggi(t.stays, d.date), items: orderItems(d.items) })) })),
     [serverTrips, queue],
   )
   const [status, setStatus] = useState<TripsStatus>(demo ? 'ready' : 'loading')
