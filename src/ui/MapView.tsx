@@ -618,7 +618,7 @@ export function DayMapView({ stops, lines, ends, center, selectedId, onSelect }:
 
   useEffect(() => {
     if (!el.current) return
-    const m = newMap(el.current, center, 12, true, true)
+    const m = newMap(el.current, center, 12, true, false)
     map.current = m
     // il tocco su un pin vale solo se la mappa è ferma e il dito è uno solo
     m.on('move', () => {
