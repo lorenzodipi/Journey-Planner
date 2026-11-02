@@ -326,3 +326,6 @@ sup{margin-left:0}
 
 /* Dark: pulsante flottante e stati selezionati con l'azzurro pieno della palette scura (bianco su #375EB3 = 6,2:1) */
 [data-theme="dark"] .fa-fab{background:var(--azzurro-solid)}
+
+/* Orario e data: l'icona è quella a sinistra del campo; tolgo quella del browser a destra (il selettore si apre cliccando il campo) */
+.fa-in input[type=time]::-webkit-calendar-picker-indicator,.fa-in input[type=date]::-webkit-calendar-picker-indicator{display:none}

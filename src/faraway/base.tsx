@@ -149,7 +149,7 @@ export function Campo({ label, value, onChange, placeholder, type = 'text', inpu
         {textarea ? (
           <textarea id={id} value={value} placeholder={ph} onChange={(e) => onChange(e.currentTarget.value)} aria-invalid={error ? true : undefined} aria-describedby={described} maxLength={rest.maxLength} rows={3} />
         ) : (
-          <input id={id} type={type} inputMode={inputMode} value={value} placeholder={ph} onChange={(e) => onChange(e.currentTarget.value)} onClick={type === 'time' ? (e) => apriSelettore(e.currentTarget) : undefined} aria-invalid={error ? true : undefined} aria-describedby={described} {...rest} />
+          <input id={id} type={type} inputMode={inputMode} value={value} placeholder={ph} onChange={(e) => onChange(e.currentTarget.value)} onClick={type === 'time' || type === 'date' ? (e) => apriSelettore(e.currentTarget) : undefined} aria-invalid={error ? true : undefined} aria-describedby={described} {...rest} />
         )}
         {pickerVuoto ? <span className="ph" aria-hidden="true">{ph}</span> : null}
         {trailing}

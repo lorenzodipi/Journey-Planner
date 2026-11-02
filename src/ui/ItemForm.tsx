@@ -49,7 +49,7 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
     if (!title.trim()) return setError('Scrivi cosa fai in questa tappa.')
     if (startTime && endTime && endTime < startTime) return setError("L'ora di fine è prima dell'inizio.")
     const minutes = parseDuration(duration)
-    if (Number.isNaN(minutes)) return setError('La durata non è chiara: scrivi per esempio 45 min o 1 h 30.')
+    if (Number.isNaN(minutes)) return setError('La durata non è chiara: scrivi per esempio 45min o 1h 30min.')
     setBusy(true)
     setError(null)
     // senza durata e senza averne mai avuta non si tocca la colonna (esiste solo dopo la migrazione 0015)
@@ -108,7 +108,7 @@ export function ItemForm({ trip, initial, onSubmit, onDelete, onOpenPlace, onDon
           value={duration}
           onChange={setDuration}
           list="durate-tappa"
-          placeholder={place?.visitMinutes ? formatDuration(place.visitMinutes) : 'es. 1 h 30'}
+          placeholder={place?.visitMinutes ? formatDuration(place.visitMinutes) : '1h 30min'}
         />
       </div>
       <datalist id="durate-tappa">

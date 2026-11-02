@@ -110,7 +110,7 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
     if (latN !== null && (Math.abs(latN) > 90 || Math.abs(lngN as number) > 180)) return setError('Le coordinate sono fuori intervallo.')
 
     const visitN = parseDuration(visit)
-    if (Number.isNaN(visitN)) return setError('La durata non è chiara: scrivi per esempio 45 min o 1 h 30.')
+    if (Number.isNaN(visitN)) return setError('La durata non è chiara: scrivi per esempio 45min o 1h 30min.')
 
     setBusy(true)
     setError(null)

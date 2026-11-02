@@ -37,11 +37,11 @@ export function DurationField({ label, value, onChange, inherited, inheritedFrom
         aria-label={`${label}, valore libero`}
         aria-invalid={invalid || undefined}
         value={value}
-        placeholder={inherited ? formatDuration(inherited) : 'es. 1 h 30'}
+        placeholder={inherited ? formatDuration(inherited) : '1h 30min'}
         onChange={(e) => onChange((e.currentTarget as HTMLInputElement).value)}
         className={`mt-2 min-h-12 w-full rounded-[14px] border-2 bg-bg px-3.5 text-base placeholder:text-muted/70 ${invalid ? 'border-danger' : 'border-line'}`}
       />
-      {invalid && <p className="mt-1 text-[13px] font-bold text-danger">Scrivi la durata, per esempio 45 min o 1 h 30.</p>}
+      {invalid && <p className="mt-1 text-[13px] font-bold text-danger">Scrivi la durata, per esempio 45min o 1h 30min.</p>}
       {!invalid && inherited && (
         <p className="mt-1 text-[13px] text-muted">
           {value.trim() ? (

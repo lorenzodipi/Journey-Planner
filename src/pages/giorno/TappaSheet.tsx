@@ -86,7 +86,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
     e.preventDefault()
     if (!title.trim()) return setError('Scrivi il luogo o cosa fate in questa tappa.')
     const minutes = parseDuration(duration)
-    if (Number.isNaN(minutes)) return setError('La durata non è chiara: scrivi per esempio 45 min o 1 h 30.')
+    if (Number.isNaN(minutes)) return setError('La durata non è chiara: scrivi per esempio 45min o 1h 30min.')
     if (cost.trim() && (amount === null || amount < 0)) return setError("Il costo non è chiaro: scrivi un importo, per esempio 12,50.")
     if (amount && !paidBy) return setError('Manca chi ha pagato. Scegli una persona.')
     if (!(await procediConflitto())) return
@@ -177,7 +177,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
         ) : null}
         <div className="fa-2c">
           <Campo label="Ora" icon="clock" type="time" value={time} onChange={setTime} />
-          <Campo label="Durata" value={duration} onChange={setDuration} placeholder={place?.visitMinutes ? durata(place.visitMinutes) : 'es. 1 h 30'} />
+          <Campo label="Durata" value={duration} onChange={setDuration} placeholder={place?.visitMinutes ? durata(place.visitMinutes) : '1h 30min'} />
         </div>
         {editing && time && schema.timeLock ? (
           <Interruttore

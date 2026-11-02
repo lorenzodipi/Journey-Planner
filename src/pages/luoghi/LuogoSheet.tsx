@@ -176,7 +176,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
     if ((latN === null) !== (lngN === null)) return setError('Scrivi sia la latitudine sia la longitudine, oppure nessuna delle due.')
     if (latN !== null && (Math.abs(latN) > 90 || Math.abs(lngN as number) > 180)) return setError('Le coordinate sono fuori dalla mappa: controlla i numeri.')
     const visitN = parseDuration(visit)
-    if (Number.isNaN(visitN)) return setError('La durata non è chiara: scrivi per esempio 45 min o 1 h 30.')
+    if (Number.isNaN(visitN)) return setError('La durata non è chiara: scrivi per esempio 45min o 1h 30min.')
     const bad = spec && Object.values(spec.w).some((f) => f?.some((x) => !x.from || !x.to))
     if (bad) return setError('In un giorno manca l’ora di apertura o di chiusura.')
     const cleaned = spec ? (cleanSpec(spec) ?? null) : null
@@ -324,7 +324,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
             <span className="fa-help">La vedi solo tu, gli altri non la vedono.</span>
           </div>
         ) : null}
-        <Campo label="Quanto ci si ferma" icon="clock" value={visit} onChange={setVisit} placeholder="es. 1 h 30" />
+        <Campo label="Quanto ci si ferma" icon="clock" value={visit} onChange={setVisit} placeholder="1h 30min" />
         <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="Appunti sul luogo" />
 
         <OrariEditor value={spec} onChange={setSpec} legacyText={place?.openingHours} />
