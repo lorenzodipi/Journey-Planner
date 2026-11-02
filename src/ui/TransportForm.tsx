@@ -156,7 +156,7 @@ export function TransportForm({ trip, initial, defaults, onSubmit, onDelete, onD
         </span>
       </label>
       <div className="grid grid-cols-2 gap-3">
-        <TextField label="Da" value={from} onChange={setFrom} placeholder="Tokyo" />
+        <TextField label="Da" value={from} onChange={setFrom} placeholder="Luogo di partenza" />
         <TextField label="A" value={to} onChange={setTo} placeholder="Nikko" />
       </div>
       <ChipSelect label="Mezzo" value={mode} options={MODES} onChange={setMode} />

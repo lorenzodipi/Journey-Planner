@@ -9,6 +9,8 @@ import { discOf, initials, useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { Stay, Trip } from '../../types'
+import { parseMapsUrl } from '../../lib/mapsUrl'
+import { reverseGeocode } from '../../lib/geocode'
 import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
 import { Foglio } from '../../faraway/Foglio'
@@ -37,6 +39,28 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
   const [city, setCity] = useState(s?.city ?? '')
   const [address, setAddress] = useState(s?.address ?? '')
   const [mapsUrl, setMapsUrl] = useState(s?.mapsUrl ?? '')
+  const [mapsInfo, setMapsInfo] = useState('')
+  // incollando un link di Google Maps compilo nome, città e indirizzo (solo i campi ancora vuoti)
+  async function leggiLink(v: string) {
+    setMapsUrl(v)
+    setMapsInfo('')
+    const text = v.trim()
+    if (!text) return
+    if (/^https?:\/\/(maps\.app\.goo\.gl|goo\.gl)\//i.test(text)) return setMapsInfo('Link corto: apri il link, copia quello completo dalla barra del browser e incollalo qui per compilare i campi.')
+    const info = parseMapsUrl(text)
+    if (!info) return
+    if (info.name && !name.trim()) setName(info.name)
+    if (city.trim() && address.trim()) return setMapsInfo('Link letto.')
+    setMapsInfo('Leggo l’indirizzo…')
+    try {
+      const r = await reverseGeocode(info.lat, info.lng)
+      if (!city.trim() && r.city) setCity(r.city)
+      if (!address.trim() && r.address) setAddress(r.address)
+      setMapsInfo(r.address || r.city ? 'Campi compilati dal link: controlla che siano giusti.' : 'Link letto, ma non trovo l’indirizzo: scrivilo a mano.')
+    } catch {
+      setMapsInfo('Link letto, ma non riesco a leggere l’indirizzo ora: scrivilo a mano.')
+    }
+  }
   const [checkIn, setCheckIn] = useState(s?.checkIn ?? trip.startDate)
   const [checkOut, setCheckOut] = useState(s?.checkOut ?? '')
   const [inInfo, setInInfo] = useState(s?.checkInInfo ?? '')
@@ -105,12 +129,12 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
       }
     >
       <form id="alloggio-form" className="frm" onSubmit={submit} noValidate>
-        <Campo label="Nome" value={name} onChange={setName} placeholder="es. Ryokan Sakura" error={errors.name} />
+        <Campo label="Nome" value={name} onChange={setName} placeholder="Nome dell’alloggio" error={errors.name} />
         <div className="fa-2c">
-          <Campo label="Città" icon="pin" value={city} onChange={setCity} placeholder="Kyoto" />
-          <Campo label="Indirizzo" value={address} onChange={setAddress} placeholder="Via, numero" />
+          <Campo label="Città" icon="pin" value={city} onChange={setCity} placeholder="Città" />
+          <Campo label="Indirizzo" value={address} onChange={setAddress} placeholder="Via e numero" />
         </div>
-        <Campo label="Link alla mappa (facoltativo)" type="url" value={mapsUrl} onChange={setMapsUrl} placeholder="https://maps.app.goo.gl/…" />
+        <Campo label="Link alla mappa (facoltativo)" type="url" value={mapsUrl} onChange={(v) => void leggiLink(v)} placeholder="Incolla il link di Google Maps" hint={mapsInfo || 'Incollalo e compilo nome, città e indirizzo.'} />
         <div className="fa-2c">
           <Campo label="Check-in, data" type="date" icon="cal" value={checkIn} onChange={(v) => (setCheckIn(v), !checkOut || checkOut <= v ? setCheckOut('') : null)} />
           <Campo label="Check-in, orario" value={inInfo} onChange={setInInfo} placeholder="15:00" />
@@ -120,9 +144,9 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
         {errors.when ? <Errore>{errors.when}</Errore> : null}
         <div className="fa-2c">
           <Campo label="Camera" value={room} onChange={setRoom} placeholder="4" maxLength={10} />
-          <Campo label="Tipo di camera" value={roomType} onChange={setRoomType} placeholder="Washitsu" />
+          <Campo label="Tipo di camera" value={roomType} onChange={setRoomType} placeholder="es. Doppia" />
           <Campo label="Ospiti" inputMode="numeric" value={guests} onChange={setGuests} placeholder="2" error={errors.guests} />
-          <Campo label="Telefono" type="tel" value={phone} onChange={setPhone} placeholder="+81 75 …" />
+          <Campo label="Telefono" type="tel" value={phone} onChange={setPhone} placeholder="Numero di telefono" />
           <Campo label="Email" type="email" value={email} onChange={setEmail} placeholder="info@…" error={errors.email} />
         </div>
         <Campo label="Codice di prenotazione" value={code} onChange={(v) => setCode(v.toUpperCase())} autoComplete="off" />

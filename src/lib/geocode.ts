@@ -77,3 +77,35 @@ export function searchPlaces(query: string, near?: { lat: number; lng: number })
   queue = job.catch(() => undefined)
   return job
 }
+
+interface NominatimReverse {
+  name?: string
+  display_name?: string
+  address?: Record<string, string>
+}
+
+/** Indirizzo «Via, numero» e città da una risposta di Nominatim /reverse. */
+export function parseReverse(item: NominatimReverse | null | undefined): { address: string; city: string } {
+  const a = item?.address ?? {}
+  const via = a.road || a.pedestrian || a.footway || a.path || a.square || a.neighbourhood || ''
+  const civico = a.house_number || ''
+  // in Italia e in gran parte d'Europa il civico segue la via; altrove (es. Giappone) il quartiere basta
+  const address = via ? `${via}${civico ? ` ${civico}` : ''}` : [a.suburb, a.quarter].filter(Boolean)[0] || ''
+  const city = a.city || a.town || a.village || a.municipality || a.suburb || a.county || ''
+  return { address, city }
+}
+
+/** Indirizzo e città di un punto sulla mappa (una richiesta, su azione esplicita dell'utente). */
+export function reverseGeocode(lat: number, lng: number): Promise<{ address: string; city: string }> {
+  const job = queue.then(async () => {
+    const wait = lastCall + GAP_MS - Date.now()
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait))
+    lastCall = Date.now()
+    const params = new URLSearchParams({ lat: String(lat), lon: String(lng), format: 'jsonv2', addressdetails: '1', zoom: '18', 'accept-language': 'it' })
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`, { headers: { Accept: 'application/json' } })
+    if (!res.ok) throw new Error(`Indirizzo non disponibile (${res.status})`)
+    return parseReverse((await res.json()) as NominatimReverse)
+  })
+  queue = job.catch(() => undefined)
+  return job
+}

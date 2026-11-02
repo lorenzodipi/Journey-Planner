@@ -29,7 +29,7 @@ export function DayForm({ day, onSubmit, onDone }: Props) {
   return (
     <form className="space-y-4" onSubmit={submit}>
       <p className="-mt-2 text-sm text-muted first-letter:uppercase">{formatDayLong(day.date)}</p>
-      <TextField label="Città o zona" value={city} onChange={setCity} placeholder="Tokyo" maxLength={60} />
+      <TextField label="Città o zona" value={city} onChange={setCity} placeholder="Città o zona" maxLength={60} />
       <TextField label="Titolo della giornata" value={title} onChange={setTitle} placeholder="Arrivo" maxLength={80} />
       <TextArea label="Note" value={notes} onChange={setNotes} placeholder="Promemoria per questa giornata" />
       <FormError message={error} />

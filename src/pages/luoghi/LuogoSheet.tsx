@@ -218,7 +218,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
             type="search"
             value={query}
             onChange={setQuery}
-            placeholder="es. Fushimi Inari Kyoto"
+            placeholder="Nome del luogo o indirizzo"
             enterKeyHint="search"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -270,7 +270,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
           </span>
         ) : null}
         <Campo label="Nome nella lingua del posto" value={nameLocal} onChange={setNameLocal} maxLength={120} hint="Da mostrare a un tassista" />
-        <Campo label="Città" icon="pin" value={city} onChange={setCity} list="luogo-citta" autoComplete="off" placeholder="es. Kyoto" />
+        <Campo label="Città" icon="pin" value={city} onChange={setCity} list="luogo-citta" autoComplete="off" placeholder="Città" />
         <datalist id="luogo-citta">
           {cities.map((c) => (
             <option key={c} value={c} />

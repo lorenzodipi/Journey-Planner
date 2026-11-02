@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseNominatim } from './geocode'
+import { parseNominatim, parseReverse } from './geocode'
 
 describe('parseNominatim', () => {
   it('estrae nome, nome locale, città e coordinate', () => {
@@ -32,5 +32,15 @@ describe('parseNominatim', () => {
   })
   it('scarta risultati senza coordinate valide o senza nome', () => {
     expect(parseNominatim([{ lat: 'x', lon: '2', name: 'A' }, { lat: '1', lon: '2' }])).toEqual([])
+  })
+})
+
+describe('parseReverse', () => {
+  it('via e civico, città', () => {
+    expect(parseReverse({ address: { road: 'Via Roma', house_number: '12', town: 'Siena' } })).toEqual({ address: 'Via Roma 12', city: 'Siena' })
+  })
+  it('senza via usa il quartiere; risposta vuota non rompe', () => {
+    expect(parseReverse({ address: { suburb: 'Asakusa', city: 'Taito' } })).toEqual({ address: 'Asakusa', city: 'Taito' })
+    expect(parseReverse(null)).toEqual({ address: '', city: '' })
   })
 })

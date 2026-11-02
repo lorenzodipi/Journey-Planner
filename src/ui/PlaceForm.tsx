@@ -143,7 +143,7 @@ export function PlaceForm({ trip, initial, onSubmit, onDone }: Props) {
             <input
               type="search"
               value={query}
-              placeholder="Es. Senso-ji Tokyo"
+              placeholder="Nome del luogo o indirizzo"
               onChange={(e) => setQuery(e.currentTarget.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {

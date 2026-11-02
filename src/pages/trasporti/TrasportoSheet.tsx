@@ -134,10 +134,10 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
             ))}
           </div>
         </div>
-        <Campo label="Nome o numero del mezzo" value={title} onChange={setTitle} placeholder="es. Haruka 33" maxLength={60} />
+        <Campo label="Nome o numero del mezzo" value={title} onChange={setTitle} placeholder="Nome o numero del mezzo" maxLength={60} />
         <div className="fa-2c">
-          <Campo label="Da" icon="pin" value={from} onChange={setFrom} placeholder="Aeroporto Kansai" error={errors.from} />
-          <Campo label="A" icon="pin" value={to} onChange={setTo} placeholder="Stazione di Kyoto" error={errors.to} />
+          <Campo label="Da" icon="pin" value={from} onChange={setFrom} placeholder="Luogo di partenza" error={errors.from} />
+          <Campo label="A" icon="pin" value={to} onChange={setTo} placeholder="Luogo di arrivo" error={errors.to} />
         </div>
         <div className="fa-2c">
           <Campo label="Partenza, data" type="date" icon="cal" value={dd} onChange={(v) => (setDd(v), !ad || ad < v ? setAd(v) : null)} />
@@ -193,7 +193,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
         ) : null}
         <div className="fa-2c">
           <Campo label="Codice" value={refCode} onChange={(v) => setRefCode(v.toUpperCase())} autoComplete="off" />
-          <Campo label="Operatore" value={operator} onChange={setOperator} placeholder="es. JR West" />
+          <Campo label="Operatore" value={operator} onChange={setOperator} placeholder="Nome dell’operatore" />
           <Campo label="Terminal" value={terminal} onChange={setTerminal} maxLength={10} />
           <Campo label="Binario" value={platform} onChange={setPlatform} maxLength={10} />
           <Campo label="Bagaglio" value={baggage} onChange={setBaggage} />

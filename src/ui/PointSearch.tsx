@@ -90,7 +90,7 @@ export function PointSearch({ label, fallbackQuery, near, value, onChange }: Pro
         <input
           type="text"
           value={query}
-          placeholder={fallbackQuery.trim() || 'Es. Tokyo Station'}
+          placeholder={fallbackQuery.trim() || 'Nome del luogo o indirizzo'}
           aria-label={`Cerca ${label.toLowerCase()}`}
           onChange={(e) => setQuery((e.currentTarget as HTMLInputElement).value)}
           onKeyDown={(e) => {
