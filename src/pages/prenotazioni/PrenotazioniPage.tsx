@@ -15,7 +15,6 @@ import { useTrip, useTrips } from '../../state/trip'
 import type { Booking } from '../../types'
 import { Ic } from '../../ui/Sprite'
 import { Campo, Chip, Pillola } from '../../faraway/base'
-import { UltimaModifica } from '../../faraway/UltimaModifica'
 import { CodiceBiglietto } from '../../faraway/CodiceBiglietto'
 import { cx } from '../../faraway/cx'
 import { useConferma } from '../../faraway/Foglio'
@@ -242,7 +241,6 @@ export function PrenotazioniPage() {
                           </div>
                         </div>
                       ) : null}
-                      <UltimaModifica trip={trip} table="bookings" rowId={b.id} />
                       <div className="acts">
                         <button type="button" className="fa-btn sm out" onClick={() => setCodice(b)}>
                           <Sv name="qr" size={18} />
