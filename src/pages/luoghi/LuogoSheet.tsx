@@ -16,7 +16,7 @@ import { showToast } from '../../state/toast'
 import type { PlacePref } from '../../types'
 import { useTrips } from '../../state/trip'
 import type { Place, PlaceStatus, Trip } from '../../types'
-import { SUGGESTED_CATEGORIES, uniqueCities } from '../../ui/placeMeta'
+import { SUGGESTED_CATEGORIES } from '../../ui/placeMeta'
 import { Campo, Chip, Pulsante } from '../../faraway/base'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
@@ -117,7 +117,6 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
     showToast(`«${place.name}» archiviato`, { label: 'Annulla', run: () => void t.archivePlace(place.id, false) })
     onClose()
   }
-  const cities = [...new Set([...uniqueCities(trip.places), ...trip.days.map((d) => d.city).filter(Boolean)])]
 
   async function search() {
     if (!query.trim()) return
@@ -280,12 +279,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
           </span>
         ) : null}
         <Campo label="Nome nella lingua del posto" value={nameLocal} onChange={setNameLocal} maxLength={120} hint="Da mostrare a un tassista" />
-        <Campo label="Città" icon="pin" value={city} onChange={setCity} list="luogo-citta" autoComplete="off" placeholder="Città" />
-        <datalist id="luogo-citta">
-          {cities.map((c) => (
-            <option key={c} value={c} />
-          ))}
-        </datalist>
+        <Campo label="Città" icon="pin" value={city} onChange={setCity} autoComplete="off" placeholder="Città" />
 
         <div className="fa-fld" role="group" aria-label="Categoria">
           Categoria
