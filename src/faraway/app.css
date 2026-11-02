@@ -333,5 +333,5 @@ sup{margin-left:0}
 /* Meteo del Giorno con più città: si scorre in orizzontale, la card successiva si intravede a destra; si ferma sempre su una card intera (mai a metà) */
 .fa-meteo-slider{display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;margin:0 -16px;padding:0 16px;scroll-padding-inline:16px}
 .fa-meteo-slider::-webkit-scrollbar{display:none}
-.fa-meteo-slide{flex:0 0 88%;min-width:0;scroll-snap-align:start;scroll-snap-stop:always}
-.fa-meteo-slide:last-child{margin-right:12%}
+.fa-meteo-slide{flex:0 0 calc(100% - 20px);min-width:0;scroll-snap-align:start;scroll-snap-stop:always}
+.fa-meteo-slider:focus-visible{outline:2px solid var(--azzurro);outline-offset:2px;border-radius:var(--r-lg,20px)}

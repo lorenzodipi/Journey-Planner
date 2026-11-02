@@ -26,7 +26,7 @@ export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Day }) {
   useEffect(() => {
     const r = riga.current
     const slide = r?.children[adesso] as HTMLElement | undefined
-    if (r && slide) r.scrollTo({ left: slide.offsetLeft - 16, behavior: 'auto' })
+    if (r && slide) r.scrollTo({ left: r.scrollLeft + slide.getBoundingClientRect().left - r.getBoundingClientRect().left - 16, behavior: 'auto' })
   }, [adesso, citta.join('|')]) // eslint-disable-line react-hooks/exhaustive-deps
   const multi = citta.length > 1
   const cards = (
@@ -61,7 +61,7 @@ export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Day }) {
           />
         )
         return multi ? (
-          <div key={c} className="fa-meteo-slide" role="group" aria-label={`${c}, ${idx + 1} di ${citta.length}`}>
+          <div key={c} className="fa-meteo-slide" role="group" aria-roledescription="slide" aria-label={`${c}, ${idx + 1} di ${citta.length}`}>
             {card}
           </div>
         ) : (
@@ -72,8 +72,8 @@ export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Day }) {
   )
   if (!multi) return cards
   return (
-    <section aria-label="Meteo del giorno per città, scorri in orizzontale">
-      <div ref={riga} className="fa-meteo-slider">
+    <section aria-label="Meteo del giorno per città" aria-roledescription="carosello">
+      <div ref={riga} className="fa-meteo-slider" tabIndex={0} role="group" aria-label="Scorri in orizzontale per cambiare città">
         {cards}
       </div>
     </section>
