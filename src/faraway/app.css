@@ -367,3 +367,9 @@ sup{margin-left:0}
 
 /* Il numero sulla scheda Spese non deve confondersi con la scheda attiva (stesso azzurro pieno): corallo con anello dello sfondo (#95) */
 .fa-tbn{background:var(--corallo-solid);color:var(--on-corallo-solid);box-shadow:0 0 0 2px var(--canvas)}
+.k-Tappa header{flex-wrap:wrap;gap:0 16px}
+.k-Tappa h2{min-width:0;overflow-wrap:anywhere}
+.k-Tappa .pl{flex-wrap:wrap;gap:0 16px}
+.k-Tappa .pl>*{min-width:0;overflow-wrap:anywhere}
+.k-Luoghi .t,.k-Luoghi .m,.k-Luoghi .rm,.k-Luoghi .rs,.k-Luoghi .tx,.k-LuoghiAperti .t,.k-LuoghiAperti .m,.k-LuoghiAperti .rm,.k-LuoghiAperti .rs,.fa-sech .l,.fa-sech h2{overflow-wrap:anywhere;min-width:0}
+.fa-sech{gap:12px}.fa-sech>:first-child{min-width:0;overflow-wrap:anywhere}.fa-sech .fa-c{flex:none}
