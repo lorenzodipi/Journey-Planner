@@ -146,6 +146,18 @@ export async function setExpenseCategoryArchived(id: string, archived: boolean):
   if (error) throw /archived_at/i.test(error.message) ? new Error("Manca la migrazione 0028 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0028_spese_avanzate.sql).") : needs0008(error)
 }
 
+/**
+ * Elimina una categoria che non ha spese ma ha costi previsti (voci di budget): i costi passano in «Altro», così il
+ * previsto totale non cambia, poi la categoria si elimina. Il database blocca l'eliminazione finché qualcosa la usa.
+ */
+export async function deleteExpenseCategoryMovingBudget(tripId: string, id: string, known: Category[]): Promise<void> {
+  const altro = await resolveExpenseCategory(tripId, 'Altro', known)
+  const db = client()
+  const moved = await db.from('budget_items').update({ category_id: altro, category: 'Altro' }).eq('category_id', id).is('deleted_at', null)
+  if (moved.error) throw moved.error
+  await setExpenseCategoryDeleted(id, true)
+}
+
 export async function setExpenseCategoryDeleted(id: string, deleted: boolean): Promise<void> {
   const { error } = await client().from('expense_categories').update({ deleted_at: deleted ? now() : null }).eq('id', id)
   if (error) throw needs0008(error)

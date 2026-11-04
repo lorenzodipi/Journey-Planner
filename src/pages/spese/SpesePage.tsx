@@ -72,6 +72,22 @@ export function SpesePage() {
       showToast(m ?? 'Categoria archiviata', m ? undefined : { label: 'Annulla', run: () => void t.setExpenseCategoryArchived(c.id as string, false) })
       return
     }
+    // niente spese ma costi previsti (voci di budget): passano in «Altro», poi la categoria si elimina
+    const previsti = trip.budget.filter((b) => b.categoryId === c.id)
+    if (previsti.length > 0) {
+      const nomi = previsti.map((b) => `«${b.label}»`).join(', ')
+      const sposta = await ask({
+        title: `Eliminare «${c.label}»?`,
+        message: `Non ha spese, ma ha ${previsti.length === 1 ? 'un costo previsto' : `${previsti.length} costi previsti`}: ${nomi}. ${previsti.length === 1 ? 'Passa' : 'Passano'} nella categoria «Altro», così il previsto totale non cambia.`,
+        confirm: 'Sposta ed elimina',
+        cancel: 'Tieni la categoria',
+        destructive: true,
+      })
+      if (!sposta) return
+      const m = await t.deleteExpenseCategoryMovingBudget(trip.id, c.id)
+      showToast(m ?? `Categoria eliminata, ${previsti.length === 1 ? 'il costo previsto è' : 'i costi previsti sono'} in «Altro»`)
+      return
+    }
     const ok = await ask({
       title: `Eliminare «${c.label}»?`,
       message: 'Non ha spese: sparisce dalla ricevuta.',

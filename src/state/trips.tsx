@@ -133,6 +133,7 @@ interface TripsValue {
   createExpenseCategory: (tripId: string, label: string) => Result
   renameExpenseCategory: (tripId: string, id: string, label: string) => Result
   setExpenseCategoryDeleted: (id: string, deleted: boolean) => Result
+  deleteExpenseCategoryMovingBudget: (tripId: string, id: string) => Result
   setExpenseCategoryArchived: (id: string, archived: boolean) => Result
   removeExpenseFile: (id: string, path: string) => Result
   /** Rimborsi (#51): servono la rete e la migrazione 0029. */
@@ -665,6 +666,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     createExpenseCategory: (tripId, label) => run(() => money.createExpenseCategory(tripId, label, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['money', 'expenseCategories']),
     renameExpenseCategory: (tripId, id, label) => run(() => money.renameExpenseCategory(id, label, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['money', 'expenseCategories']),
     setExpenseCategoryDeleted: (id, deleted) => run(() => money.setExpenseCategoryDeleted(id, deleted), ['money', 'expenseCategories']),
+    deleteExpenseCategoryMovingBudget: (tripId, id) => run(() => money.deleteExpenseCategoryMovingBudget(tripId, id, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['money', 'expenseCategories']),
     setExpenseCategoryArchived: (id, archived) => run(() => money.setExpenseCategoryArchived(id, archived), ['money', 'expenseCategories']),
     removeExpenseFile: (id, path) => run(() => money.deleteExpenseFile(id, path), ['money']),
     declareSettlement: (input) => run(() => money.declareSettlement(input), ['money']),
