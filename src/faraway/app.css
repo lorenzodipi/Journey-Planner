@@ -365,7 +365,7 @@ sup{margin-left:0}
 .fa-dbt .rt{display:grid;justify-items:end;gap:8px}
 .fa-dbt .rt .amt{line-height:24px}
 .k-Ricevuta .pp .sub{display:block}
-.fa-cron{display:grid;gap:12px;padding:16px}
+.fa-cron{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:start;padding:16px}
 .fa-cron+.fa-cron{border-top:1px solid var(--hairline)}
 .fa-cron .t{display:block;font:600 16px/24px var(--font-sans);letter-spacing:.16px;overflow-wrap:anywhere}
 .fa-cron .bt{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
@@ -378,3 +378,4 @@ sup{margin-left:0}
 .k-Tappa .pl>*{min-width:0;overflow-wrap:anywhere}
 .k-Luoghi .t,.k-Luoghi .m,.k-Luoghi .rm,.k-Luoghi .rs,.k-Luoghi .tx,.k-LuoghiAperti .t,.k-LuoghiAperti .m,.k-LuoghiAperti .rm,.k-LuoghiAperti .rs,.fa-sech .l,.fa-sech h2{overflow-wrap:anywhere;min-width:0}
 .fa-sech{gap:12px}.fa-sech>:first-child{min-width:0;overflow-wrap:anywhere}.fa-sech .fa-c{flex:none}
+.fa-cron .rt{display:grid;justify-items:end;gap:8px}

@@ -48,8 +48,7 @@ export function Bilancio() {
           {lista.map((x) => (
             <div key={x.id} className="fa-cron">
               <span className="t">{testoCronologia(x, trip.travelers, me?.id)}</span>
-              <span className="bt">
-                <StatoPillola stato={x.status} />
+              <span className="rt">
                 {x.status === 'in_attesa' && x.fromId === me?.id ? (
                   <Pulsante size="sm" color="link-color" onPress={() => void annulla(x.id)}>
                     Annulla
@@ -60,6 +59,7 @@ export function Bilancio() {
                     Rettifica
                   </Pulsante>
                 ) : null}
+                <StatoPillola stato={x.status} />
               </span>
             </div>
           ))}
