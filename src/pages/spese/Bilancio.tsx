@@ -35,7 +35,7 @@ export function Bilancio() {
       <p style={{ margin: 0, font: '600 20px/1.3 var(--font-sans)' }}>
         {saldo === null ? 'Collega il tuo account a un viaggiatore per vedere il bilancio.' : Math.abs(saldo) < 0.005 ? 'Sei in pari' : saldo > 0 ? `Devi ricevere ${formatMoney(saldo, cur)}` : `Devi dare ${formatMoney(-saldo, cur)}`}
       </p>
-      <RimborsiCard trip={trip} />
+      <RimborsiCard trip={trip} conMie={false} />
       <DebitiSpesa trip={trip} spese={r.spese} fx={r.fx} me={me?.id} abilitaPagamento={trip.settlements !== undefined} />
       {dati.transfers.filter((x) => x.from === me?.id || x.to === me?.id).length === 0 && saldo !== null ? <p className="fa-m" style={{ margin: 0 }}>Nessun rimborso necessario.</p> : null}
       <h2 style={{ margin: '8px 0 0', font: '600 16px/1.3 var(--font-sans)' }}>Cronologia dei rimborsi</h2>
@@ -46,9 +46,9 @@ export function Bilancio() {
       ) : (
         <div className="fa-list">
           {lista.map((x) => (
-            <div key={x.id} className="fa-row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 8 }}>
+            <div key={x.id} className="fa-cron">
               <span className="t">{testoCronologia(x, trip.travelers, me?.id)}</span>
-              <span style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className="bt">
                 <StatoPillola stato={x.status} />
                 {x.status === 'in_attesa' && x.fromId === me?.id ? (
                   <Pulsante size="sm" color="link-color" onPress={() => void annulla(x.id)}>

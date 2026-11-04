@@ -354,3 +354,13 @@ sup{margin-left:0}
 @media (prefers-reduced-motion:reduce){.k-Tappa .steps.trascina>li{transition:none}}
 /* il trattino della tappa saltata è centrato come gli altri glifi del nodo (#89) */
 .k-Tappa .nd.skip svg,.k-TappaStati .nd.skip svg{inset:-2px}
+
+/* Bilancio e ricevuta (#90 #91 #92) */
+.fa-dbt .top{align-items:start}
+.fa-dbt .rt{display:grid;justify-items:end;gap:8px}
+.fa-dbt .rt .amt{line-height:24px}
+.k-Ricevuta .pp .sub{display:block}
+.fa-cron{display:grid;gap:12px;padding:16px}
+.fa-cron+.fa-cron{border-top:1px solid var(--hairline)}
+.fa-cron .t{display:block;font:600 16px/24px var(--font-sans);letter-spacing:.16px;overflow-wrap:anywhere}
+.fa-cron .bt{display:flex;flex-wrap:wrap;align-items:center;gap:8px}

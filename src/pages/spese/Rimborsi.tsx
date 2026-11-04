@@ -118,12 +118,12 @@ function DecidiSheet({ trip, r, onClose }: { trip: Trip; r: Rimborso; onClose: (
 }
 
 /** Richieste da decidere e richieste mie in attesa, in cima alla pagina Spese. */
-export function RimborsiCard({ trip }: { trip: Trip }) {
+export function RimborsiCard({ trip, conMie = true }: { trip: Trip; /** Le mie richieste in attesa: in «Il mio bilancio» ci sono già nella cronologia. */ conMie?: boolean }) {
   const t = useTrips()
   const me = useMe(trip)
   const [aperta, setAperta] = useState<Rimborso | null>(null)
   const dec = daDecidere(trip.settlements, me?.id)
-  const mie = inAttesaMie(trip.settlements, me?.id)
+  const mie = conMie ? inAttesaMie(trip.settlements, me?.id) : []
   if (dec.length === 0 && mie.length === 0) return null
   async function annulla(r: Rimborso) {
     const m = await t.cancelSettlement(r.id)

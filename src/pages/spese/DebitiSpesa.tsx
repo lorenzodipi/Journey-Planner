@@ -15,7 +15,7 @@ const giorno = (iso: string) => new Intl.DateTimeFormat('it-IT', { day: 'numeric
 
 function Stato({ d }: { d: DebitoSpesa }) {
   if (d.stato === 'pagato') return <Pillola tone="acq" icon="check">Pagato</Pillola>
-  if (d.stato === 'in_attesa') return <Pillola tone="soft" icon="clock">{d.verso === 'devo' ? 'In attesa di conferma' : 'Da confermare'}</Pillola>
+  if (d.stato === 'in_attesa') return <Pillola tone="soft" icon="clock">{d.verso === 'devo' ? 'In attesa' : 'Da confermare'}</Pillola>
   return <Pillola tone={d.verso === 'devo' ? 'cor' : 'mut'}>{d.verso === 'devo' ? 'Da pagare' : 'Da ricevere'}</Pillola>
 }
 
@@ -51,12 +51,16 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
                         {verso === 'devo' ? `Da dare a ${nome(d.otherId)}` : `Da ricevere da ${nome(d.otherId)}`} · {giorno(d.expense.spentAt)}
                       </span>
                     </span>
-                    <span className="amt">{formatMoney(d.stato === 'pagato' ? d.importo : d.residuo, cur)}</span>
+                    <span className="rt">
+                      <span className="amt">{formatMoney(d.stato === 'pagato' ? d.importo : d.residuo, cur)}</span>
+                      <Stato d={d} />
+                    </span>
                   </div>
-                  <div className="bt">
-                    <Stato d={d} />
-                    {d.stato === 'da_pagare' && d.pagato > 0 ? <span className="fa-m">Già dati {formatMoney(d.pagato, cur)} su {formatMoney(d.importo, cur)}</span> : null}
-                  </div>
+                  {d.stato === 'da_pagare' && d.pagato > 0 ? (
+                    <span className="fa-m">
+                      Già dati {formatMoney(d.pagato, cur)} su {formatMoney(d.importo, cur)}
+                    </span>
+                  ) : null}
                   {verso === 'devo' && d.stato === 'da_pagare' && abilitaPagamento ? (
                     <Pulsante size="sm" color="secondary-soft" onPress={() => setPaga(d)}>
                       Ho pagato

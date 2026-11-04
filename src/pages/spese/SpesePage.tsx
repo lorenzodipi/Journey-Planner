@@ -16,7 +16,7 @@ import { DueValori, Riepilogo, SaldoPersone } from '../../faraway/Home'
 import { Ricevuta } from '../../faraway/Ricevuta'
 import { BarraGrande, Schermata } from '../../faraway/shell'
 import { SpesaSheet } from './SpesaSheet'
-import { DichiaraSheet, RimborsiCard } from './Rimborsi'
+import { RimborsiCard } from './Rimborsi'
 import { finoAl, inQuanti, intervallo } from './testi'
 
 export function SpesePage() {
@@ -25,7 +25,6 @@ export function SpesePage() {
   const me = useMe(trip)
   const [, navigate] = useLocation()
   const [nuova, setNuova] = useState(false)
-  const [paga, setPaga] = useState<{ to: string; amount: number } | null>(null)
   const [ask, confirmNode] = useConferma()
   const today = tripToday(trip)
   const r = riassunto(trip, me?.id)
@@ -93,7 +92,6 @@ export function SpesePage() {
       overlay={
         <>
           {nuova ? <SpesaSheet trip={trip} open onClose={() => setNuova(false)} /> : null}
-          {paga ? <DichiaraSheet trip={trip} toId={paga.to} dovuto={paga.amount} onClose={() => setPaga(null)} /> : null}
           {confirmNode}
         </>
       }
@@ -101,8 +99,6 @@ export function SpesePage() {
       <Riepilogo dove={trip.destination} speso={r.speso} currency={cur} limit={r.limit} onSetBudget={() => navigate('/spese/budget')} onOpenBudget={() => navigate('/spese/budget')} second={second} />
       <RimborsiCard trip={trip} />
       <Ricevuta
-        me={me?.id}
-        onHoPagato={trip.settlements ? (x) => setPaga({ to: x.to, amount: x.amount }) : undefined}
         trip={trip}
         dati={dati}
         sub={[trip.destination, intervallo(trip.startDate, trip.endDate), inQuanti(n)].filter(Boolean).join(' · ')}
