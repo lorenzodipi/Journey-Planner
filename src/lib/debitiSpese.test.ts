@@ -49,6 +49,22 @@ describe('debiti per spesa', () => {
     expect(by.cena).toMatchObject({ stato: 'in_attesa', richieste: [{ id: 'r3', amount: 20 }] })
     expect(by.assicurazione.stato).toBe('da_pagare')
   })
+  it('un rimborso dato due volte: l\'eccedenza si vede sulla card ed è rettificabile (caso reale: «Prova»)', () => {
+    const prova = [spesa('prova', 40, '05', 'gaia')]
+    const a = { ...richiesta(20, 'confermato'), id: 'a', fromId: 'lorenzo', toId: 'gaia' }
+    const b = { ...richiesta(20, 'confermato'), id: 'b', fromId: 'lorenzo', toId: 'gaia', createdAt: '2026-11-05T10:01:00Z' }
+    const g = debitiPerSpesa(prova, T, fx, 'gaia', [], [a, b])
+    expect(g[0]).toMatchObject({ verso: 'devono', stato: 'pagato', eccedenza: 20 })
+    expect(g[0].confermati.map((c) => c.id)).toEqual(['a', 'b'])
+  })
+  it('i rimborsi nei due versi non si compensano (bug: 20 € di Lorenzo annullati dai 77,12 € di Gaia)', () => {
+    const sp = [spesa('assicurazione', 154.24, '01'), spesa('prova', 40, '05', 'gaia')]
+    const g77 = { ...richiesta(77.12, 'confermato'), id: 'g' }
+    const l20 = { ...richiesta(20, 'confermato'), id: 'l', fromId: 'lorenzo', toId: 'gaia' }
+    const l = debitiPerSpesa(sp, T, fx, 'lorenzo', [], [g77, l20])
+    expect(l.find((x) => x.expenseId === 'prova')?.stato).toBe('pagato')
+    expect(l.find((x) => x.expenseId === 'assicurazione')?.stato).toBe('pagato')
+  })
   it('le spese pagate da me per me non creano debiti', () => {
     const solo = { ...spesa('mia', 30, '03'), shares: [{ travelerId: 'lorenzo', weight: 1 }] }
     expect(debitiPerSpesa([solo], T, fx, 'gaia', [], [])).toEqual([])

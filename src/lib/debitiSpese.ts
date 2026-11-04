@@ -33,6 +33,8 @@ export interface DebitoSpesa {
   stato: StatoDebito
   /** rimborsi confermati che coprono la card (per «Rettifica») */
   confermati: Copertura[]
+  /** dato in più di quanto dovuto, tra queste due persone in questo verso (si vede sulla card più recente) */
+  eccedenza: number
   /** richieste in attesa che coprono la card (per «Rispondi» o «Annulla») */
   richieste: Copertura[]
 }
@@ -58,7 +60,7 @@ export function debitiPerSpesa(
   richieste: readonly Rimborso[] | undefined,
 ): DebitoSpesa[] {
   if (!me) return []
-  const grezzi: Omit<DebitoSpesa, 'pagato' | 'inAttesa' | 'residuo' | 'stato' | 'confermati' | 'richieste'>[] = []
+  const grezzi: Omit<DebitoSpesa, 'pagato' | 'inAttesa' | 'residuo' | 'stato' | 'confermati' | 'richieste' | 'eccedenza'>[] = []
   for (const e of [...spese].sort((a, b) => a.spentAt.localeCompare(b.spentAt))) {
     if (expenseBase(e, fx) === null) continue
     const owed = expenseOwed(e, travelers, fx)
@@ -92,7 +94,7 @@ export function debitiPerSpesa(
   }
   const att: Voce[] = tutte.filter((r) => r.status === 'in_attesa' && !r.corrects).map(voce)
 
-  const out: DebitoSpesa[] = grezzi.map((g) => ({ ...g, pagato: 0, inAttesa: 0, residuo: g.importo, stato: 'da_pagare' as StatoDebito, confermati: [], richieste: [] }))
+  const out: DebitoSpesa[] = grezzi.map((g) => ({ ...g, pagato: 0, inAttesa: 0, residuo: g.importo, stato: 'da_pagare' as StatoDebito, confermati: [], richieste: [], eccedenza: 0 }))
   const dir = (g: DebitoSpesa) => (g.verso === 'devo' ? { fromId: me, toId: g.otherId } : { fromId: g.otherId, toId: me })
 
   /** Distribuisce i rimborsi sulle card: prima quelle della sua spesa, poi dalla più vecchia. `campo` = dove si somma. */
@@ -121,6 +123,20 @@ export function debitiPerSpesa(
     // 2) il resto, dalla spesa più vecchia (e dal rimborso più vecchio)
     const ordinate = [...voci].sort((a, b) => a.ordine.localeCompare(b.ordine))
     for (const g of out) for (const v of ordinate) if (stessa(g, v)) applica(g, v)
+    // 3) un rimborso confermato più alto del dovuto: l'eccedenza va sulla card più recente di quella coppia e verso,
+    //    così si vede e si può rettificare
+    if (campo === 'pagato')
+      for (const v of voci) {
+        const extra = resto.get(v.id) ?? 0
+        if (extra < MIN) continue
+        const ultima = [...out].reverse().find((g) => stessa(g, v))
+        if (!ultima) continue
+        ultima.eccedenza = round2(ultima.eccedenza + extra)
+        const gia = ultima.confermati.find((c) => c.id === v.id)
+        if (gia) gia.amount = round2(gia.amount + extra)
+        else ultima.confermati.push({ id: v.id, amount: extra })
+        resto.set(v.id, 0)
+      }
   }
   distribuisci(conf, 'pagato')
   distribuisci(att, 'inAttesa')

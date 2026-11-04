@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
-import { RicercaPage } from './pages/altro/RicercaPage'
 import { Redirect, Route, Router, Switch, useLocation } from 'wouter'
 import type { ReactNode } from 'react'
 import { navigate as hashNavigate, useHashLocation } from 'wouter/use-hash-location'
@@ -164,7 +163,9 @@ export function App() {
           <Route path="/altro/prenotazioni" component={PrenotazioniPage} />
           <Route path="/altro/documenti" component={DocumentiPage} />
           <Route path="/altro/registro" component={RegistroPage} />
-          <Route path="/altro/cerca" component={RicercaPage} />
+          <Route path="/altro/cerca">
+            <Redirect to="/altro" replace />
+          </Route>
           <Route path="/altro/impostazioni" component={ImpostazioniPage} />
           <Route path="/altro/account" component={ProfiloPage} />
           <Route>

@@ -1,23 +1,20 @@
-// Ricerca in tutto il viaggio (#63, SET-008): un campo, risultati raggruppati con link.
-import { useMemo, useState } from 'react'
+// Ricerca in tutto il viaggio (#63, SET-008): risultati raggruppati con link. Il campo sta in alto nella pagina Altro
+// (icona di ricerca nell'intestazione); qui c'è solo l'elenco dei risultati.
+import { useMemo } from 'react'
 import { useLocation } from 'wouter'
 import { cercaNelViaggio } from '../../lib/ricerca'
-import { useTrip } from '../../state/trip'
-import { Campo } from '../../faraway/base'
-import { BarraIndietro, Schermata } from '../../faraway/shell'
+import type { Trip } from '../../types'
 import { Riga } from '../../faraway/Righe'
 import { Vuoto } from '../../faraway/Stati'
 
-export function RicercaPage() {
-  const trip = useTrip()
+/** Risultati della ricerca nel viaggio per `q` (da 2 caratteri in su). */
+export function RisultatiRicerca({ trip, q }: { trip: Trip; q: string }) {
   const [, navigate] = useLocation()
-  const [q, setQ] = useState('')
   const risultati = useMemo(() => cercaNelViaggio(trip, q), [trip, q])
   const gruppi = [...new Set(risultati.map((r) => r.gruppo))]
+  if (q.trim().length >= 2 && risultati.length === 0) return <Vuoto title="Nessun risultato" text="Prova con un’altra parola o con il nome di una città." />
   return (
-    <Schermata bar={<BarraIndietro title="Cerca nel viaggio" back="/altro" />} gap={12}>
-      <Campo label="Cerca" hideLabel icon="search" type="search" value={q} onChange={setQ} placeholder="Luoghi, tappe, prenotazioni, alloggi, trasporti" autoFocus enterKeyHint="search" />
-      {q.trim().length >= 2 && risultati.length === 0 ? <Vuoto title="Nessun risultato" text="Prova con un’altra parola o con il nome di una città." /> : null}
+    <>
       {gruppi.map((g) => (
         <section key={g} aria-label={g} style={{ display: 'grid', gap: 8 }}>
           <h2 className="fa-h3" style={{ margin: 0 }}>{g}</h2>
@@ -28,6 +25,6 @@ export function RicercaPage() {
           </div>
         </section>
       ))}
-    </Schermata>
+    </>
   )
 }

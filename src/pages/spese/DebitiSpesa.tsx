@@ -95,6 +95,11 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
                       <Stato d={d} />
                     </span>
                   </div>
+                  {d.eccedenza > 0 ? (
+                    <span className="fa-m">
+                      {verso === 'devo' ? `Hai dato ${formatMoney(d.eccedenza, cur)} in più.` : `${nome(d.otherId)} ti ha dato ${formatMoney(d.eccedenza, cur)} in più: puoi rettificare dal menu.`}
+                    </span>
+                  ) : null}
                   {d.stato === 'da_pagare' && d.pagato > 0 ? (
                     <span className="fa-m">
                       Già dati {formatMoney(d.pagato, cur)} su {formatMoney(d.importo, cur)}

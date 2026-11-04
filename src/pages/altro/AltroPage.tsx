@@ -12,7 +12,8 @@ import { riassunto } from '../../lib/spese'
 import { discOf, initials, useMe } from '../../state/me'
 import { useTrip, useTrips } from '../../state/trip'
 import { FxForm } from '../../ui/FxForm'
-import { Avatar, Avatars, Pulsante } from '../../faraway/base'
+import { Avatar, Avatars, Campo, Pulsante, PulsanteIcona } from '../../faraway/base'
+import { RisultatiRicerca } from './RicercaPage'
 import { Foglio } from '../../faraway/Foglio'
 import { Simbolo } from '../../faraway/Home'
 import { Riga } from '../../faraway/Righe'
@@ -27,6 +28,10 @@ export function AltroPage() {
   const [, navigate] = useLocation()
   const [edit, setEdit] = useState(false)
   const [fx, setFx] = useState(false)
+  /** Ricerca in tutto il viaggio: il campo si apre dall'icona in alto a destra, i risultati prendono il posto della pagina. */
+  const [cerca, setCerca] = useState(false)
+  const [q, setQ] = useState('')
+  const mostraRisultati = cerca && q.trim().length >= 2
   const r = riassunto(trip, me?.id)
   const saved = loadSnapshot()?.savedAt
   const savedTime = saved ? new Date(saved).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : null
@@ -42,7 +47,6 @@ export function AltroPage() {
     { icon: 'i-tra-train', title: 'Trasporti', sub: riepilogoTrasportiAltro(trip), to: '/altro/trasporti' },
     { icon: 'i-sez-ticket', title: 'Prenotazioni', sub: riepilogoPrenotazioni(trip), to: '/altro/prenotazioni' },
     { icon: <DiscoSprite name="i-sez-file" colore="#FF7C80" />, title: 'Documenti', sub: riepilogoDocumenti(trip), to: '/altro/documenti' },
-    { icon: <DiscoSprite name="i-azi-search" colore="#83D670" />, title: 'Cerca nel viaggio', sub: 'Luoghi, tappe, prenotazioni…', to: '/altro/cerca' },
     { icon: <DiscoSprite name="i-azi-download" colore="#FFB45C" />, title: 'Esporta il riepilogo', sub: 'Immagine con statistiche e il tuo bilancio', onPress: () => void esportaRiepilogo(riepilogoViaggio(trip)).catch((e) => showToast(e instanceof Error ? e.message : 'Esportazione non riuscita')) },
     { icon: <DiscoSprite name="i-nav-clock" colore="#79A1FC" />, title: 'Registro modifiche', sub: 'Chi ha cambiato cosa', to: '/altro/registro' },
     { icon: 'i-sez-checklist', title: 'Checklist', sub: riepilogoChecklist(trip), to: '/altro/checklist' },
@@ -53,7 +57,13 @@ export function AltroPage() {
 
   return (
     <Schermata
-      bar={<BarraGrande title="Altro" sub={savedTime ? `Aggiornato alle ${savedTime}` : auth.status === 'demo' ? 'Anteprima con dati fittizi' : undefined} />}
+      bar={
+        <BarraGrande
+          title="Altro"
+          sub={savedTime ? `Aggiornato alle ${savedTime}` : auth.status === 'demo' ? 'Anteprima con dati fittizi' : undefined}
+          actions={<PulsanteIcona icon={cerca ? 'close' : 'search'} label={cerca ? 'Chiudi la ricerca' : 'Cerca nel viaggio'} expanded={cerca} onPress={() => (setCerca(!cerca), setQ(''))} />}
+        />
+      }
       overlay={
         <>
           {edit ? <ViaggioSheet key={trip.id} trip={trip} open onClose={() => setEdit(false)} /> : null}
@@ -69,42 +79,49 @@ export function AltroPage() {
         </>
       }
     >
-      <section aria-label="Viaggio attuale" style={{ position: 'relative', display: 'grid', gap: 8, padding: 24, borderRadius: 'var(--radius-xl)', background: 'var(--tinta-azzurro)', color: 'var(--on-tinta)', border: '1px solid var(--bordo-azzurro)' }}>
-        <Simbolo style={{ position: 'absolute', right: 18, top: 16, width: 46, height: 54 }} />
-        <p className="fa-m" style={{ margin: 0, color: 'var(--on-tinta-muted)' }}>Viaggio attuale</p>
-        <h2 style={{ margin: 0, paddingRight: 56, font: '500 32px/36px var(--font-display)' }}>{trip.title}</h2>
-        <p style={{ margin: 0, font: '600 15px/22px var(--font-sans)' }}>{periodo(trip)}</p>
-        {citta ? <p style={{ margin: 0, font: '400 14px/20px var(--font-sans)', color: 'var(--on-tinta-muted)' }}>{citta}</p> : null}
-        <p style={{ margin: 0, font: '400 14px/20px var(--font-sans)', color: 'var(--on-tinta-muted)' }}>{rigaBudgetValute(trip)}</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-          <Avatars people={people.slice(0, 4)} />
-          <span style={{ font: '600 14px/20px var(--font-sans)' }}>{personeText(trip.travelers.length)}</span>
-        </div>
-        {owner ? (
-          <div style={{ marginTop: 8 }}>
-            <Pulsante color="secondary" iconLeading="pencil" onPress={() => setEdit(true)}>
-              Modifica dati del viaggio
-            </Pulsante>
+      {cerca ? <Campo label="Cerca nel viaggio" hideLabel icon="search" type="search" value={q} onChange={setQ} placeholder="Luoghi, tappe, prenotazioni, alloggi, trasporti" autoFocus enterKeyHint="search" /> : null}
+      {mostraRisultati ? (
+        <RisultatiRicerca trip={trip} q={q} />
+      ) : (
+        <>
+        <section aria-label="Viaggio attuale" style={{ position: 'relative', display: 'grid', gap: 8, padding: 24, borderRadius: 'var(--radius-xl)', background: 'var(--tinta-azzurro)', color: 'var(--on-tinta)', border: '1px solid var(--bordo-azzurro)' }}>
+          <Simbolo style={{ position: 'absolute', right: 18, top: 16, width: 46, height: 54 }} />
+          <p className="fa-m" style={{ margin: 0, color: 'var(--on-tinta-muted)' }}>Viaggio attuale</p>
+          <h2 style={{ margin: 0, paddingRight: 56, font: '500 32px/36px var(--font-display)' }}>{trip.title}</h2>
+          <p style={{ margin: 0, font: '600 15px/22px var(--font-sans)' }}>{periodo(trip)}</p>
+          {citta ? <p style={{ margin: 0, font: '400 14px/20px var(--font-sans)', color: 'var(--on-tinta-muted)' }}>{citta}</p> : null}
+          <p style={{ margin: 0, font: '400 14px/20px var(--font-sans)', color: 'var(--on-tinta-muted)' }}>{rigaBudgetValute(trip)}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            <Avatars people={people.slice(0, 4)} />
+            <span style={{ font: '600 14px/20px var(--font-sans)' }}>{personeText(trip.travelers.length)}</span>
           </div>
-        ) : null}
-      </section>
+          {owner ? (
+            <div style={{ marginTop: 8 }}>
+              <Pulsante color="secondary" iconLeading="pencil" onPress={() => setEdit(true)}>
+                Modifica dati del viaggio
+              </Pulsante>
+            </div>
+          ) : null}
+        </section>
 
-      <section className="fa-list" aria-label="Account">
-        <Riga icon={<Avatar initials={initials(nome)} n={me ? discOf(trip, me.id) : 1} large />} title={nome} sub="Account e profilo" onPress={() => navigate('/altro/account')} />
-        <Riga icon="i-sez-bag" title="Tutti i viaggi" sub={viaggiText(t.trips.length)} onPress={() => navigate('/viaggi')} />
-      </section>
+        <section className="fa-list" aria-label="Account">
+          <Riga icon={<Avatar initials={initials(nome)} n={me ? discOf(trip, me.id) : 1} large />} title={nome} sub="Account e profilo" onPress={() => navigate('/altro/account')} />
+          <Riga icon="i-sez-bag" title="Tutti i viaggi" sub={viaggiText(t.trips.length)} onPress={() => navigate('/viaggi')} />
+        </section>
 
-      <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Il viaggio</h2>
-      <div className="fa-list">
-        {righe.map((x) => (
-          <Riga key={x.title} icon={x.icon} title={x.title} sub={x.sub} onPress={() => (x.to ? navigate(x.to) : x.onPress?.())} />
-        ))}
-      </div>
+        <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Il viaggio</h2>
+        <div className="fa-list">
+          {righe.map((x) => (
+            <Riga key={x.title} icon={x.icon} title={x.title} sub={x.sub} onPress={() => (x.to ? navigate(x.to) : x.onPress?.())} />
+          ))}
+        </div>
 
-      <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Faraway</h2>
-      <div className="fa-list">
-        <Riga icon="i-azi-settings" title="Impostazioni" sub={t.pending > 0 ? `Aspetto, notifiche e dati · ${t.pending === 1 ? '1 modifica' : `${t.pending} modifiche`} in coda` : 'Aspetto, notifiche, lingua e dati'} onPress={() => navigate('/altro/impostazioni')} />
-      </div>
+        <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Faraway</h2>
+        <div className="fa-list">
+          <Riga icon="i-azi-settings" title="Impostazioni" sub={t.pending > 0 ? `Aspetto, notifiche e dati · ${t.pending === 1 ? '1 modifica' : `${t.pending} modifiche`} in coda` : 'Aspetto, notifiche, lingua e dati'} onPress={() => navigate('/altro/impostazioni')} />
+        </div>
+        </>
+      )}
     </Schermata>
   )
 }

@@ -473,3 +473,29 @@ sup{margin-left:0}
   .fa-dbt .rt .ln{grid-column:3;grid-row:1;align-self:start}
   .fa-dbt .rt>.fa-pillst{grid-column:2 / 4;grid-row:2;justify-self:start}
 }
+
+/* Biglietti di Prenotazioni e Documenti (stessa struttura dei trasporti): disco già colorato al posto del cerchio,
+   fascia centrale a due colonne (quando · codice, formato · caricato) */
+.k-TicketOrizzontale .tv .kd.kd-disco{background:none}
+.k-TicketOrizzontale .tv .kd.kd-disco svg{display:block;width:40px;height:40px}
+.k-TicketOrizzontale .hz3{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;padding:0 24px 16px}
+.k-TicketOrizzontale .tv:not(.open) .hz3{padding-bottom:var(--space-xl)}
+.k-TicketOrizzontale .hz3 .hs b{min-height:0;overflow-wrap:anywhere}
+.k-TicketOrizzontale .hz3 .hs .tm{overflow-wrap:anywhere}
+.k-TicketOrizzontale .hz3 .hs .tm.cod{font:700 20px/32px var(--font-sans);letter-spacing:.02em}
+.k-TicketOrizzontale .tv .ti{min-width:0;flex:1 1 0}
+/* i documenti non hanno uno stato pagato/da pagare: biglietto azzurro neutro; i testi d'aiuto usano il colore del biglietto */
+.k-TicketOrizzontale .tv.doc{--bg:var(--tinta-azzurro);--btnbg:#FFFFFF}
+.k-TicketOrizzontale .tv .fa-help{color:var(--fgm)}
+.k-TicketOrizzontale .tv .ti b{overflow-wrap:break-word}
+/* stato sotto il titolo (Prenotazioni, Documenti): il titolo ha tutta la riga */
+.k-TicketOrizzontale .tv .ti .pl3b{justify-self:start;margin-top:8px;font:600 12px/16px var(--font-sans)}
+.k-TicketOrizzontale .tv .ti .pl3b.ok{color:var(--on-tinta)}
+.k-TicketOrizzontale .tv .ti .pl3b.td{color:var(--on-corallo-solid)}
+
+/* Checklist: più e meno delle quantità più piccoli (32px visibili, bersaglio 44px senza allargare la riga) */
+.fa-qta{display:inline-flex;align-items:center;gap:4px}
+.fa-qta b{min-width:40px;text-align:center;font-variant-numeric:tabular-nums}
+.fa-qta .fa-ib{width:32px;height:32px;position:relative}
+.fa-qta .fa-ib svg{width:18px;height:18px}
+.fa-qta .fa-ib::after{content:"";position:absolute;inset:-6px}

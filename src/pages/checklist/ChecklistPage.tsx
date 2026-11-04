@@ -135,7 +135,7 @@ export function ChecklistPage() {
               {selecting ? (
                 <span className="cnt">{have}/{i.quantity}</span>
               ) : (
-                <span role="group" aria-label={`Pezzi a posto: ${i.text}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <span role="group" aria-label={`Pezzi a posto: ${i.text}`} className="fa-qta">
                   <PulsanteIcona icon="minus" label={`Meno: ${i.text}`} isDisabled={pending.has(i.id) || have <= 0} onPress={() => void setCount(i, have - 1)} />
                   <b aria-live="polite">{have}/{i.quantity}</b>
                   <PulsanteIcona icon="plus" label={`Più: ${i.text}`} isDisabled={pending.has(i.id) || have >= (i.quantity ?? 1)} onPress={() => void setCount(i, have + 1)} />
@@ -190,8 +190,18 @@ export function ChecklistPage() {
         />
       }
       fab={vuota || selecting ? null : { label: 'Voce', aria: 'Aggiungi una voce', onPress: () => setSheet({}) }}
+      // eliminando, al posto della barra delle sezioni c'è il bottone «Elimina», sempre visibile
+      tabs={!selecting}
+      className={selecting ? 'fa-selmode' : undefined}
       overlay={
         <>
+          {selecting ? (
+            <div className="fa-selbar">
+              <Pulsante color="tertiary-destructive" iconLeading="trash" isDisabled={chosen.length === 0} onPress={() => void elimina(chosen)}>
+                {chosen.length === 0 ? 'Elimina' : chosen.length === 1 ? 'Elimina 1 voce' : `Elimina ${chosen.length} voci`}
+              </Pulsante>
+            </div>
+          ) : null}
           {sheet ? <VoceSheet key={sheet.item?.id ?? 'new'} trip={trip} item={sheet.item} where={lista} open onClose={() => setSheet(null)} /> : null}
           <Foglio open={dup} title="Duplica da un viaggio" onClose={() => setDup(false)}>
             <div style={{ display: 'grid', gap: 8 }}>
@@ -267,11 +277,6 @@ export function ChecklistPage() {
           {!selecting && !vuota && altri.length > 0 ? (
             <Pulsante color="secondary" iconLeading="copy" onPress={() => setDup(true)}>
               Duplica da un viaggio
-            </Pulsante>
-          ) : null}
-          {selecting ? (
-            <Pulsante color="tertiary-destructive" iconLeading="trash" isDisabled={chosen.length === 0} onPress={() => void elimina(chosen)}>
-              {chosen.length === 0 ? 'Elimina' : chosen.length === 1 ? 'Elimina 1 voce' : `Elimina ${chosen.length} voci`}
             </Pulsante>
           ) : null}
         </div>
