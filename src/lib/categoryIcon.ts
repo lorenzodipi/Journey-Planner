@@ -76,9 +76,49 @@ const normalize = (s: string) =>
     .toLowerCase()
     .trim()
 
+/** Icone che si possono scegliere per una categoria nuova, con il nome per chi usa lo screen reader. */
+export const ICONE_CATEGORIA: { id: PinIcon; nome: string }[] = [
+  { id: 'food', nome: 'Cibo' },
+  { id: 'cafe', nome: 'Caffè' },
+  { id: 'shopping', nome: 'Shopping' },
+  { id: 'grocery', nome: 'Spesa' },
+  { id: 'stay', nome: 'Alloggio' },
+  { id: 'airport', nome: 'Aereo' },
+  { id: 'train', nome: 'Treno' },
+  { id: 'transit', nome: 'Bus e trasporti' },
+  { id: 'fuel', nome: 'Carburante' },
+  { id: 'temple', nome: 'Tempio' },
+  { id: 'museum', nome: 'Museo' },
+  { id: 'castle', nome: 'Castello' },
+  { id: 'viewpoint', nome: 'Panorama' },
+  { id: 'nature', nome: 'Natura' },
+  { id: 'district', nome: 'Quartiere' },
+  { id: 'spa', nome: 'Terme e relax' },
+  { id: 'night', nome: 'Sera' },
+  { id: 'fun', nome: 'Svago' },
+  { id: 'pin', nome: 'Generica' },
+]
+const SCEGLIBILI = new Set<string>(ICONE_CATEGORIA.map((x) => x.id))
+
+/** Icone scelte per le categorie del viaggio attivo (per nome): hanno la precedenza su quelle dedotte. */
+const scelte = new Map<string, PinIcon>()
+export function impostaIconeScelte(cats: readonly { label: string; icon?: string }[]): void {
+  scelte.clear()
+  for (const c of cats) if (c.icon && SCEGLIBILI.has(c.icon)) scelte.set(normalize(c.label), c.icon as PinIcon)
+}
+
+/** Icona dedotta dal nome, senza guardare quelle scelte (per proporla mentre si scrive il nome). */
+export function iconaDalNome(label: string | undefined | null): PinIcon {
+  const text = normalize(label ?? '')
+  if (!text) return 'pin'
+  return RULES.find(([, re]) => re.test(text))?.[0] ?? 'pin'
+}
+
 export function categoryIcon(label: string | undefined | null): PinIcon {
   const text = normalize(label ?? '')
   if (!text) return 'pin'
+  const scelta = scelte.get(text)
+  if (scelta) return scelta
   return RULES.find(([, re]) => re.test(text))?.[0] ?? 'pin'
 }
 

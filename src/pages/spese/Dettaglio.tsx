@@ -17,7 +17,9 @@ import { useTrip, useTrips } from '../../state/trip'
 import { Ic } from '../../ui/Sprite'
 import { Campo, Chip, Segmenti } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
-import { useConferma } from '../../faraway/Foglio'
+import { Foglio, useConferma } from '../../faraway/Foglio'
+import { CalendarioIntervallo, type Intervallo } from '../../faraway/CalendarioIntervallo'
+import { rangeText } from '../../lib/dayGroups'
 import { Sv } from '../../faraway/icons'
 import { useUnaAperta } from '../../faraway/Righe'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
@@ -36,6 +38,9 @@ export function Dettaglio() {
   const gruppo = trip.travelers.length > 1
   const [vista, setVista] = useState<Vista>('tutti')
   const [cat, setCat] = useState<string | null>(null)
+  /** Filtro per data (dal … al …, estremi compresi), nel fuso del viaggio. */
+  const [date, setDate] = useState<Intervallo | null>(null)
+  const [calendario, setCalendario] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [text, setText] = useState('')
   const [sheet, setSheet] = useState<{ expense?: SpesaVista } | null>(null)
@@ -57,7 +62,13 @@ export function Dettaglio() {
     return keys.sort((a, b) => order(a) - order(b) || a.localeCompare(b, 'it')).map((k) => categoriaDi(inVista.find((e) => catKey(categoriaDi(e)) === k) as SpesaVista))
   }, [inVista])
   const q = text.trim().toLowerCase()
-  const shown = inVista.filter((e) => (!cat || catKey(categoriaDi(e)) === catKey(cat)) && (!q || `${e.label} ${e.category ?? ''}`.toLowerCase().includes(q)))
+  const nelleDate = (e: SpesaVista) => {
+    if (!date) return true
+    const d = dateInZone(e.spentAt, trip.timezone)
+    return d >= date.dal && d <= date.al
+  }
+  const shown = inVista.filter((e) => (!cat || catKey(categoriaDi(e)) === catKey(cat)) && nelleDate(e) && (!q || `${e.label} ${e.category ?? ''}`.toLowerCase().includes(q)))
+  const testoDate = date ? rangeText(date.dal, date.al) : ''
   const giorni = useMemo(() => {
     const m = new Map<string, SpesaVista[]>()
     for (const e of shown) {
@@ -99,6 +110,25 @@ export function Dettaglio() {
         <>
           {sheet ? <SpesaSheet key={sheet.expense?.id ?? 'new'} trip={trip} expense={sheet.expense} open onClose={() => setSheet(null)} /> : null}
           {confirmNode}
+          {calendario ? (
+            <Foglio
+              open
+              title="Filtra per data"
+              onClose={() => setCalendario(false)}
+              headStart={
+                date ? (
+                  <button type="button" className="fa-hdtxt" onClick={() => (setDate(null), setCalendario(false))}>
+                    Azzera
+                  </button>
+                ) : (
+                  <span />
+                )
+              }
+            >
+              <p className="fa-m" style={{ margin: 0 }}>Tocca il primo e l’ultimo giorno. Per un giorno solo, toccalo due volte.</p>
+              <CalendarioIntervallo value={date} mese={trip.days[0]?.date ?? today} onChange={(v) => (setDate(v), setCalendario(false), open.setOpen(null))} />
+            </Foglio>
+          ) : null}
         </>
       }
     >
@@ -119,16 +149,23 @@ export function Dettaglio() {
           </p>
         </>
       ) : null}
-      {cats.length > 1 ? (
-        <div className="fa-chips scroll" role="group" aria-label="Categoria">
-          <Chip on={!cat} onPress={() => setCat(null)}>
-            Tutte
+      {inVista.length > 0 ? (
+        <div className="fa-chips scroll" role="group" aria-label="Filtri">
+          <Chip on={!!date} icon={<Sv name="cal" size={18} />} label={date ? `Date: ${testoDate}. Cambia le date` : 'Filtra per data'} onPress={() => setCalendario(true)}>
+            {date ? testoDate : null}
           </Chip>
-          {cats.map((c) => (
-            <Chip key={c} on={cat !== null && catKey(cat) === catKey(c)} onPress={() => setCat(c)}>
-              {c}
-            </Chip>
-          ))}
+          {cats.length > 1 ? (
+            <>
+              <Chip on={!cat} onPress={() => setCat(null)}>
+                Tutte
+              </Chip>
+              {cats.map((c) => (
+                <Chip key={c} on={cat !== null && catKey(cat) === catKey(c)} onPress={() => setCat(c)}>
+                  {c}
+                </Chip>
+              ))}
+            </>
+          ) : null}
         </div>
       ) : null}
       {shown.length === 0 ? (
@@ -140,7 +177,7 @@ export function Dettaglio() {
             onAction={() => setSheet({})}
           />
         ) : (
-          <VuotoFiltro title="Nessuna spesa trovata" text="Prova con un'altra categoria o un altro nome." action="Mostra tutte le spese" onAction={() => (setCat(null), setText(''))} />
+          <VuotoFiltro title="Nessuna spesa trovata" text={date ? "Prova con altre date, un'altra categoria o un altro nome." : "Prova con un'altra categoria o un altro nome."} action="Mostra tutte le spese" onAction={() => (setCat(null), setText(''), setDate(null))} />
         )
       ) : null}
       {giorni.map(([ymd, list]) => (

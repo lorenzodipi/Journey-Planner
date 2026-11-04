@@ -17,7 +17,7 @@ export async function execOp(op: Op): Promise<void> {
   }
   if (op.k === 'update') {
     const { error, status } = await db.from(op.table).update(op.patch).eq('id', op.id)
-    if (error) throw fail(error, status)
+    if (error && !(op.optional && /schema cache|does not exist|column/i.test(error.message))) throw fail(error, status)
     return
   }
   if (op.k === 'updateMany') {

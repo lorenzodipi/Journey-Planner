@@ -12,7 +12,6 @@ import { ViaggiatoriPage } from './pages/altro/ViaggiatoriPage'
 import { RegistroPage } from './pages/altro/RegistroPage'
 import { DocumentiPage } from './pages/documenti/DocumentiPage'
 import { AltroPage } from './pages/altro/AltroPage'
-import { DatiTelefono } from './pages/altro/DatiTelefono'
 import { BudgetPage } from './pages/spese/BudgetPage'
 import { Bilancio } from './pages/spese/Bilancio'
 import { Dettaglio } from './pages/spese/Dettaglio'
@@ -132,7 +131,9 @@ export function App() {
             <ViaggiPage />
           </Route>
           <Route path="/altro" component={AltroPage} />
-          <Route path="/altro/dati" component={DatiTelefono} />
+          <Route path="/altro/dati">
+            <Redirect to="/altro/impostazioni" replace />
+          </Route>
           <Route path="/altro/viaggiatori" component={ViaggiatoriPage} />
           <Route path="/altro/alloggi" component={AlloggiPage} />
           <Route path="/altro/voli" component={VoliPage} />

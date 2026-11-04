@@ -423,3 +423,40 @@ sup{margin-left:0}
    L'anello resta solo quando si usa la tastiera (data-focus-visible di react-aria). */
 .fa-phone .fa-dots:focus-visible{outline:none}
 .fa-phone .fa-dots[data-focus-visible]{outline:3px solid var(--focus);outline-offset:2px}
+
+/* Scelta dell'icona di una categoria nuova: dischi da 40px in un bersaglio da 44px, la scelta ha l'anello azzurro */
+.fa-icone{display:grid;gap:8px}
+.fa-icone-l{font:600 14px/20px var(--font-sans);color:var(--ink)}
+.fa-icone-g{display:flex;flex-wrap:wrap;gap:8px}
+.fa-icona{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;cursor:pointer;outline:none;transition:box-shadow 100ms cubic-bezier(.23,1,.32,1)}
+.fa-icona svg{display:block}
+.fa-icona[data-selected]{box-shadow:0 0 0 2px var(--canvas),0 0 0 4px var(--azzurro-ink)}
+.fa-icona[data-focus-visible]{outline:3px solid var(--focus);outline-offset:4px}
+@media (hover:hover) and (pointer:fine){.fa-icona:not([data-selected]):hover{box-shadow:0 0 0 2px var(--canvas),0 0 0 4px var(--hairline)}}
+
+/* Calendario a intervallo (Dettaglio spese → filtro per data). Celle da 44px; l'intervallo è una fascia azzurra
+   tenue con gli estremi pieni, come nei calendari di sistema. */
+.fa-cal{display:grid;gap:8px;width:100%}
+.fa-cal-h{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center}
+.fa-cal-t{margin:0;text-align:center;font:600 17px/24px var(--font-sans);text-transform:capitalize}
+.fa-cal-nav{all:unset;box-sizing:border-box;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;color:var(--ink);cursor:pointer}
+.fa-cal-nav[data-focus-visible]{outline:3px solid var(--focus);outline-offset:2px}
+.fa-cal-nav[data-disabled]{opacity:.35;cursor:default}
+@media (hover:hover) and (pointer:fine){.fa-cal-nav:not([data-disabled]):hover{background:var(--surface-high)}}
+.fa-cal-prev{transform:rotate(180deg)}
+.fa-cal-g{width:100%;border-collapse:collapse;table-layout:fixed}
+.fa-cal-wd{padding:0 0 8px;font:600 13px/18px var(--font-sans);color:var(--ink-muted);text-transform:capitalize}
+.fa-cal-g td{padding:2px 0}
+.fa-cal-c{display:grid;place-items:center;height:44px;font:500 16px/24px var(--font-sans);font-variant-numeric:tabular-nums;color:var(--ink);cursor:pointer;outline:none;position:relative}
+.fa-cal-c[data-outside-month]{visibility:hidden}
+.fa-cal-c[data-selected]{background:var(--azzurro-soft);color:var(--azzurro-ink)}
+.fa-cal-c[data-selection-start]{border-radius:22px 0 0 22px}
+.fa-cal-c[data-selection-end]{border-radius:0 22px 22px 0}
+.fa-cal-c[data-selection-start][data-selection-end]{border-radius:22px}
+.fa-cal-c[data-selection-start],.fa-cal-c[data-selection-end]{background:var(--azzurro-solid);color:var(--on-azzurro-solid);font-weight:700}
+.fa-cal-c[data-focus-visible]{outline:3px solid var(--focus);outline-offset:-3px;border-radius:22px}
+.fa-cal-c[data-disabled]{color:var(--ink-muted);opacity:.5;cursor:default}
+@media (hover:hover) and (pointer:fine){.fa-cal-c:not([data-selected]):hover{background:var(--surface-high);border-radius:22px}}
+/* la fascia dell'intervallo si arrotonda anche all'inizio e alla fine di ogni settimana */
+.fa-cal-g td:first-child .fa-cal-c[data-selected]{border-top-left-radius:22px;border-bottom-left-radius:22px}
+.fa-cal-g td:last-child .fa-cal-c[data-selected]{border-top-right-radius:22px;border-bottom-right-radius:22px}

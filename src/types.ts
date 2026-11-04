@@ -54,6 +54,8 @@ export interface Category {
   planned?: number
   /** Categoria archiviata (0028): resta sulle spese già fatte ma non si propone più. */
   archived?: boolean
+  /** Icona scelta da chi l'ha creata (0041): una delle icone delle categorie (es. «food»). Senza, si deduce dal nome. */
+  icon?: string
 }
 
 export interface Place {

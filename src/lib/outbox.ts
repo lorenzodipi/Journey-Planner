@@ -7,7 +7,7 @@ import type { Category, ChecklistItem, Expense, PlaceStatus, ItemStatus } from '
 
 export type Op =
   | { k: 'upsert'; table: string; row: Record<string, unknown>; /** colonne di conflitto, se non è `id` */ onConflict?: string }
-  | { k: 'update'; table: string; id: string; patch: Record<string, unknown> }
+  | { k: 'update'; table: string; id: string; patch: Record<string, unknown>; /** Colonna facoltativa (migrazione non ancora eseguita): se manca, si salta. */ optional?: boolean }
   /** Stessa modifica su più righe, in una sola richiesta (es. eliminare 100 voci selezionate). */
   | { k: 'updateMany'; table: string; ids: string[]; patch: Record<string, unknown> }
   | {

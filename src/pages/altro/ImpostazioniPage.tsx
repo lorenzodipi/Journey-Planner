@@ -1,4 +1,4 @@
-// Impostazioni (mock Fa-46, #45): aspetto, notifiche, lingua e versione.
+// Impostazioni (mock Fa-46, #45): aspetto, notifiche, lingua, dati sul telefono e versione.
 import { NOTIFICHE_TESTI, LINGUE, useNotifichePrefs } from '../../lib/prefs'
 import { useFormati } from '../../lib/formati'
 import { useThemePref, type ThemePref } from '../../lib/theme'
@@ -11,6 +11,7 @@ import { BarraIndietro, Schermata } from '../../faraway/shell'
 import { attivaNotifica, statoPermesso } from '../../lib/notificheDevice'
 import { useConferma } from '../../faraway/Foglio'
 import { showToast } from '../../state/toast'
+import { SezioniDati } from './DatiTelefono'
 
 const TEMI: { value: ThemePref; label: string }[] = [
   { value: 'light', label: 'Chiaro' },
@@ -78,6 +79,8 @@ export function ImpostazioniPage() {
       <div className="fa-list">
         <Riga icon={<Sv name="globe" size={22} />} title={lingua.nome} sub={LINGUE.length > 1 ? 'Cambia lingua' : 'Altre lingue arriveranno'} chevron={LINGUE.length > 1} />
       </div>
+
+      <SezioniDati ask={ask} />
 
       <p className="fa-c" style={{ margin: '8px 0 0', textAlign: 'center', color: 'var(--ink-muted)' }}>
         Faraway 1.0{build ? ` · ${new Date(Date.parse(build)).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}

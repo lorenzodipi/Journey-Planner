@@ -1,3 +1,4 @@
+import { impostaIconeScelte } from '../lib/categoryIcon'
 import { createContext } from 'react'
 import type { ReactNode } from 'react'
 import { cittaDaAlloggi } from '../lib/cittaGiorno'
@@ -313,7 +314,12 @@ export function TripProvider({ children }: { children: ReactNode }) {
   }, [demo, signedIn, refresh])
 
   tripsRef.current = trips
-  const active = useMemo(() => trips.find((t) => t.id === activeId) ?? trips[0] ?? null, [trips, activeId])
+  const active = useMemo(() => {
+    const a = trips.find((t) => t.id === activeId) ?? trips[0] ?? null
+    // le icone scelte per le categorie valgono in tutta l'app (dischi, tappe, mappa): le registro prima del rendering
+    impostaIconeScelte(a ? [...a.categories, ...a.expenseCategories] : [])
+    return a
+  }, [trips, activeId])
 
   // Modifiche di altre persone (es. Gaia) in tempo reale: Supabase avvisa quando cambia una riga del viaggio aperto
   // e si ricarica solo il gruppo di dati toccato (le raffiche, come un import, diventano un solo ricaricamento).

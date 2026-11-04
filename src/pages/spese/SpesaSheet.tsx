@@ -1,6 +1,8 @@
 // Fogli «Nuova spesa» e «Modifica spesa» (mock Fa-30, #34): nome, importo con il convertitore (si scrive in una
 // valuta e si legge l'altra), «Pagata da» obbligatorio, «Dividi in parti uguali» o le persone, categoria a pillole.
 // Di base: pagata da me, divisa tra tutti, nella valuta del paese.
+import { SceltaIcona } from '../../faraway/SceltaIcona'
+import { iconaDalNome } from '../../lib/categoryIcon'
 import { useEffect, useState } from 'react'
 import { dateInZone } from '../../lib/flights'
 import { removeBookingFile } from '../../lib/bookingFiles'
@@ -128,6 +130,8 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
   const [gone, setGone] = useState<string[]>([])
   const [category, setCategory] = useState(expense?.category?.trim() || cat0 || 'Cibo')
   const [newCat, setNewCat] = useState(false)
+  /** Icona scelta a mano per la categoria nuova; finché non la si tocca segue il nome che si scrive. */
+  const [icona, setIcona] = useState<string | null>(null)
   const [errors, setErrors] = useState<{ label?: string; amount?: string; paidBy?: string; who?: string; form?: string }>({})
   const [busy, setBusy] = useState(false)
 
@@ -197,6 +201,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
       ...(expense ? {} : { id }),
       label: label.trim(),
       category: category.trim() || 'Altro',
+      ...(newCat && category.trim() ? { categoryIcon: icona ?? iconaDalNome(category) } : {}),
       amount: amount as number,
       currency: side,
       // il cambio resta scritto sulla spesa: i totali di ieri non cambiano se domani il cambio si muove
@@ -299,6 +304,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
             </Chip>
           </div>
           {newCat ? <Campo label="Nuova categoria" hideLabel value={category} onChange={setCategory} placeholder="es. Souvenir" maxLength={40} autoFocus /> : null}
+          {newCat ? <SceltaIcona value={icona ?? iconaDalNome(category)} onChange={setIcona} /> : null}
         </div>
         <RicevuteEditor trip={trip} expenseId={spesaId} files={(expense?.files ?? []).filter((f) => !gone.includes(f.id))} added={added} onAdded={setAdded} onRemove={(f) => void removeFile(f)} />
         {errors.form ? (

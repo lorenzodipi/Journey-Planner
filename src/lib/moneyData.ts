@@ -237,6 +237,8 @@ export interface ExpenseInput {
   id?: string
   label: string
   category: string
+  /** Icona scelta per una categoria nuova (0041). */
+  categoryIcon?: string
   amount: number
   currency: string
   fxRate: number | null

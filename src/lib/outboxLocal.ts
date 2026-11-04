@@ -85,7 +85,9 @@ export function expenseEntry(
   existing?: Expense,
 ): { ops: Op[]; local: Local; label: string } {
   const id = existing?.id ?? input.id ?? newId()
-  const { category, isNew } = pickExpenseCategory(trip.expenseCategories, input.category)
+  const picked = pickExpenseCategory(trip.expenseCategories, input.category)
+  const isNew = picked.isNew
+  const category = picked.category && isNew && input.categoryIcon ? { ...picked.category, icon: input.categoryIcon } : picked.category
   // le colonne della 0028 si scrivono se servono o se il database le ha già (la spesa letta le porta)
   const hasNew = existing?.splitMode !== undefined || existing?.fxManual !== undefined
   const cols = expenseColumns(input, trip.timezone, trip.days, category?.id ?? null, hasNew)
@@ -126,6 +128,7 @@ export function expenseEntry(
   return {
     ops: [
       ...createCategory,
+      ...(isNew && category?.icon ? [{ k: 'update', table: 'expense_categories', id: category.id, patch: { icon: category.icon }, optional: true } as Op] : []),
       // una categoria archiviata che si torna a usare si riattiva
       ...(category?.archived ? [{ k: 'update', table: 'expense_categories', id: category.id, patch: { archived_at: null } } as Op] : []),
       write,

@@ -1,6 +1,8 @@
 // Fogli «Nuovo luogo» e «Modifica luogo» (#33) nello stile del design system: ricerca su OpenStreetMap,
 // link di Google Maps, nome, nome locale, città, categoria, stato, durata, note, orari strutturati,
 // indirizzo e posizione (con il pin da aggiustare sulla mappa).
+import { SceltaIcona } from '../../faraway/SceltaIcona'
+import { iconaDalNome } from '../../lib/categoryIcon'
 import { Loader } from '../../faraway/Loader'
 import { useConflitto } from '../../faraway/useConflitto'
 import { ora } from '../../lib/formati'
@@ -58,6 +60,8 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
   const [city, setCity] = useState(place?.city ?? '')
   const [category, setCategory] = useState(place?.category ?? '')
   const [otherCat, setOtherCat] = useState(false)
+  /** Icona scelta a mano per la categoria nuova; finché non la si tocca segue il nome che si scrive. */
+  const [icona, setIcona] = useState<string | null>(null)
   const [status, setStatus] = useState<PlaceStatus>(place?.status === 'done' || place?.status === 'skipped' ? place.status : 'idea')
   const [notes, setNotes] = useState(place?.note ?? '')
   const [visit, setVisit] = useState(place?.visitMinutes ? formatDuration(place.visitMinutes) : '')
@@ -186,6 +190,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
     setBusy(true)
     setError(null)
     const input: PlaceInput = {
+      ...(otherCat && category.trim() ? { categoryIcon: icona ?? iconaDalNome(category) } : {}),
       name,
       nameLocal,
       city,
@@ -300,6 +305,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
             </Chip>
           </div>
           {otherCat ? <Campo label="Nuova categoria" hideLabel value={category} onChange={setCategory} placeholder="Nome della categoria" maxLength={40} autoFocus /> : null}
+          {otherCat ? <SceltaIcona value={icona ?? iconaDalNome(category)} onChange={setIcona} /> : null}
         </div>
 
         <div className="fa-fld" role="group" aria-label="Stato">

@@ -117,6 +117,8 @@ interface CategoryRow {
   label: string
   color: string | null
   position: number
+  /** icona scelta, dalla migrazione 0041 */
+  icon?: string | null
   /** solo categorie di spesa, dalla migrazione 0019 */
   planned?: number | string | null
   /** dalla migrazione 0028 */
@@ -236,13 +238,13 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
   const categories: Category[] = extras.categories
     .filter((c) => c.trip_id === row.id)
     .sort((a, b) => a.position - b.position)
-    .map((c) => ({ id: c.id, label: c.label, color: c.color ?? undefined }))
+    .map((c) => ({ id: c.id, label: c.label, color: c.color ?? undefined, ...(c.icon ? { icon: c.icon } : {}) }))
   const categoryLabel = new Map(categories.map((c) => [c.id, c.label]))
 
   const expenseCategories: Category[] = extras.expenseCategories
     .filter((c) => c.trip_id === row.id)
     .sort((a, b) => a.position - b.position || a.label.localeCompare(b.label, 'it'))
-    .map((c) => ({ id: c.id, label: c.label, color: c.color ?? undefined, ...(c.planned != null && Number(c.planned) >= 0 ? { planned: Number(c.planned) } : {}), ...(c.archived_at ? { archived: true } : {}) }))
+    .map((c) => ({ id: c.id, label: c.label, color: c.color ?? undefined, ...(c.planned != null && Number(c.planned) >= 0 ? { planned: Number(c.planned) } : {}), ...(c.archived_at ? { archived: true } : {}), ...(c.icon ? { icon: c.icon } : {}) }))
   const expenseCategoryLabel = new Map(expenseCategories.map((c) => [c.id, c.label]))
 
   const allPlaces: (Place & { archived: boolean })[] = extras.places
@@ -793,6 +795,8 @@ export async function removeTraveler(id: string): Promise<void> {
 // ---------- luoghi e categorie ----------
 
 export interface PlaceInput {
+  /** Icona scelta per una categoria nuova (0041). */
+  categoryIcon?: string
   name: string
   nameLocal: string
   city: string
@@ -813,11 +817,18 @@ export interface PlaceInput {
 }
 
 /** Trova la categoria per nome (senza badare alle maiuscole) o la crea. */
-async function resolveCategory(tripId: string, label: string, known: Category[]): Promise<string | null> {
+async function resolveCategory(tripId: string, label: string, known: Category[], icon?: string): Promise<string | null> {
   const clean = label.trim()
   if (!clean) return null
   const hit = known.find((c) => c.label.toLowerCase() === clean.toLowerCase())
   if (hit) return hit.id
+  const id = await creaCategoria(tripId, clean, known)
+  // l'icona è facoltativa: senza la migrazione 0041 la categoria si crea lo stesso
+  if (id && icon) await client().from('categories').update({ icon }).eq('id', id)
+  return id
+}
+
+async function creaCategoria(tripId: string, clean: string, known: Category[]): Promise<string | null> {
   const db = client()
   const position = (known.length + 1) * 1000
   const { data, error } = await db
@@ -886,7 +897,7 @@ export async function rememberCategory(label: string): Promise<void> {
 }
 
 export async function createPlace(tripId: string, input: PlaceInput, known: Category[]): Promise<string> {
-  const categoryId = await resolveCategory(tripId, input.category, known)
+  const categoryId = await resolveCategory(tripId, input.category, known, input.categoryIcon)
   void rememberCategory(input.category)
   const { data, error } = await client()
     .from('places')
@@ -902,7 +913,7 @@ export async function createPlace(tripId: string, input: PlaceInput, known: Cate
  * personalizzate) prendono il nuovo: il luogo e le sue tappe nei giorni restano la stessa cosa.
  */
 export async function updatePlace(id: string, tripId: string, input: PlaceInput, known: Category[], oldName?: string): Promise<void> {
-  const categoryId = await resolveCategory(tripId, input.category, known)
+  const categoryId = await resolveCategory(tripId, input.category, known, input.categoryIcon)
   void rememberCategory(input.category)
   const db = client()
   const { error } = await db.from('places').update(placeColumns(input, categoryId)).eq('id', id)
