@@ -86,11 +86,8 @@ export function MenuAzioni({ label, azioni }: { label: string; azioni: { id: str
       </AriaButton>
       <AriaPopover className="fa-pop" placement="bottom" offset={12}>
         <AriaOverlayArrow className="fa-poparr">
-          <svg width={16} height={8} viewBox="0 0 16 8" aria-hidden="true">
-            {/* il fondo copre anche il bordo del pannello sotto la base, il tratto disegna solo i due lati */}
-            <path className="f" d="M-1 -1.5 H17 V0 L8 8 L-1 0 Z" />
-            <path className="s" d="M0 0 L8 8 L16 0" />
-          </svg>
+          {/* quadrato ruotato a cavallo del bordo del pannello: stesso fondo e stesso bordo, quindi un pezzo unico */}
+          <span className="dia" aria-hidden="true" />
         </AriaOverlayArrow>
         <AriaMenu className="fa-popm" aria-label={label} onAction={(k) => azioni.find((a) => a.id === k)?.onPress()}>
           {azioni.map((a) => (

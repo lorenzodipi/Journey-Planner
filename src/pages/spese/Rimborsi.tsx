@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'wouter'
 import { Banner, Campo, Pillola, Pulsante } from '../../faraway/base'
 import { Foglio } from '../../faraway/Foglio'
-import { controllaRimborso, daDecidere, inAttesaMie, STATO_RIMBORSO, testoRichiesta } from '../../lib/rimborsi'
+import { chiRichiesta, controllaRimborso, daDecidere, dataNumerica, inAttesaMie, STATO_RIMBORSO, testoRichiesta } from '../../lib/rimborsi'
 import { formatMoney, parseAmount } from '../../lib/money'
 import { tripToday } from '../../lib/today'
 import { useMe } from '../../state/me'
@@ -106,7 +106,11 @@ function DecidiSheet({ trip, r, onClose }: { trip: Trip; r: Rimborso; onClose: (
         </div>
       }
     >
-      <p style={{ margin: 0 }}>{testoRichiesta(r, trip.travelers)}</p>
+      <p style={{ margin: 0 }}>
+        {chiRichiesta(r, trip.travelers)}
+        <br />
+        <span style={{ color: 'var(--ink-muted)' }}>{dataNumerica(r.paidOn)}</span>
+      </p>
       <p className="fa-m">Confermando, il debito e il credito si riducono di {formatMoney(r.amount, r.currency)}.
         <br />
         Se non l'hai ricevuto, rifiuta: non cambia niente.

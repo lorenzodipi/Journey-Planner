@@ -47,9 +47,8 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
                     <Ic name={iconaSpesa(d.expense)} size={44} />
                     <span style={{ minWidth: 0 }}>
                       <span className="t">{d.expense.label}</span>
-                      <span className="s">
-                        {verso === 'devo' ? `Da dare a ${nome(d.otherId)}` : `Da ricevere da ${nome(d.otherId)}`} · {dataNumerica(d.expense.spentAt)}
-                      </span>
+                      <span className="s">{verso === 'devo' ? `Da dare a ${nome(d.otherId)}` : `Da ricevere da ${nome(d.otherId)}`}</span>
+                      <span className="s">{dataNumerica(d.expense.spentAt)}</span>
                     </span>
                     <span className="rt">
                       <span className="amt">{formatMoney(d.stato === 'pagato' ? d.importo : d.residuo, cur)}</span>

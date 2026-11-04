@@ -29,8 +29,11 @@ export const dataNumerica = (d: string) => new Intl.DateTimeFormat('it-IT', { da
 const giorno = dataNumerica
 
 /** «Giorgio dice di averti dato 604,72 € · 28 nov» (per il destinatario). */
+/** La richiesta senza la data, per le viste che mettono la data sulla riga sotto (modale «Hai ricevuto il rimborso?»). */
+export const chiRichiesta = (r: Pick<Rimborso, 'fromId' | 'amount' | 'currency'>, travelers: readonly Pick<Traveler, 'id' | 'name'>[]) => `${nome(travelers, r.fromId)} dice di averti dato ${formatMoney(r.amount, r.currency)}`
+
 export function testoRichiesta(r: Pick<Rimborso, 'fromId' | 'amount' | 'currency' | 'paidOn'>, travelers: readonly Pick<Traveler, 'id' | 'name'>[]): string {
-  return `${nome(travelers, r.fromId)} dice di averti dato ${formatMoney(r.amount, r.currency)} · ${giorno(r.paidOn)}`
+  return `${chiRichiesta(r, travelers)} · ${giorno(r.paidOn)}`
 }
 
 /** Riga della cronologia vista da `me`: «Hai dato 50,00 € a Giorgio · 28 nov». */

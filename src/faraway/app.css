@@ -415,9 +415,7 @@ sup{margin-left:0}
 /* Il menu del popover non mostra l'anello di focus globale (bordo azzurro): resta solo la voce */
 .fa-pop .fa-popm,.fa-pop .fa-popm:focus,.fa-pop .fa-popm:focus-visible,.fa-pop .fa-popi:focus,.fa-pop .fa-popi:focus-visible,.fa-pop:focus-visible{outline:none!important;box-shadow:none}
 /* Freccia del popover (OverlayArrow di react-aria): stesso fondo e bordo del pannello, punta al pulsante che l'ha aperto */
-.fa-poparr svg{display:block;overflow:visible}
-.fa-poparr .f{fill:var(--surface-card)}
-.fa-poparr .s{fill:none;stroke:var(--border-strong);stroke-width:1px;stroke-linejoin:round}
-.fa-pop[data-placement="bottom"] .fa-poparr svg{transform:rotate(180deg)}
-.fa-pop[data-placement="left"] .fa-poparr svg{transform:rotate(-90deg)}
-.fa-pop[data-placement="right"] .fa-poparr svg{transform:rotate(90deg)}
+.fa-poparr{width:16px;height:8px}
+.fa-poparr .dia{position:absolute;left:50%;width:12px;height:12px;box-sizing:border-box;background:var(--surface-card);border:1px solid var(--border-strong);border-right-color:var(--surface-card);border-bottom-color:var(--surface-card);clip-path:polygon(0 0,100% 0,100% 1.5px,1.5px 100%,0 100%)}
+.fa-pop[data-placement="bottom"] .fa-poparr .dia{top:8px;transform:translate(-50%,-50%) rotate(45deg)}
+.fa-pop[data-placement="top"] .fa-poparr .dia{top:0;transform:translate(-50%,-50%) rotate(225deg)}
