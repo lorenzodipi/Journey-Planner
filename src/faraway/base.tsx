@@ -2,7 +2,8 @@
 // (stesse API: Button con color/size/iconLeading/onPress, Input, Toggle, Badge, Avatar, sopra
 // React Aria Components) ma con l'aspetto del mock (classi .fa-* di faraway.css).
 import type { ReactNode } from 'react'
-import { useId } from 'react'
+import { useId, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { Button as AriaButton, Link as AriaLink, Switch as AriaSwitch } from 'react-aria-components'
 import { cx } from './cx'
 import { apriSelettore } from '../lib/picker'
@@ -98,6 +99,8 @@ interface InputProps {
   max?: string
   autoFocus?: boolean
   onBlur?: () => void
+  /** Solo per l'orario: da vuoto il selettore si apre su 00:00 (il campo resta vuoto finché non si sceglie un valore). */
+  da00?: boolean
   textarea?: boolean
   trailing?: ReactNode
   name?: string
@@ -133,12 +136,14 @@ export function segnaposto(label: string, type: string, textarea: boolean): stri
 }
 
 /** Campo del design system (Untitled UI `Input`): 56px, etichetta sopra, aiuto o errore sotto. */
-export function Campo({ label, value, onChange, placeholder, type = 'text', inputMode, icon: ic, hint, error, positive, textarea, trailing, hideLabel, ...rest }: InputProps) {
+export function Campo({ label, value, onChange, placeholder, type = 'text', inputMode, icon: ic, hint, error, positive, textarea, trailing, hideLabel, da00, onBlur, ...rest }: InputProps) {
   const id = useId()
+  const [anteprima, setAnteprima] = useState(false)
   const helpId = `${id}-h`
   const described = error || hint || positive ? helpId : undefined
   const ph = placeholder ?? segnaposto(label, type, !!textarea)
-  const pickerVuoto = (type === 'date' || type === 'time') && !value
+  const mostrato = value || (anteprima ? '00:00' : '')
+  const pickerVuoto = (type === 'date' || type === 'time') && !mostrato
   return (
     <div className="fa-fld">
       <label htmlFor={id} className={hideLabel ? 'sr-only' : undefined}>
@@ -149,7 +154,7 @@ export function Campo({ label, value, onChange, placeholder, type = 'text', inpu
         {textarea ? (
           <textarea id={id} value={value} placeholder={ph} onChange={(e) => onChange(e.currentTarget.value)} aria-invalid={error ? true : undefined} aria-describedby={described} maxLength={rest.maxLength} rows={3} />
         ) : (
-          <input id={id} type={type} inputMode={inputMode} value={value} placeholder={ph} onChange={(e) => onChange(e.currentTarget.value)} onClick={type === 'time' || type === 'date' ? (e) => apriSelettore(e.currentTarget) : undefined} aria-invalid={error ? true : undefined} aria-describedby={described} {...rest} />
+          <input id={id} type={type} inputMode={inputMode} value={mostrato} placeholder={ph} onChange={(e) => { setAnteprima(false); onChange(e.currentTarget.value) }} onBlur={() => { setAnteprima(false); onBlur?.() }} onClick={type === 'time' || type === 'date' ? (e) => { const el = e.currentTarget; if (da00 && type === 'time' && !value) flushSync(() => setAnteprima(true)); apriSelettore(el) } : undefined} aria-invalid={error ? true : undefined} aria-describedby={described} {...rest} />
         )}
         {pickerVuoto ? <span className="ph" aria-hidden="true">{ph}</span> : null}
         {trailing}

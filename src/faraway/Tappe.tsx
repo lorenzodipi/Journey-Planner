@@ -6,6 +6,7 @@ import { Pulsante } from './base'
 import { ora } from '../lib/formati'
 import type { ReactNode } from 'react'
 import { Fragment, useEffect, useRef, useState } from 'react'
+import { useTrascinaTappe } from './useTrascinaTappe'
 import { categoryIcon } from '../lib/categoryIcon'
 import { formatMoney, round2 } from '../lib/money'
 import { mapsLinkFor } from '../lib/mapsUrl'
@@ -53,6 +54,8 @@ interface Props {
   meteoDi?: (item: DayItem) => string | null
   /** Id della tappa da evidenziare (tocco su un pin). */
   highlight?: string | null
+  /** Riordino a trascinamento delle tappe senza orario: dalla posizione `from` alla posizione `to` della lista. */
+  onReorder?: (item: DayItem, to: number) => void
   readOnly?: boolean
 }
 
@@ -191,8 +194,14 @@ function Riga({ icon, main, sub, action }: { icon: string; main: ReactNode; sub?
   )
 }
 
-export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle, onStatus, onEdit, onMove, onDelete, fromHere, meteoDi, highlight, readOnly }: Props) {
+export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle, onStatus, onEdit, onMove, onDelete, fromHere, meteoDi, highlight, onReorder, readOnly }: Props) {
   const items = day.items
+  const listRef = useRef<HTMLOListElement>(null)
+  const [annuncio, setAnnuncio] = useState('')
+  const { trascinata, inizia, tasto, spostamento } = useTrascinaTappe(listRef, items.length, (from, to) => {
+    onReorder?.(items[from], to)
+    setAnnuncio(`${items[from].title}: posizione ${to + 1} di ${items.length}`)
+  })
   const sum = riepilogo(items, ctx)
   const payer = new Map(trip.travelers.map((p) => [p.id, p.name]))
   const phases = items.map((i) => fase(i, placeOf(trip, i), ctx))
@@ -216,7 +225,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
           </div>
         </div>
       ) : null}
-      <ol className="steps">
+      <ol ref={listRef} className={cx('steps', trascinata !== null && 'trascina')}>
         {items.map((item, idx) => {
           const f = phases[idx]
           const place = placeOf(trip, item)
@@ -231,11 +240,14 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
           const opening = place?.openingSpec ? openingFor(place.openingSpec, day.date, f === 'now' ? ctx.nowMin : startAt) : null
           const address = place?.address || [place?.name, place?.city].filter(Boolean).join(', ')
           const hereText = fromHere?.(item) ?? null
+          const puoiTrascinare = !!onReorder && !readOnly && !item.time && items.length > 1
+          const dy = spostamento(idx)
+          const stile = trascinata !== null ? ({ transform: `translateY(${dy}px)`, transition: idx === trascinata ? 'none' : undefined } as const) : undefined
           const people = exp ? (exp.shares.length > 0 ? exp.shares.map((s) => s.travelerId) : trip.travelers.map((p) => p.id)) : []
           return (
             <Fragment key={item.id}>
               {seg && idx > 0 ? (
-                <li className={cx('seg', prevF !== 'done' && prevF !== 'skip' && 'after')}>
+                <li className={cx('seg', prevF !== 'done' && prevF !== 'skip' && 'after')} style={stile}>
                   <span className="rail" />
                   <span className="sg">
                     <G name={seg.icon} />
@@ -243,11 +255,29 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                   </span>
                 </li>
               ) : null}
-              <li id={`tappa-${item.id}`} className={cx('stp', ndCls, open && 'sel', highlight === item.id && 'fa-flash')}>
+              <li id={`tappa-${item.id}`} className={cx('stp', ndCls, open && 'sel', highlight === item.id && 'fa-flash', trascinata === idx && 'drag')} style={stile}>
                 <span className="rail">
                   <span className={cx('nd', ndCls)}>
                     <G name={ndIcon} />
                   </span>
+                  {puoiTrascinare ? (
+                    <button
+                      type="button"
+                      className="grip"
+                      aria-label={`Sposta «${item.title}» nell'elenco: trascina, oppure usa le frecce su e giù`}
+                      onPointerDown={(e) => inizia(e, idx)}
+                      onKeyDown={(e) => tasto(e, idx)}
+                    >
+                      <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="9" cy="6" r="1.7" />
+                        <circle cx="15" cy="6" r="1.7" />
+                        <circle cx="9" cy="12" r="1.7" />
+                        <circle cx="15" cy="12" r="1.7" />
+                        <circle cx="9" cy="18" r="1.7" />
+                        <circle cx="15" cy="18" r="1.7" />
+                      </svg>
+                    </button>
+                  ) : null}
                 </span>
                 <div className="body">
                   <div
@@ -349,6 +379,9 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
           )
         })}
       </ol>
+      <span className="sr-only" role="status" aria-live="polite">
+        {annuncio}
+      </span>
     </div>
   )
 }

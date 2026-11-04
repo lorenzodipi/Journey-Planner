@@ -177,7 +177,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
           </div>
         ) : null}
         <div className="fa-2c">
-          <Campo label="Ora" icon="clock" type="time" value={time} onChange={setTime} />
+          <Campo da00 label="Ora" icon="clock" type="time" value={time} onChange={setTime} />
           <CampoDurata label="Durata" value={duration} onChange={setDuration} placeholder={place?.visitMinutes ? durata(place.visitMinutes) : '1h 30min'} />
         </div>
         {editing && time && schema.timeLock ? (

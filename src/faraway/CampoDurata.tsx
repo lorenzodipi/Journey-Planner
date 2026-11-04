@@ -9,5 +9,5 @@ export function CampoDurata({ label, value, onChange, placeholder, icon, hint, e
   if (ora === null) {
     return <Campo label={label} icon={icon} value={value} onChange={onChange} placeholder={placeholder ?? '1h 30min'} hint={hint ?? 'Testo scritto prima: cancellalo per scegliere ore e minuti.'} error={error ?? undefined} />
   }
-  return <Campo label={label} icon={icon ?? 'clock'} type="time" value={ora} onChange={(v) => onChange(oraComeDurata(v))} placeholder={placeholder ?? '1h 30min'} hint={hint} error={error ?? undefined} />
+  return <Campo da00 label={label} icon={icon ?? 'clock'} type="time" value={ora} onChange={(v) => onChange(oraComeDurata(v))} placeholder={placeholder ?? '1h 30min'} hint={hint} error={error ?? undefined} />
 }

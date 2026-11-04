@@ -248,6 +248,7 @@ export function Giorno({ params }: { params: { id: string } }) {
           onEdit={(item) => setSheet({ kind: 'edit', item })}
           onMove={(item) => setSheet({ kind: 'move', item, postpone: false })}
           onDelete={(item) => void onDelete(item)}
+          onReorder={(item, to) => void t.moveItemTo(day.id, item.id, to).then((m) => m && showToast(m))}
           fromHere={fromHere}
           meteoDi={(item) => meteoDellaTappa(previsioniCitta.get(cittaTappa(trip, day, item)), day.date, item.time)}
           highlight={highlight}

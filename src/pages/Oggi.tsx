@@ -315,6 +315,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
             onEdit={() => navigate(`/giorni/${day.id}`)}
             onMove={() => navigate(`/giorni/${day.id}`)}
             onDelete={(i) => void onDelete(i)}
+            onReorder={(i, to) => void t.moveItemTo(day.id, i.id, to).then((m) => m && showToast(m))}
           />
         </div>
       ) : null}

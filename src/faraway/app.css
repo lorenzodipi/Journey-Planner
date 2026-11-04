@@ -153,7 +153,7 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-stay .fr .cd{font:600 17px/24px var(--font-sans);letter-spacing:.04em;font-variant-numeric:tabular-nums}
 .fa-stay .dt{display:grid;gap:var(--space-md);padding-top:var(--space-sm)}
 .fa-stay .dl{display:grid;gap:var(--space-sm);margin:0}
-.fa-stay .dl>div{display:grid;grid-template-columns:120px 1fr;gap:var(--space-md);font:400 14px/20px var(--font-sans)}
+.fa-stay .dl>div{display:grid;grid-template-columns:120px minmax(0,1fr);gap:var(--space-md);font:400 14px/20px var(--font-sans)}
 .fa-stay .dl dt{color:var(--on-tinta-muted)}
 .fa-stay .dl dd{margin:0;color:var(--on-tinta);font-weight:600}
 .fa-stay .avs{display:inline-flex}
@@ -168,7 +168,7 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-tab .pill{position:relative}
 .fa-tbn{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 8px;border-radius:9999px;background:var(--azzurro-solid);color:var(--on-azzurro-solid);font:600 11px/18px var(--font-sans);text-align:center}
 .fa-dlc{display:grid;gap:8px;margin:0}
-.fa-dlc>div{display:grid;grid-template-columns:84px 1fr;gap:var(--space-md);font:400 14px/20px var(--font-sans)}
+.fa-dlc>div{display:grid;grid-template-columns:84px minmax(0,1fr);gap:var(--space-md);font:400 14px/20px var(--font-sans)}
 .fa-dlc dt{color:var(--ink-muted)}
 .fa-dlc dd{margin:0;font-weight:600;overflow-wrap:anywhere}
 .fa-acts{display:flex;flex-wrap:wrap;gap:8px}
@@ -218,7 +218,7 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 /* Il viaggio (Home prima della partenza): stepper delle città, non interattivo */
 .fa-stepv{display:grid;gap:16px}
 .fa-stepv ol{list-style:none;margin:0;padding:0;display:grid}
-.fa-stepv li{position:relative;display:grid;grid-template-columns:24px 1fr;column-gap:16px;padding-bottom:24px}
+.fa-stepv li{position:relative;display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:16px;padding-bottom:24px}
 .fa-stepv li:last-child{padding-bottom:0}
 .fa-stepv li i{grid-row:1/3;width:24px;height:24px;border-radius:50%;display:block}
 .fa-stepv li:not(:last-child)::before{content:"";position:absolute;left:11px;top:32px;bottom:8px;border-left:2px dashed var(--border-strong)}
@@ -335,3 +335,22 @@ sup{margin-left:0}
 .fa-meteo-slider::-webkit-scrollbar{display:none}
 .fa-meteo-slide{flex:0 0 calc(100% - 20px);min-width:0;scroll-snap-align:start;scroll-snap-stop:always}
 .fa-meteo-slider:focus-visible{outline:2px solid var(--azzurro);outline-offset:2px;border-radius:var(--r-lg,20px)}
+
+/* Una card di Oggi/Giorno non deve mai uscire dallo schermo: le colonne 1fr possono restringersi e le parole lunghe vanno a capo (#86) */
+.k-Tappa .body,.k-Tappa .tt,.k-Tappa .rx{min-width:0}
+.k-Tappa .t,.k-Tappa .m,.k-Tappa .rm,.k-Tappa .rs{overflow-wrap:anywhere}
+
+/* Riordino a trascinamento delle tappe senza orario (#88) */
+.k-Tappa .rail{flex-direction:column;align-items:center}
+.k-Tappa .grip{all:unset;box-sizing:border-box;position:relative;z-index:1;flex:none;margin-top:12px;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--canvas);color:var(--ink-muted);box-shadow:inset 0 0 0 1.5px var(--border-strong);cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.k-Tappa .grip::after{content:"";position:absolute;inset:-6px}
+.k-Tappa .grip svg{width:18px;height:18px}
+.k-Tappa .grip:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.k-Tappa .steps.trascina{-webkit-user-select:none;user-select:none}
+.k-Tappa .steps.trascina>li{transition:transform 160ms cubic-bezier(.23,1,.32,1)}
+.k-Tappa .steps.trascina .seg .sg{opacity:.35}
+.k-Tappa .stp.drag{position:relative;z-index:5;filter:drop-shadow(0 14px 18px rgba(0,0,0,.28))}
+.k-Tappa .stp.drag .grip{cursor:grabbing;color:var(--azzurro-ink);box-shadow:inset 0 0 0 2px var(--azzurro-ink)}
+@media (prefers-reduced-motion:reduce){.k-Tappa .steps.trascina>li{transition:none}}
+/* il trattino della tappa saltata è centrato come gli altri glifi del nodo (#89) */
+.k-Tappa .nd.skip svg,.k-TappaStati .nd.skip svg{inset:-2px}
