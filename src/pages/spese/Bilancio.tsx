@@ -33,9 +33,11 @@ export function Bilancio() {
       gap={16}
       overlay={correggi ? <DichiaraSheet trip={trip} toId={correggi.toId} dovuto={correggi.amount} corrects={correggi.corrects} onClose={() => setCorreggi(null)} /> : null}
     >
-      <p style={{ margin: 0, font: '600 20px/1.3 var(--font-sans)' }}>
-        {saldo === null ? 'Collega il tuo account a un viaggiatore per vedere il bilancio.' : Math.abs(saldo) < 0.005 ? 'Sei in pari' : saldo > 0 ? `Devi ricevere ${formatMoney(saldo, cur)}` : `Devi dare ${formatMoney(-saldo, cur)}`}
-      </p>
+      {saldo !== null && Math.abs(saldo) < 0.005 ? null : (
+        <p style={{ margin: 0, font: '600 20px/1.3 var(--font-sans)' }}>
+          {saldo === null ? 'Collega il tuo account a un viaggiatore per vedere il bilancio.' : saldo > 0 ? `Devi ricevere ${formatMoney(saldo, cur)}` : `Devi dare ${formatMoney(-saldo, cur)}`}
+        </p>
+      )}
       <RimborsiCard trip={trip} conMie={false} />
       <DebitiSpesa trip={trip} spese={r.spese} fx={r.fx} me={me?.id} abilitaPagamento={trip.settlements !== undefined} />
       {dati.transfers.filter((x) => x.from === me?.id || x.to === me?.id).length === 0 && saldo !== null ? <p className="fa-m" style={{ margin: 0 }}>Nessun rimborso necessario.</p> : null}
