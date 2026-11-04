@@ -419,3 +419,7 @@ sup{margin-left:0}
 .fa-poparr .dia{position:absolute;left:50%;width:12px;height:12px;box-sizing:border-box;background:var(--surface-card);border:1px solid var(--border-strong);border-right-color:var(--surface-card);border-bottom-color:var(--surface-card);clip-path:polygon(0 0,100% 0,100% 1.5px,1.5px 100%,0 100%)}
 .fa-pop[data-placement="bottom"] .fa-poparr .dia{top:8px;transform:translate(-50%,-50%) rotate(45deg)}
 .fa-pop[data-placement="top"] .fa-poparr .dia{top:0;transform:translate(-50%,-50%) rotate(225deg)}
+/* Tre puntini: dopo un clic il focus torna qui alla chiusura del menu e la regola globale mostrerebbe l'anello.
+   L'anello resta solo quando si usa la tastiera (data-focus-visible di react-aria). */
+.fa-phone .fa-dots:focus-visible{outline:none}
+.fa-phone .fa-dots[data-focus-visible]{outline:3px solid var(--focus);outline-offset:2px}
