@@ -34,7 +34,7 @@ export function FiltriSheet({ trip, places, open, filters, view, onApply, onClos
       title="Filtri"
       onClose={onClose}
       headStart={
-        <button type="button" className="fa-btn soft" style={{ height: 40, padding: '0 16px', width: 'auto' }} onClick={() => (setF(EMPTY_FILTERS), setV(view ? { groupBy: 'city', sortBy: 'name' } : undefined))}>
+        <button type="button" className="fa-hdtxt" onClick={() => (setF(EMPTY_FILTERS), setV(view ? { groupBy: 'city', sortBy: 'name' } : undefined))}>
           Azzera
         </button>
       }

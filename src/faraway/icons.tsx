@@ -8,6 +8,8 @@ const PATHS = {
   back: <path d="M15 5l-7 7 7 7" />,
   close: <path d="M6 6l12 12M18 6L6 18" />,
   dots: <><circle cx="5.5" cy="12" r="1.2" /><circle cx="12" cy="12" r="1.2" /><circle cx="18.5" cy="12" r="1.2" /></>,
+  archive: <><rect x="3" y="4" width="18" height="5" rx="1.5" /><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9" /><path d="M10 13h4" /></>,
+  dotsv: <><circle cx="12" cy="5.5" r="1.2" /><circle cx="12" cy="12" r="1.2" /><circle cx="12" cy="18.5" r="1.2" /></>,
   check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
   chev: <path d="M6 9l6 6 6-6" />,
   chevr: <path d="M9 6l6 6-6 6" />,

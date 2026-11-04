@@ -81,8 +81,8 @@ export function PulsanteIcona({ icon: name, label, onPress, primary, className, 
 export function MenuAzioni({ label, azioni }: { label: string; azioni: { id: string; label: string; onPress: () => void }[] }) {
   return (
     <AriaMenuTrigger>
-      <AriaButton className="fa-ib fa-dots" aria-label={label}>
-        <Sv name="dots" />
+      <AriaButton className="fa-dots" aria-label={label}>
+        <Sv name="dotsv" size={20} />
       </AriaButton>
       <AriaPopover className="fa-pop" placement="bottom end" offset={4}>
         <AriaMenu className="fa-popm" aria-label={label} onAction={(k) => azioni.find((a) => a.id === k)?.onPress()}>

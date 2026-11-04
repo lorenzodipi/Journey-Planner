@@ -1,9 +1,8 @@
 // «Il mio bilancio» (#51): quanto devo dare o ricevere e la cronologia dei miei rimborsi (solo io e l'altra persona).
 import { useState } from 'react'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
-import { MenuAzioni, Pulsante } from '../../faraway/base'
+import { MenuAzioni } from '../../faraway/base'
 import { bozzaRettifica, cronologia, partiCronologia, STATO_RIMBORSO } from '../../lib/rimborsi'
-import { formatMoney } from '../../lib/money'
 import { ricevuta } from '../../lib/ricevuta'
 import { riassunto } from '../../lib/spese'
 import { useMe } from '../../state/me'
@@ -19,7 +18,6 @@ export function Bilancio() {
   const me = useMe(trip)
   const r = riassunto(trip, me?.id)
   const dati = ricevuta(trip, r.spese, r.fx)
-  const cur = trip.baseCurrency
   const lista = cronologia(trip.settlements).filter((x) => x.fromId === me?.id || x.toId === me?.id)
   const [correggi, setCorreggi] = useState<ReturnType<typeof bozzaRettifica> | null>(null)
   const saldo = r.mioSaldo
@@ -33,11 +31,6 @@ export function Bilancio() {
       gap={16}
       overlay={correggi ? <DichiaraSheet trip={trip} toId={correggi.toId} dovuto={correggi.amount} corrects={correggi.corrects} onClose={() => setCorreggi(null)} /> : null}
     >
-      {saldo !== null && Math.abs(saldo) < 0.005 ? null : (
-        <p style={{ margin: 0, font: '600 20px/1.3 var(--font-sans)' }}>
-          {saldo === null ? 'Collega il tuo account a un viaggiatore per vedere il bilancio.' : saldo > 0 ? `Devi ricevere ${formatMoney(saldo, cur)}` : `Devi dare ${formatMoney(-saldo, cur)}`}
-        </p>
-      )}
       <RimborsiCard trip={trip} conMie={false} />
       <DebitiSpesa trip={trip} spese={r.spese} fx={r.fx} me={me?.id} abilitaPagamento={trip.settlements !== undefined} />
       {dati.transfers.filter((x) => x.from === me?.id || x.to === me?.id).length === 0 && saldo !== null ? <p className="fa-m" style={{ margin: 0 }}>Nessun rimborso necessario.</p> : null}
@@ -50,8 +43,10 @@ export function Bilancio() {
         <div className="fa-list">
           {lista.map((x) => {
             const p = partiCronologia(x, trip.travelers, me?.id)
-            const annullabile = x.status === 'in_attesa' && x.fromId === me?.id
-            const rettificabile = x.status === 'confermato' && !x.corrects
+            const azioni = [
+              ...(x.status === 'in_attesa' && x.fromId === me?.id ? [{ id: 'annulla', label: 'Annulla la richiesta', onPress: () => void annulla(x.id) }] : []),
+              ...(x.status === 'confermato' && !x.corrects ? [{ id: 'rettifica', label: 'Rettifica', onPress: () => setCorreggi(bozzaRettifica(x)) }] : []),
+            ]
             return (
             <div key={x.id} className="fa-cron">
               <span className={`st ${x.status}`} role="img" aria-label={STATO_RIMBORSO[x.status]}>
@@ -63,14 +58,9 @@ export function Bilancio() {
               </span>
               <span className="rt">
                 <span className="ln">
-                  {rettificabile ? <MenuAzioni label="Altre azioni" azioni={[{ id: 'rettifica', label: 'Rettifica', onPress: () => setCorreggi(bozzaRettifica(x)) }]} /> : null}
+                  {azioni.length ? <MenuAzioni label="Azioni sul rimborso" azioni={azioni} /> : null}
                   <span className="amt">{p.importo}</span>
                 </span>
-                {annullabile ? (
-                  <Pulsante size="sm" color="link-color" onPress={() => void annulla(x.id)}>
-                    Annulla
-                  </Pulsante>
-                ) : null}
               </span>
             </div>
             )

@@ -390,13 +390,27 @@ sup{margin-left:0}
 
 /* Le <select> hanno la freccia: senza si leggerebbero come testo (la valuta della spesa, con la sua etichetta, ne è esclusa) */
 .fa-in:has(>select:not([aria-label="Valuta"])){position:relative}
-.fa-in:has(>select:not([aria-label="Valuta"]))::after{content:"";flex:none;width:20px;height:20px;background:currentColor;opacity:.7;pointer-events:none;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center/contain no-repeat}
+.fa-in>select:not([aria-label="Valuta"]){margin-right:-16px;padding-right:44px}
+.fa-in:has(>select:not([aria-label="Valuta"]))::after{content:"";position:absolute;right:16px;top:50%;width:20px;height:20px;margin-top:-10px;background:currentColor;opacity:.7;pointer-events:none;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center/contain no-repeat}
 
 /* Tre puntini + popover (Bilancio → cronologia): il bersaglio è 44px ma non allarga la riga dell'importo */
 .fa-cron .ln{display:flex;align-items:center;justify-content:flex-end;gap:4px;min-height:24px}
-.fa-ib.fa-dots{margin:-10px 0;flex:none}
+/* solo i tre puntini (niente sfondo né bordo); il bersaglio resta 32×44 senza allargare la riga */
+.fa-dots{all:unset;box-sizing:border-box;display:grid;place-items:center;width:32px;height:44px;margin:-10px 0;flex:none;color:var(--ink-muted);cursor:pointer;border-radius:8px}
+.fa-dots[data-focus-visible]{outline:3px solid var(--focus);outline-offset:-2px}
 .fa-pop{min-width:160px;padding:8px;border-radius:var(--radius-lg,16px);background:var(--surface-card);color:var(--ink);border:1px solid var(--border-strong);box-shadow:0 8px 24px rgb(0 0 0 / .18)}
+.fa-pop{outline:none}
 .fa-popm{outline:none;display:grid;gap:0}
 .fa-popi{display:flex;align-items:center;min-height:44px;padding:0 16px;border-radius:8px;font:600 16px/24px var(--font-sans);cursor:pointer;outline:none}
 .fa-popi[data-focused],.fa-popi[data-hovered]{background:var(--surface-high)}
-.fa-popi[data-focus-visible]{outline:3px solid var(--focus);outline-offset:-3px}
+
+/* Azione testuale nell'intestazione dei fogli (es. «Azzera»): solo la parola, mai tagliata */
+.fa-hdtxt,.fa-sheet .hd .fa-hdtxt{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;min-height:44px;padding:0 4px;font:600 16px/24px var(--font-sans);color:var(--azzurro-ink);white-space:nowrap;cursor:pointer;border-radius:8px;justify-self:start}
+.fa-hdtxt:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.fa-sheet .hd:has(>.fa-hdtxt){grid-template-columns:minmax(44px,1fr) minmax(0,auto) minmax(44px,1fr)}
+/* I bottoni nelle file di azioni non si stringono sotto il loro testo: se non c'è posto vanno a capo (es. «Duplica come modello» a 320px) */
+.acts2 .fa-btn,.fa-acts .fa-btn{min-width:fit-content}
+/* Codici IATA dei biglietti: su schermi stretti si riducono, così non toccano la rotta (320px) */
+.k-Ticket .code,.k-TicketOrizzontale .code,.k-TicketTrasporti .code{font-size:clamp(32px,11vw,44px);line-height:1.1}
+/* Il menu del popover non mostra l'anello di focus globale (bordo azzurro): resta solo la voce */
+.fa-pop .fa-popm,.fa-pop .fa-popm:focus,.fa-pop .fa-popm:focus-visible,.fa-pop .fa-popi:focus,.fa-pop .fa-popi:focus-visible,.fa-pop:focus-visible{outline:none!important;box-shadow:none}
