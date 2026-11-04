@@ -67,10 +67,12 @@ export function Bilancio() {
               </span>
               <span className="tx">
                 <span className="t">{p.chi}</span>
-                <span className="amt">{p.importo}</span>
                 <span className="s">{p.data}</span>
               </span>
-              {azione}
+              <span className="rt">
+                <span className="amt">{p.importo}</span>
+                {azione}
+              </span>
             </div>
             )
           })}
