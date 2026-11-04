@@ -24,6 +24,7 @@ import { useUnaAperta } from '../../faraway/Righe'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto, VuotoFiltro } from '../../faraway/Stati'
 import { giornoSpese } from '../spese/testi'
+import { filtriAttivi, FiltriPrenotazioniSheet } from './FiltriSheet'
 import { PrenotazioneSheet } from './PrenotazioneSheet'
 
 const icona = (b: Booking) => CATEGORIE_BASE.find((c) => c.label === BOOKING_BUDGET_CATEGORY[b.type])?.icon ?? 'i-sez-ticket'
@@ -38,6 +39,8 @@ export function PrenotazioniPage() {
   const [codice, setCodice] = useState<Booking | null>(null)
   const [arch, setArch] = useState<FiltriArchivio>(FILTRI_VUOTI)
   const [offline, setOffline] = useState<Set<string>>(new Set())
+  const [filtriOpen, setFiltriOpen] = useState(false)
+  const attivi = filtriAttivi(arch)
   const today = tripToday(trip)
   const tz = trip.timezone
   const shown = useMemo(() => filtraArchivio(trip.bookings, arch).filter((b) => nelFiltro(b, filtro)), [trip.bookings, filtro, arch])
@@ -82,26 +85,25 @@ export function PrenotazioniPage() {
         <>
           {sheet ? <PrenotazioneSheet key={sheet.booking?.id ?? 'new'} trip={trip} booking={sheet.booking} open onClose={() => setSheet(null)} /> : null}
           {codice ? <CodiceBiglietto key={codice.id} trip={trip} kind="booking" refId={codice.id} title={codice.title} when={codice.validFrom ? [giornoSpese(dateInZone(codice.validFrom, tz), today), oraPrenotazione(codice, tz)].filter(Boolean).join(', ') : undefined} detail={codice.code} travelerIds={codice.forTravelers} open onClose={() => setCodice(null)} /> : null}
+          {filtriOpen ? <FiltriPrenotazioniSheet bookings={trip.bookings.filter((b) => nelFiltro(b, filtro))} filters={arch} onApply={(f) => (setArch(f), open.setOpen(null))} onClose={() => setFiltriOpen(false)} /> : null}
           {confirmNode}
         </>
       }
     >
       {trip.bookings.length > 0 ? (
-        <div className="fa-chips scroll" role="group" aria-label="Tipo di prenotazione">
-          {FILTRI.map((f) => (
-            <Chip key={f.v} on={filtro === f.v} onPress={() => (setFiltro(f.v), open.setOpen(null))}>{f.l}</Chip>
-          ))}
-        </div>
-      ) : null}
-      {trip.bookings.length > 0 ? (
         <>
-          <Campo label="Cerca" icon="search" value={arch.q} onChange={(q) => setArch({ ...arch, q })} placeholder="Titolo, luogo, fornitore, codice" />
-          <div className="fa-chips scroll" role="group" aria-label="Stato e allegati">
-            {(['to_confirm', 'confirmed', 'cancelled'] as const).map((x) => (
-              <Chip key={x} on={arch.stato === x} onPress={() => setArch({ ...arch, stato: arch.stato === x ? 'all' : x })}>{STATO_LABEL[x]}</Chip>
-            ))}
-            <Chip on={arch.allegati === 'con'} onPress={() => setArch({ ...arch, allegati: arch.allegati === 'con' ? 'all' : 'con' })}>Con file</Chip>
-            <Chip on={arch.allegati === 'senza'} onPress={() => setArch({ ...arch, allegati: arch.allegati === 'senza' ? 'all' : 'senza' })}>Senza file</Chip>
+          <Campo label="Cerca" hideLabel icon="search" value={arch.q} onChange={(q) => setArch({ ...arch, q })} placeholder="Cerca titolo, luogo, codice" />
+          <div className="fa-frow">
+            <button type="button" className={cx('fa-fbtn', attivi > 0 && 'on')} aria-label={attivi > 0 ? `Apri i filtri, ${attivi} attivi` : 'Apri i filtri'} onClick={() => setFiltriOpen(true)}>
+              <Sv name="filter" size={18} />
+              Filtri
+              {attivi > 0 ? <b>{attivi}</b> : null}
+            </button>
+            <div className="fa-chips scroll" role="group" aria-label="Tipo di prenotazione">
+              {FILTRI.map((f) => (
+                <Chip key={f.v} on={filtro === f.v} onPress={() => (setFiltro(f.v), open.setOpen(null))}>{f.l}</Chip>
+              ))}
+            </div>
           </div>
         </>
       ) : null}

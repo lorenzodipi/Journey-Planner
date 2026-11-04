@@ -104,6 +104,19 @@ export interface Ricevuta {
   unconverted: string[]
 }
 
+export type StatoBudget = 'over' | 'paid' | 'ok'
+
+/**
+ * Stato di una categoria nel budget: `over` solo se lo speso supera il previsto (oltre il limite); `paid` quando il previsto
+ * è raggiunto e non resta nulla da pagare (voci con costo comprese); altrimenti `ok`, senza avvisi. Niente «quasi al limite».
+ */
+export function statoBudget(c: Pick<RigaCategoria, 'spent' | 'planned' | 'unpaid' | 'voci'>): StatoBudget {
+  if (c.planned <= 0) return 'ok'
+  const oltre = round2(c.spent - c.planned)
+  if (oltre > 0) return 'over'
+  return c.spent > 0 && oltre === 0 && c.unpaid === 0 && c.voci.paid === c.voci.tot ? 'paid' : 'ok'
+}
+
 const pagat = (n: number, masc: boolean) => (n === 1 ? (masc ? 'pagato' : 'pagata') : masc ? 'pagati' : 'pagate')
 
 /** Prima riga sotto il nome: quante spese e quante pagate. Il previsto sta sulla riga sotto (`previstoTesto`). */

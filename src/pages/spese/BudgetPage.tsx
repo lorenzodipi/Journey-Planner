@@ -2,7 +2,7 @@
 // «Cambia il budget», l'avviso quando è superato e le categorie con speso e previsto.
 import { useMemo, useState } from 'react'
 import { formatMoney, parseAmount, round2 } from '../../lib/money'
-import { iconaSezione, ricevuta } from '../../lib/ricevuta'
+import { iconaSezione, ricevuta, statoBudget } from '../../lib/ricevuta'
 import { riassunto } from '../../lib/spese'
 import { useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
@@ -139,11 +139,9 @@ export function BudgetPage() {
               </div>
               <section className="fa-card xl" style={{ overflow: 'hidden', padding: '8px 0' }}>
                 {cats.map((c, i) => {
-                  const ratio = c.planned > 0 ? c.spent / c.planned : c.spent > 0 ? 2 : 0
-                  const oltre = round2(c.spent - c.planned)
-                  const pagati = c.voci.tot > 0 && c.voci.paid === c.voci.tot && c.unpaid === 0 && oltre <= 0
-                  const stato = ratio > 1.05 ? 'over' : ratio >= 0.9 && !pagati ? 'warn' : pagati ? 'paid' : 'ok'
-                  const color = stato === 'over' ? 'var(--danger)' : stato === 'warn' ? 'var(--warning)' : 'var(--azzurro)'
+                  const ratio = c.planned > 0 ? c.spent / c.planned : 0
+                  const stato = statoBudget(c)
+                  const color = stato === 'over' ? 'var(--danger)' : 'var(--azzurro)'
                   return (
                     <div key={c.key}>
                       {i > 0 ? <div className="fa-hr" /> : null}
@@ -167,12 +165,7 @@ export function BudgetPage() {
                             ) : stato === 'over' ? (
                               <span className="fa-st ba">
                                 <Sv name="err" size={16} />
-                                Oltre di {formatMoney(oltre, cur)}
-                              </span>
-                            ) : stato === 'warn' ? (
-                              <span className="fa-st wa">
-                                <Sv name="warn" size={16} />
-                                Quasi al limite
+                                Oltre il limite
                               </span>
                             ) : null}
                           </div>

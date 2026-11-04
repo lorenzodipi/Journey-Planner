@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ricevuta, iconaSpesa } from './ricevuta'
+import { ricevuta, iconaSpesa, statoBudget } from './ricevuta'
 import { sezioneSpesa, tutteLeSpese } from './spese'
 import type { Trip } from '../types'
 import { formatMoney } from './money'
@@ -89,5 +89,29 @@ describe('ricevuta', () => {
   it('icona della spesa dal nome o dalla categoria', () => {
     expect(iconaSpesa({ label: 'Caffè al mercato', category: 'Cibo' })).toBe('i-cat-cafe')
     expect(iconaSpesa({ label: 'Ingresso', category: 'Attività' })).toBe('i-sez-ticket')
+  })
+})
+
+describe('statoBudget', () => {
+  const c = (spent: number, planned: number, unpaid = 0, tot = 0, paid = 0) => ({ spent, planned, unpaid, voci: { tot, paid } })
+  it('previsto raggiunto senza voci (assicurazione, connessione): pagati, non «quasi al limite»', () => {
+    expect(statoBudget(c(154.24, 154.24))).toBe('paid')
+    expect(statoBudget(c(89.82, 89.82))).toBe('paid')
+  })
+  it('previsto raggiunto con voci tutte pagate (voli, alloggi): pagati', () => {
+    expect(statoBudget(c(1246, 1246, 0, 2, 2))).toBe('paid')
+  })
+  it('sotto il previsto o con voci ancora da pagare: nessun avviso', () => {
+    expect(statoBudget(c(36, 292, 256, 2, 1))).toBe('ok')
+    expect(statoBudget(c(0, 600))).toBe('ok')
+    expect(statoBudget(c(95, 100))).toBe('ok')
+    expect(statoBudget(c(100, 100, 0, 2, 1))).toBe('ok')
+  })
+  it('solo se supera il previsto: oltre il limite, anche di un centesimo', () => {
+    expect(statoBudget(c(100.01, 100))).toBe('over')
+    expect(statoBudget(c(120, 100, 0, 1, 1))).toBe('over')
+  })
+  it('senza previsto non c’è un limite da superare', () => {
+    expect(statoBudget(c(50, 0))).toBe('ok')
   })
 })
