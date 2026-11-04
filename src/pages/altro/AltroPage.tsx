@@ -91,12 +91,9 @@ export function AltroPage() {
 
       <section className="fa-list" aria-label="Account">
         <Riga icon={<Avatar initials={initials(nome)} n={me ? discOf(trip, me.id) : 1} large />} title={nome} sub="Account e profilo" onPress={() => navigate('/altro/account')} />
-      </section>
-
-      <div className="fa-list">
         <Riga icon="i-sez-bag" title="Tutti i viaggi" sub={viaggiText(t.trips.length)} onPress={() => navigate('/viaggi')} />
         <Riga icon="i-azi-settings" title="Impostazioni" sub="Aspetto, notifiche e lingua" onPress={() => navigate('/altro/impostazioni')} />
-      </div>
+      </section>
 
       <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Il viaggio</h2>
       <div className="fa-list">

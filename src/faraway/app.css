@@ -391,3 +391,12 @@ sup{margin-left:0}
 /* Le <select> hanno la freccia: senza si leggerebbero come testo (la valuta della spesa, con la sua etichetta, ne è esclusa) */
 .fa-in:has(>select:not([aria-label="Valuta"])){position:relative}
 .fa-in:has(>select:not([aria-label="Valuta"]))::after{content:"";flex:none;width:20px;height:20px;background:currentColor;opacity:.7;pointer-events:none;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center/contain no-repeat}
+
+/* Tre puntini + popover (Bilancio → cronologia): il bersaglio è 44px ma non allarga la riga dell'importo */
+.fa-cron .ln{display:flex;align-items:center;justify-content:flex-end;gap:4px;min-height:24px}
+.fa-ib.fa-dots{margin:-10px 0;flex:none}
+.fa-pop{min-width:160px;padding:8px;border-radius:var(--radius-lg,16px);background:var(--surface-card);color:var(--ink);border:1px solid var(--border-strong);box-shadow:0 8px 24px rgb(0 0 0 / .18)}
+.fa-popm{outline:none;display:grid;gap:0}
+.fa-popi{display:flex;align-items:center;min-height:44px;padding:0 16px;border-radius:8px;font:600 16px/24px var(--font-sans);cursor:pointer;outline:none}
+.fa-popi[data-focused],.fa-popi[data-hovered]{background:var(--surface-high)}
+.fa-popi[data-focus-visible]{outline:3px solid var(--focus);outline-offset:-3px}

@@ -4,7 +4,7 @@
 import type { ReactNode } from 'react'
 import { useId, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { Button as AriaButton, Link as AriaLink, Switch as AriaSwitch } from 'react-aria-components'
+import { Button as AriaButton, Link as AriaLink, Menu as AriaMenu, MenuItem as AriaMenuItem, MenuTrigger as AriaMenuTrigger, Popover as AriaPopover, Switch as AriaSwitch } from 'react-aria-components'
 import { cx } from './cx'
 import { apriSelettore } from '../lib/picker'
 import { Loader } from './Loader'
@@ -74,6 +74,26 @@ export function PulsanteIcona({ icon: name, label, onPress, primary, className, 
       <Sv name={name} />
       {badge ? <span className="fa-ibn">{badge}</span> : null}
     </AriaButton>
+  )
+}
+
+/** Tre puntini verticali che aprono un popover con poche azioni (tastiera e lettore di schermo con react-aria). */
+export function MenuAzioni({ label, azioni }: { label: string; azioni: { id: string; label: string; onPress: () => void }[] }) {
+  return (
+    <AriaMenuTrigger>
+      <AriaButton className="fa-ib fa-dots" aria-label={label}>
+        <Sv name="dots" />
+      </AriaButton>
+      <AriaPopover className="fa-pop" placement="bottom end" offset={4}>
+        <AriaMenu className="fa-popm" aria-label={label} onAction={(k) => azioni.find((a) => a.id === k)?.onPress()}>
+          {azioni.map((a) => (
+            <AriaMenuItem key={a.id} id={a.id} className="fa-popi">
+              {a.label}
+            </AriaMenuItem>
+          ))}
+        </AriaMenu>
+      </AriaPopover>
+    </AriaMenuTrigger>
   )
 }
 

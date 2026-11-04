@@ -1,7 +1,7 @@
 // «Il mio bilancio» (#51): quanto devo dare o ricevere e la cronologia dei miei rimborsi (solo io e l'altra persona).
 import { useState } from 'react'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
-import { Pulsante } from '../../faraway/base'
+import { MenuAzioni, Pulsante } from '../../faraway/base'
 import { bozzaRettifica, cronologia, partiCronologia, STATO_RIMBORSO } from '../../lib/rimborsi'
 import { formatMoney } from '../../lib/money'
 import { ricevuta } from '../../lib/ricevuta'
@@ -50,16 +50,8 @@ export function Bilancio() {
         <div className="fa-list">
           {lista.map((x) => {
             const p = partiCronologia(x, trip.travelers, me?.id)
-            const azione =
-              x.status === 'in_attesa' && x.fromId === me?.id ? (
-                <Pulsante size="sm" color="link-color" onPress={() => void annulla(x.id)}>
-                  Annulla
-                </Pulsante>
-              ) : x.status === 'confermato' && !x.corrects ? (
-                <Pulsante size="sm" color="link-color" onPress={() => setCorreggi(bozzaRettifica(x))}>
-                  Rettifica
-                </Pulsante>
-              ) : null
+            const annullabile = x.status === 'in_attesa' && x.fromId === me?.id
+            const rettificabile = x.status === 'confermato' && !x.corrects
             return (
             <div key={x.id} className="fa-cron">
               <span className={`st ${x.status}`} role="img" aria-label={STATO_RIMBORSO[x.status]}>
@@ -70,8 +62,15 @@ export function Bilancio() {
                 <span className="s">{p.data}</span>
               </span>
               <span className="rt">
-                <span className="amt">{p.importo}</span>
-                {azione}
+                <span className="ln">
+                  {rettificabile ? <MenuAzioni label="Altre azioni" azioni={[{ id: 'rettifica', label: 'Rettifica', onPress: () => setCorreggi(bozzaRettifica(x)) }]} /> : null}
+                  <span className="amt">{p.importo}</span>
+                </span>
+                {annullabile ? (
+                  <Pulsante size="sm" color="link-color" onPress={() => void annulla(x.id)}>
+                    Annulla
+                  </Pulsante>
+                ) : null}
               </span>
             </div>
             )
