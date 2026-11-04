@@ -50,7 +50,8 @@ function RigaCat({ c, cur, open, onToggle, onPlanned, onRename, onDelete }: { c:
             <span className="d" />
             <span className="v">{formatMoney(c.spent, cur)}</span>
           </div>
-          <div className="sub">{c.sub}</div>
+          {c.sub ? <div className="sub">{c.sub}</div> : null}
+          {c.previstoTesto ? <div className="sub">{c.previstoTesto}</div> : null}
         </div>
       </button>
       {open ? (

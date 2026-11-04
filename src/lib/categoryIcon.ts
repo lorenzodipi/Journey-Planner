@@ -18,6 +18,8 @@ import {
   faTrainSubway,
   faTree,
   faUtensils,
+  faShieldHalved,
+  faArrowsUpDown,
   type IconDefinition,
 } from '@fortawesome/free-solid-svg-icons'
 
@@ -43,10 +45,14 @@ export type PinIcon =
   | 'fun'
   | 'grocery'
   | 'fuel'
+  | 'shield'
+  | 'connection'
   | 'pin'
 
 // L'ordine conta: «parco giochi» deve battere «parco».
 const RULES: [PinIcon, RegExp][] = [
+  ['shield', /assicura|polizza|insurance/],
+  ['connection', /connession|\besim\b|e-sim|\bsim\b|internet|roaming|dati mobili|router|pocket wi/],
   // prima di «shopping» («supermercato» contiene «mercat») e di «transit» («stazione di servizio»)
   ['grocery', /supermerc|alimentar|\bspesa\b|konbini|conbini|minimarket|drogheria|negozio di alimenti/],
   ['fuel', /benzin|carburant|rifornimento|distributor|stazione di servizio|area di servizio|gas station|\bgpl\b|\bpompa\b/],
@@ -96,6 +102,8 @@ export const ICONE_CATEGORIA: { id: PinIcon; nome: string }[] = [
   { id: 'spa', nome: 'Terme e relax' },
   { id: 'night', nome: 'Sera' },
   { id: 'fun', nome: 'Svago' },
+  { id: 'shield', nome: 'Assicurazione' },
+  { id: 'connection', nome: 'Connessione' },
   { id: 'pin', nome: 'Generica' },
 ]
 const SCEGLIBILI = new Set<string>(ICONE_CATEGORIA.map((x) => x.id))
@@ -143,6 +151,8 @@ export const PIN_ICONS: Record<PinIcon, IconDefinition> = {
   fun: faMasksTheater,
   grocery: faCartShopping,
   fuel: faGasPump,
+  shield: faShieldHalved,
+  connection: faArrowsUpDown,
   pin: faLocationDot,
 }
 

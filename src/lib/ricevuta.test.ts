@@ -45,7 +45,8 @@ describe('ricevuta', () => {
     const tr = r.categorie.find((c) => c.label === 'Trasporti')!
     expect(tr.spent).toBe(20)
     expect(tr.planned).toBe(25)
-    expect(tr.sub).toBe(`1 di 2 pagati · previsto ${formatMoney(25, 'EUR')}`)
+    expect(tr.sub).toBe('1 di 2 pagati')
+    expect(tr.previstoTesto).toBe(`Previsto ${formatMoney(25, 'EUR')}`)
     expect(r.pagato).toBe(50)
     expect(r.daPagare).toBe(5)
     expect(r.previsto).toBe(55)
@@ -74,7 +75,8 @@ describe('ricevuta', () => {
     const cibo = r.categorie.find((c) => c.key === 'cibo')!
     expect(cibo.plannedSet).toBe(true)
     expect(cibo.id).toBe('c')
-    expect(cibo.sub).toBe(`Ancora vuota · previsto ${formatMoney(600, 'EUR')}`)
+    expect(cibo.sub).toBe('Ancora vuota')
+    expect(cibo.previstoTesto).toBe(`Previsto ${formatMoney(600, 'EUR')}`)
   })
 
   it('sezioni del Dettaglio spese', () => {

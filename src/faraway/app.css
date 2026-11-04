@@ -499,3 +499,5 @@ sup{margin-left:0}
 .fa-qta .fa-ib{width:32px;height:32px;position:relative}
 .fa-qta .fa-ib svg{width:18px;height:18px}
 .fa-qta .fa-ib::after{content:"";position:absolute;inset:-6px}
+/* Ricevuta: le righe sotto il nome della categoria (spese e pagate · previsto) stanno attaccate */
+.k-Ricevuta .cat .sub{margin:2px 0 0}

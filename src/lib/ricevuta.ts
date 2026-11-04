@@ -19,7 +19,7 @@ export const CATEGORIE_BASE = [
   { label: 'Altro', icon: 'i-cat-pin' },
 ] as const
 
-const CAT_ICONS = new Set(['airport', 'cafe', 'castle', 'district', 'food', 'fuel', 'fun', 'grocery', 'museum', 'nature', 'night', 'shopping', 'spa', 'stay', 'temple', 'train', 'transit', 'viewpoint'])
+const CAT_ICONS = new Set(['shield', 'connection', 'airport', 'cafe', 'castle', 'district', 'food', 'fuel', 'fun', 'grocery', 'museum', 'nature', 'night', 'shopping', 'spa', 'stay', 'temple', 'train', 'transit', 'viewpoint'])
 
 export const catKey = (label: string) => label.trim().toLowerCase()
 export const categoriaDi = (e: { category?: string }) => e.category?.trim() || 'Altro'
@@ -80,6 +80,8 @@ export interface RigaCategoria {
   nSpese: number
   voci: { tot: number; paid: number }
   sub: string
+  /** «previsto 1.200,00 €» sulla riga sotto (vuota se non c'è un previsto) */
+  previstoTesto: string
 }
 
 export interface PersonaSaldo {
@@ -104,15 +106,14 @@ export interface Ricevuta {
 
 const pagat = (n: number, masc: boolean) => (n === 1 ? (masc ? 'pagato' : 'pagata') : masc ? 'pagati' : 'pagate')
 
-function sottotitolo(c: Omit<RigaCategoria, 'sub'>, currency: string): string {
-  const prev = c.planned > 0 ? `previsto ${formatMoney(c.planned, currency)}` : ''
-  if (c.spent === 0 && c.voci.tot === 0) return ['Ancora vuota', prev || 'registra una spesa'].join(' · ')
+/** Prima riga sotto il nome: quante spese e quante pagate. Il previsto sta sulla riga sotto (`previstoTesto`). */
+function sottotitolo(c: Omit<RigaCategoria, 'sub' | 'previstoTesto'>): string {
+  if (c.spent === 0 && c.voci.tot === 0) return c.planned > 0 ? 'Ancora vuota' : 'Ancora vuota · registra una spesa'
   const masc = c.key === 'alloggi' || c.key === 'trasporti'
   const parts: string[] = []
   if (c.key === 'alloggi' && c.voci.tot > 0) parts.push(`${c.voci.tot} ${c.voci.tot === 1 ? 'soggiorno' : 'soggiorni'}`)
   else if (c.nSpese > 0 && (c.voci.tot === 0 || c.key === 'voli')) parts.push(`${c.nSpese} ${c.nSpese === 1 ? 'spesa' : 'spese'}`)
   if (c.voci.tot > 0) parts.push(`${c.voci.paid} di ${c.voci.tot} ${pagat(c.voci.tot, masc)}`)
-  if (prev) parts.push(prev)
   return parts.join(' · ')
 }
 
@@ -121,7 +122,7 @@ export function ricevuta(
   spese: SpesaVista[],
   fx: FxContext,
 ): Ricevuta {
-  const map = new Map<string, Omit<RigaCategoria, 'sub'>>()
+  const map = new Map<string, Omit<RigaCategoria, 'sub' | 'previstoTesto'>>()
   const slot = (label: string, cat?: Category) => {
     const key = catKey(label)
     let c = map.get(key)
@@ -168,14 +169,14 @@ export function ricevuta(
   }
   for (const c of map.values()) if (!c.plannedSet) c.planned = round2(Math.max(c.spent + c.unpaid, c.planned))
 
-  const order = (c: Omit<RigaCategoria, 'sub'>) => {
+  const order = (c: Omit<RigaCategoria, 'sub' | 'previstoTesto'>) => {
     const i = CATEGORIE_BASE.findIndex((b) => catKey(b.label) === c.key)
     return c.key === 'altro' ? 1000 : i >= 0 ? i : 100
   }
   const categorie = [...map.values()]
     .filter((c) => (c.key === 'altro' ? c.spent > 0 || c.voci.tot > 0 || c.plannedSet : true))
     .sort((a, b) => order(a) - order(b) || a.label.localeCompare(b.label, 'it'))
-    .map((c) => ({ ...c, sub: sottotitolo(c, trip.baseCurrency) }))
+    .map((c) => ({ ...c, sub: sottotitolo(c), previstoTesto: c.planned > 0 ? `Previsto ${formatMoney(c.planned, trip.baseCurrency)}` : '' }))
 
   const summary = summarizeExpenses(spese, trip.travelers, fx, trip.settled)
   summary.unconverted.forEach((u) => unconverted.add(u))

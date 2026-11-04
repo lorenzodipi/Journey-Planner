@@ -42,6 +42,8 @@ const ICON_COLOR: Record<PinIcon, string> = {
   fun: '#ff5fa8',
   grocery: '#98aa07',
   fuel: '#b97aaa',
+  shield: '#4bc680',
+  connection: '#b397f9',
   pin: '#9fb0c8',
 }
 /** Colori di riserva per le categorie senza un tipo riconosciuto o con il colore già preso. */
