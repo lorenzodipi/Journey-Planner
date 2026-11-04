@@ -344,9 +344,9 @@ sup{margin-left:0}
    per le tappe a orario vincolato al suo posto c'è il lucchetto */
 .k-Tappa .tw{position:relative}
 .k-Tappa .tw.ico .r{min-width:28px;align-content:start}
-.k-Tappa .gl{position:absolute;right:-8px;bottom:-8px;width:36px;height:36px;display:grid;place-items:center;color:var(--ink-muted);opacity:.6}
+.k-Tappa .gl{position:absolute;right:-10px;bottom:-8px;width:36px;height:36px;display:grid;place-items:center;color:var(--ink-muted);opacity:.6}
 .k-Tappa .gl svg{width:20px;height:20px}
-.k-Tappa .grip{all:unset;box-sizing:border-box;position:absolute;right:-8px;bottom:-8px;width:36px;height:36px;display:grid;place-items:center;color:var(--ink-muted);opacity:.6;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;border-radius:8px}
+.k-Tappa .grip{all:unset;box-sizing:border-box;position:absolute;right:-10px;bottom:-8px;width:36px;height:36px;display:grid;place-items:center;color:var(--ink-muted);opacity:.6;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;border-radius:8px}
 .k-Tappa .grip::after{content:"";position:absolute;inset:-4px}
 .k-Tappa .grip svg{width:20px;height:20px}
 .k-Tappa .grip:hover,.k-Tappa .grip:focus-visible,.k-Tappa .stp.drag .grip{opacity:1;color:var(--azzurro-ink)}
