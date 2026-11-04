@@ -4,7 +4,7 @@
 import type { ReactNode } from 'react'
 import { useId, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { Button as AriaButton, Link as AriaLink, Menu as AriaMenu, MenuItem as AriaMenuItem, MenuTrigger as AriaMenuTrigger, Popover as AriaPopover, Switch as AriaSwitch } from 'react-aria-components'
+import { Button as AriaButton, Link as AriaLink, Menu as AriaMenu, MenuItem as AriaMenuItem, MenuTrigger as AriaMenuTrigger, OverlayArrow as AriaOverlayArrow, Popover as AriaPopover, Switch as AriaSwitch } from 'react-aria-components'
 import { cx } from './cx'
 import { apriSelettore } from '../lib/picker'
 import { Loader } from './Loader'
@@ -84,7 +84,14 @@ export function MenuAzioni({ label, azioni }: { label: string; azioni: { id: str
       <AriaButton className="fa-dots" aria-label={label}>
         <Sv name="dotsv" size={20} />
       </AriaButton>
-      <AriaPopover className="fa-pop" placement="bottom end" offset={4}>
+      <AriaPopover className="fa-pop" placement="bottom" offset={12}>
+        <AriaOverlayArrow className="fa-poparr">
+          <svg width={16} height={8} viewBox="0 0 16 8" aria-hidden="true">
+            {/* il fondo copre anche il bordo del pannello sotto la base, il tratto disegna solo i due lati */}
+            <path className="f" d="M-1 -1.5 H17 V0 L8 8 L-1 0 Z" />
+            <path className="s" d="M0 0 L8 8 L16 0" />
+          </svg>
+        </AriaOverlayArrow>
         <AriaMenu className="fa-popm" aria-label={label} onAction={(k) => azioni.find((a) => a.id === k)?.onPress()}>
           {azioni.map((a) => (
             <AriaMenuItem key={a.id} id={a.id} className="fa-popi">

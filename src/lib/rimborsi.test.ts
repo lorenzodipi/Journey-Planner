@@ -46,8 +46,8 @@ describe('dichiarazione', () => {
 
 describe('testi e liste', () => {
   it('richiesta per il destinatario e cronologia', () => {
-    expect(testoRichiesta(r({ amount: 604.72 }), people)).toMatch(/^Giorgio dice di averti dato 604,72\s?€ · 28 nov$/)
-    expect(testoCronologia(r({}), people, 'g')).toMatch(/^Hai dato 50,00\s?€ a Anna · 28 nov$/)
+    expect(testoRichiesta(r({ amount: 604.72 }), people)).toMatch(/^Giorgio dice di averti dato 604,72\s?€ · 28\/11\/2026$/)
+    expect(testoCronologia(r({}), people, 'g')).toMatch(/^Hai dato 50,00\s?€ a Anna · 28\/11\/2026$/)
     expect(testoCronologia(r({ corrects: 'x' }), people, 'a')).toMatch(/^Rettifica: Giorgio ti ha dato/)
   })
   it('chi deve decidere e chi aspetta', () => {

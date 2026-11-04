@@ -24,7 +24,9 @@ export function controllaRimborso(amount: number | null, dovuto: number, currenc
 }
 
 const nome = (travelers: readonly Pick<Traveler, 'id' | 'name'>[], id: string) => travelers.find((t) => t.id === id)?.name.split(/\s+/)[0] ?? '—'
-const giorno = (ymd: string) => new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short' }).format(new Date(`${ymd}T12:00:00`)).replace(/\./g, '')
+/** Data in cifre (gg/mm/aaaa), come in tutta la sezione rimborsi. Accetta «aaaa-mm-gg» o un istante ISO. */
+export const dataNumerica = (d: string) => new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(d.length === 10 ? `${d}T12:00:00` : d))
+const giorno = dataNumerica
 
 /** «Giorgio dice di averti dato 604,72 € · 28 nov» (per il destinatario). */
 export function testoRichiesta(r: Pick<Rimborso, 'fromId' | 'amount' | 'currency' | 'paidOn'>, travelers: readonly Pick<Traveler, 'id' | 'name'>[]): string {
@@ -44,7 +46,7 @@ export function partiCronologia(r: Pick<Rimborso, 'fromId' | 'toId' | 'amount' |
   return {
     chi: `${r.corrects ? 'Rettifica: ' : ''}${chi}`,
     importo: formatMoney(r.amount, r.currency),
-    data: new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(`${r.paidOn}T12:00:00`)),
+    data: dataNumerica(r.paidOn),
   }
 }
 

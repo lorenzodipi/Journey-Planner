@@ -5,13 +5,13 @@ import { Pillola, Pulsante } from '../../faraway/base'
 import { debitiPerSpesa, type DebitoSpesa } from '../../lib/debitiSpese'
 import { formatMoney, round2 } from '../../lib/money'
 import { iconaSpesa } from '../../lib/ricevuta'
+import { dataNumerica } from '../../lib/rimborsi'
 import type { SpesaVista } from '../../lib/spese'
 import { Ic } from '../../ui/Sprite'
 import type { FxContext } from '../../lib/budget'
 import type { Trip } from '../../types'
 import { DichiaraSheet } from './Rimborsi'
 
-const giorno = (iso: string) => new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short' }).format(new Date(iso)).replace(/\./g, '')
 
 function Stato({ d }: { d: DebitoSpesa }) {
   if (d.stato === 'pagato') return <Pillola tone="acq" icon="check">Pagato</Pillola>
@@ -48,7 +48,7 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
                     <span style={{ minWidth: 0 }}>
                       <span className="t">{d.expense.label}</span>
                       <span className="s">
-                        {verso === 'devo' ? `Da dare a ${nome(d.otherId)}` : `Da ricevere da ${nome(d.otherId)}`} · {giorno(d.expense.spentAt)}
+                        {verso === 'devo' ? `Da dare a ${nome(d.otherId)}` : `Da ricevere da ${nome(d.otherId)}`} · {dataNumerica(d.expense.spentAt)}
                       </span>
                     </span>
                     <span className="rt">
