@@ -93,6 +93,11 @@ export function AltroPage() {
         <Riga icon={<Avatar initials={initials(nome)} n={me ? discOf(trip, me.id) : 1} large />} title={nome} sub="Account e profilo" onPress={() => navigate('/altro/account')} />
       </section>
 
+      <div className="fa-list">
+        <Riga icon="i-sez-bag" title="Tutti i viaggi" sub={viaggiText(t.trips.length)} onPress={() => navigate('/viaggi')} />
+        <Riga icon="i-azi-settings" title="Impostazioni" sub="Aspetto, notifiche e lingua" onPress={() => navigate('/altro/impostazioni')} />
+      </div>
+
       <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Il viaggio</h2>
       <div className="fa-list">
         {righe.map((x) => (
@@ -102,8 +107,6 @@ export function AltroPage() {
 
       <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Faraway</h2>
       <div className="fa-list">
-        <Riga icon="i-sez-bag" title="Tutti i viaggi" sub={viaggiText(t.trips.length)} onPress={() => navigate('/viaggi')} />
-        <Riga icon="i-azi-settings" title="Impostazioni" sub="Aspetto, notifiche e lingua" onPress={() => navigate('/altro/impostazioni')} />
         <Riga icon={<DiscoGlifo icona={GLIFI.rete} colore="#F893BC" />} title="Dati sul telefono" sub={t.pending > 0 ? `${t.pending === 1 ? '1 modifica' : `${t.pending} modifiche`} in coda` : savedTime ? `Aggiornati alle ${savedTime}` : 'Nessuna copia salvata'} onPress={() => navigate('/altro/dati')} />
       </div>
     </Schermata>

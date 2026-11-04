@@ -3,7 +3,7 @@ import { useAuth } from '../../lib/auth'
 import { distintivi, numeriProfilo, sottotitoloProfilo } from '../../lib/profilo'
 import { discOf, initials, useMe } from '../../state/me'
 import { useTrips } from '../../state/trip'
-import { Avatar, Barra } from '../../faraway/base'
+import { Avatar, Barra, Pulsante } from '../../faraway/base'
 import { Sv } from '../../faraway/icons'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
 
@@ -56,6 +56,14 @@ export function ProfiloPage() {
           </div>
         ))}
       </div>
+
+      {auth.status === 'signed-in' ? (
+        <div style={{ marginTop: 8 }}>
+          <Pulsante color="tertiary-destructive" iconLeading="out" onPress={() => void auth.signOut()}>
+            Esci dall’account
+          </Pulsante>
+        </div>
+      ) : null}
     </Schermata>
   )
 }
