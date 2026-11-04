@@ -1,6 +1,7 @@
 // Giorni raggruppati come nel mock Fa-08: giorni consecutivi nella stessa città, i giorni di volo
-// («Milano → Osaka») e l'ultimo giorno di rientro («Rientro»). Una città che torna più tardi
-// forma un gruppo nuovo.
+// («Milano → Osaka»), i giorni di volo all'inizio («Partenza») e gli ultimi di rientro («Rientro»).
+// Il giorno in cui si atterra a inizio viaggio sta già nella città di arrivo (si è lì dal pomeriggio).
+// Una città che torna più tardi forma un gruppo nuovo.
 import { dateInZone } from './flights'
 import { parseYmd } from './dates'
 import type { Day, Trip } from '../types'
@@ -61,6 +62,8 @@ export function groupDays(trip: Pick<Trip, 'days' | 'flights'>, today: string): 
   const groups: DayGroup[] = []
   const lastIdx = days.length - 1
   let i = 0
+  /** Giorno d'arrivo a inizio viaggio: apre il gruppo della città invece di restare in «Partenza». */
+  let arrivo = -1
   while (i <= lastIdx) {
     const d = days[i]
     // ultimi giorni con un volo (anche la partenza del giorno prima): rientro
@@ -76,18 +79,24 @@ export function groupDays(trip: Pick<Trip, 'days' | 'flights'>, today: string): 
       break
     }
     // giorni di volo consecutivi (partenza e arrivo del giorno dopo)
-    if (flightOn(trip, d.date) && d.items.length === 0) {
+    if (i !== arrivo && flightOn(trip, d.date) && d.items.length === 0) {
       let j = i
       while (j + 1 < lastIdx && flightOn(trip, days[j + 1].date) && days[j + 1].items.length === 0) j++
+      // a inizio viaggio: l'ultimo giorno di volo è l'arrivo e va con la città che segue
+      const partenza = i === 0
+      if (partenza && j > i && j + 1 <= lastIdx && (days[j].city || '').trim().toLowerCase() === (days[j + 1].city || '').trim().toLowerCase()) {
+        arrivo = j
+        j--
+      }
       const span = days.slice(i, j + 1)
       const before = days[i - 1]?.city
       const fromCity = before || span[0].city || ''
       const after = days[j + 1]?.city
       const toCity = after || span[span.length - 1].city || ''
-      const cells = span.map((x, k) => cellFor(trip, x, today, span.length > 1 ? (k === 0 ? 'out' : k === span.length - 1 ? 'in' : null) : 'out'))
+      const cells = span.map((x, k) => cellFor(trip, x, today, span.length > 1 ? (k === 0 ? 'out' : k === span.length - 1 && arrivo < 0 ? 'in' : null) : 'out'))
       groups.push({
         kind: 'travel',
-        title: fromCity && toCity && fromCity !== toCity ? `${fromCity} → ${toCity}` : toCity || fromCity || 'In viaggio',
+        title: partenza ? 'Partenza' : fromCity && toCity && fromCity !== toCity ? `${fromCity} → ${toCity}` : toCity || fromCity || 'In viaggio',
         meta: `${plural(span.length, 'giorno', 'giorni')} · ${rangeText(span[0].date, span[span.length - 1].date)}`,
         cells,
       })
@@ -99,7 +108,7 @@ export function groupDays(trip: Pick<Trip, 'days' | 'flights'>, today: string): 
     let j = i
     while (j + 1 <= lastIdx && (days[j + 1].city || '').trim().toLowerCase() === city.toLowerCase() && !(j + 1 === lastIdx && flightOn(trip, days[j + 1].date)) && !(flightOn(trip, days[j + 1].date) && days[j + 1].items.length === 0)) j++
     const span = days.slice(i, j + 1)
-    const cells = span.map((x) => cellFor(trip, x, today, null))
+    const cells = span.map((x, k) => cellFor(trip, x, today, k === 0 && i === arrivo ? 'in' : null))
     const free = cells.filter((c) => c.state === 'free').length
     groups.push({
       kind: 'city',

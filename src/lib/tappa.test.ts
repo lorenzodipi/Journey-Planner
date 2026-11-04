@@ -71,6 +71,18 @@ describe('gruppi di Giorni', () => {
     expect(g[0].cells.map((c) => c.state)).toEqual(['past', 'today'])
     expect(g[2].meta).toBe('1 giorno · 26 nov · 1 libero')
   })
+  it('a inizio viaggio i giorni di volo sono «Partenza» e il giorno d\'arrivo va nella città', () => {
+    const lg = (n: number, dep: string, arr: string, fromTz: string, toTz: string) => ({ id: `l${n}`, seq: n, from: 'MXP', to: 'HND', departAt: dep, arriveAt: arr, fromTz, toTz })
+    const trip = {
+      days: [day('a', '2026-11-21', 'Tokyo', 0), day('b', '2026-11-22', 'Tokyo', 0), day('c', '2026-11-23', 'Tokyo', 0), day('d', '2026-11-24', 'Tokyo')],
+      flights: [{ id: 'f', title: '', currency: 'EUR', scope: 'total' as const, paid: true, legs: [lg(1, '2026-11-21T10:00:00.000Z', '2026-11-21T22:00:00.000Z', 'Europe/Rome', 'Asia/Shanghai'), lg(2, '2026-11-21T17:00:00.000Z', '2026-11-22T06:00:00.000Z', 'Asia/Shanghai', 'Asia/Tokyo')] }],
+    }
+    const g = groupDays(trip, '2026-11-01')
+    expect(g.map((x) => x.title)).toEqual(['Partenza', 'Tokyo'])
+    expect(g[0].cells.map((c) => [c.day.id, c.label])).toEqual([['a', 'Partenza']])
+    expect(g[1].cells.map((c) => c.day.id)).toEqual(['b', 'c', 'd'])
+    expect(g[1].cells[0].label).toBe('Arrivo')
+  })
   it('il giorno della partenza prima del rientro va sotto «Rientro», non in un gruppo a sé', () => {
     const lg = (n: number, dep: string, arr: string, fromTz: string, toTz: string) => ({ id: `l${n}`, seq: n, from: 'KIX', to: 'MXP', departAt: dep, arriveAt: arr, fromTz, toTz })
     const trip = {

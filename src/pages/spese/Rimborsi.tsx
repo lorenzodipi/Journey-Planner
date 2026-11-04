@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'wouter'
 import { Banner, Campo, Pillola, Pulsante } from '../../faraway/base'
 import { Foglio } from '../../faraway/Foglio'
-import { chiRichiesta, controllaRimborso, daDecidere, dataNumerica, inAttesaMie, STATO_RIMBORSO, testoRichiesta } from '../../lib/rimborsi'
+import { chiRichiesta, controllaRimborso, daDecidere, dataNumerica, inAttesaMie, STATO_RIMBORSO } from '../../lib/rimborsi'
 import { formatMoney, parseAmount } from '../../lib/money'
 import { tripToday } from '../../lib/today'
 import { useMe } from '../../state/me'
@@ -140,12 +140,16 @@ export function RimborsiCard({ trip, conMie = true }: { trip: Trip; /** Le mie r
     <div style={{ display: 'grid', gap: 8 }}>
       {dec.map((r) => (
         <Banner key={r.id} tone="az" icon="info" action={<Pulsante size="sm" onPress={() => setAperta(r)}>Rispondi</Pulsante>}>
-          {testoRichiesta(r, trip.travelers)}
+          {chiRichiesta(r, trip.travelers)}
+          <br />
+          {dataNumerica(r.paidOn)}
         </Banner>
       ))}
       {mie.map((r) => (
         <Banner key={r.id} tone="az" icon="clock" action={<Pulsante size="sm" color="secondary" onPress={() => void annulla(r)}>Annulla</Pulsante>}>
-          Hai dichiarato {formatMoney(r.amount, r.currency)} a {first(trip, r.toId)} · {STATO_RIMBORSO.in_attesa.toLowerCase()}
+          Hai dichiarato {formatMoney(r.amount, r.currency)} a {first(trip, r.toId)}
+          <br />
+          {STATO_RIMBORSO.in_attesa}
         </Banner>
       ))}
       {aperta ? <DecidiSheet trip={trip} r={aperta} onClose={() => setAperta(null)} /> : null}
@@ -159,8 +163,10 @@ export function RimborsiOggi({ trip }: { trip: Trip }) {
   if (dec.length === 0) return null
   return (
     <Banner tone="az" icon="info" action={<Link href="/spese" className="fa-btn sm">Rispondi</Link>}>
-      {testoRichiesta(dec[0], trip.travelers)}
+      {chiRichiesta(dec[0], trip.travelers)}
       {dec.length > 1 ? ` (+${dec.length - 1})` : ''}
+      <br />
+      {dataNumerica(dec[0].paidOn)}
     </Banner>
   )
 }
