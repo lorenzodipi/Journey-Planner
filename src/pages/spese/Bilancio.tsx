@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
 import { Pulsante } from '../../faraway/base'
-import { bozzaRettifica, cronologia, testoCronologia } from '../../lib/rimborsi'
+import { bozzaRettifica, cronologia, partiCronologia, STATO_RIMBORSO } from '../../lib/rimborsi'
 import { formatMoney } from '../../lib/money'
 import { ricevuta } from '../../lib/ricevuta'
 import { riassunto } from '../../lib/spese'
@@ -10,7 +10,8 @@ import { useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrip, useTrips } from '../../state/trip'
 import { DebitiSpesa } from './DebitiSpesa'
-import { DichiaraSheet, RimborsiCard, StatoPillola } from './Rimborsi'
+import { Sv } from '../../faraway/icons'
+import { DichiaraSheet, RimborsiCard } from './Rimborsi'
 
 export function Bilancio() {
   const trip = useTrip()
@@ -45,24 +46,32 @@ export function Bilancio() {
         <p className="fa-m" style={{ margin: 0 }}>Ancora nessun rimborso. Quando dichiari di aver pagato qualcuno, lo trovi qui con il suo stato.</p>
       ) : (
         <div className="fa-list">
-          {lista.map((x) => (
+          {lista.map((x) => {
+            const p = partiCronologia(x, trip.travelers, me?.id)
+            const azione =
+              x.status === 'in_attesa' && x.fromId === me?.id ? (
+                <Pulsante size="sm" color="link-color" onPress={() => void annulla(x.id)}>
+                  Annulla
+                </Pulsante>
+              ) : x.status === 'confermato' && !x.corrects ? (
+                <Pulsante size="sm" color="link-color" onPress={() => setCorreggi(bozzaRettifica(x))}>
+                  Rettifica
+                </Pulsante>
+              ) : null
+            return (
             <div key={x.id} className="fa-cron">
-              <span className="t">{testoCronologia(x, trip.travelers, me?.id)}</span>
-              <span className="rt">
-                {x.status === 'in_attesa' && x.fromId === me?.id ? (
-                  <Pulsante size="sm" color="link-color" onPress={() => void annulla(x.id)}>
-                    Annulla
-                  </Pulsante>
-                ) : null}
-                {x.status === 'confermato' && !x.corrects ? (
-                  <Pulsante size="sm" color="link-color" onPress={() => setCorreggi(bozzaRettifica(x))}>
-                    Rettifica
-                  </Pulsante>
-                ) : null}
-                <StatoPillola stato={x.status} />
+              <span className={`st ${x.status}`} role="img" aria-label={STATO_RIMBORSO[x.status]}>
+                <Sv name={x.status === 'confermato' ? 'check' : x.status === 'in_attesa' ? 'clock' : 'close'} size={22} />
               </span>
+              <span className="tx">
+                <span className="t">{p.chi}</span>
+                <span className="amt">{p.importo}</span>
+                <span className="s">{p.data}</span>
+              </span>
+              {azione}
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </Schermata>

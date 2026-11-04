@@ -38,6 +38,16 @@ export function testoCronologia(r: Pick<Rimborso, 'fromId' | 'toId' | 'amount' |
   return `${r.corrects ? 'Rettifica: ' : ''}${base} · ${giorno(r.paidOn)}`
 }
 
+/** La stessa riga della cronologia, divisa nei tre pezzi che la card mette su righe diverse: chi, quanto, quando (gg/mm/aaaa). */
+export function partiCronologia(r: Pick<Rimborso, 'fromId' | 'toId' | 'amount' | 'currency' | 'paidOn' | 'corrects'>, travelers: readonly Pick<Traveler, 'id' | 'name'>[], me: string | undefined) {
+  const chi = r.fromId === me ? `Hai dato a ${nome(travelers, r.toId)}` : `${nome(travelers, r.fromId)} ti ha dato`
+  return {
+    chi: `${r.corrects ? 'Rettifica: ' : ''}${chi}`,
+    importo: formatMoney(r.amount, r.currency),
+    data: new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(`${r.paidOn}T12:00:00`)),
+  }
+}
+
 /** Richieste in attesa che aspettano la mia decisione. */
 export const daDecidere = (list: readonly Rimborso[] | undefined, me: string | undefined): Rimborso[] =>
   me ? (list ?? []).filter((r) => r.status === 'in_attesa' && r.toId === me) : []
