@@ -44,6 +44,7 @@ const PATHS = {
   file: <path d="M7 3.5h7l4 4V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1zM14 3.5V8h4" />,
   download: <path d="M12 4v11M8 11l4 4 4-4M5 19h14" />,
   move: <path d="M8 7l-4 5 4 5M16 7l4 5-4 5M4 12h16" />,
+  save: <><path d="M6 4h10l4 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" /><path d="M8 4v4.5h7V4M7.5 20v-5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v5" /></>,
 } as const
 
 export type SvName = keyof typeof PATHS

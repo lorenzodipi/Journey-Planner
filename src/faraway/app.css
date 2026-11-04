@@ -128,8 +128,8 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .k-Ricevuta .fa-rcat .cat:focus-visible{outline:3px solid var(--focus);outline-offset:4px}
 .k-Ricevuta .cat svg.ic,.k-Ricevuta .cat .ic{width:32px;height:32px}
 .k-Ricevuta .fa-rcat-ed{display:grid;gap:16px;margin:16px 0 0 48px}
-.k-Ricevuta .fa-rcat-ed .acts{display:flex;gap:8px;flex-wrap:wrap;margin:0}
-.k-Ricevuta .fa-rcat-ed .fa-btn{width:auto}
+.k-Ricevuta .fa-rcat-ed .acts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin:0}
+.k-Ricevuta .fa-rcat-ed .fa-btn{width:100%;min-width:0;padding:0 8px;white-space:nowrap}
 .k-Ricevuta .ok svg{flex:none}
 
 /* Stati di sistema (#25, #49) */

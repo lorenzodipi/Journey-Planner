@@ -68,12 +68,12 @@ function RigaCat({ c, cur, open, onToggle, onPlanned, onRename, onDelete }: { c:
             error={error}
           />
           <div className="acts">
-            <Pulsante size="sm" onPress={() => void save()} isLoading={busy}>
+            <Pulsante size="sm" iconLeading="save" onPress={() => void save()} isLoading={busy}>
               Salva
             </Pulsante>
             {c.personale && c.id ? (
               <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={() => void onDelete(c)}>
-                Elimina categoria
+                Elimina
               </Pulsante>
             ) : (
               <Pulsante size="sm" color="secondary" onPress={onToggle}>
