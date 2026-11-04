@@ -364,7 +364,7 @@ sup{margin-left:0}
 .fa-dbt .top{align-items:start}
 .fa-dbt .rt{display:grid;justify-items:end;gap:8px}
 .fa-dbt .rt .amt{line-height:24px}
-.k-Ricevuta .pp .sub{display:block}
+.k-Ricevuta .pp .sub{display:block;margin:0}
 .fa-cron{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:16px;align-items:start;padding:16px}
 .fa-cron+.fa-cron{border-top:1px solid var(--hairline)}
 .fa-cron .t{display:block;font:600 16px/24px var(--font-sans);letter-spacing:.16px;overflow-wrap:anywhere}
