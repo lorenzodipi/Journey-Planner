@@ -12,6 +12,7 @@ import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { Transport, TransportMode, Trip } from '../../types'
 import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
+import { CampoValuta } from '../../faraway/CampoValuta'
 import { ChiHaPagato } from '../../faraway/ChiHaPagato'
 import { cx } from '../../faraway/cx'
 import { Foglio } from '../../faraway/Foglio'
@@ -176,12 +177,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
         ) : null}
         <div className="fa-2c">
           <Campo label="Prezzo" inputMode="decimal" value={cost} onChange={setCost} placeholder="es. 15,50" error={errors.cost} autoFocus={focus === 'prezzo'} />
-          <div className="fa-fld">
-            <label htmlFor="tr-val">Valuta</label>
-            <span className="fa-in">
-              <input placeholder="EUR" id="tr-val" list="tr-valute" value={currency} onChange={(e) => setCurrency(e.currentTarget.value.toUpperCase().slice(0, 3))} maxLength={3} />
-            </span>
-          </div>
+          <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, t?.currency)} />
         </div>
         <div className="fa-chips" role="group" aria-label="Il prezzo è">
           <Chip on={scope === 'per_person'} onPress={() => setScope('per_person')}>A persona</Chip>
@@ -206,7 +202,6 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
         <Campo label="Nota" textarea value={notes} onChange={setNotes} />
         {t ? <DocumentiCollegati trip={trip} kind={'transport'} refId={t.id} /> : null}
         {errors.form ? <Errore>{errors.form}</Errore> : null}
-        <datalist id="tr-valute">{tripCurrencies(trip, t?.currency).map((c) => <option key={c} value={c} />)}</datalist>
       </form>
     </Foglio>
   )

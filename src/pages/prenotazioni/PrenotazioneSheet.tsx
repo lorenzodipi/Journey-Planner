@@ -15,6 +15,7 @@ import { schema } from '../../lib/schema'
 import type { Booking, BookingStatus, BookingType, TimeKind, Trip } from '../../types'
 import { formatShort } from '../../lib/dates'
 import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
+import { CampoValuta } from '../../faraway/CampoValuta'
 import { cx } from '../../faraway/cx'
 import { Foglio, useConferma } from '../../faraway/Foglio'
 import { TIME_KIND_LABEL } from '../../lib/vincoli'
@@ -197,12 +198,7 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
         <Campo label="Link" type="url" value={url} onChange={setUrl} placeholder="https://…" error={errors.url} />
         <div className="fa-2c">
           <Campo label="Costo" inputMode="decimal" value={cost} onChange={setCost} placeholder="es. 45,00" error={errors.cost} />
-          <div className="fa-fld">
-            <label htmlFor="pr-val">Valuta</label>
-            <span className="fa-in">
-              <input placeholder="EUR" id="pr-val" list="pr-valute" value={currency} onChange={(e) => setCurrency(e.currentTarget.value.toUpperCase().slice(0, 3))} maxLength={3} />
-            </span>
-          </div>
+          <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, b?.currency)} />
         </div>
         <div className="fa-chips" role="group" aria-label="Il costo è">
           <Chip on={scope === 'per_person'} onPress={() => setScope('per_person')}>A persona</Chip>
@@ -248,7 +244,6 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
         <Interruttore label="Disponibile offline" hint="Il file resta sul telefono e si apre anche senza rete." isSelected={offline} onChange={setOffline} />
         <Campo label="Nota" textarea value={notes} onChange={setNotes} />
         {errors.form ? <Errore>{errors.form}</Errore> : null}
-        <datalist id="pr-valute">{tripCurrencies(trip, b?.currency).map((c) => <option key={c} value={c} />)}</datalist>
       </form>
       {confirmNode}
       {avvisoData ? (

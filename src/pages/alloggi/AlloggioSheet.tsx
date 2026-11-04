@@ -13,6 +13,7 @@ import { luogoDaAlloggio, luogoEsistente } from '../../lib/luogoAlloggio'
 import { parseMapsUrl } from '../../lib/mapsUrl'
 import { reverseGeocode } from '../../lib/geocode'
 import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
+import { CampoValuta } from '../../faraway/CampoValuta'
 import { cx } from '../../faraway/cx'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
@@ -160,12 +161,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
         <Campo label="Codice di prenotazione" value={code} onChange={(v) => setCode(v.toUpperCase())} autoComplete="off" />
         <div className="fa-2c">
           <Campo label="Costo totale" inputMode="decimal" value={cost} onChange={setCost} placeholder="es. 450,00" error={errors.cost} />
-          <div className="fa-fld">
-            <label htmlFor="al-val">Valuta</label>
-            <span className="fa-in">
-              <input placeholder="EUR" id="al-val" list="al-valute" value={currency} onChange={(e) => setCurrency(e.currentTarget.value.toUpperCase().slice(0, 3))} maxLength={3} />
-            </span>
-          </div>
+          <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, s?.currency)} />
         </div>
         <Interruttore label="Pagato" hint={paid ? 'Con un costo, l’alloggio diventa una spesa.' : 'Non pagato'} isSelected={paid} onChange={setPaid} />
         {paid && cost.trim() ? (
@@ -214,7 +210,6 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
         <Campo label="Nota" textarea value={notes} onChange={setNotes} />
         {s ? <DocumentiCollegati trip={trip} kind={'stay'} refId={s.id} /> : null}
         {errors.form ? <Errore>{errors.form}</Errore> : null}
-        <datalist id="al-valute">{tripCurrencies(trip, s?.currency).map((c) => <option key={c} value={c} />)}</datalist>
       </form>
     {nodoConflitto}
     </Foglio>

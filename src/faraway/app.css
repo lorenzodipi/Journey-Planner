@@ -387,3 +387,7 @@ sup{margin-left:0}
 .fa-cron .st.in_attesa{background:var(--azzurro-soft);color:var(--azzurro-ink)}
 [data-theme="light"] .fa-cron .st.confermato{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--acqua-ink) 16%,var(--acqua-soft))}
 [data-theme="light"] .fa-cron .st.in_attesa{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--azzurro-ink) 16%,var(--azzurro-soft))}
+
+/* Le <select> hanno la freccia: senza si leggerebbero come testo (la valuta della spesa, con la sua etichetta, ne è esclusa) */
+.fa-in:has(>select:not([aria-label="Valuta"])){position:relative}
+.fa-in:has(>select:not([aria-label="Valuta"]))::after{content:"";flex:none;width:20px;height:20px;background:currentColor;opacity:.7;pointer-events:none;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center/contain no-repeat}

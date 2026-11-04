@@ -15,6 +15,7 @@ import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { Flight, Trip } from '../../types'
 import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
+import { CampoValuta } from '../../faraway/CampoValuta'
 import { CampoFuso } from '../../faraway/CampoFuso'
 import { ChiHaPagato } from '../../faraway/ChiHaPagato'
 import { cx } from '../../faraway/cx'
@@ -214,12 +215,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
 
         <div className="fa-2c">
           <Campo label="Costo" inputMode="decimal" value={cost} onChange={setCost} placeholder="es. 623" error={errors.cost} />
-          <div className="fa-fld">
-            <label htmlFor="volo-val">Valuta</label>
-            <span className="fa-in">
-              <input placeholder="EUR" id="volo-val" list="volo-valute" value={currency} onChange={(e) => setCurrency(e.currentTarget.value.toUpperCase().slice(0, 3))} maxLength={3} />
-            </span>
-          </div>
+          <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, flight?.currency)} />
         </div>
         <div className="fa-chips" role="group" aria-label="Il costo è">
           <Chip on={scope === 'per_person'} onPress={() => setScope('per_person')}>A persona</Chip>
@@ -239,7 +235,6 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
         <Campo label="Note" textarea value={notes} onChange={setNotes} />
         {flight ? <DocumentiCollegati trip={trip} kind={'flight'} refId={flight.id} /> : null}
         {errors.form ? <Errore>{errors.form}</Errore> : null}
-        <datalist id="volo-valute">{tripCurrencies(trip, flight?.currency).map((c) => <option key={c} value={c} />)}</datalist>
       </form>
     </Foglio>
   )
