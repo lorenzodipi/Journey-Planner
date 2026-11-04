@@ -3,7 +3,7 @@ import { RicercaPage } from './pages/altro/RicercaPage'
 import { Redirect, Route, Router, Switch, useLocation } from 'wouter'
 import type { ReactNode } from 'react'
 import { navigate as hashNavigate, useHashLocation } from 'wouter/use-hash-location'
-import { useAuth } from './lib/auth'
+import { SCEGLI_DOPO_ACCESSO, useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
 import { AlloggiPage } from './pages/alloggi/AlloggiPage'
 import { NotificheHost } from './state/NotificheHost'
@@ -60,14 +60,34 @@ function ScrollToTop() {
 
 export function App() {
   const auth = useAuth()
-  const { active: trip, trips, status, refresh, receivedInvites } = useTrips()
-  const [scelto, setScelto] = useState(() => {
+  const { active: trip, status, refresh, receivedInvites } = useTrips()
+  // appena fatto l'accesso si sceglie il viaggio; riaprendo l'app senza uscire dall'account si torna dov'eri
+  const [daScegliere, setDaScegliere] = useState(() => {
     try {
-      return sessionStorage.getItem('jp.viaggio.scelto') === '1'
+      return localStorage.getItem(SCEGLI_DOPO_ACCESSO) === '1'
     } catch {
       return false
     }
   })
+  useEffect(() => {
+    // l'accesso avviene con l'app già aperta: rileggo il segno quando si entra
+    if (auth.status !== 'signed-in') return
+    try {
+      setDaScegliere(localStorage.getItem(SCEGLI_DOPO_ACCESSO) === '1')
+    } catch {
+      // ignorato
+    }
+  }, [auth.status])
+  useEffect(() => {
+    // senza viaggi non c'è nulla da scegliere: il primo viaggio creato si apre direttamente
+    if (status !== 'ready' || trip || !daScegliere) return
+    try {
+      localStorage.removeItem(SCEGLI_DOPO_ACCESSO)
+    } catch {
+      // ignorato
+    }
+    setDaScegliere(false)
+  }, [status, trip, daScegliere])
 
   // avvio, errore e caricamento con gli stati del design system (#25, #49)
   const saved = loadSnapshot()
@@ -84,17 +104,19 @@ export function App() {
   if (status === 'loading') return screen(<SchermataCaricamento title={title} />)
   if (status === 'error') return screen(<SchermataErrore title={title} onRetry={() => void refresh()} />)
 
-  if (!trip) return receivedInvites.length > 0 ? screen(<ViaggiPage scelta onChosen={() => undefined} />) : <PrimoViaggio />
+  if (!trip) {
+    return receivedInvites.length > 0 ? screen(<ViaggiPage scelta onChosen={() => undefined} />) : <PrimoViaggio />
+  }
 
-  // dopo l'accesso, con più di un viaggio, si sceglie quale aprire (#43)
-  if (auth.status === 'signed-in' && trips.length > 1 && !scelto) {
+  // subito dopo l'accesso si sceglie quale viaggio aprire (#43), anche se ce n'è uno solo
+  if (auth.status === 'signed-in' && daScegliere) {
     const fatto = () => {
       try {
-        sessionStorage.setItem('jp.viaggio.scelto', '1')
+        localStorage.removeItem(SCEGLI_DOPO_ACCESSO)
       } catch {
         // ignorato
       }
-      setScelto(true)
+      setDaScegliere(false)
     }
     return screen(<ViaggiPage scelta onChosen={fatto} />)
   }

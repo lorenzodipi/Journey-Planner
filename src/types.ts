@@ -337,6 +337,8 @@ export interface Rimborso {
   decidedAt?: string
   /** Rettifica: il rimborso confermato che corregge. */
   corrects?: string
+  /** Spesa per cui è stato dichiarato (0042): copre quella prima delle altre. */
+  expenseId?: string
 }
 
 /** Rimborso confermato, visibile a tutti i partecipanti solo come importo (serve a calcolare i saldi). */

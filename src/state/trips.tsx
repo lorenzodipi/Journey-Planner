@@ -136,7 +136,7 @@ interface TripsValue {
   setExpenseCategoryArchived: (id: string, archived: boolean) => Result
   removeExpenseFile: (id: string, path: string) => Result
   /** Rimborsi (#51): servono la rete e la migrazione 0029. */
-  declareSettlement: (input: { tripId: string; fromId: string; toId: string; amount: number; currency: string; paidOn: string; corrects?: string }) => Result
+  declareSettlement: (input: { tripId: string; fromId: string; toId: string; amount: number; currency: string; paidOn: string; corrects?: string; expenseId?: string }) => Result
   cancelSettlement: (id: string) => Result
   /** Documenti (#52): servono la rete e la migrazione 0030. */
   createDocument: (tripId: string, input: planning.DocumentoInput) => Result

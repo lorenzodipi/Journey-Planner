@@ -26,6 +26,29 @@ describe('debiti per spesa', () => {
     const g = debitiPerSpesa([spesa('assicurazione', 175, '01')], T, fx, 'gaia', [], [richiesta(87.5, 'in_attesa')])
     expect(g[0]).toMatchObject({ stato: 'in_attesa', residuo: 87.5, inAttesa: 87.5 })
   })
+  it('«Ho pagato» su una card copre quella spesa, non la più vecchia (bug del giro senza fine)', () => {
+    const r = { ...richiesta(20, 'confermato'), id: 'r1', expenseId: 'cena' }
+    const g = debitiPerSpesa(s, T, fx, 'gaia', [{ id: 'r1', fromId: 'gaia', toId: 'lorenzo', amount: 20 }], [r])
+    const by = Object.fromEntries(g.map((x) => [x.expenseId, x]))
+    expect(by.cena).toMatchObject({ stato: 'pagato', residuo: 0, confermati: [{ id: 'r1', amount: 20 }] })
+    expect(by.assicurazione).toMatchObject({ stato: 'da_pagare', residuo: 87.5 })
+    // e lo stesso dal lato di Lorenzo
+    const l = debitiPerSpesa(s, T, fx, 'lorenzo', [], [r])
+    expect(l.find((x) => x.expenseId === 'cena')?.stato).toBe('pagato')
+  })
+  it('una rettifica confermata riapre la spesa del rimborso che corregge', () => {
+    const orig = { ...richiesta(20, 'confermato'), id: 'r1', expenseId: 'cena' }
+    const rett = { ...richiesta(20, 'confermato'), id: 'r2', fromId: 'lorenzo', toId: 'gaia', corrects: 'r1' }
+    const g = debitiPerSpesa(s, T, fx, 'gaia', [], [orig, rett])
+    expect(g.find((x) => x.expenseId === 'cena')).toMatchObject({ stato: 'da_pagare', residuo: 20, confermati: [] })
+  })
+  it('una richiesta in attesa legata alla spesa segna quella card', () => {
+    const r = { ...richiesta(20, 'in_attesa'), id: 'r3', expenseId: 'cena' }
+    const g = debitiPerSpesa(s, T, fx, 'gaia', [], [r])
+    const by = Object.fromEntries(g.map((x) => [x.expenseId, x]))
+    expect(by.cena).toMatchObject({ stato: 'in_attesa', richieste: [{ id: 'r3', amount: 20 }] })
+    expect(by.assicurazione.stato).toBe('da_pagare')
+  })
   it('le spese pagate da me per me non creano debiti', () => {
     const solo = { ...spesa('mia', 30, '03'), shares: [{ travelerId: 'lorenzo', weight: 1 }] }
     expect(debitiPerSpesa([solo], T, fx, 'gaia', [], [])).toEqual([])

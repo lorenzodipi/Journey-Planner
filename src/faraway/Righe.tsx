@@ -1,26 +1,15 @@
 // Righe e card che si aprono in linea (regola di Lorenzo: niente modali per i dettagli).
 // Una sola aperta per lista: aprirne una chiude la precedente; freccia che ruota e aria-expanded.
 import type { ReactNode } from 'react'
-import { useCallback, useEffect, useId, useState } from 'react'
+import { useCallback, useId, useState } from 'react'
 import { Ic } from '../ui/Sprite'
 import { cx } from './cx'
 import { Sv, type SvName } from './icons'
 
-/** Quale elemento della lista è aperto (uno solo). Il tasto «indietro» di Android lo chiude prima di tornare indietro. */
+/** Quale elemento della lista è aperto (uno solo). «Indietro» non lo richiude: torna alla pagina precedente. */
 export function useUnaAperta<T extends string = string>(initial: T | null = null) {
   const [open, setOpen] = useState<T | null>(initial)
   const toggle = useCallback((id: T) => setOpen((cur) => (cur === id ? null : id)), [])
-  useEffect(() => {
-    if (open === null) return
-    const root = document.documentElement
-    root.setAttribute('data-card-open', '')
-    const onClose = () => setOpen(null)
-    window.addEventListener('fa:close-card', onClose)
-    return () => {
-      root.removeAttribute('data-card-open')
-      window.removeEventListener('fa:close-card', onClose)
-    }
-  }, [open])
   return { open, toggle, setOpen, isOpen: (id: T) => open === id }
 }
 

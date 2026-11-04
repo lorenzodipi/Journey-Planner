@@ -21,7 +21,7 @@ export function useRichiesteDaDecidere(trip: Trip | null | undefined): Rimborso[
 }
 
 /** «Ho pagato»: importo (anche parziale, non oltre il dovuto) e data; la richiesta va «In attesa di conferma». */
-export function DichiaraSheet({ trip, toId, dovuto, onClose, corrects }: { trip: Trip; toId: string; dovuto: number; onClose: () => void; corrects?: string }) {
+export function DichiaraSheet({ trip, toId, dovuto, onClose, corrects, expenseId }: { trip: Trip; toId: string; dovuto: number; onClose: () => void; corrects?: string; /** spesa da cui si dichiara: il rimborso copre quella (0042) */ expenseId?: string }) {
   const t = useTrips()
   const me = useMe(trip)
   const cur = trip.baseCurrency
@@ -37,7 +37,7 @@ export function DichiaraSheet({ trip, toId, dovuto, onClose, corrects }: { trip:
     if (err) return setError(err)
     if (!data) return setError('Scegli la data.')
     setBusy(true)
-    const m = await t.declareSettlement({ tripId: trip.id, fromId: me.id, toId, amount: n as number, currency: cur, paidOn: data, ...(corrects ? { corrects } : {}) })
+    const m = await t.declareSettlement({ tripId: trip.id, fromId: me.id, toId, amount: n as number, currency: cur, paidOn: data, ...(corrects ? { corrects } : {}), ...(expenseId ? { expenseId } : {}) })
     setBusy(false)
     if (m) return setError(m)
     showToast(`Fatto: aspetto la conferma di ${first(trip, toId)}.`)
@@ -66,7 +66,7 @@ export function DichiaraSheet({ trip, toId, dovuto, onClose, corrects }: { trip:
 }
 
 /** Foglio di conferma: mostra la richiesta; la conferma vale solo se i saldi sono ancora quelli visti qui (COST-038). */
-function DecidiSheet({ trip, r, onClose }: { trip: Trip; r: Rimborso; onClose: () => void }) {
+export function DecidiSheet({ trip, r, onClose }: { trip: Trip; r: Rimborso; onClose: () => void }) {
   const t = useTrips()
   const [versione, setVersione] = useState<string | null | undefined>(undefined)
   const [busy, setBusy] = useState(false)

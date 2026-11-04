@@ -54,10 +54,11 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
     if (r.tripId) apri(r.tripId)
   }
 
+  /** Un viaggio scelto si apre sempre dalla sua home («Oggi»), qualunque fosse l'ultima pagina vista. */
   const apri = (id: string) => {
     t.setActive(id)
     onChosen?.()
-    navigate('/')
+    navigate('/', { replace: true })
   }
 
   async function archivia(trip: Trip, on: boolean) {

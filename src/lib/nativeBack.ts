@@ -20,7 +20,8 @@ export function goBack(): boolean {
     top.close()
     return true
   }
-  // 2) poi una card aperta in linea si richiude
+  // 2) poi si esce da una modalità della pagina (es. selezione multipla dei luoghi). Una card aperta nella pagina
+  //    NON si richiude: «indietro» torna alla pagina precedente, come nelle app di sistema.
   if (document.documentElement.hasAttribute('data-card-open')) {
     window.dispatchEvent(new Event('fa:close-card'))
     return true

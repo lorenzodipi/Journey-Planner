@@ -82,18 +82,6 @@ export function Giorno({ params }: { params: { id: string } }) {
     }
   }, [day?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // l'indietro di Android chiude prima la card aperta
-  useEffect(() => {
-    if (!openId) return
-    document.documentElement.setAttribute('data-card-open', '')
-    const close = () => setOpenId(null)
-    window.addEventListener('fa:close-card', close)
-    return () => {
-      document.documentElement.removeAttribute('data-card-open')
-      window.removeEventListener('fa:close-card', close)
-    }
-  }, [openId])
-
   if (!day) {
     return (
       <Schermata bar={<BarraIndietro title="Giorni" back="/giorni" />}>

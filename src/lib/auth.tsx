@@ -4,6 +4,9 @@ import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { isSupabaseConfigured, supabase } from './supabase'
 
+/** Segnata all'accesso, tolta quando si sceglie il viaggio: l'app apre «Tutti i viaggi» invece dell'ultima pagina. */
+export const SCEGLI_DOPO_ACCESSO = 'jp.scegliDopoAccesso'
+
 /**
  * `unreachable`: il servizio non risponde entro il tempo limite (es. progetto Supabase in pausa, #25);
  * `saved`: si usano i dati salvati sul telefono finché il servizio non torna.
@@ -107,7 +110,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async signIn(email, password) {
       if (!supabase) return 'Supabase non è configurato.'
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
-      return error ? translateError(error.message) : null
+      if (error) return translateError(error.message)
+      // subito dopo l'accesso si sceglie il viaggio (riaprendo l'app senza uscire, invece, si torna dov'eri)
+      try {
+        localStorage.setItem(SCEGLI_DOPO_ACCESSO, '1')
+      } catch {
+        // ignorato
+      }
+      return null
     },
     async signOut() {
       await supabase?.auth.signOut()

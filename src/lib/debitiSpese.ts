@@ -1,12 +1,19 @@
 // Debiti e crediti spesa per spesa (#51): per ogni spesa che mi riguarda, quanto devo dare o ricevere da ogni persona,
-// e se è già stato pagato. I rimborsi del database sono importi tra due persone, non legati a una spesa: li assegno
-// alle spese dalla più vecchia alla più recente (prima i confermati, poi quelli in attesa).
+// e se è già stato pagato. Un rimborso dichiarato da una card è legato alla sua spesa (`expenseId`, migrazione 0042) e
+// copre quella; i rimborsi senza spesa (quelli di prima) coprono le spese dalla più vecchia alla più recente.
+// Una rettifica confermata toglie dal rimborso che corregge. Prima i confermati, poi quelli in attesa.
 import { expenseOwed, expensePaid, expenseBase, settle, type FxContext } from './budget'
 import { round2 } from './money'
 import { expenseBalance } from './ripartizione'
 import type { Expense, Rimborso, RimborsoConfermato, Traveler } from '../types'
 
 export type StatoDebito = 'da_pagare' | 'in_attesa' | 'pagato'
+
+/** Un rimborso che copre (in tutto o in parte) una card. */
+export interface Copertura {
+  id: string
+  amount: number
+}
 
 export interface DebitoSpesa {
   expenseId: string
@@ -24,9 +31,22 @@ export interface DebitoSpesa {
   /** ancora da pagare (importo − pagato) */
   residuo: number
   stato: StatoDebito
+  /** rimborsi confermati che coprono la card (per «Rettifica») */
+  confermati: Copertura[]
+  /** richieste in attesa che coprono la card (per «Rispondi» o «Annulla») */
+  richieste: Copertura[]
 }
 
 const MIN = 0.005
+
+interface Voce {
+  id: string
+  fromId: string
+  toId: string
+  amount: number
+  expenseId?: string
+  ordine: string
+}
 
 /** Spese (con un pagante) in cui io sono debitore o creditore con un'altra persona, dal più vecchio al più recente. */
 export function debitiPerSpesa(
@@ -38,7 +58,7 @@ export function debitiPerSpesa(
   richieste: readonly Rimborso[] | undefined,
 ): DebitoSpesa[] {
   if (!me) return []
-  const grezzi: Omit<DebitoSpesa, 'pagato' | 'inAttesa' | 'residuo' | 'stato'>[] = []
+  const grezzi: Omit<DebitoSpesa, 'pagato' | 'inAttesa' | 'residuo' | 'stato' | 'confermati' | 'richieste'>[] = []
   for (const e of [...spese].sort((a, b) => a.spentAt.localeCompare(b.spentAt))) {
     if (expenseBase(e, fx) === null) continue
     const owed = expenseOwed(e, travelers, fx)
@@ -53,26 +73,59 @@ export function debitiPerSpesa(
       else if (t.to === me) grezzi.push({ expenseId: e.id, expense: e, otherId: t.from, verso: 'devono', importo: t.amount })
     }
   }
-  const somma = (list: readonly { fromId: string; toId: string; amount: number }[], from: string, to: string) =>
-    round2(list.filter((r) => r.fromId === from && r.toId === to).reduce((n, r) => n + r.amount, 0))
-  const attesa = (richieste ?? []).filter((r) => r.status === 'in_attesa')
-  const out: DebitoSpesa[] = []
-  const altri = Array.from(new Set(grezzi.map((g) => g.otherId)))
-  for (const other of altri) {
-    // saldo dei rimborsi confermati tra noi due: positivo = ho dato io, negativo = ha dato l'altro
-    const netto = round2(somma(confermati ?? [], me, other) - somma(confermati ?? [], other, me))
-    const pool = { devo: Math.max(0, netto), devono: Math.max(0, -netto) }
-    const sospesi = { devo: somma(attesa, me, other), devono: somma(attesa, other, me) }
-    for (const g of grezzi.filter((x) => x.otherId === other)) {
-      const dato = round2(Math.min(g.importo, pool[g.verso]))
-      pool[g.verso] = round2(pool[g.verso] - dato)
-      const residuo = round2(g.importo - dato)
-      const inAtt = round2(Math.min(residuo, sospesi[g.verso]))
-      sospesi[g.verso] = round2(sospesi[g.verso] - inAtt)
-      const stato: StatoDebito = residuo < MIN ? 'pagato' : inAtt >= residuo - MIN ? 'in_attesa' : 'da_pagare'
-      out.push({ ...g, pagato: dato, inAttesa: inAtt, residuo, stato })
-    }
+
+  // rimborsi confermati: quelli completi (le due controparti li vedono) più quelli noti solo come importo
+  const tutte = richieste ?? []
+  const byId = new Map(tutte.map((r) => [r.id, r]))
+  const rettificato = new Map<string, number>()
+  for (const r of tutte) if (r.status === 'confermato' && r.corrects) rettificato.set(r.corrects, round2((rettificato.get(r.corrects) ?? 0) + r.amount))
+  const voce = (r: Rimborso): Voce => ({ id: r.id, fromId: r.fromId, toId: r.toId, amount: r.amount, ...(r.expenseId ? { expenseId: r.expenseId } : {}), ordine: `${r.paidOn}|${r.createdAt}` })
+  const conf: Voce[] = []
+  for (const r of tutte) {
+    if (r.status !== 'confermato' || r.corrects) continue
+    const netto = round2(r.amount - (rettificato.get(r.id) ?? 0))
+    if (netto > MIN) conf.push({ ...voce(r), amount: netto })
   }
+  for (const c of confermati ?? []) {
+    if (byId.has(c.id)) continue
+    conf.push({ id: c.id, fromId: c.fromId, toId: c.toId, amount: c.amount, ordine: '' })
+  }
+  const att: Voce[] = tutte.filter((r) => r.status === 'in_attesa' && !r.corrects).map(voce)
+
+  const out: DebitoSpesa[] = grezzi.map((g) => ({ ...g, pagato: 0, inAttesa: 0, residuo: g.importo, stato: 'da_pagare' as StatoDebito, confermati: [], richieste: [] }))
+  const dir = (g: DebitoSpesa) => (g.verso === 'devo' ? { fromId: me, toId: g.otherId } : { fromId: g.otherId, toId: me })
+
+  /** Distribuisce i rimborsi sulle card: prima quelle della sua spesa, poi dalla più vecchia. `campo` = dove si somma. */
+  function distribuisci(voci: readonly Voce[], campo: 'pagato' | 'inAttesa') {
+    const resto = new Map(voci.map((v) => [v.id, v.amount]))
+    const libero = (g: DebitoSpesa) => round2(g.residuo - (campo === 'inAttesa' ? g.inAttesa : 0))
+    const applica = (g: DebitoSpesa, v: Voce) => {
+      const quanto = round2(Math.min(libero(g), resto.get(v.id) ?? 0))
+      if (quanto < MIN) return
+      resto.set(v.id, round2((resto.get(v.id) ?? 0) - quanto))
+      if (campo === 'pagato') {
+        g.pagato = round2(g.pagato + quanto)
+        g.residuo = round2(g.residuo - quanto)
+        g.confermati.push({ id: v.id, amount: quanto })
+      } else {
+        g.inAttesa = round2(g.inAttesa + quanto)
+        g.richieste.push({ id: v.id, amount: quanto })
+      }
+    }
+    const stessa = (g: DebitoSpesa, v: Voce) => {
+      const d = dir(g)
+      return v.fromId === d.fromId && v.toId === d.toId
+    }
+    // 1) legati alla spesa
+    for (const v of voci) if (v.expenseId) for (const g of out) if (g.expenseId === v.expenseId && stessa(g, v)) applica(g, v)
+    // 2) il resto, dalla spesa più vecchia (e dal rimborso più vecchio)
+    const ordinate = [...voci].sort((a, b) => a.ordine.localeCompare(b.ordine))
+    for (const g of out) for (const v of ordinate) if (stessa(g, v)) applica(g, v)
+  }
+  distribuisci(conf, 'pagato')
+  distribuisci(att, 'inAttesa')
+  for (const g of out) g.stato = g.residuo < MIN ? 'pagato' : g.inAttesa >= g.residuo - MIN ? 'in_attesa' : 'da_pagare'
+
   const rank = (s: StatoDebito) => (s === 'da_pagare' ? 0 : s === 'in_attesa' ? 1 : 2)
   return out.sort((a, b) => rank(a.stato) - rank(b.stato) || b.expense.spentAt.localeCompare(a.expense.spentAt))
 }

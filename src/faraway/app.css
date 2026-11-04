@@ -460,3 +460,16 @@ sup{margin-left:0}
 /* la fascia dell'intervallo si arrotonda anche all'inizio e alla fine di ogni settimana */
 .fa-cal-g td:first-child .fa-cal-c[data-selected]{border-top-left-radius:22px;border-bottom-left-radius:22px}
 .fa-cal-g td:last-child .fa-cal-c[data-selected]{border-top-right-radius:22px;border-bottom-right-radius:22px}
+
+/* Da dare / Da ricevere: tre puntini fissi a destra dell'importo (spazio vuoto se non ci sono azioni, per allineare) */
+.fa-dbt .rt .ln{display:flex;align-items:center;justify-content:flex-end;min-height:24px;margin-right:-8px}
+.fa-dots-vuoto{display:block;flex:none;width:32px}
+/* Schermi stretti: la chip di stato va sotto il testo (a tutta riga), così nome e descrizione non si spezzano */
+@media (max-width:389px){
+  .fa-dbt .top{grid-template-columns:44px minmax(0,1fr) auto;row-gap:8px}
+  .fa-dbt .top>:first-child{grid-row:1 / span 2}
+  .fa-dbt .top>span:nth-child(2){grid-column:2;grid-row:1}
+  .fa-dbt .rt{display:contents}
+  .fa-dbt .rt .ln{grid-column:3;grid-row:1;align-self:start}
+  .fa-dbt .rt>.fa-pillst{grid-column:2 / 4;grid-row:2;justify-self:start}
+}

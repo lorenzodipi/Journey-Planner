@@ -46,9 +46,9 @@ const MIGRATION_0029 = "Manca la migrazione 0029 sul database: eseguila nell'SQL
 const needs0029 = (e: { message: string }) => (/settlements|decide_settlement|cancel_settlement|balance_version|schema cache|does not exist/i.test(e.message) ? new Error(MIGRATION_0029) : e)
 
 /** Il debitore dichiara «Ho pagato»: resta in attesa di conferma, i saldi non cambiano. */
-export async function declareSettlement(input: { id?: string; tripId: string; fromId: string; toId: string; amount: number; currency: string; paidOn: string; corrects?: string }): Promise<void> {
+export async function declareSettlement(input: { id?: string; tripId: string; fromId: string; toId: string; amount: number; currency: string; paidOn: string; corrects?: string; expenseId?: string }): Promise<void> {
   const db = client()
-  const { error } = await db.from('settlements').insert({
+  const row: Record<string, unknown> = {
     ...(input.id ? { id: input.id } : {}),
     trip_id: input.tripId,
     from_traveler: input.fromId,
@@ -57,7 +57,10 @@ export async function declareSettlement(input: { id?: string; tripId: string; fr
     currency: input.currency,
     paid_on: input.paidOn,
     ...(input.corrects ? { corrects: input.corrects } : {}),
-  })
+  }
+  let { error } = await db.from('settlements').insert(input.expenseId ? { ...row, expense_id: input.expenseId } : row)
+  // senza la migrazione 0042 la colonna non c'è: il rimborso si salva lo stesso, senza il legame con la spesa
+  if (error && input.expenseId && /expense_id|schema cache|column/i.test(error.message)) ({ error } = await db.from('settlements').insert(row))
   if (error) throw needs0029(error)
 }
 

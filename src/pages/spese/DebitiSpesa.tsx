@@ -1,7 +1,12 @@
 // «Da dare» e «Da ricevere» spesa per spesa (#51): una card per ogni spesa in cui devo dare o ricevere dei soldi,
-// con l'importo tra me e l'altra persona, lo stato (da pagare, in attesa di conferma, pagato) e «Ho pagato».
+// con l'importo tra me e l'altra persona e lo stato. Le azioni (Ho pagato, Rispondi, Annulla, Rettifica) stanno
+// nel menu a tre puntini a destra dell'importo.
 import { useMemo, useState } from 'react'
-import { Pillola, Pulsante } from '../../faraway/base'
+import { MenuAzioni, Pillola } from '../../faraway/base'
+import { bozzaRettifica } from '../../lib/rimborsi'
+import { showToast } from '../../state/toast'
+import { useTrips } from '../../state/trip'
+import type { Rimborso } from '../../types'
 import { debitiPerSpesa, type DebitoSpesa } from '../../lib/debitiSpese'
 import { formatMoney, round2 } from '../../lib/money'
 import { iconaSpesa } from '../../lib/ricevuta'
@@ -10,7 +15,7 @@ import type { SpesaVista } from '../../lib/spese'
 import { Ic } from '../../ui/Sprite'
 import type { FxContext } from '../../lib/budget'
 import type { Trip } from '../../types'
-import { DichiaraSheet } from './Rimborsi'
+import { DecidiSheet, DichiaraSheet } from './Rimborsi'
 
 
 function Stato({ d }: { d: DebitoSpesa }) {
@@ -21,7 +26,35 @@ function Stato({ d }: { d: DebitoSpesa }) {
 
 export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: Trip; spese: readonly SpesaVista[]; fx: FxContext; me: string | undefined; abilitaPagamento: boolean }) {
   const cur = trip.baseCurrency
+  const t = useTrips()
   const [paga, setPaga] = useState<DebitoSpesa | null>(null)
+  const [rispondi, setRispondi] = useState<Rimborso | null>(null)
+  const [correggi, setCorreggi] = useState<ReturnType<typeof bozzaRettifica> | null>(null)
+  const rimborso = (id: string) => trip.settlements?.find((x) => x.id === id)
+  async function annulla(id: string) {
+    const m = await t.cancelSettlement(id)
+    showToast(m ?? 'Richiesta annullata')
+  }
+  /** Le azioni possibili su una card, secondo chi deve a chi e lo stato dei rimborsi che la coprono. */
+  function azioni(d: DebitoSpesa) {
+    const out: { id: string; label: string; onPress: () => void }[] = []
+    const piu = (n: number, base: string, amount: number) => (n > 1 ? `${base} di ${formatMoney(amount, cur)}` : base)
+    const daDichiarare = round2(d.residuo - d.inAttesa)
+    if (d.verso === 'devo') {
+      if (abilitaPagamento && daDichiarare > 0.004) out.push({ id: 'paga', label: 'Ho pagato', onPress: () => setPaga({ ...d, residuo: daDichiarare }) })
+      for (const c of d.richieste) out.push({ id: `annulla:${c.id}`, label: piu(d.richieste.length, 'Annulla la richiesta', c.amount), onPress: () => void annulla(c.id) })
+    } else {
+      for (const c of d.richieste) {
+        const r = rimborso(c.id)
+        if (r) out.push({ id: `rispondi:${c.id}`, label: piu(d.richieste.length, 'Rispondi', c.amount), onPress: () => setRispondi(r) })
+      }
+      for (const c of d.confermati) {
+        const r = rimborso(c.id)
+        if (r) out.push({ id: `rettifica:${c.id}`, label: piu(d.confermati.length, 'Rettifica', c.amount), onPress: () => setCorreggi(bozzaRettifica(r)) })
+      }
+    }
+    return out
+  }
   const righe = useMemo(() => debitiPerSpesa(spese, trip.travelers, fx, me, trip.settled, trip.settlements), [spese, trip.travelers, fx, me, trip.settled, trip.settlements])
   const nome = (id: string) => trip.travelers.find((t) => t.id === id)?.name.split(/\s+/)[0] ?? '—'
   const sezioni: { verso: DebitoSpesa['verso']; titolo: string }[] = [
@@ -51,7 +84,14 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
                       <span className="s">{dataNumerica(d.expense.spentAt)}</span>
                     </span>
                     <span className="rt">
-                      <span className="amt">{formatMoney(d.stato === 'pagato' ? d.importo : d.residuo, cur)}</span>
+                      <span className="ln">
+                        <span className="amt">{formatMoney(d.stato === 'pagato' ? d.importo : d.residuo, cur)}</span>
+                        {(() => {
+                          const a = azioni(d)
+                          // senza azioni resta lo spazio, così gli importi restano allineati
+                          return a.length > 0 ? <MenuAzioni label={`Azioni su ${d.expense.label}`} azioni={a} /> : <span className="fa-dots-vuoto" aria-hidden="true" />
+                        })()}
+                      </span>
                       <Stato d={d} />
                     </span>
                   </div>
@@ -60,18 +100,15 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
                       Già dati {formatMoney(d.pagato, cur)} su {formatMoney(d.importo, cur)}
                     </span>
                   ) : null}
-                  {verso === 'devo' && d.stato === 'da_pagare' && abilitaPagamento ? (
-                    <Pulsante size="sm" color="secondary-soft" onPress={() => setPaga(d)}>
-                      Ho pagato
-                    </Pulsante>
-                  ) : null}
                 </div>
               ))}
             </div>
           </section>
         )
       })}
-      {paga ? <DichiaraSheet trip={trip} toId={paga.otherId} dovuto={paga.residuo} onClose={() => setPaga(null)} /> : null}
+      {paga ? <DichiaraSheet trip={trip} toId={paga.otherId} dovuto={paga.residuo} expenseId={paga.expenseId} onClose={() => setPaga(null)} /> : null}
+      {rispondi ? <DecidiSheet trip={trip} r={rispondi} onClose={() => setRispondi(null)} /> : null}
+      {correggi ? <DichiaraSheet trip={trip} toId={correggi.toId} dovuto={correggi.amount} corrects={correggi.corrects} onClose={() => setCorreggi(null)} /> : null}
     </>
   )
 }
