@@ -111,7 +111,7 @@ function Pill({ item, f, ctx }: { item: DayItem; f: Fase; ctx: TappeCtx }) {
   if (f === 'now') return <span className="now">Ora</span>
   if (forseInRitardo(item, ctx)) return <span className="next">In ritardo?</span>
   if (f === 'past') return <span className="next">Da fare</span>
-  return <span className="next">Dopo</span>
+  return null
 }
 
 /** Menu «Stato della tappa» (listbox) dentro la card aperta. */
@@ -240,6 +240,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
           const opening = place?.openingSpec ? openingFor(place.openingSpec, day.date, f === 'now' ? ctx.nowMin : startAt) : null
           const address = place?.address || [place?.name, place?.city].filter(Boolean).join(', ')
           const hereText = fromHere?.(item) ?? null
+          const bloccata = !!item.time && item.timeLock === 'locked'
           const puoiTrascinare = !!onReorder && !readOnly && !item.time && items.length > 1
           const dy = spostamento(idx)
           const stile = trascinata !== null ? ({ transform: `translateY(${dy}px)`, transition: idx === trascinata ? 'none' : undefined } as const) : undefined
@@ -260,26 +261,9 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                   <span className={cx('nd', ndCls)}>
                     <G name={ndIcon} />
                   </span>
-                  {puoiTrascinare ? (
-                    <button
-                      type="button"
-                      className="grip"
-                      aria-label={`Sposta «${item.title}» nell'elenco: trascina, oppure usa le frecce su e giù`}
-                      onPointerDown={(e) => inizia(e, idx)}
-                      onKeyDown={(e) => tasto(e, idx)}
-                    >
-                      <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
-                        <circle cx="9" cy="6" r="1.7" />
-                        <circle cx="15" cy="6" r="1.7" />
-                        <circle cx="9" cy="12" r="1.7" />
-                        <circle cx="15" cy="12" r="1.7" />
-                        <circle cx="9" cy="18" r="1.7" />
-                        <circle cx="15" cy="18" r="1.7" />
-                      </svg>
-                    </button>
-                  ) : null}
                 </span>
                 <div className="body">
+                  <div className={cx('tw', (puoiTrascinare || bloccata) && 'ico')}>
                   <div
                     className="top"
                     role="button"
@@ -299,7 +283,6 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                       {meteoDi?.(item) ? <div className="m">{meteoDi(item)}</div> : null}
                       {item.time && item.timeLock ? (
                         <div className="m" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          {item.timeLock === 'locked' ? <Sv name="lock" size={14} /> : null}
                           {item.timeLock === 'locked' ? 'Orario vincolato' : 'Orario flessibile'}
                         </div>
                       ) : null}
@@ -317,6 +300,29 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                       )}
                       <Pill item={item} f={f} ctx={ctx} />
                     </div>
+                  </div>
+                  {bloccata ? (
+                    <span className="gl" aria-hidden="true">
+                      <Sv name="lock" size={20} />
+                    </span>
+                  ) : puoiTrascinare ? (
+                    <button
+                      type="button"
+                      className="gl grip"
+                      aria-label={`Sposta «${item.title}» nell'elenco: trascina, oppure usa le frecce su e giù`}
+                      onPointerDown={(e) => inizia(e, idx)}
+                      onKeyDown={(e) => tasto(e, idx)}
+                    >
+                      <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="9" cy="6" r="1.7" />
+                        <circle cx="15" cy="6" r="1.7" />
+                        <circle cx="9" cy="12" r="1.7" />
+                        <circle cx="15" cy="12" r="1.7" />
+                        <circle cx="9" cy="18" r="1.7" />
+                        <circle cx="15" cy="18" r="1.7" />
+                      </svg>
+                    </button>
+                  ) : null}
                   </div>
                   {open && f === 'now' && exp ? (
                     <div className="foot">

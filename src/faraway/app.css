@@ -340,17 +340,22 @@ sup{margin-left:0}
 .k-Tappa .body,.k-Tappa .tt,.k-Tappa .rx{min-width:0}
 .k-Tappa .t,.k-Tappa .m,.k-Tappa .rm,.k-Tappa .rs{overflow-wrap:anywhere}
 
-/* Riordino a trascinamento delle tappe senza orario (#88) */
-.k-Tappa .rail{flex-direction:column;align-items:center}
-.k-Tappa .grip{all:unset;box-sizing:border-box;position:relative;z-index:1;flex:none;margin-top:12px;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--canvas);color:var(--ink-muted);box-shadow:inset 0 0 0 1.5px var(--border-strong);cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.k-Tappa .grip::after{content:"";position:absolute;inset:-6px}
-.k-Tappa .grip svg{width:18px;height:18px}
-.k-Tappa .grip:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+/* Riordino a trascinamento delle tappe senza orario (#88): la maniglia sta dentro la card, in basso a destra della sezione in alto;
+   per le tappe a orario vincolato al suo posto c'è il lucchetto */
+.k-Tappa .tw{position:relative}
+.k-Tappa .tw.ico .r{min-width:28px;align-content:start}
+.k-Tappa .gl{position:absolute;right:-8px;bottom:-8px;width:36px;height:36px;display:grid;place-items:center;color:var(--ink-muted);opacity:.6}
+.k-Tappa .gl svg{width:20px;height:20px}
+.k-Tappa .grip{all:unset;box-sizing:border-box;position:absolute;right:-8px;bottom:-8px;width:36px;height:36px;display:grid;place-items:center;color:var(--ink-muted);opacity:.6;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;border-radius:8px}
+.k-Tappa .grip::after{content:"";position:absolute;inset:-4px}
+.k-Tappa .grip svg{width:20px;height:20px}
+.k-Tappa .grip:hover,.k-Tappa .grip:focus-visible,.k-Tappa .stp.drag .grip{opacity:1;color:var(--azzurro-ink)}
+.k-Tappa .grip:focus-visible{outline:3px solid var(--focus);outline-offset:0}
 .k-Tappa .steps.trascina{-webkit-user-select:none;user-select:none}
 .k-Tappa .steps.trascina>li{transition:transform 160ms cubic-bezier(.23,1,.32,1)}
 .k-Tappa .steps.trascina .seg .sg{opacity:.35}
 .k-Tappa .stp.drag{position:relative;z-index:5;filter:drop-shadow(0 14px 18px rgba(0,0,0,.28))}
-.k-Tappa .stp.drag .grip{cursor:grabbing;color:var(--azzurro-ink);box-shadow:inset 0 0 0 2px var(--azzurro-ink)}
+.k-Tappa .stp.drag .grip{cursor:grabbing}
 @media (prefers-reduced-motion:reduce){.k-Tappa .steps.trascina>li{transition:none}}
 /* il trattino della tappa saltata è centrato come gli altri glifi del nodo (#89) */
 .k-Tappa .nd.skip svg,.k-TappaStati .nd.skip svg{inset:-2px}
