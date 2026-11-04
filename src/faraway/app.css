@@ -364,3 +364,6 @@ sup{margin-left:0}
 .fa-cron+.fa-cron{border-top:1px solid var(--hairline)}
 .fa-cron .t{display:block;font:600 16px/24px var(--font-sans);letter-spacing:.16px;overflow-wrap:anywhere}
 .fa-cron .bt{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+
+/* Il numero sulla scheda Spese non deve confondersi con la scheda attiva (stesso azzurro pieno): corallo con anello dello sfondo (#95) */
+.fa-tbn{background:var(--corallo-solid);color:var(--on-corallo-solid);box-shadow:0 0 0 2px var(--canvas)}
