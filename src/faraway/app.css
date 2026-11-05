@@ -529,7 +529,9 @@ sup{margin-left:0}
 [data-theme="dark"] :is(.fa-rc .big,.fa-r2 .ft) .fa-btn,[data-theme="dark"] .fa-tkt :is(.nc,.rg b){background:var(--surface-card);color:var(--ink)}
 [data-theme="dark"] .k-TicketOrizzontale .rt2 .pl{background:var(--surface-card)}
 /* Rosso «pericolo» nello scuro (#F87171): fondo al 5% invece del 10% */
-[data-theme="dark"] .fa-ib.dng,[data-theme="dark"] .fa-btn.del{background:color-mix(in srgb,var(--danger) 5%,var(--surface-card));color:#ff6b6bf5;border-color:#fa525266}
+[data-theme="dark"] .fa-ib.dng,[data-theme="dark"] .fa-btn.del,[data-theme="dark"] .fa-selbar .fa-btn{background:rgba(0,0,0,.3);color:#ff6b6bf5;border-color:#fa525266}
+/* «Esci dall’account» del primo viaggio (stile legacy, solo testo): stesso rosso morbido, niente altro cambia */
+[data-theme="dark"] .btn.danger{color:#ff6b6bf5}
 /* Segmentato: il binario non scelto è un po' più chiaro della pagina, senza bordo */
 [data-theme="dark"] .fa-seg{background:#262F40}
 /* Biglietti colorati: bottoni e pillole si fondono con la tinta (vetro chiaro, niente bordo acceso) */
@@ -541,8 +543,8 @@ sup{margin-left:0}
 /* Il tuo saldo (Spese): la pillola si fonde con la tinta della card, rossa solo quando c'è da pagare */
 [data-theme="dark"] .k-Riepilogo .badge{background:rgba(255,255,255,.12);color:var(--on-tinta)}
 [data-theme="dark"] .k-Riepilogo .badge.pay{background:rgba(0,0,0,.3);color:#FF6B6B}
-/* Foglio di conferma: «Elimina» e «Tieni» hanno la stessa costruzione (fondo al 5%, bordo 1,5px), cambia solo il colore */
-[data-theme="dark"] .fa-sheet .msg+.bt .fa-btn.soft{background:color-mix(in srgb,var(--ink) 5%,var(--surface-card));border:1.5px solid var(--border-strong);color:var(--ink);box-shadow:none}
+/* Foglio di conferma: «Elimina» e «Tieni» hanno la stessa costruzione (fondo scuro al 30%, bordo 1,5px), cambia solo il colore */
+[data-theme="dark"] .fa-sheet .msg+.bt .fa-btn.soft{background:rgba(0,0,0,.3);border:1.5px solid var(--border-strong);color:var(--ink);box-shadow:none}
 /* Meno colori nei moduli: chip non scelte un gradino sopra la superficie (anche dentro i fogli), conferme senza tinta */
 [data-theme="dark"] .fa-chip:not(.on){background:#262F40}
 [data-theme="dark"] .fa-help.ok{background:rgba(255,255,255,.06);color:var(--ink-muted)}
