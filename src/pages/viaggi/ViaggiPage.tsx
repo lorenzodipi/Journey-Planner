@@ -1,5 +1,5 @@
 // Viaggi (mock Fa-12, #43): copertine illustrate, stato, avatar, date e riga finale; FAB «+ Viaggio»; stato vuoto.
-// Dopo l'accesso, con più viaggi, è la scelta del viaggio (`scelta`).
+// Senza barra delle schede né «indietro», con il profilo in alto a destra: si esce scegliendo un viaggio (dopo l’accesso è la scelta del viaggio).
 import { useEffect, useState } from 'react'
 import { useLocation } from 'wouter'
 import { periodo, viaggiText } from '../../lib/altro'
@@ -8,14 +8,16 @@ import { showToast } from '../../state/toast'
 import { Sv } from '../../faraway/icons'
 import { riassunto } from '../../lib/spese'
 import { ordinaViaggi, rigaFinale, scenaDelViaggio, statoViaggio, STATO_TESTO } from '../../lib/viaggi'
-import { initials, discOf } from '../../state/me'
+import { useAuth } from '../../lib/auth'
+import { initials, discOf, useMe } from '../../state/me'
 import { useTrips } from '../../state/trip'
 import type { Trip } from '../../types'
 import { ART } from '../../ui/art'
-import { Avatars, Campo, Pillola, Pulsante } from '../../faraway/base'
+import { Button as AriaButton } from 'react-aria-components'
+import { Avatar, Avatars, Campo, Pillola, Pulsante } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
 import { Foglio } from '../../faraway/Foglio'
-import { BarraGrande, BarraIndietro, Schermata } from '../../faraway/shell'
+import { BarraGrande, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
 import { ViaggioSheet } from '../viaggio/ViaggioSheet'
 import { DuplicaSheet } from './DuplicaSheet'
@@ -23,8 +25,10 @@ import { DuplicaSheet } from './DuplicaSheet'
 const SCENE = { tempio: ART.tempio, mare: ART.mare, citta: ART.citta, natura: ART.natura, panorama: ART.panorama }
 const TONO = { prossimo: 'soft', incorso: 'acq', concluso: 'mut' } as const
 
-export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: () => void }) {
+export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
   const t = useTrips()
+  const auth = useAuth()
+  const me = useMe(t.active)
   const [, navigate] = useLocation()
   const [nuovo, setNuovo] = useState(false)
   const [invito, setInvito] = useState(false)
@@ -115,10 +119,19 @@ export function ViaggiPage({ scelta, onChosen }: { scelta?: boolean; onChosen?: 
     </div>
   )
 
+  // il profilo sta in alto a destra: da qui non c'è «indietro» né barra delle schede, si esce scegliendo un viaggio
+  const email = auth.session?.user.email ?? ''
+  const nome = me?.name || (email ? email.split('@')[0].replace(/^./, (c) => c.toUpperCase()) : 'Anteprima demo')
+  const profilo = (
+    <AriaButton className="fa-avbtn" aria-label={`Profilo di ${nome}`} onPress={() => navigate('/altro/account')}>
+      <Avatar initials={initials(nome)} n={t.active && me ? discOf(t.active, me.id) : 1} large />
+    </AriaButton>
+  )
+
   return (
     <Schermata
-      tabs={!scelta}
-      bar={scelta ? <BarraGrande title="Viaggi" sub={viaggiText(tutti.filter((x) => !x.archivedAt).length)} /> : <BarraIndietro title="Viaggi" back="/altro" />}
+      tabs={false}
+      bar={<BarraGrande title="Viaggi" sub={viaggiText(tutti.filter((x) => !x.archivedAt).length)} actions={profilo} />}
       fab={tutti.some((x) => !x.archivedAt) ? { label: 'Viaggio', aria: 'Crea un viaggio', onPress: () => setNuovo(true) } : null}
       overlay={
         <>
