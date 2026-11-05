@@ -357,7 +357,7 @@ export function DocumentoDettaglio({ trip, doc, onClose }: { trip: Trip; doc: Do
         {img ? (
           <img
             src={img}
-            alt=""
+            alt={`Anteprima di ${doc.name}`}
             style={{
               width: '100%',
               maxHeight: 240,

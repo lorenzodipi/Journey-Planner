@@ -385,7 +385,7 @@ function FotoLuogo({ trip, place }: { trip: Trip; place: Place }) {
   return (
     <span className="fa-foto">
       <Ic name={discOfPlace(place)} size={44} />
-      {url && bad !== url ? <img src={url} alt="" decoding="async" referrerPolicy="no-referrer" onError={() => setBad(url)} /> : null}
+      {url && bad !== url ? <img src={url} alt={`Foto di ${place.name}`} decoding="async" referrerPolicy="no-referrer" onError={() => setBad(url)} /> : null}
     </span>
   )
 }
