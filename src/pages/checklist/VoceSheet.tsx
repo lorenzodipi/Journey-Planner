@@ -1,5 +1,5 @@
 // Foglio «Nuova voce» / «Modifica voce» (#41, Fa-51 adattato): testo, descrizione, quantità e unità, categoria a pillole
-// (+ «Nuova categoria»), «Dove» (Tutti = lista comune · Solo io = lista privata), link e scadenza.
+// (+ «Nuova categoria»), «Dove» (due riquadri come «Per chi» del design system: Tutti = lista comune · Solo io = lista privata), link e scadenza.
 import { useState } from 'react'
 import { useAuth } from '../../lib/auth'
 import { categoriesFor, categoryOf, kindOfCategory, parseQuantity } from '../../lib/checklist'
@@ -7,7 +7,8 @@ import { cleanUrl, type ChecklistInput } from '../../lib/planningData'
 import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { ChecklistItem, Trip } from '../../types'
-import { Campo, Chip, Pulsante, Segmenti } from '../../faraway/base'
+import { Campo, Chip, Pulsante } from '../../faraway/base'
+import { cx } from '../../faraway/cx'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 
@@ -96,17 +97,19 @@ export function VoceSheet({ trip, item, where = 'all', open, onClose }: Props) {
           {creating ? <Campo label="Nome della categoria" value={newCat} onChange={setNewCat} maxLength={30} error={errors.cat} autoFocus /> : null}
         </div>
         {canPrivate ? (
-          <div className="fa-fld">
+          <div className="fa-fld k-ChecklistNuova" role="group" aria-label="Dove">
             Dove
-            <Segmenti
-              label="Dove"
-              value={dove}
-              options={[
-                { value: 'all', label: 'Tutti' },
-                { value: 'mine', label: 'Solo io' },
-              ]}
-              onChange={setDove}
-            />
+            <div className="sg" style={{ gridTemplateColumns: 'repeat(2,minmax(0,1fr))' }}>
+              {([
+                { value: 'all', label: 'Tutti', icon: 'users' },
+                { value: 'mine', label: 'Solo io', icon: 'user' },
+              ] as const).map((o) => (
+                <button key={o.value} type="button" className={cx('seg', dove === o.value && 'on')} aria-pressed={dove === o.value} onClick={() => setDove(o.value)}>
+                  <Sv name={o.icon} size={20} className="ic" />
+                  {o.label}
+                </button>
+              ))}
+            </div>
             <span className="fa-m">{dove === 'all' ? 'Lista comune: ognuno spunta la sua.' : 'Lista privata: la vedi solo tu.'}</span>
           </div>
         ) : null}

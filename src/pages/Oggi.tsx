@@ -383,6 +383,23 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
   for (const g of cityGroups) if (!colorOf.has(g.title)) colorOf.set(g.title, CITY_DISCS[colorOf.size % CITY_DISCS.length])
   const legend = [...colorOf.entries()].map(([c, col]) => ({ c, col, n: cityGroups.filter((g) => g.title === c).reduce((s, g) => s + g.cells.length, 0) }))
 
+  // Sotto il totale ci sono sempre due blocchi, mai uno solo con un buco accanto
+  const perGiorno = { l: 'Al giorno', v: formatMoney(giorno.perDay, trip.baseCurrency), c: `in media su ${giorno.days} ${giorno.days === 1 ? 'giorno' : 'giorni'}` }
+  const nSpese = r.spese.length
+  const nCat = new Set(r.spese.map((e) => e.categoryId ?? e.category ?? '')).size
+  const secondo = avanzo !== null
+    ? avanzo >= 0
+      ? { l: 'Avanzati del budget', v: formatMoney(avanzo, trip.baseCurrency), c: 'non spesi' }
+      : { l: 'Oltre il budget', v: formatMoney(-avanzo, trip.baseCurrency), c: 'spesi in più' }
+    : { l: 'Spese', v: String(nSpese), c: nSpese === 0 ? 'nessuna registrata' : `in ${nCat} ${nCat === 1 ? 'categoria' : 'categorie'}` }
+  const secondaRiga = r.solo ? (
+    <DueValori a={perGiorno} b={secondo} />
+  ) : r.mioSaldo !== null ? (
+    <SaldoPersone saldo={r.mioSaldo} currency={trip.baseCurrency} people={people} inPari={false} />
+  ) : (
+    <DueValori a={perGiorno} b={{ l: 'Persone', v: String(people.length), c: people.map((p) => firstName(p.name)).join(', ') }} />
+  )
+
   async function condividi() {
     const text = `${nDays} giorni in ${trip.destination} con Faraway`
     const el = ticket.current
@@ -409,22 +426,7 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
       <Saluto date={longIn(now)} greeting="Bentornato" name={firstName(me?.name)} />
       <Offline />
       <RimborsiOggi trip={trip} />
-      <Riepilogo
-        dove={trip.destination}
-        speso={r.speso}
-        currency={trip.baseCurrency}
-        limit={r.limit}
-        second={
-          r.solo ? (
-            <DueValori
-              a={{ l: 'Al giorno', v: formatMoney(giorno.perDay, trip.baseCurrency), c: `in ${giorno.days} ${giorno.days === 1 ? 'giorno' : 'giorni'}` }}
-              b={avanzo === null ? undefined : avanzo >= 0 ? { l: 'Avanzati del budget', v: formatMoney(avanzo, trip.baseCurrency), c: 'non spesi' } : { l: 'Oltre il budget', v: formatMoney(-avanzo, trip.baseCurrency), c: 'in più' }}
-            />
-          ) : (
-            <SaldoPersone saldo={r.mioSaldo} currency={trip.baseCurrency} people={people} />
-          )
-        }
-      />
+      <Riepilogo dove={trip.destination} speso={r.speso} currency={trip.baseCurrency} limit={r.limit} simbolo={false} second={secondaRiga} />
 
       <section ref={ticket} aria-label="Il viaggio in numeri" className="fa-r2 fa-tkt" role="group">
         <div className="tp hero">
@@ -525,7 +527,6 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
             </div>
           ) : null}
           <div className="ft">
-            <div aria-hidden="true" className="cd" />
             <div className="fr">
               <div>
                 <b>
@@ -544,39 +545,6 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
         </div>
       </section>
 
-      {r.limit ? (
-        <button type="button" className="fa-card xl fa-bc" aria-label={`Budget del viaggio: ${avanzo !== null && avanzo >= 0 ? `sotto di ${Math.round(avanzo)} euro` : `oltre di ${Math.round(-(avanzo ?? 0))} euro`}. Apri il dettaglio`} onClick={() => navigate('/spese')}>
-          <div className="top">
-            <Ic name="i-sez-budget" size={44} />
-            <div className="tx">
-              <div className="t">Budget del viaggio</div>
-              <div className="m">
-                {formatMoney(Math.round(r.speso), trip.baseCurrency).replace(/,00/, '')} spesi su {formatMoney(r.limit, trip.baseCurrency).replace(/,00/, '')}
-              </div>
-            </div>
-            <span style={{ color: 'var(--ink-muted)' }}>
-              <Sv name="chevr" size={20} />
-            </span>
-          </div>
-          <div className="bar" role="img" aria-label={`${Math.round((r.speso / r.limit) * 100)}% del budget speso`}>
-            <i style={{ width: `${Math.min(100, Math.round((r.speso / r.limit) * 100))}%` }} />
-          </div>
-          <div className="ft">
-            {avanzo !== null && avanzo >= 0 ? (
-              <span className="fa-st ok">
-                <Sv name="check" size={16} />
-                Sotto il budget
-              </span>
-            ) : (
-              <span className="fa-st ba">
-                <Sv name="warn" size={16} />
-                Oltre il budget
-              </span>
-            )}
-            <b>{avanzo !== null && avanzo >= 0 ? `${formatMoney(Math.round(avanzo), trip.baseCurrency).replace(/,00/, '')} avanzati` : `${formatMoney(Math.round(-(avanzo ?? 0)), trip.baseCurrency).replace(/,00/, '')} in più`}</b>
-          </div>
-        </button>
-      ) : null}
 
       {cityGroups.length > 0 ? (
         <section className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }}>

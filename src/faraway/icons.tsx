@@ -24,6 +24,7 @@ const PATHS = {
   cal: <><rect x="4" y="5.5" width="16" height="14" rx="3" /><path d="M8 3.5v4M16 3.5v4M4 10h16" /></>,
   pin: <><path d="M12 19.5s5.5-4.4 5.5-9a5.5 5.5 0 1 0-11 0c0 4.6 5.5 9 5.5 9z" /><circle cx="12" cy="10.5" r="1.9" /></>,
   user: <><circle cx="12" cy="8.5" r="3.5" /><path d="M5 19c0-3.3 3.1-5 7-5s7 1.7 7 5" /></>,
+  users: <><circle cx="9" cy="8.5" r="3" /><path d="M3.5 19c0-3 2.4-5 5.5-5s5.5 2 5.5 5" /><circle cx="16.5" cy="9.5" r="2.4" /><path d="M16 14.3c2.6 0 4.5 1.5 4.5 4.2" /></>,
   lock: <><rect x="5" y="10.5" width="14" height="9.5" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></>,
   mail: <><rect x="3.5" y="5.5" width="17" height="13" rx="3" /><path d="M4 8l8 6 8-6" /></>,
   wifi: <><path d="M3 9.5a14 14 0 0 1 18 0M6 13a9.5 9.5 0 0 1 12 0M9.2 16.4a4.8 4.8 0 0 1 5.6 0M12 19.5v.1" /><path d="M4 4l16 16" /></>,

@@ -347,9 +347,10 @@
 .fa-tkt .nc{background:#FFFFFF;color:#191510}
 .fa-tkt .rg{background:conic-gradient(var(--azzurro-solid) calc(var(--p)*1%),rgba(255,255,255,.7) 0)}
 .fa-tkt .rg b{background:#FFFFFF;color:#191510}
-.fa-tkt .ft{background:none;margin-top:16px;padding:0 16px 24px;display:grid;gap:16px}
+.fa-tkt .ft{background:none;margin-top:16px;padding:0 16px 24px;display:grid;grid-template-columns:minmax(0,1fr);justify-content:stretch;gap:16px}
 .fa-tkt .ft .cd{height:44px;border-radius:2px;background:repeating-linear-gradient(90deg,var(--on-tinta) 0 2px,#0000 2px 4px,var(--on-tinta) 4px 5px,#0000 5px 8px,var(--on-tinta) 8px 11px,#0000 11px 13px,var(--on-tinta) 13px 14px,#0000 14px 17px);opacity:.8}
 .fa-tkt .ft .fr{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.fa-tkt .ft .fr b{white-space:nowrap}
 .fa-tkt .ft b{color:var(--on-tinta)}.fa-tkt .ft span{color:var(--on-tinta-muted)}
 
 .k-Ticket .v-top.closed{border-radius:var(--radius-xl);-webkit-mask:none;mask:none}

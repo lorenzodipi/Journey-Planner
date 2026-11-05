@@ -476,7 +476,7 @@ export function ValutaPiccola({ base, local, rate, baseName, localName }: { base
 }
 
 /** Riepilogo spese (componente Riepilogo): «Speso in …» con budget, poi saldo e persone o le varianti. */
-export function Riepilogo({ dove, speso, currency, limit, onSetBudget, onOpenBudget, second }: { dove: string; speso: number; currency: string; limit?: number; onSetBudget?: () => void; onOpenBudget?: () => void; second: ReactNode }) {
+export function Riepilogo({ dove, speso, currency, limit, onSetBudget, onOpenBudget, second, simbolo = true }: { dove: string; speso: number; currency: string; limit?: number; onSetBudget?: () => void; onOpenBudget?: () => void; second: ReactNode; /** Mongolfiera nell'angolo (falsa dove un'altra card della pagina la mostra già). */ simbolo?: boolean }) {
   const pct = limit ? Math.round((speso / limit) * 100) : 0
   const open = limit && onOpenBudget ? onOpenBudget : undefined
   return (
@@ -493,7 +493,7 @@ export function Riepilogo({ dove, speso, currency, limit, onSetBudget, onOpenBud
             }
           : {})}
       >
-        <Simbolo />
+        {simbolo ? <Simbolo /> : null}
         <span className="l">Speso in {dove}</span>
         <span className="big">{formatMoney(speso, currency)}</span>
         {limit ? (
