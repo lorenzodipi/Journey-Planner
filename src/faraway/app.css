@@ -510,7 +510,6 @@ sup{margin-left:0}
 /* ---- Palette scura (5 nov 2026): solo colori, la forma dei componenti non cambia. Superfici blu-grigie poco sature con
    salti di luce netti, azzurro più chiaro delle superfici (testo scuro sopra), tinte scure. ---- */
 /* Segmentato: binario più scuro della pagina, scelta = pillola chiara */
-[data-theme="dark"] .fa-seg{background:#090C12}
 [data-theme="dark"] .fa-seg button.on,[data-theme="dark"] .fa-seg span.on{background:#E6ECF7;color:var(--on-azzurro-solid)}
 /* Calendarietti dei Giorni: intestazione azzurro pieno con anelli scuri; «oggi» ha l'intestazione chiara e il bordo azzurro */
 [data-theme="dark"] .k-SelettoreGiorni .cl:not(.free):not(.sel):not(.past):not(.move){--hb:var(--azzurro-solid);--hf:var(--on-azzurro-solid)}
@@ -522,11 +521,18 @@ sup{margin-left:0}
 /* Ricevuta: il contorno (ombra) diventa un filo chiaro, come per i biglietti */
 [data-theme="dark"] .k-Ricevuta .rc{filter:drop-shadow(0 0 .75px rgba(255,255,255,.4))}
 /* Sulle tinte (ora scure) i bottoni e le pillole che nel chiaro sono bianchi diventano superficie della card */
-[data-theme="dark"] :is(.k-Tappa,.k-TappaStati) .btn.sec,[data-theme="dark"] :is(.k-Tappa,.k-TappaStati) .stp.now :is(.btn.mp,.stbtn),[data-theme="dark"] :is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tv .pl3b.ok{background:var(--surface-card)}
+[data-theme="dark"] :is(.k-Tappa,.k-TappaStati) .btn.sec,[data-theme="dark"] :is(.k-Tappa,.k-TappaStati) .stp.now :is(.btn.mp,.stbtn){background:var(--surface-card)}
 [data-theme="dark"] .k-Riepilogo .bar{background:rgba(255,255,255,.18)}
 [data-theme="dark"] .fa-tkt .rg{background:conic-gradient(var(--azzurro-solid) calc(var(--p)*1%),rgba(255,255,255,.18) 0)}
-[data-theme="dark"] :is(.k-Biglietto,.k-Ticket,.k-TicketOrizzontale) .fa-btn.out{background:var(--surface-card);color:var(--azzurro-ink);border-color:var(--azzurro-ink)}
-[data-theme="dark"] :is(.k-Biglietto,.k-Ticket,.k-TicketOrizzontale) .fa-btn.del{background:var(--corallo-soft);color:var(--corallo-ink);border-color:var(--danger)}
 [data-theme="dark"] :is(.fa-rc .big,.fa-r2 .ft) .fa-btn,[data-theme="dark"] .fa-tkt :is(.nc,.rg b){background:var(--surface-card);color:var(--ink)}
 [data-theme="dark"] .k-TicketOrizzontale .rt2 .pl{background:var(--surface-card)}
-[data-theme="dark"] :is(.k-Biglietto,.k-Ticket,.k-TicketOrizzontale) .ok:not(.td){background:var(--azzurro-soft);color:var(--azzurro-ink);border-color:var(--azzurro-ink)}
+/* Rosso «pericolo» nello scuro (#F87171): fondo al 5% invece del 10% */
+[data-theme="dark"] .fa-ib.dng,[data-theme="dark"] .fa-btn.del{background:color-mix(in srgb,var(--danger) 5%,var(--surface-card))}
+/* Segmentato: il binario non scelto è un po' più chiaro della pagina, senza bordo */
+[data-theme="dark"] .fa-seg{background:#262F40}
+/* Biglietti colorati: bottoni e pillole si fondono con la tinta (vetro chiaro, niente bordo acceso) */
+[data-theme="dark"] :is(.k-Biglietto,.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .fa-btn.out{background:rgba(255,255,255,.1);color:var(--on-tinta);border-color:transparent}
+[data-theme="dark"] :is(.k-Biglietto,.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .fa-btn.del{background:rgba(248,113,113,.14);color:#FCA5A5;border-color:transparent}
+[data-theme="dark"] :is(.k-Biglietto,.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .ok:not(.td),[data-theme="dark"] :is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tv .pl3b.ok{background:rgba(255,255,255,.1);color:var(--on-tinta);border-color:transparent}
+[data-theme="dark"] :is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tv .pl3b.td,[data-theme="dark"] .fa-stay .ok.td,[data-theme="dark"] .k-TicketOrizzontale .tv .ti .pl3b.td{background:rgba(248,113,113,.18);color:#FCA5A5}
+[data-theme="dark"] :is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tv{--btnbg:rgba(255,255,255,.1)}
