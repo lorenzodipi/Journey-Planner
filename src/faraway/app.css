@@ -26,6 +26,7 @@
 .fa-row:focus-visible,.fa-ib:focus-visible,.fa-btn:focus-visible,.fa-chip:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 .fa-ib[data-focus-visible],.fa-btn[data-focus-visible],.fa-chip[data-focus-visible]{outline:3px solid var(--focus);outline-offset:2px}
 .fa-lnk:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+.fa-sech .fa-lnk{display:inline-flex;align-items:center;box-sizing:border-box}
 a.fa-row,a.fa-tab{text-decoration:none;color:inherit}
 
 /* fogli dal basso: <dialog> nativo (focus intrappolato, Esc, indietro di Android) */
