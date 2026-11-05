@@ -6,7 +6,7 @@ export type Theme = 'light' | 'dark'
 
 const KEY = 'jp.theme.v1'
 /** Colore della barra di stato / del browser: lo stesso dello sfondo della pagina. */
-const BAR: Record<Theme, string> = { light: '#FAF6EE', dark: '#142240' }
+const BAR: Record<Theme, string> = { light: '#FAF6EE', dark: '#0D1118' }
 
 export function readThemePref(): ThemePref {
   try {

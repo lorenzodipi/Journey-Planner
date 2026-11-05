@@ -328,8 +328,9 @@ sup{margin-left:0}
 .fa-dbt .bt{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .fa-dbt .fa-btn{justify-self:stretch;width:100%}
 
-/* Dark: pulsante flottante e stati selezionati con l'azzurro pieno della palette scura (bianco su #375EB3 = 6,2:1) */
+/* Dark: pulsante flottante e stati selezionati con l'azzurro pieno della palette scura (testo scuro su #6EA6FF) */
 [data-theme="dark"] .fa-fab{background:var(--azzurro-solid)}
+[data-theme="dark"] .fa-phone .fa-fab,[data-theme="dark"] .fa-phone .fa-fab svg{color:var(--on-azzurro-solid)!important}
 
 /* Orario e data: l'icona è quella a sinistra del campo; tolgo quella del browser a destra (il selettore si apre cliccando il campo) */
 .fa-in input[type=time]::-webkit-calendar-picker-indicator,.fa-in input[type=date]::-webkit-calendar-picker-indicator{display:none}
@@ -505,3 +506,27 @@ sup{margin-left:0}
 .fa-qta .fa-ib::after{content:"";position:absolute;inset:-6px}
 /* Ricevuta: le righe sotto il nome della categoria (spese e pagate · previsto) stanno attaccate */
 .k-Ricevuta .cat .sub{margin:2px 0 0}
+
+/* ---- Palette scura (5 nov 2026): solo colori, la forma dei componenti non cambia. Superfici blu-grigie poco sature con
+   salti di luce netti, azzurro più chiaro delle superfici (testo scuro sopra), tinte scure. ---- */
+/* Segmentato: binario più scuro della pagina, scelta = pillola chiara */
+[data-theme="dark"] .fa-seg{background:#090C12}
+[data-theme="dark"] .fa-seg button.on,[data-theme="dark"] .fa-seg span.on{background:#E6ECF7;color:var(--on-azzurro-solid)}
+/* Calendarietti dei Giorni: intestazione azzurro pieno con anelli scuri; «oggi» ha l'intestazione chiara e il bordo azzurro */
+[data-theme="dark"] .k-SelettoreGiorni .cl:not(.free):not(.sel):not(.past):not(.move){--hb:var(--azzurro-solid);--hf:var(--on-azzurro-solid)}
+[data-theme="dark"] .k-SelettoreGiorni .cl:not(.free):not(.sel):not(.past):not(.move) .rg1,[data-theme="dark"] .k-SelettoreGiorni .cl:not(.free):not(.sel):not(.past):not(.move) .rg2{background:var(--on-azzurro-solid)}
+[data-theme="dark"] .k-SelettoreGiorni .cl.today{--hb:#E6ECF7;border-color:var(--azzurro-solid)}
+/* Conto alla rovescia di Oggi: il numero è la cosa più accesa, gli aeroporti un bianco meno pieno */
+[data-theme="dark"] .k-Ticket .cdl .num{color:var(--azzurro-solid)}
+[data-theme="dark"] .k-Ticket .cd2-bot .rr3{color:#DCE2EC}
+/* Ricevuta: il contorno (ombra) diventa un filo chiaro, come per i biglietti */
+[data-theme="dark"] .k-Ricevuta .rc{filter:drop-shadow(0 0 .75px rgba(255,255,255,.4))}
+/* Sulle tinte (ora scure) i bottoni e le pillole che nel chiaro sono bianchi diventano superficie della card */
+[data-theme="dark"] :is(.k-Tappa,.k-TappaStati) .btn.sec,[data-theme="dark"] :is(.k-Tappa,.k-TappaStati) .stp.now :is(.btn.mp,.stbtn),[data-theme="dark"] :is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tv .pl3b.ok{background:var(--surface-card)}
+[data-theme="dark"] .k-Riepilogo .bar{background:rgba(255,255,255,.18)}
+[data-theme="dark"] .fa-tkt .rg{background:conic-gradient(var(--azzurro-solid) calc(var(--p)*1%),rgba(255,255,255,.18) 0)}
+[data-theme="dark"] :is(.k-Biglietto,.k-Ticket,.k-TicketOrizzontale) .fa-btn.out{background:var(--surface-card);color:var(--azzurro-ink);border-color:var(--azzurro-ink)}
+[data-theme="dark"] :is(.k-Biglietto,.k-Ticket,.k-TicketOrizzontale) .fa-btn.del{background:var(--corallo-soft);color:var(--corallo-ink);border-color:var(--danger)}
+[data-theme="dark"] :is(.fa-rc .big,.fa-r2 .ft) .fa-btn,[data-theme="dark"] .fa-tkt :is(.nc,.rg b){background:var(--surface-card);color:var(--ink)}
+[data-theme="dark"] .k-TicketOrizzontale .rt2 .pl{background:var(--surface-card)}
+[data-theme="dark"] :is(.k-Biglietto,.k-Ticket,.k-TicketOrizzontale) .ok:not(.td){background:var(--azzurro-soft);color:var(--azzurro-ink);border-color:var(--azzurro-ink)}
