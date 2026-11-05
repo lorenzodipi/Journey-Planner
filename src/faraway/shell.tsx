@@ -4,6 +4,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { useEffect, useRef } from 'react'
 import { Link, useLocation } from 'wouter'
 import { cx } from './cx'
+import { tornaSu } from '../lib/indietro'
 import { useVaiAllErrore } from './useVaiAllErrore'
 import { Sv, TAB_PATHS } from './icons'
 import { PulsanteIcona } from './base'
@@ -66,13 +67,9 @@ export function BarraGrande({ title, sub, actions }: { title: ReactNode; sub?: R
   )
 }
 
-/** Torna alla pagina precedente; se non c'è (link aperto da fuori), va a `fallback`. */
-export function useBack(fallback: string) {
-  const [, navigate] = useLocation()
-  return () => {
-    if (window.history.length > 1) window.history.back()
-    else navigate(fallback, { replace: true })
-  }
+/** «Indietro» in alto a sinistra: sale sempre alla pagina madre `madre` (es. «Giorni»), non alla pagina precedente. */
+export function useBack(madre: string) {
+  return () => tornaSu(madre)
 }
 
 /** Barra delle pagine secondarie: «indietro» a sinistra, titolo al centro, azione a destra. */

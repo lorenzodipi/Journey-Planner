@@ -327,7 +327,7 @@ export function Giorno({ params }: { params: { id: string } }) {
       {prev || next ? (
         <nav aria-label="Giorni vicini" style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
           {prev ? (
-            <Link href={`/giorni/${prev.id}`} className="fa-btn sm out" aria-label={`Giorno precedente, ${fmt(prev.date)}`}>
+            <Link href={`/giorni/${prev.id}`} replace className="fa-btn sm out" aria-label={`Giorno precedente, ${fmt(prev.date)}`}>
               <Sv name="back" size={18} />
               {fmt(prev.date)}
             </Link>
@@ -335,7 +335,7 @@ export function Giorno({ params }: { params: { id: string } }) {
             <span />
           )}
           {next ? (
-            <Link href={`/giorni/${next.id}`} className="fa-btn sm out" aria-label={`Giorno successivo, ${fmt(next.date)}`}>
+            <Link href={`/giorni/${next.id}`} replace className="fa-btn sm out" aria-label={`Giorno successivo, ${fmt(next.date)}`}>
               {fmt(next.date)}
               <Sv name="chevr" size={18} />
             </Link>

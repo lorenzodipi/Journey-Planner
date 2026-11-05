@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useState } from 'react'
 import { Redirect, Route, Router, Switch, useLocation } from 'wouter'
 import type { ReactNode } from 'react'
 import { navigate as hashNavigate, useHashLocation } from 'wouter/use-hash-location'
+import { navigateClean } from './lib/indietro'
 import { SCEGLI_DOPO_ACCESSO, useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
 import { AlloggiPage } from './pages/alloggi/AlloggiPage'
@@ -34,9 +35,6 @@ import { Sprite } from './ui/Sprite'
 import { loadActiveId, loadSnapshot } from './lib/cache'
 import { SchermataCaricamento, SchermataErrore } from './faraway/Rete'
 
-// La query delle rotte (?vista=mappa) sta in location.search: wouter la lascia alla pagina dopo se il
-// nuovo indirizzo non ha «?». Qui ogni cambio di pagina la riscrive (vuota se non c'è).
-const navigateClean: typeof hashNavigate = (to, options) => hashNavigate(to.includes('?') ? to : `${to}?`, options)
 const useHashLoc = (options?: Parameters<typeof useHashLocation>[0]): [string, typeof hashNavigate] => [useHashLocation(options)[0], navigateClean]
 useHashLoc.hrefs = (href: string) => `#${href}`
 

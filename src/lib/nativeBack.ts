@@ -2,6 +2,7 @@
 // il gesto non fa nulla o chiude l'app. Si importa SOLO dentro `if (__NATIVE__)`.
 import { App } from '@capacitor/app'
 import { topDialog } from '../ui/dialogStack'
+import { genitore, percorsoAttuale, tornaSu } from './indietro'
 
 const isHome = () => {
   const h = location.hash.replace(/^#/, '')
@@ -26,7 +27,13 @@ export function goBack(): boolean {
     window.dispatchEvent(new Event('fa:close-card'))
     return true
   }
-  // 3) altrimenti torna alla pagina precedente; se non ce n'è, va a "Oggi"
+  // 3) da una pagina interna si sale alla pagina madre (da un giorno a «Giorni»), come il bottone in alto a sinistra
+  const madre = genitore(percorsoAttuale())
+  if (madre) {
+    tornaSu(madre)
+    return true
+  }
+  // 4) da una scheda principale torna alla pagina precedente; se non ce n'è, va a "Oggi"
   if (!isHome()) {
     const before = location.hash
     history.back()
@@ -40,7 +47,7 @@ export function goBack(): boolean {
 
 export function setupNativeBack(): void {
   void App.addListener('backButton', () => {
-    // 3) già su "Oggi": esce dall'app
+    // già su "Oggi": esce dall'app
     if (!goBack()) void App.exitApp()
   })
 }
