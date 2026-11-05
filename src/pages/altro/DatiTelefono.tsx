@@ -12,6 +12,7 @@ import { Pulsante } from '../../faraway/base'
 import type { useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { Riga } from '../../faraway/Righe'
+import { useInCorso } from '../../faraway/Attesa'
 
 const clock = (ms: number) => new Date(ms).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
 const when = (ms: number) => new Date(ms).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -34,6 +35,7 @@ export function SezioniDati({ ask }: { ask: ReturnType<typeof useConferma>[0] })
     }
   }
 
+  const [occ, faiOcc] = useInCorso()
   async function riscarica() {
     const ok = await ask({
       title: 'Scaricare di nuovo i dati?',
@@ -49,7 +51,7 @@ export function SezioniDati({ ask }: { ask: ReturnType<typeof useConferma>[0] })
     } catch {
       // ignorato
     }
-    await t.refresh()
+    await faiOcc('riscarica', () => t.refresh())
     showToast('Copia locale svuotata e riscaricata')
   }
 
@@ -68,7 +70,7 @@ export function SezioniDati({ ask }: { ask: ReturnType<typeof useConferma>[0] })
           chevron={false}
         />
       </section>
-      <Pulsante color="secondary" iconLeading="refresh" onPress={() => void riscarica()}>
+      <Pulsante color="secondary" iconLeading="refresh" isLoading={occ === 'riscarica'} onPress={() => void riscarica()}>
         Scarica di nuovo i dati
       </Pulsante>
 

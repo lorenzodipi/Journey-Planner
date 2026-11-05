@@ -11,6 +11,7 @@ import { useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { Rimborso, Trip } from '../../types'
+import { useInCorso } from '../../faraway/Attesa'
 
 const first = (trip: Trip, id: string) => trip.travelers.find((p) => p.id === id)?.name.split(/\s+/)[0] ?? '—'
 
@@ -129,11 +130,12 @@ export function RimborsiCard({ trip, conMie = true }: { trip: Trip; /** Le mie r
   const t = useTrips()
   const me = useMe(trip)
   const [aperta, setAperta] = useState<Rimborso | null>(null)
+  const [occ, faiOcc] = useInCorso()
   const dec = daDecidere(trip.settlements, me?.id)
   const mie = conMie ? inAttesaMie(trip.settlements, me?.id) : []
   if (dec.length === 0 && mie.length === 0) return null
   async function annulla(r: Rimborso) {
-    const m = await t.cancelSettlement(r.id)
+    const m = await faiOcc(r.id, () => t.cancelSettlement(r.id))
     showToast(m ?? 'Richiesta annullata')
   }
   return (
@@ -146,7 +148,7 @@ export function RimborsiCard({ trip, conMie = true }: { trip: Trip; /** Le mie r
         </Banner>
       ))}
       {mie.map((r) => (
-        <Banner key={r.id} tone="az" icon="clock" action={<Pulsante size="sm" color="secondary" onPress={() => void annulla(r)}>Annulla</Pulsante>}>
+        <Banner key={r.id} tone="az" icon="clock" action={<Pulsante size="sm" color="secondary" isLoading={occ === r.id} onPress={() => void annulla(r)}>Annulla</Pulsante>}>
           Hai dichiarato {formatMoney(r.amount, r.currency)} a {first(trip, r.toId)}
           <br />
           {STATO_RIMBORSO.in_attesa}

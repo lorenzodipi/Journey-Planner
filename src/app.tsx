@@ -30,6 +30,7 @@ import { TrasportiPage } from './pages/trasporti/TrasportiPage'
 import { PrimoViaggio } from './pages/PrimoViaggio'
 import { PullToRefresh } from './ui/PullToRefresh'
 import { ToastHost } from './ui/ToastHost'
+import { BarraAttesa } from './faraway/Attesa'
 import { EmptyState } from './ui/PageHeader'
 import { Sprite } from './ui/Sprite'
 import { loadActiveId, loadSnapshot } from './lib/cache'
@@ -93,6 +94,8 @@ export function App() {
     <Router hook={useHashLoc}>
       <Sprite />
       {node}
+      <ToastHost />
+      <BarraAttesa />
     </Router>
   )
   // nella scelta del viaggio non c'è il resto dell'app, ma il profilo (icona in alto a destra) si apre lo stesso
@@ -185,6 +188,7 @@ export function App() {
       <NotificheHost trip={trip} />
       <PullToRefresh />
       <ToastHost />
+      <BarraAttesa />
     </Router>
   )
 }

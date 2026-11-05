@@ -18,6 +18,7 @@ import { showToast } from '../../state/toast'
 import { useTrip, useTrips } from '../../state/trip'
 import type { Documento } from '../../types'
 import { DocumentoDettaglio, NuovoDocumentoSheet, spesaDelDocumento } from './DocumentoSheet'
+import { useInCorso } from '../../faraway/Attesa'
 
 const formato = (d: Documento) => d.mime?.split('/')[1]?.split(/[.+-]/).pop()?.toUpperCase() || d.name.split('.').pop()?.toUpperCase() || 'File'
 const caricato = (d: Documento) => new Date(d.createdAt).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -34,12 +35,15 @@ export function DocumentiPage() {
   const lista = senzaCollegamenti(trip.documents)
   const doc = lista.find((d) => d.id === modifica) ?? (trip.documents ?? []).find((d) => d.id === modifica)
 
+  const [occ, faiOcc] = useInCorso()
   async function elimina(d: Documento) {
     const ok = await ask({ title: 'Eliminare il documento?', message: `«${d.name}» sparisce per tutti, anche dai punti a cui è collegato.`, confirm: 'Elimina', cancel: 'Tienilo', destructive: true })
     if (!ok) return
     const spesa = spesaDelDocumento(trip, d.id)
-    if (spesa) await t.setExpenseDeleted(spesa.id, true)
-    const m = await t.deleteDocument(d.id, d.path)
+    const m = await faiOcc(d.id, async () => {
+      if (spesa) await t.setExpenseDeleted(spesa.id, true)
+      return t.deleteDocument(d.id, d.path)
+    })
     showToast(m ?? 'Documento eliminato')
   }
 
@@ -118,14 +122,14 @@ export function DocumentiPage() {
                     </dl>
                     {mio ? null : <p className="fa-help" style={{ margin: '16px 0 0' }}>Solo chi l’ha caricato può cambiarne la visibilità o eliminarlo.</p>}
                     <div className="acts2">
-                      <Pulsante size="sm" color="secondary" iconLeading="file" onPress={() => void openBookingFile(d.path).catch((e: Error) => showToast(e.message))}>
+                      <Pulsante size="sm" color="secondary" iconLeading="file" isLoading={occ === `apri:${d.id}`} onPress={() => void faiOcc(`apri:${d.id}`, () => openBookingFile(d.path)).catch((e: Error) => showToast(e.message))}>
                         Apri
                       </Pulsante>
                       <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => setModifica(d.id)}>
                         Modifica
                       </Pulsante>
                       {mio ? (
-                        <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={() => void elimina(d)}>
+                        <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" isLoading={occ === d.id} onPress={() => void elimina(d)}>
                           Elimina
                         </Pulsante>
                       ) : null}

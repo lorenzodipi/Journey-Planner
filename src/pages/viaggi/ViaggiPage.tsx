@@ -1,6 +1,7 @@
 // Viaggi (mock Fa-12, #43): copertine illustrate, stato, avatar, date e riga finale; FAB «+ Viaggio»; stato vuoto.
 // Senza barra delle schede né «indietro», con il profilo in alto a destra: si esce scegliendo un viaggio (dopo l’accesso è la scelta del viaggio).
 import { useEffect, useState } from 'react'
+import { useInCorso } from '../../faraway/Attesa'
 import { useLocation } from 'wouter'
 import { periodo, viaggiText } from '../../lib/altro'
 import { formatShort } from '../../lib/dates'
@@ -48,7 +49,7 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
   }, [])
 
   async function rispondi(id: string, accetta: boolean, titolo: string) {
-    setRispondendo(id)
+    setRispondendo(`${id}:${accetta ? 'si' : 'no'}`)
     const r = await t.respondInvite(id, accetta)
     setRispondendo(null)
     if (r.error) return showToast(r.error)
@@ -65,8 +66,10 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
     navigate('/', { replace: true })
   }
 
+  // il pulsante del viaggio mostra il caricamento finché il server risponde
+  const [archiviando, inCorso] = useInCorso()
   async function archivia(trip: Trip, on: boolean) {
-    const m = await t.archiveTrip(trip.id, on)
+    const m = await inCorso(trip.id, () => t.archiveTrip(trip.id, on))
     showToast(m ?? (on ? `«${trip.title}» archiviato` : `«${trip.title}» ripristinato`), m || !on ? undefined : { label: 'Annulla', run: () => void t.archiveTrip(trip.id, false) })
   }
 
@@ -75,11 +78,11 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
     return (
       <span className="fa-acts" style={{ margin: 0, padding: 16, borderTop: '1px solid var(--hairline)' }}>
         {trip.archivedAt ? (
-          <Pulsante size="sm" color="secondary" onPress={() => void archivia(trip, false)}>Ripristina</Pulsante>
+          <Pulsante size="sm" color="secondary" isLoading={archiviando === trip.id} onPress={() => void archivia(trip, false)}>Ripristina</Pulsante>
         ) : (
           <>
-            <Pulsante size="sm" color="secondary" onPress={() => setDuplica(trip)}>Duplica come modello</Pulsante>
-            <Pulsante size="sm" color="secondary-soft" iconLeading="archive" onPress={() => void archivia(trip, true)}>Archivia</Pulsante>
+            <Pulsante size="sm" color="secondary" isDisabled={archiviando === trip.id} onPress={() => setDuplica(trip)}>Duplica come modello</Pulsante>
+            <Pulsante size="sm" color="secondary-soft" iconLeading="archive" isLoading={archiviando === trip.id} onPress={() => void archivia(trip, true)}>Archivia</Pulsante>
           </>
         )}
       </span>
@@ -168,10 +171,10 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
                 {i.startDate && i.endDate ? ` · ${formatShort(i.startDate)} – ${formatShort(i.endDate)}` : ''}
               </span>
               <span style={{ display: 'flex', gap: 8 }}>
-                <Pulsante isLoading={rispondendo === i.id} onPress={() => void rispondi(i.id, true, i.title)}>
+                <Pulsante isLoading={rispondendo === `${i.id}:si`} isDisabled={rispondendo === `${i.id}:no`} onPress={() => void rispondi(i.id, true, i.title)}>
                   Accetta
                 </Pulsante>
-                <Pulsante color="secondary" isDisabled={rispondendo === i.id} onPress={() => void rispondi(i.id, false, i.title)}>
+                <Pulsante color="secondary" isLoading={rispondendo === `${i.id}:no`} isDisabled={rispondendo === `${i.id}:si`} onPress={() => void rispondi(i.id, false, i.title)}>
                   Rifiuta
                 </Pulsante>
               </span>
@@ -203,7 +206,7 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
           {lista.map(conAzioni)}
           {archiviati.length ? (
             <section aria-label="Viaggi archiviati" style={{ display: 'grid', gap: 16 }}>
-              <button type="button" className="fa-lnk" style={{ justifySelf: 'start' }} aria-expanded={mostraArch} onClick={() => setMostraArch(!mostraArch)}>
+              <button type="button" className="fa-lnk" style={{ justifySelf: 'center' }} aria-expanded={mostraArch} onClick={() => setMostraArch(!mostraArch)}>
                 {mostraArch ? 'Nascondi' : 'Mostra'} i viaggi archiviati ({archiviati.length})
               </button>
               {mostraArch ? archiviati.map(conAzioni) : null}

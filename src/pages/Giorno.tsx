@@ -40,6 +40,7 @@ import { SpesaSheet } from './spese/SpesaSheet'
 import { iconaSpesa } from '../lib/ricevuta'
 import { TappaSheet } from './giorno/TappaSheet'
 import { alloggiDelGiorno } from '../lib/fattibilita'
+import { useInCorso } from '../faraway/Attesa'
 
 const wdm = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
 const fmt = (ymd: string) => wdm.format(parseYmd(ymd)).replace(/\./g, '')
@@ -165,12 +166,13 @@ export function Giorno({ params }: { params: { id: string } }) {
   const casaUrl = casa.escluso ? undefined : (casa.partenza ?? casa.arrivo ?? stays.night)?.mapsUrl
   const homePoint = casaUrl ? parseMapsUrl(casaUrl) : null
   const plan = planRoute(day.items.map((i) => ({ id: i.id, position: i.position, time: i.timeLock === 'locked' ? (i.time ?? '00:00') : i.time, lat: stopById.get(i.id)?.lat, lng: stopById.get(i.id)?.lng })), homePoint)
+  const [occ, faiOcc] = useInCorso()
   const optimize = async () => {
     if (!plan) return
     if (plan.changed.length === 0) return showToast('Il percorso è già il più corto')
     const old = new Map(day.items.map((i) => [i.id, i.position ?? 0]))
     const previous = plan.changed.map((c) => ({ id: c.id, position: old.get(c.id) ?? 0 }))
-    const m = await t.setItemPositions(plan.changed)
+    const m = await faiOcc('ottimizza', () => t.setItemPositions(plan.changed))
     if (m) return showToast(m)
     showToast(plan.afterM < plan.beforeM - 50 ? `Percorso accorciato da ${formatDistance(plan.beforeM)} a ${formatDistance(plan.afterM)}` : 'Tappe senza orario messe dopo quelle con orario', {
       label: 'Annulla',
@@ -248,7 +250,7 @@ export function Giorno({ params }: { params: { id: string } }) {
         Aggiungi tappa
       </Pulsante>
       {plan && day.items.filter((i) => !i.time).length > 1 ? (
-        <Pulsante color="secondary" iconLeading="move" onPress={() => void optimize()}>
+        <Pulsante color="secondary" iconLeading="move" isLoading={occ === 'ottimizza'} onPress={() => void optimize()}>
           Ottimizza percorso
         </Pulsante>
       ) : null}

@@ -26,6 +26,7 @@ import { Vuoto, VuotoFiltro } from '../../faraway/Stati'
 import { giornoSpese } from '../spese/testi'
 import { filtriAttivi, FiltriPrenotazioniSheet } from './FiltriSheet'
 import { PrenotazioneSheet } from './PrenotazioneSheet'
+import { useInCorso } from '../../faraway/Attesa'
 
 const icona = (b: Booking) => CATEGORIE_BASE.find((c) => c.label === BOOKING_BUDGET_CATEGORY[b.type])?.icon ?? 'i-sez-ticket'
 
@@ -65,15 +66,16 @@ export function PrenotazioniPage() {
       showToast(e instanceof Error ? e.message : 'Non riesco ad aprire il file.')
     }
   }
+  const [occ, faiOcc] = useInCorso()
   async function scollega(b: Booking, itemId: string) {
     // BOOK-027: scollegare non elimina né la prenotazione né la tappa
-    const m = await t.setBookingItems(trip.id, b.id, tappeDi(trip, b.id).filter((x) => x !== itemId))
+    const m = await faiOcc(`scollega:${itemId}`, () => t.setBookingItems(trip.id, b.id, tappeDi(trip, b.id).filter((x) => x !== itemId)))
     showToast(m ?? 'Prenotazione scollegata')
   }
   async function elimina(b: Booking) {
     const ok = await ask({ title: 'Eliminare la prenotazione?', message: conDipendenze(`${b.title} sparisce dalle prenotazioni${b.cost != null ? ' e dalle spese' : ''}; le tappe collegate restano. Puoi annullare subito dopo.`, dipendenze(trip, 'prenotazione', b.id)), confirm: 'Elimina la prenotazione', cancel: 'Tieni la prenotazione', destructive: true })
     if (!ok) return
-    const m = await t.setBookingDeleted(b.id, true)
+    const m = await faiOcc(`elimina:${b.id}`, () => t.setBookingDeleted(b.id, true))
     showToast(m ?? 'Prenotazione eliminata', m ? undefined : { label: 'Annulla', run: () => void t.setBookingDeleted(b.id, false) })
   }
 
@@ -214,7 +216,7 @@ export function PrenotazioniPage() {
                           </Pulsante>
                         ) : null}
                         {b.filePath ? (
-                          <Pulsante size="sm" color="secondary" iconLeading="file" onPress={() => void apri(b)}>
+                          <Pulsante size="sm" color="secondary" iconLeading="file" isLoading={occ === `apri:${b.id}`} onPress={() => void faiOcc(`apri:${b.id}`, () => apri(b))}>
                             File
                           </Pulsante>
                         ) : null}
@@ -224,14 +226,14 @@ export function PrenotazioniPage() {
                           </Pulsante>
                         ) : null}
                         {tappe.map((id) => (
-                          <Pulsante key={id} size="sm" color="secondary" iconLeading="pin" onPress={() => void scollega(b, id)} aria-label={`Scollega dalla tappa ${giornoDellaTappa(trip, id)?.title ?? ''}`}>
+                          <Pulsante key={id} size="sm" color="secondary" iconLeading="pin" isLoading={occ === `scollega:${id}`} onPress={() => void scollega(b, id)} aria-label={`Scollega dalla tappa ${giornoDellaTappa(trip, id)?.title ?? ''}`}>
                             Scollega
                           </Pulsante>
                         ))}
                         <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => setSheet({ booking: b })}>
                           Modifica
                         </Pulsante>
-                        <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={() => void elimina(b)}>
+                        <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" isLoading={occ === `elimina:${b.id}`} onPress={() => void elimina(b)}>
                           Elimina
                         </Pulsante>
                       </div>

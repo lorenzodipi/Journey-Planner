@@ -19,6 +19,7 @@ import { Avatars, Banner, Campo, Pulsante } from '../../faraway/base'
 import { Foglio, useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { initials } from '../../state/me'
+import { useInCorso } from '../../faraway/Attesa'
 
 type Fonte = 'salvato' | 'oggi' | 'mano' | 'errore' | 'attesa'
 interface Bozza {
@@ -223,12 +224,13 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
     onClose()
   }
 
+  const [occ, faiOcc] = useInCorso()
   async function invita() {
     if (!invito) return
     if (editing && trip) {
       const email = invito.email.trim().toLowerCase()
       if (!email) return setError('Scrivi l’email dell’account della persona.')
-      const message = await t.addTraveler(trip.id, { email, name: invito.name.trim() || nameFromEmail(email), color: TRAVELER_COLORS[trip.travelers.length % TRAVELER_COLORS.length] })
+      const message = await faiOcc('invita', () => t.addTraveler(trip.id, { email, name: invito.name.trim() || nameFromEmail(email), color: TRAVELER_COLORS[trip.travelers.length % TRAVELER_COLORS.length] }))
       if (message) return setError(message)
       showToast('Persona aggiunta')
     } else {
@@ -250,7 +252,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
       destructive: true,
     })
     if (!ok) return
-    const message = await t.deleteTrip(trip.id)
+    const message = await faiOcc('elimina', () => t.deleteTrip(trip.id))
     if (message) return setError(message)
     onClose()
     navigate('/')
@@ -385,7 +387,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
               <Campo label="Email dell'account" type="email" inputMode="email" value={invito.email} onChange={(v) => setInvito({ ...invito, email: v })} autoComplete="off" placeholder="Email del suo account" autoFocus />
               <Campo label="Nome (facoltativo)" value={invito.name} onChange={(v) => setInvito({ ...invito, name: v })} maxLength={40} autoComplete="off" />
               <div style={{ display: 'flex', gap: 8 }}>
-                <Pulsante size="sm" onPress={() => void invita()}>
+                <Pulsante size="sm" isLoading={occ === 'invita'} onPress={() => void invita()}>
                   {editing ? 'Aggiungi al viaggio' : 'Aggiungi'}
                 </Pulsante>
                 <Pulsante size="sm" color="secondary" onPress={() => setInvito(null)}>
@@ -406,7 +408,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
         </Pulsante>
 
         {editing && organizza ? (
-          <Pulsante color="tertiary-destructive" iconLeading="trash" onPress={() => void elimina()}>
+          <Pulsante color="tertiary-destructive" iconLeading="trash" isLoading={occ === 'elimina'} onPress={() => void elimina()}>
             Elimina viaggio
           </Pulsante>
         ) : null}

@@ -15,6 +15,7 @@ import { Sv } from '../../faraway/icons'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
 import { VoceSheet } from './VoceSheet'
+import { useInCorso } from '../../faraway/Attesa'
 
 const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']
 
@@ -70,13 +71,14 @@ export function ChecklistPage() {
     setSel(new Set())
   }
 
+  const [occ, faiOcc] = useInCorso()
   async function modello() {
-    const m = await t.addChecklistTemplate(trip.id)
+    const m = await faiOcc('modello', () => t.addChecklistTemplate(trip.id))
     showToast(m ?? 'Modello aggiunto: modifica o elimina le voci che non ti servono.')
   }
   async function duplica(from: Trip) {
+    const m = await faiOcc(`dup:${from.id}`, () => t.duplicateChecklist(trip.id, from.id))
     setDup(false)
-    const m = await t.duplicateChecklist(trip.id, from.id)
     showToast(m ?? `Voci copiate da «${from.title}»`)
   }
 
@@ -210,7 +212,7 @@ export function ChecklistPage() {
             <div style={{ display: 'grid', gap: 8 }}>
               <p className="fa-m" style={{ margin: 0 }}>Copio le voci comuni e la tua lista privata, senza spunte.</p>
               {altri.map((x) => (
-                <Pulsante key={x.id} color="secondary" onPress={() => void duplica(x)}>
+                <Pulsante key={x.id} color="secondary" isLoading={occ === `dup:${x.id}`} onPress={() => void duplica(x)}>
                   {x.title}
                 </Pulsante>
               ))}
@@ -223,7 +225,7 @@ export function ChecklistPage() {
       {vuota ? (
         <>
           <Vuoto title="Nessuna voce ancora" text="Aggiungi cosa fare prima di partire e cosa mettere in valigia, per tutti o solo per te." action="Aggiungi la prima voce" onAction={() => setSheet({})} />
-          <Pulsante color="secondary" onPress={() => void modello()}>
+          <Pulsante color="secondary" isLoading={occ === 'modello'} onPress={() => void modello()}>
             Parti da un modello
           </Pulsante>
           {altri.length > 0 ? (

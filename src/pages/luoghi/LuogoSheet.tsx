@@ -24,6 +24,7 @@ import { CampoDurata } from '../../faraway/CampoDurata'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { OrariEditor } from './OrariEditor'
+import { useInCorso } from '../../faraway/Attesa'
 
 type PinPickerComponent = typeof import('../../ui/MapView').PinPicker
 
@@ -115,9 +116,10 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
     const m = await t.setPlacePref(place.id, pref === v ? null : v)
     if (m) showToast(m)
   }
+  const [occ, faiOcc] = useInCorso()
   async function archivia() {
     if (!place) return
-    const m = await t.archivePlace(place.id, true)
+    const m = await faiOcc('archivia', () => t.archivePlace(place.id, true))
     if (m) return showToast(m)
     showToast(`«${place.name}» archiviato`, { label: 'Annulla', run: () => void t.archivePlace(place.id, false) })
     onClose()
@@ -394,7 +396,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
           </div>
         ) : null}
         {place ? (
-          <Pulsante color="tertiary" iconLeading="archive" onPress={() => void archivia()}>
+          <Pulsante color="tertiary" iconLeading="archive" isLoading={occ === 'archivia'} onPress={() => void archivia()}>
             Archivia il luogo
           </Pulsante>
         ) : null}

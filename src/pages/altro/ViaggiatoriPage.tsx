@@ -11,6 +11,7 @@ import { Foglio, useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { Azioni, KV, RigaApribile, useUnaAperta } from '../../faraway/Righe'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
+import { useInCorso } from '../../faraway/Attesa'
 
 const TONO = { inviato: 'soft', accettato: 'acq', rifiutato: 'mut', scaduto: 'cor' } as const
 
@@ -42,6 +43,7 @@ export function ViaggiatoriPage() {
     showToast('Invito inviato: la persona lo trova in Viaggi, in «Inviti ricevuti»')
   }
 
+  const [occ, faiOcc] = useInCorso()
   async function rimuovi(id: string) {
     const p = trip.travelers.find((x) => x.id === id)
     if (!p) return
@@ -53,7 +55,7 @@ export function ViaggiatoriPage() {
       destructive: true,
     })
     if (!ok) return
-    const m = await t.removeMember(trip.id, p.userId, p.id)
+    const m = await faiOcc(`rimuovi:${p.id}`, () => t.removeMember(trip.id, p.userId, p.id))
     showToast(m ?? `${p.name} non è più nel viaggio`)
   }
 
@@ -68,7 +70,7 @@ export function ViaggiatoriPage() {
   }
 
   async function annulla(id: string, mail: string) {
-    const m = await t.cancelInvite(id)
+    const m = await faiOcc(`invito:${id}`, () => t.cancelInvite(id))
     showToast(m ?? `Invito a ${mail} annullato`)
   }
 
@@ -147,7 +149,7 @@ export function ViaggiatoriPage() {
               ) : null}
               {puoiRimuovere ? (
                 <Azioni>
-                  <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={() => void rimuovi(p.id)}>
+                  <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" isLoading={occ === `rimuovi:${p.id}`} onPress={() => void rimuovi(p.id)}>
                     Rimuovi dal viaggio
                   </Pulsante>
                 </Azioni>
@@ -174,7 +176,7 @@ export function ViaggiatoriPage() {
                 <KV icon="info" title={i.stato === 'inviato' ? 'Aspetta la risposta' : i.stato === 'rifiutato' ? 'Ha rifiutato l’invito' : 'L’invito è scaduto'} sub={i.stato === 'inviato' ? 'La persona deve accettare per vedere il viaggio' : creatore ? 'Puoi invitarla di nuovo' : undefined} />
                 {creatore ? (
                   <Azioni>
-                    <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={() => void annulla(i.id, i.email)}>
+                    <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" isLoading={occ === `invito:${i.id}`} onPress={() => void annulla(i.id, i.email)}>
                       {i.stato === 'inviato' ? 'Annulla l’invito' : 'Togli dall’elenco'}
                     </Pulsante>
                   </Azioni>

@@ -49,6 +49,8 @@ type Result = Promise<string | null>
 export const LOAD_TIMEOUT_MS = 15_000
 
 interface TripsValue {
+  /** Una scrittura che aspetta il server è in corso (barra d'attesa in cima). */
+  inCorso: boolean
   status: TripsStatus
   trips: Trip[]
   active: Trip | null
@@ -235,6 +237,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
   )
   const [status, setStatus] = useState<TripsStatus>(demo ? 'ready' : 'loading')
   const [stale, setStale] = useState(false)
+  const [attese, setAttese] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(demo ? demoTrip.id : loadActiveId())
   const hasData = useRef(false)
@@ -449,28 +452,37 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const run = useCallback(
     async (job: () => Promise<unknown>, scope?: api.Scope[]): Result => {
       if (demo) return DEMO_MESSAGE
+      setAttese((n) => n + 1)
       try {
-        // tetto di attesa anche prima della richiesta di rete (es. blocco della sessione)
-        let timer: ReturnType<typeof setTimeout> | undefined
-        const giveUp = new Promise<never>((_, reject) => {
-          timer = setTimeout(() => reject(new Error('timeout')), 25_000)
-        })
-        try {
-          await Promise.race([job(), giveUp])
-        } finally {
-          clearTimeout(timer)
-        }
-      } catch (e) {
-        console.error('[journey] operazione fallita', e)
-        return api.describeError(e)
+        return await eseguiERicarica()
+      } finally {
+        setAttese((n) => Math.max(0, n - 1))
       }
-      await load(scope) // solo i dati toccati dalla modifica (tutto se non indicato)
-      return null
+      async function eseguiERicarica(): Result {
+        try {
+          // tetto di attesa anche prima della richiesta di rete (es. blocco della sessione)
+          let timer: ReturnType<typeof setTimeout> | undefined
+          const giveUp = new Promise<never>((_, reject) => {
+            timer = setTimeout(() => reject(new Error('timeout')), 25_000)
+          })
+          try {
+            await Promise.race([job(), giveUp])
+          } finally {
+            clearTimeout(timer)
+          }
+        } catch (e) {
+          console.error('[journey] operazione fallita', e)
+          return api.describeError(e)
+        }
+        await load(scope) // solo i dati toccati dalla modifica (tutto se non indicato)
+        return null
+      }
     },
     [demo, load],
   )
 
   const value: TripsValue = {
+    inCorso: attese > 0,
     status,
     trips,
     active,
