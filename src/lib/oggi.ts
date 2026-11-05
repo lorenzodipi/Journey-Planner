@@ -122,3 +122,49 @@ export function numeriViaggio(trip: Trip) {
 }
 
 export const domani = (today: string) => dateAddDays(today, 1)
+
+export interface StatDopo {
+  id: 'pieno' | 'ore' | 'genere' | 'pasti' | 'lunga' | 'durata' | 'meta'
+  l: string
+  v: string
+  c: string
+}
+
+const oreTesto = (min: number) => {
+  const h = Math.floor(min / 60)
+  const m = Math.round(min % 60)
+  return m && h < 10 ? `${h} h ${m}` : `${Math.round(min / 60)} h`
+}
+const giornoBreve = (ymd: string) => {
+  const s = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${ymd}T12:00:00Z`)).replace(/\./g, '')
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+/**
+ * Statistiche per i due blocchi di «Oggi» dopo il viaggio, in ordine di preferenza. Ognuna c'è solo se ha un valore
+ * che dice qualcosa (niente zeri): così c'è sempre un'alternativa. L'ultima («Durata») c'è sempre.
+ */
+export function statisticheDopo(trip: Pick<Trip, 'days' | 'places' | 'startDate' | 'endDate' | 'destination'>): StatDopo[] {
+  const fatto = (i: { status?: string; done?: boolean }) => (i.status ?? (i.done ? 'done' : 'todo')) === 'done'
+  const attive = (d: Trip['days'][number]) => d.items.filter((i) => i.status !== 'cancelled' && i.status !== 'skipped').length
+  const fatte = trip.days.flatMap((d) => d.items.filter(fatto))
+  const out: StatDopo[] = []
+  const pieno = [...trip.days].sort((a, b) => attive(b) - attive(a) || a.date.localeCompare(b.date))[0]
+  if (pieno && attive(pieno) >= 2) out.push({ id: 'pieno', l: 'Giorno più pieno', v: giornoBreve(pieno.date), c: `${attive(pieno)} tappe${pieno.city?.trim() ? ` a ${pieno.city.trim()}` : ''}` })
+  const minuti = fatte.reduce((s, i) => s + (i.durationMinutes ?? 0), 0)
+  if (minuti >= 60) out.push({ id: 'ore', l: 'Ore in giro', v: oreTesto(minuti), c: `in ${fatte.length} ${fatte.length === 1 ? 'tappa fatta' : 'tappe fatte'}` })
+  const visti = new Set(fatte.map((i) => i.placeId).filter(Boolean))
+  const conta = new Map<string, number>()
+  for (const p of trip.places) if ((p.status === 'done' || visti.has(p.id)) && p.category?.trim()) conta.set(p.category.trim(), (conta.get(p.category.trim()) ?? 0) + 1)
+  const genere = [...conta.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]
+  if (genere && genere[1] >= 2) out.push({ id: 'genere', l: 'I più visitati', v: genere[0], c: `${genere[1]} luoghi su ${[...conta.values()].reduce((s, n) => s + n, 0)}` })
+  const pasti = fatte.filter((i) => i.kind === 'meal').length
+  if (pasti >= 1) out.push({ id: 'pasti', l: 'Pasti fuori', v: String(pasti), c: 'tra ristoranti e locali' })
+  const lunga = [...fatte].sort((a, b) => (b.durationMinutes ?? 0) - (a.durationMinutes ?? 0))[0]
+  if (lunga && (lunga.durationMinutes ?? 0) >= 60) out.push({ id: 'lunga', l: 'Tappa più lunga', v: oreTesto(lunga.durationMinutes as number), c: lunga.title })
+  const giorni = trip.days.length || 1
+  out.push({ id: 'durata', l: 'In viaggio', v: `${giorni} ${giorni === 1 ? 'giorno' : 'giorni'}`, c: `${Math.max(0, giorni - 1)} ${giorni - 1 === 1 ? 'notte' : 'notti'} fuori casa` })
+  // sempre almeno due: l'ultima riserva è la meta
+  if (out.length < 2) out.push({ id: 'meta', l: 'Meta', v: trip.destination || 'Il viaggio', c: 'il posto che hai visto' })
+  return out
+}

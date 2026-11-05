@@ -15,7 +15,7 @@ import { groupDays, rangeText, type DayGroup } from '../lib/dayGroups'
 import { riassunto } from '../lib/spese'
 import { StepperViaggio, type TappaViaggio } from '../faraway/StepperViaggio'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
-import { avvisoPioggia, descrizione, faseViaggio, momento, notteAlle, numeriViaggio, prossimeOre, rigaSole } from '../lib/oggi'
+import { avvisoPioggia, descrizione, faseViaggio, momento, notteAlle, numeriViaggio, prossimeOre, rigaSole, statisticheDopo } from '../lib/oggi'
 import { isClosed, toMin } from '../lib/tappa'
 import { minutesOfDay, sunForDay } from '../lib/sun'
 import { tripToday } from '../lib/today'
@@ -391,21 +391,14 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
   const conCitta = trip.days.some((d) => d.city?.trim())
 
   // Sotto il totale ci sono sempre due blocchi, mai uno solo con un buco accanto. Da soli raccontano il viaggio, non i soldi.
-  const citta = [...new Set(trip.days.map((d) => d.city?.trim()).filter((c): c is string => !!c))]
-  const cittaBlocco = citta.length
-    ? { l: citta.length === 1 ? 'Città' : 'Città visitate', v: String(citta.length), c: citta.join(', ') }
-    : { l: 'Meta', v: '1', c: trip.destination }
-  const attive = (d: Trip['days'][number]) => d.items.filter((i) => i.status !== 'cancelled' && i.status !== 'skipped').length
-  const pieno = [...trip.days].sort((a, b) => attive(b) - attive(a) || a.date.localeCompare(b.date))[0]
-  const pienoBlocco = pieno && attive(pieno) > 0
-    ? { l: 'Giorno più pieno', v: cap(wdm(pieno.date)), c: `${attive(pieno)} ${attive(pieno) === 1 ? 'tappa' : 'tappe'}${pieno.city ? ` a ${pieno.city}` : ''}` }
-    : { l: 'Giorno più pieno', v: '—', c: 'nessuna tappa segnata' }
+  // statistiche del viaggio in ordine di preferenza: ci sono solo quelle con un valore vero, quindi c'è sempre un'alternativa
+  const stats = statisticheDopo(trip)
   const secondaRiga = r.solo ? (
-    <DueValori a={cittaBlocco} b={pienoBlocco} />
+    <DueValori a={stats[0]} b={stats[1]} />
   ) : r.mioSaldo !== null ? (
     <SaldoPersone saldo={r.mioSaldo} currency={trip.baseCurrency} people={people} inPari={false} />
   ) : (
-    <DueValori a={cittaBlocco} b={{ l: 'Persone', v: String(people.length), c: people.map((p) => firstName(p.name)).join(', ') }} />
+    <DueValori a={stats[0]} b={{ l: 'Persone', v: String(people.length), c: people.map((p) => firstName(p.name)).join(', ') }} />
   )
 
   async function condividi() {
