@@ -9,10 +9,10 @@ import { oggiNelViaggio } from '../lib/paesi'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'wouter'
 import { countryByCode } from '../lib/countries'
-import { currencyName, formatMoney, round2 } from '../lib/money'
+import { currencyName } from '../lib/money'
 import { dateAddDays, daysBetween, parseYmd } from '../lib/dates'
 import { groupDays, rangeText, type DayGroup } from '../lib/dayGroups'
-import { alGiorno, riassunto } from '../lib/spese'
+import { riassunto } from '../lib/spese'
 import { StepperViaggio, type TappaViaggio } from '../faraway/StepperViaggio'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
 import { avvisoPioggia, descrizione, faseViaggio, momento, notteAlle, numeriViaggio, prossimeOre, rigaSole } from '../lib/oggi'
@@ -376,28 +376,36 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
   const nDays = trip.days.length || daysBetween(trip.startDate, trip.endDate) + 1
   const nights = Math.max(0, daysBetween(trip.startDate, trip.endDate))
   const people = trip.travelers.map((p) => ({ name: p.name, n: discOf(trip, p.id) }))
-  const giorno = alGiorno(r.speso, trip, today)
-  const avanzo = r.limit ? round2(r.limit - r.speso) : null
   const cityGroups = groups.filter((g) => g.kind === 'city')
   const colorOf = new Map<string, string>()
   for (const g of cityGroups) if (!colorOf.has(g.title)) colorOf.set(g.title, CITY_DISCS[colorOf.size % CITY_DISCS.length])
-  const legend = [...colorOf.entries()].map(([c, col]) => ({ c, col, n: cityGroups.filter((g) => g.title === c).reduce((s, g) => s + g.cells.length, 0) }))
+  // ogni pezzo della barra ha la sua voce in legenda: città con il loro colore, viaggi e rientro in ardesia
+  const colore = (g: (typeof groups)[number]) => (g.kind === 'city' ? (colorOf.get(g.title) as string) : 'ardesia')
+  const legend: { c: string; col: string; n: number }[] = []
+  for (const g of groups) {
+    const l = legend.find((x) => x.c === g.title)
+    if (l) l.n += g.cells.length
+    else legend.push({ c: g.title, col: colore(g), n: g.cells.length })
+  }
+  // senza nessuna città scritta la barra direbbe solo «Da definire»: non la mostriamo
+  const conCitta = trip.days.some((d) => d.city?.trim())
 
-  // Sotto il totale ci sono sempre due blocchi, mai uno solo con un buco accanto
-  const perGiorno = { l: 'Al giorno', v: formatMoney(giorno.perDay, trip.baseCurrency), c: `in media su ${giorno.days} ${giorno.days === 1 ? 'giorno' : 'giorni'}` }
-  const nSpese = r.spese.length
-  const nCat = new Set(r.spese.map((e) => e.categoryId ?? e.category ?? '')).size
-  const secondo = avanzo !== null
-    ? avanzo >= 0
-      ? { l: 'Avanzati del budget', v: formatMoney(avanzo, trip.baseCurrency), c: 'non spesi' }
-      : { l: 'Oltre il budget', v: formatMoney(-avanzo, trip.baseCurrency), c: 'spesi in più' }
-    : { l: 'Spese', v: String(nSpese), c: nSpese === 0 ? 'nessuna registrata' : `in ${nCat} ${nCat === 1 ? 'categoria' : 'categorie'}` }
+  // Sotto il totale ci sono sempre due blocchi, mai uno solo con un buco accanto. Da soli raccontano il viaggio, non i soldi.
+  const citta = [...new Set(trip.days.map((d) => d.city?.trim()).filter((c): c is string => !!c))]
+  const cittaBlocco = citta.length
+    ? { l: citta.length === 1 ? 'Città' : 'Città visitate', v: String(citta.length), c: citta.join(', ') }
+    : { l: 'Meta', v: '1', c: trip.destination }
+  const attive = (d: Trip['days'][number]) => d.items.filter((i) => i.status !== 'cancelled' && i.status !== 'skipped').length
+  const pieno = [...trip.days].sort((a, b) => attive(b) - attive(a) || a.date.localeCompare(b.date))[0]
+  const pienoBlocco = pieno && attive(pieno) > 0
+    ? { l: 'Giorno più pieno', v: cap(wdm(pieno.date)), c: `${attive(pieno)} ${attive(pieno) === 1 ? 'tappa' : 'tappe'}${pieno.city ? ` a ${pieno.city}` : ''}` }
+    : { l: 'Giorno più pieno', v: '—', c: 'nessuna tappa segnata' }
   const secondaRiga = r.solo ? (
-    <DueValori a={perGiorno} b={secondo} />
+    <DueValori a={cittaBlocco} b={pienoBlocco} />
   ) : r.mioSaldo !== null ? (
     <SaldoPersone saldo={r.mioSaldo} currency={trip.baseCurrency} people={people} inPari={false} />
   ) : (
-    <DueValori a={perGiorno} b={{ l: 'Persone', v: String(people.length), c: people.map((p) => firstName(p.name)).join(', ') }} />
+    <DueValori a={cittaBlocco} b={{ l: 'Persone', v: String(people.length), c: people.map((p) => firstName(p.name)).join(', ') }} />
   )
 
   async function condividi() {
@@ -442,11 +450,11 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
           <span className="s">
             {rangeText(trip.startDate, trip.endDate)} · {nights} {nights === 1 ? 'notte' : 'notti'}
           </span>
-          {groups.length > 0 ? (
+          {groups.length > 0 && conCitta ? (
             <>
               <div className="seg" role="img" aria-label="Giorni per città">
                 {groups.map((g, i) => (
-                  <i key={i} style={{ flex: g.cells.length, background: g.kind === 'city' ? `var(--disco-${colorOf.get(g.title)})` : 'var(--disco-ardesia)' }} />
+                  <i key={i} style={{ flex: g.cells.length, background: `var(--disco-${colore(g)})` }} />
                 ))}
               </div>
               <div className="leg">

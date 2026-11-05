@@ -32,7 +32,8 @@ export function ChecklistPage() {
   const [sel, setSel] = useState<Set<string>>(new Set())
   const gruppo = trip.travelers.length > 1
 
-  const visibili = useMemo(() => (v2 ? trip.checklist.filter((i) => inLista(i, lista)) : trip.checklist), [trip.checklist, lista, v2])
+  // da soli non c'è differenza tra lista comune e privata: si vede tutto in una lista sola
+  const visibili = useMemo(() => (v2 && gruppo ? trip.checklist.filter((i) => inLista(i, lista)) : trip.checklist), [trip.checklist, lista, v2, gruppo])
   const gruppi = useMemo(() => sezioni(visibili), [visibili])
   // le voci «Scegli» che non mi riguardano non contano nel mio avanzamento
   const mio = mioAvanzamento(trip.checklist.filter((i) => !i.forTravelers || !trip.myTravelerId || i.forTravelers.includes(trip.myTravelerId)))
@@ -233,7 +234,7 @@ export function ChecklistPage() {
         </>
       ) : (
         <div className="k-Checklist" style={{ display: 'grid', gap: 16 }}>
-          {v2 && !selecting ? (
+          {v2 && gruppo && !selecting ? (
             <Segmenti
               label="Lista"
               value={lista}

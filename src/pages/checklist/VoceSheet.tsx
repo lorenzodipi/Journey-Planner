@@ -29,7 +29,9 @@ export function VoceSheet({ trip, item, where = 'all', open, onClose }: Props) {
   const auth = useAuth()
   const userId = auth.session?.user.id
   const v2 = !!trip.checklistV2
-  const canPrivate = v2 && !!userId
+  // «Dove» serve solo in gruppo; «Scegli» da tre persone in su
+  const canPrivate = v2 && !!userId && trip.travelers.length > 1
+  const canPick = trip.travelers.length >= 3
   const [text, setText] = useState(item?.text ?? '')
   const [description, setDescription] = useState(item?.description ?? '')
   const [quantity, setQuantity] = useState(item?.quantity ? String(item.quantity) : '')
@@ -37,8 +39,7 @@ export function VoceSheet({ trip, item, where = 'all', open, onClose }: Props) {
   const [category, setCategory] = useState(item ? categoryOf(item) : 'Valigia')
   const [creating, setCreating] = useState(false)
   const [newCat, setNewCat] = useState('')
-  const gruppo = trip.travelers.length > 1
-  const [dove, setDove] = useState<'all' | 'mine' | 'pick'>(item ? (item.private ? 'mine' : item.forTravelers?.length ? 'pick' : 'all') : canPrivate ? where : 'all')
+  const [dove, setDove] = useState<'all' | 'mine' | 'pick'>(item ? (item.private ? 'mine' : item.forTravelers?.length && canPick ? 'pick' : 'all') : canPrivate ? where : 'all')
   // «Scegli»: chi deve spuntare la voce comune (all'inizio io, o le persone già scelte)
   const [scelti, setScelti] = useState<Set<string>>(() => new Set(item?.forTravelers ?? (trip.myTravelerId ? [trip.myTravelerId] : [])))
   const [url, setUrl] = useState(item?.url ?? '')
@@ -110,14 +111,14 @@ export function VoceSheet({ trip, item, where = 'all', open, onClose }: Props) {
         {canPrivate ? (
           <div className="fa-fld k-ChecklistNuova" role="group" aria-label="Dove">
             Dove
-            <div className="sg" style={{ gridTemplateColumns: `repeat(${gruppo ? 3 : 2},minmax(0,1fr))` }}>
+            <div className="sg" style={{ gridTemplateColumns: `repeat(${canPick ? 3 : 2},minmax(0,1fr))` }}>
               {(
                 [
                   { value: 'all', label: 'Tutti', icon: 'users' },
                   { value: 'mine', label: 'Solo io', icon: 'user' },
                   { value: 'pick', label: 'Scegli', icon: 'users' },
                 ] as const
-              ).filter((o) => gruppo || o.value !== 'pick').map((o) => (
+              ).filter((o) => canPick || o.value !== 'pick').map((o) => (
                 <button key={o.value} type="button" className={cx('seg', dove === o.value && 'on')} aria-pressed={dove === o.value} onClick={() => setDove(o.value)}>
                   <Sv name={o.icon} size={20} className="ic" />
                   {o.label}
