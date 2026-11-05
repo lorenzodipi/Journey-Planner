@@ -4,7 +4,7 @@
 import { ora } from '../lib/formati'
 import { formatWhen, transportWhen } from '../lib/logistics'
 import { formatMoney } from '../lib/money'
-import { MODE_NOME, durataTrasporto, fermate, nomeTrasporto, prezzoDi } from '../lib/trasporti'
+import { MODE_NOME, durataTrasporto, fermate, prezzoDi } from '../lib/trasporti'
 import { discOf, initials } from '../state/me'
 import type { Transport, Trip } from '../types'
 import { MovementIcon } from '../ui/MovementIcon'
@@ -60,7 +60,7 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
               <MovementIcon event={{ kind: 'transport', mode: t.mode, title: '' }} size={22} />
             </span>
             <span className="ti">
-              <b>{nomeTrasporto(t)}</b>
+              {t.title?.trim() ? <b>{t.title.trim()}</b> : null}
               <span>{sub}</span>
             </span>
             <span className={cx('pl3b', t.bought ? 'ok' : 'td')}>

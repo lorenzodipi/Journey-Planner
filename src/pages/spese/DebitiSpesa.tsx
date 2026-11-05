@@ -2,8 +2,11 @@
 // con l'importo tra me e l'altra persona e lo stato. Le azioni (Ho pagato, Rispondi, Annulla, Rettifica) stanno
 // nel menu a tre puntini a destra dell'importo.
 import { useMemo, useState } from 'react'
+import { useLocation } from 'wouter'
 import { MenuAzioni, Pillola } from '../../faraway/base'
 import { bozzaRettifica } from '../../lib/rimborsi'
+import { puoModificareSpesa } from '../../lib/ripartizione'
+import { useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { Rimborso } from '../../types'
@@ -16,6 +19,8 @@ import { Ic } from '../../ui/Sprite'
 import type { FxContext } from '../../lib/budget'
 import type { Trip } from '../../types'
 import { DecidiSheet, DichiaraSheet } from './Rimborsi'
+import { SpesaSheet } from './SpesaSheet'
+import { sorgente, testoVerso } from './testi'
 
 
 function Stato({ d }: { d: DebitoSpesa }) {
@@ -27,6 +32,9 @@ function Stato({ d }: { d: DebitoSpesa }) {
 export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: Trip; spese: readonly SpesaVista[]; fx: FxContext; me: string | undefined; abilitaPagamento: boolean }) {
   const cur = trip.baseCurrency
   const t = useTrips()
+  const io = useMe(trip)
+  const [, navigate] = useLocation()
+  const [modifica, setModifica] = useState<DebitoSpesa['expense'] | null>(null)
   const [paga, setPaga] = useState<DebitoSpesa | null>(null)
   const [rispondi, setRispondi] = useState<Rimborso | null>(null)
   const [correggi, setCorreggi] = useState<ReturnType<typeof bozzaRettifica> | null>(null)
@@ -53,6 +61,11 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
         if (r) out.push({ id: `rettifica:${c.id}`, label: piu(d.confermati.length, 'Rettifica', c.amount), onPress: () => setCorreggi(bozzaRettifica(r)) })
       }
     }
+    // la spesa si modifica da qui come dal Dettaglio: quelle nate da un'altra voce si aprono là, le altre solo se sono mie
+    const vista = spese.find((x) => x.id === d.expenseId)
+    const src = vista ? sorgente(vista, trip) : null
+    if (vista?.derived && src) out.push({ id: 'modifica', label: src.label, onPress: () => navigate(src.href) })
+    else if (!vista?.derived && puoModificareSpesa(d.expense, io?.userId, io?.id)) out.push({ id: 'modifica', label: 'Modifica', onPress: () => setModifica(d.expense) })
     return out
   }
   const righe = useMemo(() => debitiPerSpesa(spese, trip.travelers, fx, me, trip.settled, trip.settlements), [spese, trip.travelers, fx, me, trip.settled, trip.settlements])
@@ -80,7 +93,7 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
                     <Ic name={iconaSpesa(d.expense)} size={44} />
                     <span style={{ minWidth: 0 }}>
                       <span className="t">{d.expense.label}</span>
-                      <span className="s">{verso === 'devo' ? `Da dare a ${nome(d.otherId)}` : `Da ricevere da ${nome(d.otherId)}`}</span>
+                      <span className="s">{testoVerso(d, nome(d.otherId))}</span>
                       <span className="s">{dataNumerica(d.expense.spentAt)}</span>
                     </span>
                     <span className="rt">
@@ -111,6 +124,7 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
           </section>
         )
       })}
+      {modifica ? <SpesaSheet key={modifica.id} trip={trip} expense={modifica} open onClose={() => setModifica(null)} /> : null}
       {paga ? <DichiaraSheet trip={trip} toId={paga.otherId} dovuto={paga.residuo} expenseId={paga.expenseId} onClose={() => setPaga(null)} /> : null}
       {rispondi ? <DecidiSheet trip={trip} r={rispondi} onClose={() => setRispondi(null)} /> : null}
       {correggi ? <DichiaraSheet trip={trip} toId={correggi.toId} dovuto={correggi.amount} corrects={correggi.corrects} onClose={() => setCorreggi(null)} /> : null}

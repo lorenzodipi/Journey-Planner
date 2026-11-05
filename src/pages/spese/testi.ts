@@ -80,3 +80,9 @@ export function sorgente(e: SpesaVista, trip: Pick<Trip, 'days'>): { href: strin
       return null
   }
 }
+
+/** «Da dare a Gaia» / «Da ricevere da Gaia»; a conti chiusi «Dati a Gaia» / «Ricevuti da Gaia». */
+export function testoVerso(d: { verso: 'devo' | 'devono'; stato: string }, chi: string): string {
+  if (d.stato === 'pagato') return d.verso === 'devo' ? `Dati a ${chi}` : `Ricevuti da ${chi}`
+  return d.verso === 'devo' ? `Da dare a ${chi}` : `Da ricevere da ${chi}`
+}

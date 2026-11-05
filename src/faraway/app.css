@@ -469,6 +469,8 @@ sup{margin-left:0}
 /* Da dare / Da ricevere: tre puntini fissi a destra dell'importo (spazio vuoto se non ci sono azioni, per allineare) */
 .fa-dbt .rt .ln{display:flex;align-items:center;justify-content:flex-end;min-height:24px;margin-right:-8px}
 .fa-dots-vuoto{display:block;flex:none;width:32px}
+/* l'icona della spesa sta al centro della card, in verticale */
+.fa-dbt .top>:first-child{align-self:center}
 /* Schermi stretti: la chip di stato va sotto il testo (a tutta riga), così nome e descrizione non si spezzano */
 @media (max-width:389px){
   .fa-dbt .top{grid-template-columns:44px minmax(0,1fr) auto;row-gap:8px}
@@ -532,7 +534,13 @@ sup{margin-left:0}
 [data-theme="dark"] .fa-seg{background:#262F40}
 /* Biglietti colorati: bottoni e pillole si fondono con la tinta (vetro chiaro, niente bordo acceso) */
 [data-theme="dark"] :is(.k-Biglietto,.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .fa-btn.out{background:rgba(255,255,255,.1);color:var(--on-tinta);border-color:transparent}
-[data-theme="dark"] :is(.k-Biglietto,.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .fa-btn.del{background:rgba(248,113,113,.14);color:#FCA5A5;border-color:transparent}
+[data-theme="dark"] :is(.k-Biglietto,.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .fa-btn.del{background:rgba(248,113,113,.2);color:#FECACA;border-color:rgba(248,113,113,.55)}
 [data-theme="dark"] :is(.k-Biglietto,.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .ok:not(.td),[data-theme="dark"] :is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tv .pl3b.ok{background:rgba(255,255,255,.1);color:var(--on-tinta);border-color:transparent}
-[data-theme="dark"] :is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tv .pl3b.td,[data-theme="dark"] .fa-stay .ok.td,[data-theme="dark"] .k-TicketOrizzontale .tv .ti .pl3b.td{background:rgba(248,113,113,.18);color:#FCA5A5}
+[data-theme="dark"] :is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tv .pl3b.td,[data-theme="dark"] .fa-stay .ok.td,[data-theme="dark"] .k-TicketOrizzontale .tv .ti .pl3b.td{background:rgba(248,113,113,.26);color:#FECACA}
 [data-theme="dark"] :is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tv{--btnbg:rgba(255,255,255,.1)}
+/* Il tuo saldo (Spese): la pillola si fonde con la tinta della card, rossa solo quando c'è da pagare */
+[data-theme="dark"] .k-Riepilogo .badge{background:rgba(255,255,255,.12);color:var(--on-tinta)}
+[data-theme="dark"] .k-Riepilogo .badge.pay{background:rgba(248,113,113,.26);color:#FECACA}
+/* Meno colori nei moduli: chip non scelte un gradino sopra la superficie (anche dentro i fogli), conferme senza tinta */
+[data-theme="dark"] .fa-chip:not(.on){background:#262F40}
+[data-theme="dark"] .fa-help.ok{background:rgba(255,255,255,.06);color:var(--ink-muted)}
