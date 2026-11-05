@@ -21,6 +21,8 @@ export interface ChecklistRow {
   description?: string | null
   unit?: string | null
   category?: string | null
+  // dalla migrazione 0044: per chi è la voce comune (vuoto = tutti)
+  for_travelers?: string[] | null
 }
 
 export interface CheckRow {
@@ -106,6 +108,7 @@ export function mapChecklist(rows: ChecklistRow[], tripId: string, checks?: Chec
         unit: r.unit?.trim() || undefined,
         category: r.category?.trim() || BASE_CATEGORY[r.kind],
         ...(priv ? { private: true } : {}),
+        ...(!priv && r.for_travelers?.length ? { forTravelers: r.for_travelers } : {}),
         ...(others ? { others } : {}),
       } satisfies ChecklistItem
     })
@@ -190,6 +193,8 @@ export interface ChecklistInput {
   unit?: string
   category?: string
   ownerId?: string
+  /** Migrazione 0044: solo alcune persone; [] = di nuovo per tutti; assente = non cambia. */
+  forTravelers?: string[]
 }
 
 /** Rende utilizzabile un link scritto a mano: aggiunge https:// se manca, vuoto se non è un indirizzo web. */
@@ -222,6 +227,8 @@ export function checklistColumns(i: ChecklistInput, hadQuantity = false, hadUrl 
     ...(url || hadUrl ? { url: url || null } : {}),
     // colonne della migrazione 0026: solo se il database le ha
     ...(i.v2 ? { description: i.description?.trim() || null, unit: i.unit?.trim() || null, category: i.category?.trim() || null, owner_id: i.ownerId ?? null } : {}),
+    // colonna della migrazione 0044: viaggia solo se la si usa ([] = torna a «tutti»), così senza la colonna il resto si salva
+    ...(i.v2 && i.forTravelers ? { for_travelers: i.forTravelers.length ? i.forTravelers : null } : {}),
   }
 }
 

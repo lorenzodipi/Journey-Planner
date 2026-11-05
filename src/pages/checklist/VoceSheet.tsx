@@ -9,6 +9,9 @@ import { useTrips } from '../../state/trip'
 import type { ChecklistItem, Trip } from '../../types'
 import { Campo, Chip, Pulsante } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
+import { discOf, initials } from '../../state/me'
+
+const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 
@@ -34,10 +37,13 @@ export function VoceSheet({ trip, item, where = 'all', open, onClose }: Props) {
   const [category, setCategory] = useState(item ? categoryOf(item) : 'Valigia')
   const [creating, setCreating] = useState(false)
   const [newCat, setNewCat] = useState('')
-  const [dove, setDove] = useState<'all' | 'mine'>(item ? (item.private ? 'mine' : 'all') : canPrivate ? where : 'all')
+  const gruppo = trip.travelers.length > 1
+  const [dove, setDove] = useState<'all' | 'mine' | 'pick'>(item ? (item.private ? 'mine' : item.forTravelers?.length ? 'pick' : 'all') : canPrivate ? where : 'all')
+  // «Scegli»: chi deve spuntare la voce comune (all'inizio io, o le persone già scelte)
+  const [scelti, setScelti] = useState<Set<string>>(() => new Set(item?.forTravelers ?? (trip.myTravelerId ? [trip.myTravelerId] : [])))
   const [url, setUrl] = useState(item?.url ?? '')
   const [due, setDue] = useState(item?.dueDate ?? '')
-  const [errors, setErrors] = useState<{ text?: string; url?: string; cat?: string; form?: string }>({})
+  const [errors, setErrors] = useState<{ text?: string; url?: string; cat?: string; form?: string; chi?: string }>({})
   const [busy, setBusy] = useState(false)
   const cats = categoriesFor([...trip.checklist, ...(item ? [item] : [])])
 
@@ -48,17 +54,22 @@ export function VoceSheet({ trip, item, where = 'all', open, onClose }: Props) {
     if (url.trim() && !cleanUrl(url)) err.url = 'Il link non è valido: scrivi un indirizzo che inizia con https://'
     const cat = creating ? newCat.trim() : category
     if (creating && !cat) err.cat = 'Scrivi il nome della categoria.'
+    if (dove === 'pick' && scelti.size === 0) err.chi = 'Scegli almeno una persona.'
     setErrors(err)
     if (Object.keys(err).length > 0) return
     const q = quantity.trim() ? parseQuantity(quantity) : 1
     const input: ChecklistInput = {
       text, kind: kindOfCategory(cat), travelerId: null, dueDate: due, quantity: q, url,
       v2, description, unit: q > 1 ? unit : '', category: cat, ownerId: dove === 'mine' && userId ? userId : undefined,
+      // tutti scelti = per tutti; si scrive solo se si usa «Scegli» o se prima c'era una scelta
+      ...(dove === 'pick' && scelti.size < trip.travelers.length
+        ? { forTravelers: trip.travelers.map((p) => p.id).filter((id) => scelti.has(id)) }
+        : item?.forTravelers?.length ? { forTravelers: [] } : {}),
     }
     setBusy(true)
     const message = item ? await tr.updateChecklistItem(item.id, input) : await tr.createChecklistItem(trip.id, input)
     setBusy(false)
-    if (message) return setErrors({ form: message })
+    if (message) return setErrors({ form: /for_travelers/.test(message) ? 'Per scegliere le persone serve la migrazione 0044 del database.' : message })
     showToast(item ? 'Voce aggiornata' : 'Voce aggiunta')
     onClose()
   }
@@ -99,18 +110,51 @@ export function VoceSheet({ trip, item, where = 'all', open, onClose }: Props) {
         {canPrivate ? (
           <div className="fa-fld k-ChecklistNuova" role="group" aria-label="Dove">
             Dove
-            <div className="sg" style={{ gridTemplateColumns: 'repeat(2,minmax(0,1fr))' }}>
-              {([
-                { value: 'all', label: 'Tutti', icon: 'users' },
-                { value: 'mine', label: 'Solo io', icon: 'user' },
-              ] as const).map((o) => (
+            <div className="sg" style={{ gridTemplateColumns: `repeat(${gruppo ? 3 : 2},minmax(0,1fr))` }}>
+              {(
+                [
+                  { value: 'all', label: 'Tutti', icon: 'users' },
+                  { value: 'mine', label: 'Solo io', icon: 'user' },
+                  { value: 'pick', label: 'Scegli', icon: 'users' },
+                ] as const
+              ).filter((o) => gruppo || o.value !== 'pick').map((o) => (
                 <button key={o.value} type="button" className={cx('seg', dove === o.value && 'on')} aria-pressed={dove === o.value} onClick={() => setDove(o.value)}>
                   <Sv name={o.icon} size={20} className="ic" />
                   {o.label}
                 </button>
               ))}
             </div>
-            <span className="fa-m">{dove === 'all' ? 'Lista comune: ognuno spunta la sua.' : 'Lista privata: la vedi solo tu.'}</span>
+            {dove === 'pick' ? (
+              <div className="pk" role="group" aria-label="Persone">
+                {trip.travelers.map((p) => {
+                  const on = scelti.has(p.id)
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className="pr"
+                      role="checkbox"
+                      aria-checked={on}
+                      onClick={() => setScelti((s) => { const n = new Set(s); if (on) n.delete(p.id); else n.add(p.id); return n })}
+                      style={{ all: 'unset', boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: 12, minHeight: 48, cursor: 'pointer' }}
+                    >
+                      <span className="av" aria-hidden="true" style={{ ['--c' as string]: `var(--disco-${COL[(discOf(trip, p.id) - 1) % 5]})` }}>{initials(p.name)}</span>
+                      <b>{p.name}{p.id === trip.myTravelerId ? ' (io)' : ''}</b>
+                      <span className={cx('cb', on && 'on')} aria-hidden="true">
+                        <Sv name="check" size={14} className="ic" />
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            ) : null}
+            {errors.chi ? (
+              <span className="fa-help bad" role="alert">
+                <Sv name="err" size={16} />
+                {errors.chi}
+              </span>
+            ) : null}
+            <span className="fa-m">{dove === 'all' ? 'Lista comune: ognuno spunta la sua.' : dove === 'mine' ? 'Lista privata: la vedi solo tu.' : 'Lista comune: la spuntano solo le persone scelte.'}</span>
           </div>
         ) : null}
         <Campo label="Link (facoltativo)" type="url" value={url} onChange={setUrl} placeholder="https://…" error={errors.url} />

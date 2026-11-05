@@ -155,6 +155,12 @@ describe('link delle voci', () => {
     expect(checklistColumns({ ...base, url: 'a.it' }).url).toBe('https://a.it/')
     expect(checklistColumns(base, false, true).url).toBeNull()
   })
+  it('«Per chi»: la colonna viaggia solo con «Scegli» o per tornare a tutti', () => {
+    const base = { text: 'x', kind: 'todo' as const, travelerId: null, dueDate: '', v2: true }
+    expect('for_travelers' in checklistColumns(base)).toBe(false)
+    expect(checklistColumns({ ...base, forTravelers: ['a'] }).for_travelers).toEqual(['a'])
+    expect(checklistColumns({ ...base, forTravelers: [] }).for_travelers).toBeNull()
+  })
 })
 
 describe('checklist personale (#41)', () => {

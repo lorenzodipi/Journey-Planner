@@ -172,6 +172,7 @@ export function checklistEntry(
           unit: input.unit?.trim() || undefined,
           category: input.category?.trim() || undefined,
           ...(input.ownerId ? { private: true } : { others: existing?.others ?? [] }),
+          ...(input.ownerId ? {} : (input.forTravelers ?? existing?.forTravelers)?.length ? { forTravelers: input.forTravelers ?? existing?.forTravelers } : {}),
         }
       : {}),
   }

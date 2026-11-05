@@ -395,6 +395,8 @@ export interface ChecklistItem {
   category?: string
   /** voce della mia lista privata (la vedo solo io) */
   private?: boolean
+  /** voce comune solo per alcuni viaggiatori («Scegli»); vuoto = tutti */
+  forTravelers?: string[]
   /** spunte degli altri viaggiatori sulle voci comuni; `done` / `quantityDone` sono sempre le MIE */
   others?: { travelerId: string; done: boolean; quantityDone?: number }[]
 }

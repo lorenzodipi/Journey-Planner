@@ -34,7 +34,8 @@ export function ChecklistPage() {
 
   const visibili = useMemo(() => (v2 ? trip.checklist.filter((i) => inLista(i, lista)) : trip.checklist), [trip.checklist, lista, v2])
   const gruppi = useMemo(() => sezioni(visibili), [visibili])
-  const mio = mioAvanzamento(trip.checklist)
+  // le voci «Scegli» che non mi riguardano non contano nel mio avanzamento
+  const mio = mioAvanzamento(trip.checklist.filter((i) => !i.forTravelers || !trip.myTravelerId || i.forTravelers.includes(trip.myTravelerId)))
   const altri = t.trips.filter((x) => x.id !== trip.id && x.checklist.length > 0)
 
   async function busy(id: string, run: () => Promise<string | null>) {
@@ -87,7 +88,8 @@ export function ChecklistPage() {
     const partial = multi && have > 0 && !i.done
     const picked = selecting && sel.has(i.id)
     const late = !i.done && !!i.dueDate && i.dueDate < today
-    const s = spunteDi(i, trip.travelers.length)
+    const persone = i.forTravelers ? trip.travelers.filter((p) => i.forTravelers?.includes(p.id)) : trip.travelers
+    const s = i.forTravelers ? { done: persone.filter((p) => (p.id === trip.myTravelerId ? i.done : !!i.others?.find((o) => o.travelerId === p.id)?.done)).length, total: persone.length } : spunteDi(i, trip.travelers.length)
     const mostraPersone = gruppo && !i.private && v2
     return (
       <li key={i.id} className={cx('it', i.done && 'done')} style={{ flexWrap: 'wrap' }}>
@@ -146,7 +148,7 @@ export function ChecklistPage() {
           {mostraPersone ? (
             <div className="mt">
               <span className="pp" aria-hidden="true">
-                {trip.travelers.map((p) => {
+                {persone.map((p) => {
                   const on = p.id === trip.myTravelerId ? i.done : !!i.others?.find((o) => o.travelerId === p.id)?.done
                   return (
                     <span key={p.id} className={cx('pe', on ? 'y' : 'o')} style={{ ['--c' as string]: `var(--disco-${COL[(discOf(trip, p.id) - 1) % 5]})` }}>
