@@ -17,6 +17,8 @@ import { impattoDate } from '../../lib/gestioneViaggio'
 import type { Trip, TripCountry } from '../../types'
 import { Avatars, Banner, Campo, Pulsante } from '../../faraway/base'
 import { Foglio, useConferma } from '../../faraway/Foglio'
+import { useConfermaCentrata } from '../../faraway/Modale'
+import { showAvviso } from '../../state/avviso'
 import { Sv } from '../../faraway/icons'
 import { initials } from '../../state/me'
 import { useInCorso } from '../../faraway/Attesa'
@@ -77,6 +79,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
   const auth = useAuth()
   const [, navigate] = useLocation()
   const [ask, confirmNode] = useConferma()
+  const [askCentro, confermaCentro] = useConfermaCentrata()
   const editing = Boolean(trip)
   const ownEmail = auth.session?.user.email ?? undefined
   const meta = auth.session?.user.user_metadata as { full_name?: string; name?: string } | undefined
@@ -244,18 +247,21 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
 
   async function elimina() {
     if (!trip) return
-    const ok = await ask({
-      title: `Eliminare ${trip.title}?`,
-      message: `Perderai tappe, spese e biglietti di ${trip.title} per tutti i viaggiatori. Non si può annullare.`,
-      confirm: 'Elimina viaggio',
+    // azione definitiva: conferma al centro dello schermo, non dal basso
+    const ok = await askCentro({
+      title: `Eliminare «${trip.title}»?`,
+      message: `Tappe, luoghi, spese e documenti spariscono per tutti i viaggiatori. Non si può annullare.`,
+      confirm: 'Elimina il viaggio',
       cancel: 'Tieni il viaggio',
-      destructive: true,
     })
     if (!ok) return
+    const titolo = trip.title
     const message = await faiOcc('elimina', () => t.deleteTrip(trip.id))
     if (message) return setError(message)
     onClose()
-    navigate('/')
+    // si torna a «Tutti i viaggi», mai dentro un altro viaggio scelto da noi
+    navigate('/viaggi', { replace: true })
+    showAvviso({ title: 'Viaggio eliminato', message: `«${titolo}» non c'è più, per te e per chi viaggiava con te. Scegli un altro viaggio o creane uno nuovo.` })
   }
 
   const organizza = !trip || trip.myRole === undefined || trip.myRole === 'owner'
@@ -419,6 +425,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
         </datalist>
       </form>
       {confirmNode}
+      {confermaCentro}
     </Foglio>
   )
 }

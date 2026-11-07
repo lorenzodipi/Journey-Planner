@@ -31,6 +31,7 @@ import { PrimoViaggio } from './pages/PrimoViaggio'
 import { PullToRefresh } from './ui/PullToRefresh'
 import { ToastHost } from './ui/ToastHost'
 import { BarraAttesa } from './faraway/Attesa'
+import { AvvisoHost } from './faraway/AvvisoHost'
 import { EmptyState } from './ui/PageHeader'
 import { Sprite } from './ui/Sprite'
 import { loadActiveId, loadSnapshot } from './lib/cache'
@@ -96,6 +97,7 @@ export function App() {
       {node}
       <ToastHost />
       <BarraAttesa />
+      <AvvisoHost />
     </Router>
   )
   // nella scelta del viaggio non c'è il resto dell'app, ma il profilo (icona in alto a destra) si apre lo stesso
@@ -114,7 +116,14 @@ export function App() {
   if (status === 'error') return screen(<SchermataErrore title={title} onRetry={() => void refresh()} />)
 
   if (!trip) {
-    return receivedInvites.length > 0 ? screen(sceltaViaggio(() => undefined)) : <PrimoViaggio />
+    return receivedInvites.length > 0 ? (
+      screen(sceltaViaggio(() => undefined))
+    ) : (
+      <>
+        <PrimoViaggio />
+        <AvvisoHost />
+      </>
+    )
   }
 
   // subito dopo l'accesso si sceglie quale viaggio aprire (#43), anche se ce n'è uno solo
@@ -189,6 +198,7 @@ export function App() {
       <PullToRefresh />
       <ToastHost />
       <BarraAttesa />
+      <AvvisoHost />
     </Router>
   )
 }
