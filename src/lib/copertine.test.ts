@@ -8,6 +8,7 @@ describe('copertine', () => {
   it('ogni paese con immagine ha il suo indirizzo', () => {
     expect(copertinaDelPaese('JP')).toMatch(/JP.*\.webp/)
     expect(copertinaDelPaese('it')).toMatch(/IT.*\.webp/)
+    expect(copertinaDelPaese('XK')).toMatch(/XK.*\.webp/)
     expect(copertinaDelPaese('XX')).toBeUndefined()
     expect(copertinaDelPaese(undefined)).toBeUndefined()
   })
@@ -18,6 +19,7 @@ describe('copertine', () => {
   })
   it('senza paesi salvati usa la destinazione', () => {
     expect(paeseDellaCopertina({ ...base, destination: 'Islanda' })).toBe('IS')
+    expect(paeseDellaCopertina({ ...base, destination: 'Kosovo' })).toBe('XK')
     expect(copertinaDelViaggio({ ...base, destination: 'Un posto' })).toBeUndefined()
   })
 })

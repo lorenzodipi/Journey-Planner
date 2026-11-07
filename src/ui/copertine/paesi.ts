@@ -257,6 +257,7 @@ VN karst m oceano
 VU vulcano m mareSera
 WF atollo m oceano
 WS atollo m oceano
+XK ponte c rosa
 YE djenne d pesca
 YT barca m mareTur
 ZA tavola c cielo

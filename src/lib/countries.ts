@@ -1,6 +1,6 @@
 import type { ThemeName } from '../types'
 
-// Tutti i paesi (ISO 3166-1) con valuta, fuso principale e capitale. Servono a proporre i valori di un nuovo viaggio
+// Tutti i paesi (ISO 3166-1, più il Kosovo con il codice XK) con valuta, fuso principale e capitale. Servono a proporre i valori di un nuovo viaggio
 // (fuso, valuta locale, centro mappa) e a scegliere il paese di origine: restano tutti modificabili.
 // L'elenco dei codici è statico perché le API Intl non lo enumerano; i nomi in italiano li dà Intl.DisplayNames.
 
@@ -261,6 +261,7 @@ VN|VND|Asia/Ho_Chi_Minh|21.03|105.85
 VU|VUV|Pacific/Efate|-17.73|168.32
 WF|XPF|Pacific/Wallis|-13.28|-176.17
 WS|WST|Pacific/Apia|-13.83|-171.76
+XK|EUR|Europe/Belgrade|42.66|21.17
 YE|YER|Asia/Aden|15.37|44.19
 YT|EUR|Indian/Mayotte|-12.78|45.23
 ZA|ZAR|Africa/Johannesburg|-25.75|28.19
