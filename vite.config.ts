@@ -57,6 +57,16 @@ export default defineConfig(({ mode }) => {
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          // le copertine dei paesi già viste (Tutti i viaggi) restano disponibili offline, senza scaricarle tutte
+          {
+            urlPattern: ({ url }) => /\/assets\/[A-Z]{2}-[^/]*\.webp$/.test(url.pathname),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'copertine-paesi',
+              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           {
             urlPattern: /^https:\/\/tiles\.openfreemap\.org\/.*/,
             handler: 'StaleWhileRevalidate',

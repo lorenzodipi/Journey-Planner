@@ -9,6 +9,7 @@ import { showToast } from '../../state/toast'
 import { Sv } from '../../faraway/icons'
 import { riassunto } from '../../lib/spese'
 import { ordinaViaggi, rigaFinale, scenaDelViaggio, statoViaggio, STATO_TESTO } from '../../lib/viaggi'
+import { copertinaDelViaggio } from '../../lib/copertine'
 import { useAuth } from '../../lib/auth'
 import { initials, discOf, useMe } from '../../state/me'
 import { useTrips } from '../../state/trip'
@@ -25,6 +26,15 @@ import { DuplicaSheet } from './DuplicaSheet'
 
 const SCENE = { tempio: ART.tempio, mare: ART.mare, citta: ART.citta, natura: ART.natura, panorama: ART.panorama }
 const TONO = { prossimo: 'soft', incorso: 'acq', concluso: 'mut' } as const
+
+/** L'illustrazione del paese in cui il viaggio passa più giorni; se manca o non si carica, la scena generica. */
+function Copertina({ trip }: { trip: Trip }) {
+  const paese = copertinaDelViaggio(trip)
+  // si ricorda quale indirizzo non si è caricato: se il paese cambia, si riprova con la nuova immagine
+  const [rotta, setRotta] = useState<string | null>(null)
+  const src = paese && paese !== rotta ? paese : SCENE[scenaDelViaggio(trip)]
+  return <img src={src} alt="" loading="lazy" decoding="async" onError={() => paese && setRotta(paese)} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+}
 
 export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
   const t = useTrips()
@@ -95,7 +105,7 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
     return (
       <button key={trip.id} type="button" onClick={() => apri(trip.id)} aria-label={`${trip.title}, ${STATO_TESTO[stato]}`} style={{ padding: 0, overflow: 'hidden', textAlign: 'left', cursor: 'pointer', color: 'inherit', background: 'none', border: 0, display: 'block', width: '100%' }}>
         <span style={{ position: 'relative', display: 'block', aspectRatio: '16/9', background: 'var(--tinta-azzurro)' }}>
-          <img src={SCENE[scenaDelViaggio(trip)]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <Copertina trip={trip} />
           <span style={{ position: 'absolute', left: 12, top: 12 }}>
             <Pillola tone={TONO[stato]}>{STATO_TESTO[stato]}</Pillola>
           </span>
