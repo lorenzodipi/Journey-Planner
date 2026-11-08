@@ -3,7 +3,8 @@
 Planner di viaggio personale, pensato per il telefono: crei e modifichi viaggi, giorni, tappe, luoghi, alloggi e soldi direttamente dal sito, anche senza rete.
 
 - **Sito**: https://lorenzodipi.github.io/Journey-Planner/
-- **Stack**: Vite + TypeScript + Preact + Tailwind, PWA installabile, Supabase (Postgres, Auth, Storage) come backend, GitHub Pages per l'hosting.
+- **Stack**: Vite + TypeScript + React 19 + react-aria-components + Tailwind 4, design system Faraway in `src/faraway/`, PWA installabile e app Capacitor, Supabase (Postgres, Auth, Storage) come backend, GitHub Pages per l'hosting.
+- **Linee guida**: prodotto, regole, modali, accessibilità e CSS in [docs/linee-guida](docs/linee-guida/README.md).
 - **Roadmap e decisioni**: nel Project "Journey Planner" su claude.ai (doc "Roadmap di progetto").
 
 > Il repo è **pubblico**: non committare mai dati personali (prenotazioni, polizze, indirizzi privati), file `.env` o la chiave `service_role` di Supabase. Il `.gitignore` esclude `.env*`, `private/`, `*.xlsx` e `*.csv`.
