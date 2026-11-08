@@ -1,24 +1,25 @@
-// Foglio «Nuovo volo» / «Modifica volo» (#36, #58): compagnia, prenotazione, tratte con terminal, gate, imbarco e posti,
-// chi vola, costo con «Pagato / Non pagato» e «Pagato da», bagaglio, politiche e apertura del check-in.
+// Foglio «Nuovo volo» / «Modifica volo» (#36, #58), a gruppi: Volo, Tratte (ognuna con il percorso, la durata e i posti,
+// lo scalo tra due tratte), Costo, Bagaglio e regole, Altri dettagli (terminal, gate, imbarco, fusi, apertura del check-in).
 import { paesiDi, paeseDelGiorno } from '../../lib/paesi'
 import { DocumentiCollegati } from '../documenti/DocumentiCollegati'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { isIata, timezoneForAirport } from '../../lib/airports'
-import { legDuration } from '../../lib/flights'
+import { layover, legDuration } from '../../lib/flights'
+import { compilati, durataTesto } from '../../lib/moduli'
 import { legToForm, type FlightInput, type LegInput } from '../../lib/logistics'
 import { amountToText, parseAmount, tripCurrencies } from '../../lib/money'
 import { defaultDepartureTz } from '../../lib/origin'
 import { isValidTimezone } from '../../lib/tripForm'
 import { instantToZoned, isCompleteZoned, zonedToInstant } from '../../lib/zoned'
-import { discOf, initials, useMe } from '../../state/me'
+import { useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { Flight, Trip } from '../../types'
-import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
+import { Campo, Interruttore, Pulsante } from '../../faraway/base'
+import { AltriDettagli, Gruppo, IlCostoE, Micro, PerChi, Percorso } from '../../faraway/Moduli'
 import { CampoValuta } from '../../faraway/CampoValuta'
 import { CampoFuso } from '../../faraway/CampoFuso'
 import { ChiHaPagato } from '../../faraway/ChiHaPagato'
-import { cx } from '../../faraway/cx'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 
@@ -130,6 +131,22 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
   }
 
   const nome = (id: string) => trip.travelers.find((p) => p.id === id)?.name.split(/\s+/)[0] ?? '—'
+  const amountNow = parseAmount(cost)
+  /** Istanti di partenza e arrivo di una tratta, se date, ore e fusi bastano a calcolarli. */
+  const istanti = (l: LegDraft) =>
+    isCompleteZoned(l.departDate, l.departTime) && isCompleteZoned(l.arriveDate, l.arriveTime) && isValidTimezone(l.fromTz) && isValidTimezone(l.toTz)
+      ? { depart: zonedToInstant(l.departDate, l.departTime, l.fromTz), arrive: zonedToInstant(l.arriveDate, l.arriveTime, l.toTz) }
+      : null
+  /** I fusi stanno in «Altri dettagli»; restano nella tratta solo se non si ricavano dal codice dell'aeroporto. */
+  const fusoInTratta = (l: LegDraft) => (isIata(l.from) && !isValidTimezone(l.fromTz)) || (isIata(l.to) && !isValidTimezone(l.toTz))
+  const campiFuso = (l: LegDraft) => (
+    <div className="fa-2c">
+      <CampoFuso label="Fuso di partenza" value={l.fromTz} onChange={(v) => patchLeg(l.key, { fromTz: v, fromTzAuto: false })} usati={[trip.timezone]} />
+      <CampoFuso label="Fuso di arrivo" value={l.toTz} onChange={(v) => patchLeg(l.key, { toTz: v, toTzAuto: false })} usati={[trip.timezone]} />
+    </div>
+  )
+  const rotta = (l: LegDraft) => (l.from && l.to ? `${l.from} → ${l.to}` : undefined)
+  const altri = compilati([...legs.flatMap((l) => [l.terminal ?? '', l.gate ?? '', l.boardingTime ?? '']), checkin.date || checkin.time])
 
   return (
     <Foglio
@@ -143,96 +160,132 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
         </Pulsante>
       }
     >
-      <form id="volo-form" className="frm" onSubmit={submit} noValidate>
-        <Campo label="Nome del volo" value={title} onChange={setTitle} placeholder="es. Andata" maxLength={60} error={errors.title} />
-        <div className="fa-2c">
-          <Campo label="Compagnia" value={airline} onChange={setAirline} placeholder="es. Faraway Air" />
-          <Campo label="Codice di prenotazione" value={bookingRef} onChange={(v) => setBookingRef(v.toUpperCase())} autoComplete="off" placeholder="FW7K 29QX" />
-        </div>
+      <form id="volo-form" className="frm grp" onSubmit={submit} noValidate>
+        <Gruppo titolo="Volo">
+          <Campo label="Nome del volo" value={title} onChange={setTitle} placeholder="es. Andata" maxLength={60} error={errors.title} />
+          <Campo label="Compagnia" value={airline} onChange={setAirline} placeholder="es. Emirates" />
+          <Campo label="Codice di prenotazione" value={bookingRef} onChange={(v) => setBookingRef(v.toUpperCase())} autoComplete="off" placeholder="es. 4K7QX2" />
+        </Gruppo>
 
-        {trip.travelers.length > 1 ? (
-          <div className="fa-fld" role="group" aria-label="Chi vola">
-            Chi vola
-            <div className="fa-chips wrap">
-              {trip.travelers.map((p) => (
-                <Chip key={p.id} on={people.includes(p.id)} onPress={() => setWho(people.includes(p.id) ? people.filter((x) => x !== p.id) : [...people, p.id])}
-                  icon={<span className={cx('fa-av', `r${discOf(trip, p.id)}`)} style={{ width: 24, height: 24, fontSize: 11 }} aria-hidden="true">{initials(p.name)}</span>}>
-                  {nome(p.id)}
-                </Chip>
-              ))}
-            </div>
+        <Gruppo titolo="Tratte">
+          {legs.map((l, i) => {
+            const ist = istanti(l)
+            const next = legs[i + 1]
+            const istNext = next ? istanti(next) : null
+            const scalo = ist && istNext ? durataTesto(layover(ist, istNext)) : ''
+            return (
+              <Fragment key={l.key}>
+                <div className="fa-tratta" role="group" aria-label={`Tratta ${i + 1}`}>
+                  <Micro titolo={`Tratta ${i + 1}`} nota={rotta(l)} />
+                  <div className="fa-2c">
+                    <Campo label="Numero del volo" value={l.flightNumber} onChange={(v) => patchLeg(l.key, { flightNumber: v.toUpperCase() })} autoComplete="off" placeholder="es. EK 92" />
+                    <Campo label="Classe" value={l.cabin} onChange={(v) => patchLeg(l.key, { cabin: v })} placeholder="es. Economy" />
+                  </div>
+                  <Percorso
+                    livello={5}
+                    durata={ist ? durataTesto(legDuration(ist)) : ''}
+                    da={{
+                      titolo: 'Partenza',
+                      children: (
+                        <>
+                          <Campo label="Aeroporto" icon="plane" value={l.from} onChange={(v) => setAirport(l, 'from', v)} placeholder="es. MXP" autoComplete="off" />
+                          <div className="dt">
+                            <Campo label="Data" type="date" icon="cal" value={l.departDate} onChange={(v) => patchLeg(l.key, { departDate: v, ...(v && l.arriveDate && l.arriveDate < v ? { arriveDate: v } : {}) })} />
+                            <Campo label="Ora" type="time" icon="clock" value={l.departTime} onChange={(v) => patchLeg(l.key, { departTime: v })} />
+                          </div>
+                        </>
+                      ),
+                    }}
+                    a={{
+                      titolo: 'Arrivo',
+                      children: (
+                        <>
+                          <Campo label="Aeroporto" icon="plane" value={l.to} onChange={(v) => setAirport(l, 'to', v)} placeholder="es. HND" autoComplete="off" />
+                          <div className="dt">
+                            <Campo label="Data" type="date" icon="cal" value={l.arriveDate} onChange={(v) => patchLeg(l.key, { arriveDate: v })} min={l.departDate || undefined} />
+                            <Campo label="Ora" type="time" icon="clock" value={l.arriveTime} onChange={(v) => patchLeg(l.key, { arriveTime: v })} />
+                          </div>
+                        </>
+                      ),
+                    }}
+                  />
+                  <span className="fa-help" style={{ marginTop: -8 }}>Orari locali di ogni aeroporto.</span>
+                  {fusoInTratta(l) ? (
+                    <>
+                      <span className="fa-help">Non riconosco il fuso di questo aeroporto: sceglilo qui.</span>
+                      {campiFuso(l)}
+                    </>
+                  ) : null}
+                  {multi ? (
+                    <div className="fa-2c riempi">
+                      {people.map((id) => (
+                        <Campo key={id} label={`Posto di ${nome(id)}`} value={l.seatsBy?.[id] ?? ''} onChange={(v) => patchLeg(l.key, { seatsBy: { ...l.seatsBy, [id]: v.toUpperCase() } })} maxLength={6} placeholder="es. 32A" />
+                      ))}
+                    </div>
+                  ) : (
+                    <Campo label="Posto" value={l.seats} onChange={(v) => patchLeg(l.key, { seats: v.toUpperCase() })} maxLength={20} placeholder="es. 32A" />
+                  )}
+                  {errors.legs[l.key] ? <Errore>{errors.legs[l.key]}</Errore> : null}
+                  {paesiDi(trip).length > 1 && l.departDate ? (
+                    <span className="fa-help">
+                      {l.arriveDate && paeseDelGiorno(trip, l.arriveDate).name !== paeseDelGiorno(trip, l.departDate).name ? `Parte in ${paeseDelGiorno(trip, l.departDate).name}, arriva in ${paeseDelGiorno(trip, l.arriveDate).name}` : `Giorno in ${paeseDelGiorno(trip, l.departDate).name}`}
+                    </span>
+                  ) : null}
+                  {legs.length > 1 ? (
+                    <Pulsante color="tertiary-destructive" size="sm" iconLeading="trash" onPress={() => setLegs(legs.filter((x) => x.key !== l.key))}>
+                      {`Rimuovi la tratta ${i + 1}`}
+                    </Pulsante>
+                  ) : null}
+                </div>
+                {next ? (
+                  <div className="fa-scalo">
+                    <Sv name="clock" size={16} />
+                    {`Scalo${l.to && l.to === next.from ? ` a ${l.to}` : ''}${scalo ? ` · ${scalo}` : ''}`}
+                  </div>
+                ) : null}
+              </Fragment>
+            )
+          })}
+          <Pulsante color="secondary" iconLeading="plus" onPress={addLeg}>
+            Aggiungi una tratta
+          </Pulsante>
+        </Gruppo>
+
+        <Gruppo titolo="Costo">
+          <PerChi trip={trip} meId={me?.id} value={people} onChange={setWho} />
+          <div className="fa-2c">
+            <Campo label="Costo" inputMode="decimal" value={cost} onChange={setCost} placeholder="es. 623" error={errors.cost} />
+            <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, flight?.currency)} />
           </div>
-        ) : null}
+          <IlCostoE value={scope} onChange={setScope} amount={amountNow} persone={people.length} currency={currency} />
+          <Interruttore label="Pagato" hint={paid ? 'Con un costo, il volo diventa una spesa.' : 'Non pagato'} isSelected={paid} onChange={setPaid} />
+          {paid && cost.trim() ? <ChiHaPagato travelers={trip.travelers} value={payers} onChange={setPayers} error={errors.paidBy} /> : null}
+        </Gruppo>
 
-        {legs.map((l, i) => (
-          <fieldset key={l.key} className="fa-card xl" style={{ display: 'grid', gap: 16, padding: 16, margin: 0 }}>
-            <legend className="fa-b" style={{ padding: '0 8px' }}>Tratta {i + 1}</legend>
-            <div className="fa-2c">
-              <Campo label="Da" value={l.from} onChange={(v) => setAirport(l, 'from', v)} placeholder="MXP" autoComplete="off" />
-              <Campo label="A" value={l.to} onChange={(v) => setAirport(l, 'to', v)} placeholder="DXB" autoComplete="off" />
-            </div>
-            <Campo label="Numero del volo" value={l.flightNumber} onChange={(v) => patchLeg(l.key, { flightNumber: v.toUpperCase() })} autoComplete="off" placeholder="FA 206" />
-            <div className="fa-2c">
-              <Campo label="Partenza, data" type="date" icon="cal" value={l.departDate} onChange={(v) => patchLeg(l.key, { departDate: v, ...(v && l.arriveDate && l.arriveDate < v ? { arriveDate: v } : {}) })} />
-              <Campo label="Partenza, ora" type="time" icon="clock" value={l.departTime} onChange={(v) => patchLeg(l.key, { departTime: v })} />
-              <Campo label="Arrivo, data" type="date" icon="cal" value={l.arriveDate} onChange={(v) => patchLeg(l.key, { arriveDate: v })} min={l.departDate || undefined} />
-              <Campo label="Arrivo, ora" type="time" icon="clock" value={l.arriveTime} onChange={(v) => patchLeg(l.key, { arriveTime: v })} />
-            </div>
-            <span className="fa-m">Ogni orario è quello locale dell'aeroporto indicato.</span>
-            <div className="fa-2c">
-              <CampoFuso label="Fuso di partenza" value={l.fromTz} onChange={(v) => patchLeg(l.key, { fromTz: v, fromTzAuto: false })} usati={[trip.timezone]} />
-              <CampoFuso label="Fuso di arrivo" value={l.toTz} onChange={(v) => patchLeg(l.key, { toTz: v, toTzAuto: false })} usati={[trip.timezone]} />
-              <Campo label="Classe" value={l.cabin} onChange={(v) => patchLeg(l.key, { cabin: v })} placeholder="Economy" />
-              <Campo label="Imbarco, ora" type="time" icon="clock" value={l.boardingTime ?? ''} onChange={(v) => patchLeg(l.key, { boardingTime: v })} />
-              <Campo label="Terminal" value={l.terminal ?? ''} onChange={(v) => patchLeg(l.key, { terminal: v })} maxLength={10} />
-              <Campo label="Gate" value={l.gate ?? ''} onChange={(v) => patchLeg(l.key, { gate: v.toUpperCase() })} maxLength={10} />
-            </div>
-            {multi ? (
+        <Gruppo titolo="Bagaglio e regole">
+          <Campo label="Bagaglio" value={baggage} onChange={setBaggage} placeholder="es. 1 valigia da 23 kg" />
+          <Campo label="Cambio e rimborso" textarea value={policy} onChange={setPolicy} placeholder="es. Cambio gratuito fino a 24 ore prima" />
+          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="" />
+        </Gruppo>
+
+        <AltriDettagli pieni={altri} contenuto="Terminal, gate, imbarco, fusi orari, check-in">
+          {legs.map((l, i) => (
+            <div key={l.key} className="fa-tratta" role="group" aria-label={`Tratta ${i + 1}`}>
+              <Micro titolo={`Tratta ${i + 1}`} nota={rotta(l)} />
               <div className="fa-2c">
-                {people.map((id) => (
-                  <Campo key={id} label={`Posto di ${nome(id)}`} value={l.seatsBy?.[id] ?? ''} onChange={(v) => patchLeg(l.key, { seatsBy: { ...l.seatsBy, [id]: v.toUpperCase() } })} maxLength={6} />
-                ))}
+                <Campo label="Terminal" value={l.terminal ?? ''} onChange={(v) => patchLeg(l.key, { terminal: v })} maxLength={10} placeholder="es. T1" />
+                <Campo label="Gate" value={l.gate ?? ''} onChange={(v) => patchLeg(l.key, { gate: v.toUpperCase() })} maxLength={10} placeholder="es. B12" />
               </div>
-            ) : (
-              <Campo label="Posto" value={l.seats} onChange={(v) => patchLeg(l.key, { seats: v.toUpperCase() })} maxLength={20} />
-            )}
-            {errors.legs[l.key] ? <Errore>{errors.legs[l.key]}</Errore> : null}
-            {paesiDi(trip).length > 1 && l.departDate ? (
-              <span className="fa-help">
-                {l.arriveDate && paeseDelGiorno(trip, l.arriveDate).name !== paeseDelGiorno(trip, l.departDate).name ? `Parte in ${paeseDelGiorno(trip, l.departDate).name}, arriva in ${paeseDelGiorno(trip, l.arriveDate).name}` : `Giorno in ${paeseDelGiorno(trip, l.departDate).name}`}
-              </span>
-            ) : null}
-            {legs.length > 1 ? (
-              <Pulsante color="tertiary-destructive" size="sm" iconLeading="trash" onPress={() => setLegs(legs.filter((x) => x.key !== l.key))}>
-                Rimuovi tratta
-              </Pulsante>
-            ) : null}
-          </fieldset>
-        ))}
-        <Pulsante color="secondary" iconLeading="plus" onPress={addLeg}>
-          Aggiungi una tratta (scalo)
-        </Pulsante>
-
-        <div className="fa-2c">
-          <Campo label="Costo" inputMode="decimal" value={cost} onChange={setCost} placeholder="es. 623" error={errors.cost} />
-          <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, flight?.currency)} />
-        </div>
-        <div className="fa-chips" role="group" aria-label="Il costo è">
-          <Chip on={scope === 'per_person'} onPress={() => setScope('per_person')}>A persona</Chip>
-          <Chip on={scope === 'total'} onPress={() => setScope('total')}>Totale</Chip>
-        </div>
-        <Interruttore label="Pagato" hint={paid ? 'Con un importo, il volo diventa una spesa.' : 'Non pagato'} isSelected={paid} onChange={setPaid} />
-        {paid && cost.trim() ? (
-          <ChiHaPagato travelers={trip.travelers} value={payers} onChange={setPayers} error={errors.paidBy} />
-        ) : null}
-
-        <Campo label="Bagaglio" value={baggage} onChange={setBaggage} placeholder="es. 1 bagaglio da 23 kg" />
-        <Campo label="Cambio e rimborso" textarea value={policy} onChange={setPolicy} placeholder="es. Cambio gratuito fino a 24 ore prima" />
-        <div className="fa-2c">
-          <Campo label="Apre il check-in, data" type="date" icon="cal" value={checkin.date} onChange={(v) => setCheckin({ ...checkin, date: v })} />
-          <Campo label="Apre il check-in, ora" type="time" icon="clock" value={checkin.time} onChange={(v) => setCheckin({ ...checkin, time: v })} />
-        </div>
-        <Campo label="Note" textarea value={notes} onChange={setNotes} />
+              <Campo label="Imbarco" type="time" icon="clock" value={l.boardingTime ?? ''} onChange={(v) => patchLeg(l.key, { boardingTime: v })} />
+              {fusoInTratta(l) ? null : campiFuso(l)}
+            </div>
+          ))}
+          <Micro titolo="Apertura del check-in" />
+          <div className="fa-2c dt">
+            <Campo label="Data" type="date" icon="cal" value={checkin.date} onChange={(v) => setCheckin({ ...checkin, date: v })} />
+            <Campo label="Ora" type="time" icon="clock" value={checkin.time} onChange={(v) => setCheckin({ ...checkin, time: v })} />
+          </div>
+        </AltriDettagli>
         {flight ? <DocumentiCollegati trip={trip} kind={'flight'} refId={flight.id} /> : null}
         {errors.form ? <Errore>{errors.form}</Errore> : null}
       </form>

@@ -1,8 +1,8 @@
 // Fogli «Nuova spesa» e «Modifica spesa» (mock Fa-30, #34): nome, importo con il convertitore (si scrive in una
-// valuta e si legge l'altra), «Pagata da» obbligatorio, «Dividi in parti uguali» o le persone, categoria a pillole.
+// valuta e si legge l'altra), «Pagata da» obbligatorio, «Per chi» a riquadri e «Come dividere», categoria a riquadri.
 // Di base: pagata da me, divisa tra tutti, nella valuta del paese.
 import { SceltaIcona } from '../../faraway/SceltaIcona'
-import { iconaDalNome } from '../../lib/categoryIcon'
+import { glifoCategoria, iconaDalNome } from '../../lib/categoryIcon'
 import { useEffect, useState } from 'react'
 import { dateInZone } from '../../lib/flights'
 import { removeBookingFile } from '../../lib/bookingFiles'
@@ -20,6 +20,7 @@ import { useTrips } from '../../state/trip'
 import type { Expense, ExpenseFile, SplitMode, Trip } from '../../types'
 import { Campo, Chip, Pulsante } from '../../faraway/base'
 import { Foglio } from '../../faraway/Foglio'
+import { Riquadri } from '../../faraway/Moduli'
 import { Sv } from '../../faraway/icons'
 import { inQuanti } from './testi'
 import { CambioRiga, defaultVals, DivisioneEditor, PagantiEditor, payersFromRows, RicevuteEditor, sharesFrom, type PayRow } from './SpesaAvanzata'
@@ -37,9 +38,15 @@ const nome = (cur: string) => {
 }
 const scrivi = (v: number, cur: string) => v.toLocaleString('it-IT', { maximumFractionDigits: decimalsOf(cur), minimumFractionDigits: 0 })
 const leggi = (t: string) => parseAmount(t)
+const NUOVA = '__nuova__'
+/** Glifo della categoria di spesa: quello delle categorie base, altrimenti dall'icona scelta o dedotta dal nome. */
+function glifoSpesa(label: string): string {
+  const base = CATEGORIE_BASE.find((c) => catKey(c.label) === catKey(label))
+  return base ? base.icon.replace(/^i-/, 'g-') : glifoCategoria(label)
+}
 
 /** Importo con il convertitore (ValutaPiccola): il campo attivo è quello in cui si scrive. */
-function Importo({ base, other, rate, side, text, onSide, onText, label }: { base: string; other: string | null; rate: number | undefined; side: string; text: string; onSide: (cur: string, text: string) => void; onText: (t: string) => void; label: string }) {
+function Importo({ base, other, rate, side, text, onSide, onText, label, cambioSotto }: { base: string; other: string | null; rate: number | undefined; side: string; text: string; onSide: (cur: string, text: string) => void; onText: (t: string) => void; label: string; /** sotto c'è già la riga del cambio con la fonte: qui non si ripete */ cambioSotto?: boolean }) {
   const n = leggi(text)
   const field = (cur: string) => {
     if (side === cur)
@@ -78,7 +85,7 @@ function Importo({ base, other, rate, side, text, onSide, onText, label }: { bas
           </span>
           {field(other)}
         </div>
-        <div className="rr">{rate ? `1 ${sym(base)} = ${scrivi(1 / rate, other)} ${sym(other)}` : `Manca il cambio tra ${base} e ${other}: la spesa non conta nei totali finché non lo imposti.`}</div>
+        {rate && cambioSotto ? null : <div className="rr">{rate ? `1 ${sym(base)} = ${scrivi(1 / rate, other)} ${sym(other)}` : `Manca il cambio tra ${base} e ${other}: la spesa non conta nei totali finché non lo imposti.`}</div>}
       </div>
     </div>
   )
@@ -179,6 +186,8 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
   }
   const personali = trip.expenseCategories.filter((c) => !c.archived || catKey(c.label) === catKey(category)).map((c) => c.label).filter((l) => !CATEGORIE_BASE.some((b) => catKey(b.label) === catKey(l)))
   const scelte = ['Cibo', 'Trasporti', 'Alloggi', 'Attività', 'Voli', ...personali, 'Altro']
+  // la categoria scritta sulla spesa resta tra le scelte anche se non è più proposta
+  const opzioniCat = !newCat && category && !scelte.some((c) => catKey(c) === catKey(category)) ? [...scelte, category] : scelte
 
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
@@ -246,7 +255,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
         <div className="fa-fld">
           <span>Importo</span>
           {others.length > 1 ? (
-            <div className="fa-chips scroll" role="group" aria-label="Valuta">
+            <div className="fa-chips wrap" role="group" aria-label="Valuta">
               {others.map((c) => (
                 <Chip key={c} on={other === c} onPress={() => (setOther(c), side !== base && setSide(c))}>
                   {c}
@@ -254,7 +263,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
               ))}
             </div>
           ) : null}
-          <Importo base={base} other={other} rate={rate} side={side} text={text} label="Importo" onText={setText} onSide={(c, v) => (setSide(c), setText(v), mode === 'fixed' && setVals(defaultVals('fixed', who, leggi(v))))} />
+          <Importo base={base} other={other} rate={rate} side={side} text={text} label="Importo" cambioSotto={!!other && side !== base} onText={setText} onSide={(c, v) => (setSide(c), setText(v), mode === 'fixed' && setVals(defaultVals('fixed', who, leggi(v))))} />
           {errors.amount ? (
             <span className="fa-help bad" role="alert">
               <Sv name="err" size={16} />
@@ -269,6 +278,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
         {trip.travelers.length > 1 ? (
           <DivisioneEditor
             trip={trip}
+            meId={me?.id}
             mode={mode}
             onMode={setMode}
             who={who}
@@ -286,26 +296,21 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
             {errors.who}
           </span>
         ) : null}
-        <div className="fa-fld" role="group" aria-label="Categoria">
-          Categoria
-          <div className="fa-chips scroll">
-            {scelte.map((c) => (
-              <Chip key={c} on={!newCat && catKey(category) === catKey(c)} onPress={() => (setNewCat(false), setCategory(c))}>
-                {c}
-              </Chip>
-            ))}
-            {!newCat && !scelte.some((c) => catKey(c) === catKey(category)) && category ? (
-              <Chip on onPress={() => undefined}>
-                {category}
-              </Chip>
-            ) : null}
-            <Chip on={newCat} onPress={() => (setNewCat(true), setCategory(''))}>
-              Nuova…
-            </Chip>
-          </div>
+        <Riquadri<string>
+          label="Categoria"
+          cols={4}
+          value={newCat ? NUOVA : (opzioniCat.find((c) => catKey(c) === catKey(category)) ?? '')}
+          onChange={(c) => {
+            if (!c) return
+            if (c === NUOVA) return (setNewCat(true), setCategory(''))
+            setNewCat(false)
+            setCategory(c)
+          }}
+          options={[...opzioniCat.map((c) => ({ value: c, label: c, glifo: glifoSpesa(c) })), { value: NUOVA, label: 'Nuova…', glifo: 'g-plus' }]}
+        >
           {newCat ? <Campo label="Nuova categoria" hideLabel value={category} onChange={setCategory} placeholder="es. Souvenir" maxLength={40} autoFocus /> : null}
           {newCat ? <SceltaIcona value={icona ?? iconaDalNome(category)} onChange={setIcona} /> : null}
-        </div>
+        </Riquadri>
         <RicevuteEditor trip={trip} expenseId={spesaId} files={(expense?.files ?? []).filter((f) => !gone.includes(f.id))} added={added} onAdded={setAdded} onRemove={(f) => void removeFile(f)} />
         {errors.form ? (
           <span className="fa-help bad" role="alert">

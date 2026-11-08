@@ -167,3 +167,9 @@ export function pinIconSvg(icon: PinIcon): string {
   const { viewBox, d } = pinIconShape(icon)
   return `<svg viewBox="${viewBox}" fill="#fff" aria-hidden="true"><path d="${d}"/></svg>`
 }
+
+/** Glifo pieno dello sprite per una categoria (riquadri dei fogli): dall'icona scelta o dedotta dal nome. */
+export function glifoCategoria(label: string): string {
+  const i = categoryIcon(label)
+  return i === 'shield' ? 'g-sez-shield' : i === 'connection' ? 'g-sez-sim' : `g-cat-${i}`
+}

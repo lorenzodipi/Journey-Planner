@@ -61,7 +61,7 @@ I componenti del design system (`.k-Ticket`, `.k-Riepilogo`, …) vengono dalle 
 
 ## Componenti da riusare
 
-`Pulsante` (`primary`, `secondary`, `secondary-soft`, `tertiary`, `tertiary-destructive`, `size="sm"`, `isLoading`), `PulsanteIcona`, `Chip`, `Campo`, `CampoValuta`, `CampoFuso`, `Interruttore`, `Segmenti`, `Foglio`, `useConferma`, `Modale`, `useConfermaCentrata`, `showAvviso`, `MenuAzioni` (tre puntini verticali con popover a freccia), `Riga`, `Pillola`, `Avatar`, `BarraAttesa`, `useInCorso`.
+`Pulsante` (`primary`, `secondary`, `secondary-soft`, `tertiary`, `tertiary-destructive`, `size="sm"`, `isLoading`), `PulsanteIcona`, `Chip`, `Campo`, `CampoValuta`, `CampoFuso`, `Interruttore`, `Segmenti`, `Foglio`, i pezzi dei moduli in `Moduli.tsx` (`Gruppo`, `AltriDettagli`, `Percorso`, `Riquadri`, `PerChi`, `IlCostoE`, `Contatore`, `SegmentiFacoltativi`, `Micro`), `useConferma`, `Modale`, `useConfermaCentrata`, `showAvviso`, `MenuAzioni` (tre puntini verticali con popover a freccia), `Riga`, `Pillola`, `Avatar`, `BarraAttesa`, `useInCorso`.
 
 Prima di scrivere un elemento nuovo: cercarlo in `src/faraway/`, poi in `react-aria-components`.
 

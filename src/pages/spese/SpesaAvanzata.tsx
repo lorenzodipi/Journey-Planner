@@ -3,9 +3,10 @@ import { useRef, useState } from 'react'
 import { cx } from '../../faraway/cx'
 import { Campo, Chip, Pulsante, PulsanteIcona, Segmenti } from '../../faraway/base'
 import { Sv } from '../../faraway/icons'
+import { PerChi } from '../../faraway/Moduli'
 import { checkFile, openBookingFile, safeFileName, uploadBookingFile } from '../../lib/bookingFiles'
 import { parseAmount } from '../../lib/money'
-import { checkPayers, checkSplit, fxTrace, SPLIT_LABEL, splitAmounts } from '../../lib/ripartizione'
+import { checkPayers, checkSplit, fxTrace, splitAmounts } from '../../lib/ripartizione'
 import { showToast } from '../../state/toast'
 import { discOf, initials } from '../../state/me'
 import type { ExpenseFile, ExpensePayer, ExpenseShare, SplitMode, Trip } from '../../types'
@@ -64,7 +65,7 @@ export function PagantiEditor({ trip, total, currency, rows, onRows, single, onS
         </div>
         {ppl.length > 1 ? (
           <Pulsante color="secondary-soft" iconLeading="plus" onPress={() => onRows([{ id: single, text: total ? txt(total) : '' }, { id: '', text: '' }])}>
-            Aggiungi un altro pagante
+            Aggiungi un pagante
           </Pulsante>
         ) : null}
         {error ? <span className="fa-help bad" role="alert"><Sv name="err" size={16} />{error}</span> : null}
@@ -103,7 +104,7 @@ export function PagantiEditor({ trip, total, currency, rows, onRows, single, onS
       ))}
       {used.size < ppl.length && !rows.some((r) => !r.id) ? (
         <Pulsante color="secondary-soft" iconLeading="plus" onPress={() => onRows([...rows, { id: '', text: '' }])}>
-          Aggiungi un altro pagante
+          Aggiungi un pagante
         </Pulsante>
       ) : null}
       {rows.some((r) => !r.id) ? <span className="fa-help bad" role="alert"><Sv name="err" size={16} />Scegli chi è il pagante che hai aggiunto, oppure toglilo.</span> : <Help check={check} />}
@@ -127,9 +128,13 @@ export function sharesFrom(mode: SplitMode, who: string[], vals: Record<string, 
   })
 }
 
-/** «Come dividere»: parti uguali, percentuali (somma 100) o importi fissi (somma = importo), con il controllo sotto. */
-export function DivisioneEditor({ trip, mode, onMode, who, onWho, vals, onVals, total, currency, hint }: {
+/**
+ * «Per chi» a riquadri (Tutti, Solo io, Solo l'altra persona o Scegli) e, se le persone sono più di una, «Come dividere»:
+ * parti uguali, percentuali (somma 100) o importi fissi (somma = importo), con il controllo sotto.
+ */
+export function DivisioneEditor({ trip, meId, mode, onMode, who, onWho, vals, onVals, total, currency, hint }: {
   trip: Trip
+  meId?: string | null
   mode: SplitMode
   onMode: (m: SplitMode) => void
   who: string[]
@@ -141,34 +146,35 @@ export function DivisioneEditor({ trip, mode, onMode, who, onWho, vals, onVals, 
   hint?: string
 }) {
   const check = who.length === 0 ? { ok: false, message: 'Scegli almeno una persona.', missing: 0 } : checkSplit(mode, total ?? 0, sharesFrom(mode, who, vals), currency)
-  const toggle = (id: string) => {
-    const next = who.includes(id) ? who.filter((x) => x !== id) : trip.travelers.map((p) => p.id).filter((x) => x === id || who.includes(x))
+  const scegli = (next: string[]) => {
     onWho(next)
-    if (mode !== 'equal') onVals(defaultVals(mode, next, total))
+    if (next.length < 2 && mode !== 'equal') {
+      onMode('equal')
+      onVals({})
+    } else if (mode !== 'equal') onVals(defaultVals(mode, next, total))
   }
   return (
-    <div style={{ display: 'grid', gap: 8 }}>
-      <div className="fa-fld">
-        Come dividere
-        <Segmenti<SplitMode> label="Come dividere" value={mode} onChange={(m) => (onMode(m), onVals(defaultVals(m, who, total)))} options={(['equal', 'percent', 'fixed'] as SplitMode[]).map((m) => ({ value: m, label: SPLIT_LABEL[m] }))} />
-      </div>
-      <div className="fa-chips wrap" role="group" aria-label="Per chi">
-        {trip.travelers.map((p) => (
-          <Chip key={p.id} on={who.includes(p.id)} onPress={() => toggle(p.id)}>
-            {first(p.name)}
-          </Chip>
-        ))}
-      </div>
-      {mode !== 'equal'
+    <>
+      <PerChi trip={trip} meId={meId} value={who} onChange={scegli} />
+      {who.length > 1 ? (
+        <div className="fa-fld">
+          Come dividere
+          <Segmenti<SplitMode> label="Come dividere" value={mode} onChange={(m) => (onMode(m), onVals(defaultVals(m, who, total)))} options={(['equal', 'percent', 'fixed'] as SplitMode[]).map((m) => ({ value: m, label: SPLIT_BREVE[m] }))} />
+        </div>
+      ) : null}
+      {mode !== 'equal' && who.length > 1
         ? who.map((id) => (
             <Campo key={id} label={first(trip.travelers.find((p) => p.id === id)?.name ?? '')} inputMode="decimal" value={vals[id] ?? ''} onChange={(v) => onVals({ ...vals, [id]: v })} placeholder="0" trailing={<span>{mode === 'percent' ? '%' : currency}</span>} />
           ))
         : null}
       <Help check={check} />
-      {check.ok && hint ? <span className="fa-help ok">{hint}</span> : null}
-    </div>
+      {check.ok && hint ? <span className="fa-help ok" style={{ marginTop: -8 }}>{hint}</span> : null}
+    </>
   )
 }
+
+/** Nomi corti dei modi di divisione: tre segmenti stanno su una riga anche a 320 px. */
+const SPLIT_BREVE: Record<SplitMode, string> = { equal: 'Uguali', percent: 'In %', fixed: 'A importi' }
 
 /** Riga del cambio: «1 € = 163,2 ¥ · BCE · 30 ott 09:10», con «Aggiorna» e «Modifica» (si può scrivere a mano; resta la traccia). */
 export function CambioRiga({ base, other, rate, source, at, manual, setBy, busy, onRefresh, onManual }: {

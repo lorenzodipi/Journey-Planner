@@ -2330,3 +2330,65 @@ html,body{margin:0;background:var(--canvas)}
 .fa-phone button,.fa-phone a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .fa-phone :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.fa-phone *,.fa-phone *::before,.fa-phone *::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+/* ---- Moduli dei fogli (Moduli.tsx, docs/linee-guida/03-modali-e-moduli.md) ---- */
+.fa-sheet .frm.grp{gap:32px;container-type:inline-size}
+.fa-grp{display:grid;gap:16px;min-width:0}
+.fa-grp>h3,.fa-altri>summary .t{margin:0;font:600 18px/24px var(--font-display);letter-spacing:-.01em;color:var(--ink)}
+.fa-micro{margin:0;display:flex;flex-wrap:wrap;gap:0 8px;align-items:baseline;font:600 16px/24px var(--font-sans);color:var(--ink)}
+.fa-micro>span{font:400 14px/20px var(--font-sans);color:var(--ink-muted);font-variant-numeric:tabular-nums}
+.fa-tratta{display:grid;gap:16px;min-width:0}
+.fa-grp>.fa-tratta+.fa-tratta,.fa-grp>.fa-scalo+.fa-tratta,.fa-grp>.fa-tratta+.fa-scalo,.fa-altri>.in>.fa-tratta+.fa-tratta,.fa-altri>.in>.fa-tratta+.fa-micro{margin-top:8px}
+.fa-2c.riempi{align-items:end}
+.fa-2c.riempi>:last-child:nth-child(odd){grid-column:1/-1}
+.fa-2c.dt,.fa-perc .dt{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start}
+/* Altri dettagli: da chiuso è un titolo di gruppo con la freccia, senza fondo */
+.fa-altri{display:grid;gap:16px;min-width:0}
+.fa-altri:not([open]){gap:0}
+.fa-altri>summary{list-style:none;display:grid;grid-template-columns:minmax(0,1fr) 32px;gap:16px;align-items:center;min-height:48px;cursor:pointer;border-radius:8px;color:var(--ink)}
+.fa-altri>summary::-webkit-details-marker{display:none}
+.fa-altri>summary>span:first-child{display:grid}
+.fa-altri>summary .m{font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
+.fa-altri>summary .chv{width:32px;height:32px;border-radius:9999px;display:grid;place-items:center;background:var(--surface-high);color:var(--ink);transition:transform 180ms cubic-bezier(.23,1,.32,1)}
+.fa-altri[open]>summary .chv{transform:rotate(180deg)}
+.fa-altri>summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.fa-altri>.in{display:grid;gap:16px;min-width:0}
+/* Percorso: due punti e una linea, la durata in mezzo */
+.fa-perc{display:grid;min-width:0}
+.fa-perc .tp{display:grid;grid-template-columns:16px minmax(0,1fr);column-gap:12px}
+.fa-perc .rail{position:relative}
+.fa-perc .tp:not(.dur)>.rail::before{content:"";position:absolute;left:2px;top:6px;width:12px;height:12px;border-radius:50%;box-sizing:border-box;border:2.5px solid var(--azzurro-ink);background:var(--surface-card)}
+.fa-perc .tp.end>.rail::before{background:var(--azzurro-ink)}
+.fa-perc .rail::after{content:"";position:absolute;left:7px;width:2px;background:var(--border-strong);border-radius:1px}
+.fa-perc .tp:first-child>.rail::after{top:20px;bottom:0}
+.fa-perc .tp.dur>.rail::after{top:0;bottom:0}
+.fa-perc .tp.end>.rail::after{top:0;height:6px}
+.fa-perc .cnt{display:grid;gap:16px;min-width:0;padding-bottom:16px}
+.fa-perc .tp.end>.cnt{padding-bottom:0}
+.fa-perc :is(h4,h5){margin:0;font:600 16px/24px var(--font-sans);color:var(--ink)}
+.fa-perc .tp.dur{padding-bottom:16px}
+.fa-perc .pill,.fa-scalo{font:500 14px/20px var(--font-sans);font-variant-numeric:tabular-nums;color:var(--ink-muted);background:var(--surface-soft);border-radius:9999px}
+.fa-perc .pill{justify-self:start;padding:4px 12px}
+.fa-scalo{justify-self:center;display:inline-flex;gap:8px;align-items:center;padding:6px 16px}
+@container (max-width:340px){.fa-2c .fa-in:has(input[type=date])>svg,.fa-2c .fa-in:has(input[type=time])>svg,.fa-perc .dt .fa-in>svg{display:none}.fa-2c .fa-in:has(input[type=date]) .ph,.fa-2c .fa-in:has(input[type=time]) .ph,.fa-perc .dt .fa-in .ph{left:16px;right:16px}}
+/* Riquadri con l'immagine e la riga di conseguenza */
+.k-ChecklistNuova .sg .seg.fa-riq{min-height:64px;gap:4px;padding:8px 4px;color:var(--ink);min-width:0}
+.k-ChecklistNuova .sg .seg.fa-riq .ic{width:24px;height:24px}
+.k-ChecklistNuova .sg .seg.fa-riq .ic.gl{width:36px;height:36px;margin:-6px 0;fill:currentColor}
+.k-ChecklistNuova .sg .seg.fa-riq .sb{font:400 13px/18px var(--font-sans);color:var(--ink-muted);font-variant-numeric:tabular-nums}
+.k-ChecklistNuova .sg .seg.fa-riq.on,.k-ChecklistNuova .sg .seg.fa-riq.on .sb{color:var(--azzurro-ink)}
+.k-ChecklistNuova .pr{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;min-height:48px;cursor:pointer}
+.k-ChecklistNuova .pr:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:8px}
+.k-ChecklistNuova .pr[aria-disabled=true]{cursor:default}
+@container (max-width:300px){.k-ChecklistNuova .sg .seg.fa-riq{font-size:12px;padding:8px 0}}
+/* Contatore − n + */
+.fa-cont{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;min-height:48px}
+.fa-cont .l{display:grid}
+.fa-cont .l b{font:600 14px/20px var(--font-sans);color:var(--ink)}
+.fa-cont .l span{font:400 13px/18px var(--font-sans);color:var(--ink-muted)}
+.fa-cont .ctl{display:inline-grid;grid-template-columns:44px 40px 44px;align-items:center;text-align:center}
+.fa-cont output{font:600 18px/24px var(--font-sans);font-variant-numeric:tabular-nums;color:var(--ink)}
+.fa-cont .fa-ib:disabled{opacity:.4;cursor:default}
+.fa-cont .fa-ib[hidden]{display:grid;visibility:hidden}
+.fa-cont output.vuoto{font-weight:400;color:var(--ink-muted)}
+@media (prefers-reduced-motion:reduce){.fa-altri>summary .chv{transition:none}}

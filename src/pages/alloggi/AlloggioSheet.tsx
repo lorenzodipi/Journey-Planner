@@ -1,11 +1,12 @@
-// Foglio «Nuovo alloggio» / «Modifica alloggio» (#39, #58): nome, città, indirizzo, date e orari, camera, codice,
-// costo con «Pagato / Non pagato», «Pagato da», «Per chi», pasti e note.
+// Foglio «Nuovo alloggio» / «Modifica alloggio» (#39, #58), a gruppi: Dove (prima il link di Google Maps, che compila il
+// resto), Quando (check-in → check-out con le notti), Costo, Camera e contatti, Altri dettagli (ospiti, telefono, email, chi dorme qui).
 import { useConflitto } from '../../faraway/useConflitto'
 import { DocumentiCollegati } from '../documenti/DocumentiCollegati'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { StayInput } from '../../lib/logistics'
-import { amountToText, parseAmount, tripCurrencies } from '../../lib/money'
-import { discOf, initials, useMe } from '../../state/me'
+import { amountToText, formatMoney, parseAmount, tripCurrencies } from '../../lib/money'
+import { compilati, nottiTesto } from '../../lib/moduli'
+import { useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { Stay, Trip } from '../../types'
@@ -14,7 +15,7 @@ import { parseMapsUrl } from '../../lib/mapsUrl'
 import { reverseGeocode } from '../../lib/geocode'
 import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
 import { CampoValuta } from '../../faraway/CampoValuta'
-import { cx } from '../../faraway/cx'
+import { AltriDettagli, Contatore, Gruppo, PerChi, Percorso } from '../../faraway/Moduli'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 
@@ -125,6 +126,30 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
     onClose()
   }
 
+  const amountNow = parseAmount(cost)
+  const altri = compilati([guests, phone, email, dorme])
+  const puoiIncollare = typeof navigator !== 'undefined' && !!navigator.clipboard?.readText
+  async function incolla() {
+    try {
+      const v = (await navigator.clipboard.readText()).trim()
+      if (!v) return showToast('Negli appunti non c’è niente da incollare.')
+      await leggiLink(v)
+    } catch {
+      showToast('Non riesco a leggere gli appunti: incolla il link nel campo.')
+    }
+  }
+  const ora = (label: string, v: string, set: (v: string) => void) => (
+    <Campo label={label} icon="clock" type={soloOra(v) ? 'time' : 'text'} value={v} onChange={set} hint={soloOra(v) ? undefined : 'Scritto a mano: cancellalo per scegliere un orario.'} />
+  )
+  /** Data e ora affiancate; un orario scritto a mano («15:00–22:00») va sotto, a tutta larghezza, per leggersi intero. */
+  const dataOra = (data: ReactNode, v: string, set: (v: string) => void) => (
+    <div className="dt" style={soloOra(v) ? undefined : { gridTemplateColumns: 'minmax(0,1fr)' }}>
+      {data}
+      {ora('Ora', v, set)}
+    </div>
+  )
+  const aTesta = amountNow && people.length > 1 ? `: ${formatMoney(Math.round((amountNow / people.length) * 100) / 100, currency)} a testa` : ''
+
   return (
     <Foglio
       open={open}
@@ -137,77 +162,102 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
         </Pulsante>
       }
     >
-      <form id="alloggio-form" className="frm" onSubmit={submit} noValidate>
-        <Campo label="Nome" value={name} onChange={setName} placeholder="Nome dell’alloggio" error={errors.name} />
-        <div className="fa-2c">
-          <Campo label="Città" icon="pin" value={city} onChange={setCity} placeholder="Città" />
-          <Campo label="Indirizzo" value={address} onChange={setAddress} placeholder="Via e numero" />
-        </div>
-        <Campo label="Link alla mappa (facoltativo)" type="url" value={mapsUrl} onChange={(v) => void leggiLink(v)} placeholder="Incolla il link di Google Maps" hint={mapsInfo || 'Incollalo e compilo nome, città e indirizzo.'} />
-        <div className="fa-2c">
-          <Campo label="Check-in, data" type="date" icon="cal" value={checkIn} onChange={(v) => (setCheckIn(v), !checkOut || checkOut <= v ? setCheckOut('') : null)} />
-          <Campo label="Check-in, orario" icon="clock" type={soloOra(inInfo) ? 'time' : 'text'} value={inInfo} onChange={setInInfo} hint={soloOra(inInfo) ? undefined : 'Testo scritto prima: cancellalo per scegliere un orario.'} />
-          <Campo label="Check-out, data" type="date" icon="cal" value={checkOut} onChange={setCheckOut} min={checkIn || undefined} />
-          <Campo label="Check-out, orario" icon="clock" type={soloOra(outInfo) ? 'time' : 'text'} value={outInfo} onChange={setOutInfo} hint={soloOra(outInfo) ? undefined : 'Testo scritto prima: cancellalo per scegliere un orario.'} />
-        </div>
-        {errors.when ? <Errore>{errors.when}</Errore> : null}
-        <div className="fa-2c">
-          <Campo label="Camera" value={room} onChange={setRoom} placeholder="4" maxLength={10} />
-          <Campo label="Tipo di camera" value={roomType} onChange={setRoomType} placeholder="es. Doppia" />
-          <Campo label="Ospiti" inputMode="numeric" value={guests} onChange={setGuests} placeholder="2" error={errors.guests} />
-          <Campo label="Telefono" type="tel" value={phone} onChange={setPhone} placeholder="Numero di telefono" />
-          <Campo label="Email" type="email" value={email} onChange={setEmail} placeholder="info@…" error={errors.email} />
-        </div>
-        <Campo label="Codice di prenotazione" value={code} onChange={(v) => setCode(v.toUpperCase())} autoComplete="off" />
-        <div className="fa-2c">
-          <Campo label="Costo totale" inputMode="decimal" value={cost} onChange={setCost} placeholder="es. 450,00" error={errors.cost} />
-          <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, s?.currency)} />
-        </div>
-        <Interruttore label="Pagato" hint={paid ? 'Con un costo, l’alloggio diventa una spesa.' : 'Non pagato'} isSelected={paid} onChange={setPaid} />
-        {paid && cost.trim() ? (
-          <div className="fa-fld" role="group" aria-label="Pagato da">
-            Pagato da
-            <div className="fa-chips wrap">
-              {trip.travelers.map((p) => (
-                <Chip key={p.id} on={paidBy === p.id} onPress={() => setPaidBy(p.id)}>{nome(p.id)}</Chip>
-              ))}
+      <form id="alloggio-form" className="frm grp" onSubmit={submit} noValidate>
+        <Gruppo titolo="Dove">
+          <Campo
+            label="Link di Google Maps"
+            icon="link"
+            type="url"
+            value={mapsUrl}
+            onChange={(v) => void leggiLink(v)}
+            placeholder=""
+            autoComplete="off"
+            hint={mapsInfo || 'Incollalo e compilo da solo nome, città e indirizzo.'}
+            trailing={
+              puoiIncollare && !mapsUrl.trim() ? (
+                <button type="button" className="fa-btn soft sm" style={{ height: 36, padding: '0 16px' }} onClick={() => void incolla()}>
+                  Incolla
+                </button>
+              ) : undefined
+            }
+          />
+          <Campo label="Nome" value={name} onChange={setName} placeholder="es. U-BELL Hotel" error={errors.name} />
+          <div className="fa-2c">
+            <Campo label="Città" icon="pin" value={city} onChange={setCity} placeholder="es. Kyoto" />
+            <Campo label="Indirizzo" value={address} onChange={setAddress} placeholder="es. 1-2 Gion" />
+          </div>
+        </Gruppo>
+        <Gruppo titolo="Quando">
+          <Percorso
+            durata={nottiTesto(checkIn, checkOut)}
+            da={{
+              titolo: 'Check-in',
+              children: (
+                dataOra(<Campo label="Data" type="date" icon="cal" value={checkIn} onChange={(v) => (setCheckIn(v), !checkOut || checkOut <= v ? setCheckOut('') : null)} />, inInfo, setInInfo)
+              ),
+            }}
+            a={{
+              titolo: 'Check-out',
+              children: (
+                dataOra(<Campo label="Data" type="date" icon="cal" value={checkOut} onChange={setCheckOut} min={checkIn || undefined} />, outInfo, setOutInfo)
+              ),
+            }}
+          />
+          {errors.when ? <Errore>{errors.when}</Errore> : null}
+        </Gruppo>
+        <Gruppo titolo="Costo">
+          <PerChi trip={trip} meId={me?.id} value={people} onChange={setWho} />
+          <div className="fa-2c">
+            <Campo label="Costo" inputMode="decimal" value={cost} onChange={setCost} placeholder="es. 450,00" error={errors.cost} />
+            <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, s?.currency)} />
+          </div>
+          <span className="fa-help" style={{ marginTop: -8 }}>Per tutto il soggiorno{aTesta}.</span>
+          <Interruttore label="Pagato" hint={paid ? 'Con un costo, l’alloggio diventa una spesa.' : 'Non pagato'} isSelected={paid} onChange={setPaid} />
+          {paid && cost.trim() ? (
+            <div className="fa-fld" role="group" aria-label="Pagato da">
+              Pagato da
+              <div className="fa-chips wrap">
+                {trip.travelers.map((p) => (
+                  <Chip key={p.id} on={paidBy === p.id} onPress={() => setPaidBy(p.id)}>{nome(p.id)}</Chip>
+                ))}
+              </div>
+              {errors.paidBy ? <Errore>{errors.paidBy}</Errore> : null}
             </div>
-            {errors.paidBy ? <Errore>{errors.paidBy}</Errore> : null}
+          ) : null}
+        </Gruppo>
+        <Gruppo titolo="Camera e contatti">
+          <div className="fa-2c">
+            <Campo label="Tipo di camera" value={roomType} onChange={setRoomType} placeholder="es. Doppia" />
+            <Campo label="Camera" value={room} onChange={setRoom} placeholder="es. 402" maxLength={10} />
           </div>
-        ) : null}
-        {trip.travelers.length > 1 ? (
-          <div className="fa-fld" role="group" aria-label="Per chi">
-            Per chi
+          <Campo label="Codice di prenotazione" value={code} onChange={(v) => setCode(v.toUpperCase())} autoComplete="off" placeholder="es. 4K7QX2" />
+          <div className="fa-fld" role="group" aria-label="Pasti e servizi">
+            Pasti e servizi
             <div className="fa-chips wrap">
-              {trip.travelers.map((p) => (
-                <Chip key={p.id} on={people.includes(p.id)} onPress={() => setWho(people.includes(p.id) ? people.filter((x) => x !== p.id) : [...people, p.id])}
-                  icon={<span className={cx('fa-av', `r${discOf(trip, p.id)}`)} style={{ width: 24, height: 24, fontSize: 11 }} aria-hidden="true">{initials(p.name)}</span>}>
-                  {nome(p.id)}
-                </Chip>
-              ))}
+              <Chip on={breakfast} onPress={() => setBreakfast(!breakfast)}>Colazione</Chip>
+              <Chip on={dinner} onPress={() => setDinner(!dinner)}>Cena</Chip>
+              <Chip on={kitchen} onPress={() => setKitchen(!kitchen)}>Cucina</Chip>
             </div>
           </div>
-        ) : null}
-        {trip.travelers.length > 1 ? (
-          <div className="fa-fld" role="group" aria-label="Chi dorme qui">
-            Chi dorme qui (facoltativo)
-            <div className="fa-chips wrap">
-              {trip.travelers.map((p) => (
-                <Chip key={p.id} on={dorme.includes(p.id)} onPress={() => setDorme(dorme.includes(p.id) ? dorme.filter((x) => x !== p.id) : [...dorme, p.id])}>{nome(p.id)}</Chip>
-              ))}
+          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="" />
+        </Gruppo>
+        <AltriDettagli pieni={altri} contenuto={trip.travelers.length > 1 ? 'Ospiti, telefono, email, chi dorme qui' : 'Ospiti, telefono, email'} errore={errors.email || errors.guests ? errors : undefined}>
+          <Contatore label="Ospiti" value={guests.trim() && Number.isFinite(Number(guests)) ? Number(guests) : null} onChange={(n) => setGuests(n === null ? '' : String(n))} vuoto />
+          {errors.guests ? <Errore>{errors.guests}</Errore> : null}
+          <Campo label="Telefono" type="tel" value={phone} onChange={setPhone} placeholder="es. +81 75 123 4567" />
+          <Campo label="Email" type="email" value={email} onChange={setEmail} placeholder="es. info@hotel.jp" error={errors.email} />
+          {trip.travelers.length > 1 ? (
+            <div className="fa-fld" role="group" aria-label="Chi dorme qui">
+              Chi dorme qui
+              <div className="fa-chips wrap">
+                {trip.travelers.map((p) => (
+                  <Chip key={p.id} on={dorme.includes(p.id)} onPress={() => setDorme(dorme.includes(p.id) ? dorme.filter((x) => x !== p.id) : [...dorme, p.id])}>{nome(p.id)}</Chip>
+                ))}
+              </div>
+              <span className="fa-help">Solo informativo: non cambia la copertura delle notti.</span>
             </div>
-            <span className="fa-help">Solo informativo: non cambia la copertura delle notti.</span>
-          </div>
-        ) : null}
-        <div className="fa-fld" role="group" aria-label="Pasti e servizi">
-          Pasti e servizi
-          <div className="fa-chips wrap">
-            <Chip on={breakfast} onPress={() => setBreakfast(!breakfast)}>Colazione</Chip>
-            <Chip on={dinner} onPress={() => setDinner(!dinner)}>Cena</Chip>
-            <Chip on={kitchen} onPress={() => setKitchen(!kitchen)}>Cucina</Chip>
-          </div>
-        </div>
-        <Campo label="Nota" textarea value={notes} onChange={setNotes} />
+          ) : null}
+        </AltriDettagli>
         {s ? <DocumentiCollegati trip={trip} kind={'stay'} refId={s.id} /> : null}
         {errors.form ? <Errore>{errors.form}</Errore> : null}
       </form>

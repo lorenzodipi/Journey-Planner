@@ -1,8 +1,9 @@
-// Fogli «Nuovo luogo» e «Modifica luogo» (#33) nello stile del design system: ricerca su OpenStreetMap,
-// link di Google Maps, nome, nome locale, città, categoria, stato, durata, note, orari strutturati,
-// indirizzo e posizione (con il pin da aggiustare sulla mappa).
+// Fogli «Nuovo luogo» e «Modifica luogo» (#33), a gruppi: Trova il luogo (OpenStreetMap o link di Google Maps), Il luogo
+// (nome, nome locale, città, categoria a riquadri, stato, sito), La visita (preferenza, durata a scelte rapide, orari, note),
+// Posizione (indirizzo e pin), Nel viaggio (visite e prenotazioni), Altri dettagli (latitudine e longitudine).
 import { SceltaIcona } from '../../faraway/SceltaIcona'
-import { iconaDalNome } from '../../lib/categoryIcon'
+import { glifoCategoria, iconaDalNome } from '../../lib/categoryIcon'
+import { compilati } from '../../lib/moduli'
 import { Loader } from '../../faraway/Loader'
 import { useConflitto } from '../../faraway/useConflitto'
 import { ora } from '../../lib/formati'
@@ -20,6 +21,7 @@ import { useTrips } from '../../state/trip'
 import type { Place, PlaceStatus, Trip } from '../../types'
 import { SUGGESTED_CATEGORIES } from '../../ui/placeMeta'
 import { Campo, Chip, Pulsante } from '../../faraway/base'
+import { AltriDettagli, Gruppo, Riquadri } from '../../faraway/Moduli'
 import { CampoDurata } from '../../faraway/CampoDurata'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
@@ -35,11 +37,15 @@ const toNumber = (text: string): number | null => {
   return Number.isFinite(n) ? n : NaN
 }
 
+const ALTRA = '__altra__'
+/** Scelte rapide di «Quanto ci si ferma», in minuti. */
+const DURATE: [number, string][] = [[30, '30 min'], [60, '1 h'], [90, '1 h 30'], [120, '2 h'], [180, '3 h'], [240, 'Mezza giornata']]
+
 // «In programma» non si sceglie: si mette da solo quando il luogo è in una tappa
-const SCELTE: { value: PlaceStatus; label: string }[] = [
-  { value: 'idea', label: 'Da visitare' },
-  { value: 'done', label: 'Visitato' },
-  { value: 'skipped', label: 'Scartato' },
+const SCELTE: { value: PlaceStatus; label: string; icona: 'pin' | 'check' | 'close' }[] = [
+  { value: 'idea', label: 'Da visitare', icona: 'pin' },
+  { value: 'done', label: 'Visitato', icona: 'check' },
+  { value: 'skipped', label: 'Scartato', icona: 'close' },
 ]
 
 interface Props {
@@ -73,6 +79,9 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
   const [mapsUrl, setMapsUrl] = useState(place?.mapsUrl ?? '')
   const [lat, setLat] = useState(place?.lat != null ? String(place.lat) : '')
   const [lng, setLng] = useState(place?.lng != null ? String(place.lng) : '')
+  const [altraDurata, setAltraDurata] = useState(false)
+  /** cresce a ogni «Salva»: riapre «Altri dettagli» se l'errore è lì, anche se è lo stesso di prima */
+  const [tentativi, setTentativi] = useState(0)
 
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<GeoResult[] | null>(null)
@@ -176,6 +185,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
 
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
+    setTentativi((n) => n + 1)
     if (!name.trim()) return setError('Scrivi il nome del luogo.')
     const latN = toNumber(lat)
     const lngN = toNumber(lng)
@@ -215,6 +225,12 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
     else onClose()
   }
 
+  const visitN = parseDuration(visit)
+  const rapida = !altraDurata && visitN !== null && !Number.isNaN(visitN) && DURATE.some(([m]) => m === visitN) ? visitN : null
+  const catScelta = otherCat ? ALTRA : category
+  const catOpzioni = [...cats, ...(category && !cats.includes(category) && !otherCat ? [category] : [])]
+  const erroreCoord = !!error && /latitudine|longitudine|coordinate/i.test(error)
+
   return (
     <Foglio
       open={open}
@@ -223,178 +239,200 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="luogo-form" isLoading={busy}>
-          {editing ? 'Salva modifiche' : 'Aggiungi luogo'}
+          {editing ? 'Salva le modifiche' : 'Aggiungi il luogo'}
         </Pulsante>
       }
     >
-      <form id="luogo-form" className="frm" onSubmit={submit} noValidate style={{ overflow: 'visible' }}>
-        <div style={{ display: 'grid', gap: 8 }}>
-          <Campo
-            label="Cerca su OpenStreetMap"
-            icon="search"
-            type="search"
-            value={query}
-            onChange={setQuery}
-            placeholder="Nome del luogo o indirizzo"
-            enterKeyHint="search"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                void search()
+      <form id="luogo-form" className="frm grp" onSubmit={submit} noValidate style={{ overflow: 'visible' }}>
+        <Gruppo titolo="Trova il luogo">
+          <div style={{ display: 'grid', gap: 8 }}>
+            <Campo
+              label="Cerca su OpenStreetMap"
+              icon="search"
+              type="search"
+              value={query}
+              onChange={setQuery}
+              placeholder="es. Fushimi Inari"
+              enterKeyHint="search"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  void search()
+                }
+              }}
+              trailing={
+                <button type="button" className="fa-btn soft sm" style={{ height: 36, padding: '0 16px' }} disabled={searching || !query.trim()} onClick={() => void search()}>
+                  {searching ? <Loader size={16} label="Ricerca in corso" /> : 'Cerca'}
+                </button>
               }
-            }}
-            trailing={
-              <button type="button" className="fa-btn soft sm" style={{ height: 36, padding: '0 16px' }} disabled={searching || !query.trim()} onClick={() => void search()}>
-                {searching ? <Loader size={16} label="Ricerca in corso" /> : 'Cerca'}
-              </button>
-            }
+            />
+            {searchError ? (
+              <span className="fa-help bad" role="alert">
+                <Sv name="err" size={16} />
+                {searchError}
+              </span>
+            ) : null}
+            {results && results.length === 0 ? <span className="fa-help">Nessun risultato: prova con un altro nome o aggiungi la città.</span> : null}
+            {results && results.length > 0 ? (
+              <ul className="fa-list" aria-label="Risultati">
+                {results.map((r, i) => (
+                  <li key={i}>
+                    <button type="button" className="fa-row" style={{ minHeight: 52, gridTemplateColumns: '20px minmax(0,1fr) auto', width: '100%' }} onClick={() => pick(r)}>
+                      <Sv name="pin" size={20} />
+                      <span style={{ minWidth: 0 }}>
+                        <span className="t" style={{ display: 'block' }}>
+                          {r.name}
+                        </span>
+                        <span className="s" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {r.address}
+                        </span>
+                      </span>
+                      <span />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+          <Campo
+            label="Oppure incolla un link di Google Maps"
+            icon="link"
+            value={mapsUrl}
+            onChange={onLink}
+            placeholder="es. google.com/maps/…"
+            autoComplete="off"
+            positive={linkHint?.ok ? linkHint.text : undefined}
+            hint={linkHint ? (linkHint.ok ? undefined : linkHint.text) : 'Compilo da solo nome, città, indirizzo e posizione.'}
           />
-          {searchError ? (
-            <span className="fa-help bad" role="alert">
-              <Sv name="err" size={16} />
-              {searchError}
+        </Gruppo>
+
+        <Gruppo titolo="Il luogo">
+          <Campo label="Nome" value={name} onChange={setName} maxLength={120} placeholder="es. Fushimi Inari" />
+          {doppioni.length > 0 ? (
+            <span className="fa-help" role="status">
+              <Sv name="warn" size={16} />
+              {testoDoppione(name.trim(), doppioni[0])}. Puoi salvare lo stesso.
             </span>
           ) : null}
-          {results && results.length === 0 ? <span className="fa-help">Nessun risultato: prova con un altro nome o aggiungi la città.</span> : null}
-          {results && results.length > 0 ? (
-            <ul className="fa-list" aria-label="Risultati">
-              {results.map((r, i) => (
-                <li key={i}>
-                  <button type="button" className="fa-row" style={{ minHeight: 52, gridTemplateColumns: '20px minmax(0,1fr) auto', width: '100%' }} onClick={() => pick(r)}>
-                    <Sv name="pin" size={20} />
-                    <span style={{ minWidth: 0 }}>
-                      <span className="t" style={{ display: 'block' }}>
-                        {r.name}
-                      </span>
-                      <span className="s" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {r.address}
-                      </span>
-                    </span>
-                    <span />
-                  </button>
-                </li>
-              ))}
-            </ul>
+          <Campo label="Nome nella lingua del posto" value={nameLocal} onChange={setNameLocal} maxLength={120} hint="Da mostrare a un tassista" placeholder="" />
+          <Campo label="Città" icon="pin" value={city} onChange={setCity} autoComplete="off" placeholder="es. Kyoto" />
+          <Riquadri<string>
+            label="Categoria"
+            cols={4}
+            value={catScelta}
+            deselezionabile
+            onChange={(v) => {
+              if (v === ALTRA) return (setOtherCat(true), setCategory(''))
+              setOtherCat(false)
+              setCategory(v)
+            }}
+            options={[...catOpzioni.map((c) => ({ value: c, label: c, glifo: glifoCategoria(c) })), { value: ALTRA, label: 'Altra…', glifo: 'g-plus' }]}
+          >
+            {otherCat ? <Campo label="Nuova categoria" hideLabel value={category} onChange={setCategory} placeholder="es. Onsen" maxLength={40} autoFocus /> : null}
+            {otherCat ? <SceltaIcona value={icona ?? iconaDalNome(category)} onChange={setIcona} /> : null}
+          </Riquadri>
+          <Riquadri<PlaceStatus> label="Stato" cols={3} value={status} onChange={(v) => v && setStatus(v)} options={SCELTE}>
+            <span className="fa-help">«In programma» si mette da solo quando il luogo è in una tappa.</span>
+          </Riquadri>
+          <Campo label="Sito web" icon="link" type="url" inputMode="url" value={website} onChange={setWebsite} placeholder="es. inari.jp" autoComplete="off" />
+        </Gruppo>
+
+        <Gruppo titolo="La visita">
+          {place ? (
+            <div className="fa-fld" role="group" aria-label="La mia preferenza">
+              La mia preferenza
+              <div className="fa-chips wrap">
+                <Chip on={pref === 'must'} onPress={() => void scegliPref('must')}>Da non perdere</Chip>
+                <Chip on={pref === 'if_time'} onPress={() => void scegliPref('if_time')}>Se c’è tempo</Chip>
+              </div>
+              <span className="fa-help">La vedi solo tu, gli altri non la vedono.</span>
+            </div>
           ) : null}
-          <Campo label="…oppure incolla un link di Google Maps" icon="link" value={mapsUrl} onChange={onLink} placeholder="https://www.google.com/maps/…" autoComplete="off" positive={linkHint?.ok ? linkHint.text : undefined} hint={linkHint && !linkHint.ok ? linkHint.text : undefined} />
-        </div>
-
-        <Campo label="Nome" value={name} onChange={setName} maxLength={120} placeholder="Nome del luogo" />
-        {doppioni.length > 0 ? (
-          <span className="fa-help" role="status">
-            <Sv name="warn" size={16} />
-            {testoDoppione(name.trim(), doppioni[0])}. Puoi salvare lo stesso.
-          </span>
-        ) : null}
-        <Campo label="Nome nella lingua del posto" value={nameLocal} onChange={setNameLocal} maxLength={120} hint="Da mostrare a un tassista" />
-        <Campo label="Città" icon="pin" value={city} onChange={setCity} autoComplete="off" placeholder="Città" />
-
-        <div className="fa-fld" role="group" aria-label="Categoria">
-          Categoria
-          <div className="fa-chips wrap">
-            {cats.map((c) => (
-              <Chip key={c} on={!otherCat && category === c} onPress={() => (setOtherCat(false), setCategory(category === c ? '' : c))}>
-                {c}
-              </Chip>
-            ))}
-            {category && !cats.includes(category) && !otherCat ? (
-              <Chip on onPress={() => setCategory('')}>
-                {category}
-              </Chip>
-            ) : null}
-            <Chip on={otherCat} onPress={() => (setOtherCat(!otherCat), setCategory(''))}>
-              Altra…
-            </Chip>
-          </div>
-          {otherCat ? <Campo label="Nuova categoria" hideLabel value={category} onChange={setCategory} placeholder="Nome della categoria" maxLength={40} autoFocus /> : null}
-          {otherCat ? <SceltaIcona value={icona ?? iconaDalNome(category)} onChange={setIcona} /> : null}
-        </div>
-
-        <div className="fa-fld" role="group" aria-label="Stato">
-          Stato
-          <div className="fa-chips wrap">
-            {SCELTE.map((s) => (
-              <Chip key={s.value} on={status === s.value} onPress={() => setStatus(s.value)}>
-                {s.label}
-              </Chip>
-            ))}
-          </div>
-          <span className="fa-help">«In programma» si mette da solo quando il luogo è in una tappa.</span>
-        </div>
-
-        <Campo label="Sito web" icon="link" type="url" inputMode="url" value={website} onChange={setWebsite} placeholder="https://…" autoComplete="off" />
-        {place ? (
-          <div className="fa-fld" role="group" aria-label="La mia preferenza">
-            La mia preferenza
+          <div className="fa-fld" role="group" aria-label="Quanto ci si ferma">
+            Quanto ci si ferma
             <div className="fa-chips wrap">
-              <Chip on={pref === 'must'} onPress={() => void scegliPref('must')}>Da non perdere</Chip>
-              <Chip on={pref === 'if_time'} onPress={() => void scegliPref('if_time')}>Se c’è tempo</Chip>
+              {DURATE.map(([m, l]) => (
+                <Chip key={m} on={rapida === m} onPress={() => (setAltraDurata(false), setVisit(rapida === m ? '' : formatDuration(m)))}>
+                  {l}
+                </Chip>
+              ))}
+              <Chip on={altraDurata || (rapida === null && !!visit.trim())} onPress={() => setAltraDurata(true)}>
+                Altro…
+              </Chip>
             </div>
-            <span className="fa-help">La vedi solo tu, gli altri non la vedono.</span>
           </div>
-        ) : null}
-        <CampoDurata label="Quanto ci si ferma" value={visit} onChange={setVisit} placeholder="1h 30min" />
-        <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="Appunti sul luogo" />
+          {altraDurata || (rapida === null && !!visit.trim()) ? <CampoDurata label="Durata" value={visit} onChange={setVisit} placeholder="es. 1h 15min" /> : null}
+          <OrariEditor value={spec} onChange={setSpec} legacyText={place?.openingHours} />
+          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="" />
+        </Gruppo>
 
-        <OrariEditor value={spec} onChange={setSpec} legacyText={place?.openingHours} />
-
-        <div ref={posRef} style={{ display: 'grid', gap: 16, scrollMarginTop: 16 }}>
-          <Campo label="Indirizzo" icon="pin" value={address} onChange={setAddress} />
-          <div className="fa-2c">
-            <Campo label="Latitudine" inputMode="decimal" value={lat} onChange={setLat} autoComplete="off" />
-            <Campo label="Longitudine" inputMode="decimal" value={lng} onChange={setLng} autoComplete="off" />
-          </div>
-          {showMap ? (
-            <div style={{ display: 'grid', gap: 8 }}>
-              {Picker ? (
-                <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--hairline)' }}>
-                  <Picker
-                    lat={toNumber(lat)}
-                    lng={toNumber(lng)}
-                    center={trip.center}
-                    onMove={(a, b) => {
-                      setLat(String(a))
-                      setLng(String(b))
-                    }}
-                  />
-                </div>
-              ) : (
-                <Loader size={24} label="Caricamento della mappa" />
-              )}
-              <span className="fa-help">Trascina il pin o tocca la mappa per correggere la posizione.</span>
-            </div>
-          ) : (
-            <button type="button" className="fa-btn out" style={{ height: 44, fontSize: 14 }} onClick={() => setShowMap(true)}>
-              <Sv name="pin" size={20} />
-              Aggiusta il pin sulla mappa
-            </button>
-          )}
+        <div ref={posRef} style={{ scrollMarginTop: 16, display: 'grid' }}>
+          <Gruppo titolo="Posizione">
+            <Campo label="Indirizzo" icon="pin" value={address} onChange={setAddress} placeholder="es. 68 Fukakusa, Kyoto" />
+            {showMap ? (
+              <div style={{ display: 'grid', gap: 8 }}>
+                {Picker ? (
+                  <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--hairline)' }}>
+                    <Picker
+                      lat={toNumber(lat)}
+                      lng={toNumber(lng)}
+                      center={trip.center}
+                      onMove={(a, b) => {
+                        setLat(String(a))
+                        setLng(String(b))
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <Loader size={24} label="Caricamento della mappa" />
+                )}
+                <span className="fa-help">Trascina il pin o tocca la mappa per correggere la posizione.</span>
+              </div>
+            ) : (
+              <button type="button" className="fa-btn out" style={{ height: 44, fontSize: 14 }} onClick={() => setShowMap(true)}>
+                <Sv name="pin" size={20} />
+                Aggiusta il pin sulla mappa
+              </button>
+            )}
+          </Gruppo>
         </div>
-        {visite.length > 0 ? (
-          <div className="fa-fld" role="group" aria-label="Visite">
-            Visite
-            <ul className="fa-list">
-              {visite.map((v) => (
-                <li key={v.itemId} className="fa-row" style={{ minHeight: 44 }}>
-                  <span className="t">{formatShort(v.date)}{v.time ? ` · ${ora(v.time)}` : ''}</span>
-                  <span className="s">{v.city}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+
+        {visite.length > 0 || prenotazioni.length > 0 ? (
+          <Gruppo titolo="Nel viaggio">
+            {visite.length > 0 ? (
+              <div className="fa-fld" role="group" aria-label="Visite">
+                Visite
+                <ul className="fa-list">
+                  {visite.map((v) => (
+                    <li key={v.itemId} className="fa-row" style={{ minHeight: 44, gridTemplateColumns: 'minmax(0,1fr) auto' }}>
+                      <span className="t">{formatShort(v.date)}{v.time ? ` · ${ora(v.time)}` : ''}</span>
+                      <span className="s">{v.city}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {prenotazioni.length > 0 ? (
+              <div className="fa-fld" role="group" aria-label="Prenotazioni">
+                Prenotazioni
+                <ul className="fa-list">
+                  {prenotazioni.map((b) => (
+                    <li key={b.id} className="fa-row" style={{ minHeight: 44, gridTemplateColumns: 'minmax(0,1fr)' }}>
+                      <span className="t">{b.title}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </Gruppo>
         ) : null}
-        {prenotazioni.length > 0 ? (
-          <div className="fa-fld" role="group" aria-label="Prenotazioni">
-            Prenotazioni
-            <ul className="fa-list">
-              {prenotazioni.map((b) => (
-                <li key={b.id} className="fa-row" style={{ minHeight: 44 }}>
-                  <span className="t">{b.title}</span>
-                </li>
-              ))}
-            </ul>
+
+        <AltriDettagli pieni={compilati([lat, lng])} contenuto="Latitudine e longitudine" errore={erroreCoord ? tentativi : undefined} apriSeCompilati={false}>
+          <div className="fa-2c">
+            <Campo label="Latitudine" inputMode="decimal" value={lat} onChange={setLat} autoComplete="off" placeholder="es. 34,9671" />
+            <Campo label="Longitudine" inputMode="decimal" value={lng} onChange={setLng} autoComplete="off" placeholder="es. 135,7727" />
           </div>
-        ) : null}
+        </AltriDettagli>
         {place ? (
           <Pulsante color="tertiary" iconLeading="archive" isLoading={occ === 'archivia'} onPress={() => void archivia()}>
             Archivia il luogo

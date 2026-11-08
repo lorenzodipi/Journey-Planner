@@ -1,5 +1,5 @@
-// Foglio «Nuovo trasporto» / «Modifica trasporto» (#37, #58): mezzo, nome o numero, percorso con orari, fermate, chi viaggia,
-// prezzo con «Pagato / Non pagato» e «Pagato da», codice, operatore, binario, bagaglio, politiche e note.
+// Foglio «Nuovo trasporto» / «Modifica trasporto» (#37, #58), a gruppi: Tragitto (mezzo a riquadri, percorso partenza →
+// arrivo con la durata, fermate), Costo (per chi, costo, il costo è, pagato da), Biglietto, Regole e note, Altri dettagli.
 import { paesiDi, paeseDelGiorno } from '../../lib/paesi'
 import { DocumentiCollegati } from '../documenti/DocumentiCollegati'
 import { useState } from 'react'
@@ -7,25 +7,20 @@ import { amountToText, parseAmount, tripCurrencies } from '../../lib/money'
 import { transportToForm, type TransportInput } from '../../lib/logistics'
 import { MODE_NOME } from '../../lib/trasporti'
 import { isCompleteZoned, instantToZoned, zonedToInstant } from '../../lib/zoned'
-import { discOf, initials, useMe } from '../../state/me'
+import { useMe } from '../../state/me'
+import { compilati, durataTesto } from '../../lib/moduli'
 import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { Transport, TransportMode, Trip } from '../../types'
-import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
+import { Campo, Interruttore, Pulsante } from '../../faraway/base'
+import { AltriDettagli, Gruppo, IlCostoE, Micro, PerChi, Percorso, Riquadri, SegmentiFacoltativi } from '../../faraway/Moduli'
 import { CampoValuta } from '../../faraway/CampoValuta'
 import { ChiHaPagato } from '../../faraway/ChiHaPagato'
-import { cx } from '../../faraway/cx'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 
-const MODI = Object.keys(MODE_NOME) as TransportMode[]
-const FERMATE = [
-  { v: 'nd', l: 'Non so' },
-  { v: '0', l: 'Diretto' },
-  { v: '1', l: 'Una fermata' },
-  { v: '2', l: '2 fermate' },
-  { v: '3', l: '3 o più' },
-]
+const MODI: TransportMode[] = ['train', 'metro', 'bus', 'taxi', 'walk', 'car', 'ferry', 'plane', 'other']
+const MODE_GLIFO: Record<TransportMode, string> = { train: 'g-tra-train', metro: 'g-tra-metro', bus: 'g-tra-bus', taxi: 'g-tra-taxi', walk: 'g-tra-walk', car: 'g-tra-car', ferry: 'g-tra-ferry', plane: 'g-tra-plane', other: 'g-cat-pin' }
 
 const Errore = ({ children }: { children: string }) => (
   <span className="fa-help bad" role="alert">
@@ -84,7 +79,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
     if (!from.trim()) err.from = 'Scrivi da dove parte.'
     if (!to.trim()) err.to = 'Scrivi dove arriva.'
     const amount = parseAmount(cost)
-    if (cost.trim() && amount === null) err.cost = 'Il prezzo non è chiaro: scrivi per esempio 15,50.'
+    if (cost.trim() && amount === null) err.cost = 'Il costo non è chiaro: scrivi per esempio 15,50.'
     if (paid && amount && payers.length === 0) err.paidBy = 'Manca chi ha pagato. Scegli una persona.'
     if ((dt && !dd) || (at && !ad)) err.when = 'Con l’ora serve anche la data.'
     else if (isCompleteZoned(dd, dt) && isCompleteZoned(ad, at) && Date.parse(zonedToInstant(ad, at, trip.timezone)) <= Date.parse(zonedToInstant(dd, dt, trip.timezone))) err.when = 'L’arrivo è prima della partenza.'
@@ -110,7 +105,9 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
     onClose()
   }
 
-  const nome = (id: string) => trip.travelers.find((p) => p.id === id)?.name.split(/\s+/)[0] ?? '—'
+  const amountNow = parseAmount(cost)
+  const durata = isCompleteZoned(dd, dt) && isCompleteZoned(ad, at) ? durataTesto((Date.parse(zonedToInstant(ad, at, trip.timezone)) - Date.parse(zonedToInstant(dd, dt, trip.timezone))) / 60_000) : ''
+  const altri = compilati([terminal, platform, checkin.date || checkin.time])
 
   return (
     <Foglio
@@ -124,82 +121,86 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
         </Pulsante>
       }
     >
-      <form id="trasporto-form" className="frm" onSubmit={submit} noValidate>
-        <div className="fa-fld" role="group" aria-label="Mezzo">
-          Mezzo
-          <div className="fa-chips scroll">
-            {MODI.map((m) => (
-              <Chip key={m} on={mode === m} onPress={() => setMode(m)}>
-                {MODE_NOME[m]}
-              </Chip>
-            ))}
+      <form id="trasporto-form" className="frm grp" onSubmit={submit} noValidate>
+        <Gruppo titolo="Tragitto">
+          <Riquadri<TransportMode> label="Mezzo" cols={3} value={mode} onChange={(m) => m && setMode(m)} options={MODI.map((m) => ({ value: m, label: m === 'other' ? 'Altro' : MODE_NOME[m], glifo: MODE_GLIFO[m] }))} />
+          <Campo label="Nome o numero del mezzo" value={title} onChange={setTitle} placeholder="es. Hikari 513" maxLength={60} />
+          <Percorso
+            durata={durata}
+            da={{
+              titolo: 'Partenza',
+              children: (
+                <>
+                  <Campo label="Luogo" icon="pin" value={from} onChange={setFrom} placeholder="es. Kamakura" error={errors.from} />
+                  <div className="dt">
+                    <Campo label="Data" type="date" icon="cal" value={dd} onChange={(v) => (setDd(v), !ad || ad < v ? setAd(v) : null)} />
+                    <Campo label="Ora" type="time" icon="clock" value={dt} onChange={setDt} />
+                  </div>
+                </>
+              ),
+            }}
+            a={{
+              titolo: 'Arrivo',
+              children: (
+                <>
+                  <Campo label="Luogo" icon="pin" value={to} onChange={setTo} placeholder="es. Kyoto" error={errors.to} />
+                  <div className="dt">
+                    <Campo label="Data" type="date" icon="cal" value={ad} onChange={setAd} min={dd || undefined} />
+                    <Campo label="Ora" type="time" icon="clock" value={at} onChange={setAt} />
+                  </div>
+                </>
+              ),
+            }}
+          />
+          {errors.when ? <Errore>{errors.when}</Errore> : null}
+          {paesiDi(trip).length > 1 && dd ? (
+            <span className="fa-help">
+              {ad && paeseDelGiorno(trip, ad).name !== paeseDelGiorno(trip, dd).name ? `Parte in ${paeseDelGiorno(trip, dd).name}, arriva in ${paeseDelGiorno(trip, ad).name}` : `Giorno in ${paeseDelGiorno(trip, dd).name}`}
+            </span>
+          ) : null}
+          <SegmentiFacoltativi
+            label="Fermate"
+            value={stops === 'nd' ? '' : stops}
+            onChange={(v) => setStops(v || 'nd')}
+            help="Se non lo sai, lascia vuoto."
+            options={[
+              { value: '0', label: 'Diretto' },
+              { value: '1', label: '1', nome: 'Una fermata' },
+              { value: '2', label: '2', nome: 'Due fermate' },
+              { value: '3', label: '3+', nome: 'Tre o più fermate' },
+            ]}
+          />
+        </Gruppo>
+        <Gruppo titolo="Costo">
+          <PerChi trip={trip} meId={me?.id} value={people} onChange={setWho} />
+          <div className="fa-2c">
+            <Campo label="Costo" inputMode="decimal" value={cost} onChange={setCost} placeholder="es. 15,50" error={errors.cost} autoFocus={focus === 'prezzo'} />
+            <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, t?.currency)} />
           </div>
-        </div>
-        <Campo label="Nome o numero del mezzo" value={title} onChange={setTitle} placeholder="Nome o numero del mezzo" maxLength={60} />
-        <div className="fa-2c">
-          <Campo label="Da" icon="pin" value={from} onChange={setFrom} placeholder="Luogo di partenza" error={errors.from} />
-          <Campo label="A" icon="pin" value={to} onChange={setTo} placeholder="Luogo di arrivo" error={errors.to} />
-        </div>
-        <div className="fa-2c">
-          <Campo label="Partenza, data" type="date" icon="cal" value={dd} onChange={(v) => (setDd(v), !ad || ad < v ? setAd(v) : null)} />
-          <Campo label="Partenza, ora" type="time" icon="clock" value={dt} onChange={setDt} />
-          <Campo label="Arrivo, data" type="date" icon="cal" value={ad} onChange={setAd} min={dd || undefined} />
-          <Campo label="Arrivo, ora" type="time" icon="clock" value={at} onChange={setAt} />
-        </div>
-        {errors.when ? <Errore>{errors.when}</Errore> : null}
-        {paesiDi(trip).length > 1 && dd ? (
-          <span className="fa-help">
-            {ad && paeseDelGiorno(trip, ad).name !== paeseDelGiorno(trip, dd).name ? `Parte in ${paeseDelGiorno(trip, dd).name}, arriva in ${paeseDelGiorno(trip, ad).name}` : `Giorno in ${paeseDelGiorno(trip, dd).name}`}
-          </span>
-        ) : null}
-        <div className="fa-fld" role="group" aria-label="Fermate">
-          Fermate
-          <div className="fa-chips scroll">
-            {FERMATE.map((f) => (
-              <Chip key={f.v} on={stops === f.v} onPress={() => setStops(f.v)}>
-                {f.l}
-              </Chip>
-            ))}
+          <IlCostoE value={scope} onChange={setScope} amount={amountNow} persone={people.length} currency={currency} />
+          <Interruttore label="Pagato" hint={paid ? 'Con un costo, il trasporto diventa una spesa.' : 'Non pagato'} isSelected={paid} onChange={setPaid} />
+          {paid && cost.trim() ? <ChiHaPagato travelers={trip.travelers} value={payers} onChange={setPayers} error={errors.paidBy} /> : null}
+        </Gruppo>
+        <Gruppo titolo="Biglietto">
+          <Campo label="Operatore" value={operator} onChange={setOperator} placeholder="es. JR Central" />
+          <Campo label="Codice di prenotazione" value={refCode} onChange={(v) => setRefCode(v.toUpperCase())} placeholder="es. 4K7QX2" autoComplete="off" />
+        </Gruppo>
+        <Gruppo titolo="Regole e note">
+          <Campo label="Bagaglio" value={baggage} onChange={setBaggage} placeholder="es. 1 valigia grande" />
+          <Campo label="Cambio e rimborso" textarea value={policy} onChange={setPolicy} placeholder="es. Cambio gratuito fino alla partenza" />
+          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="" />
+        </Gruppo>
+        <AltriDettagli pieni={altri} contenuto="Terminal, binario, check-in">
+          <div className="fa-2c">
+            <Campo label="Terminal" value={terminal} onChange={setTerminal} maxLength={10} placeholder="es. T1" />
+            <Campo label="Binario" value={platform} onChange={setPlatform} maxLength={10} placeholder="es. 14" />
           </div>
-        </div>
-        {trip.travelers.length > 1 ? (
-          <div className="fa-fld" role="group" aria-label="Chi viaggia">
-            Chi viaggia
-            <div className="fa-chips wrap">
-              {trip.travelers.map((p) => (
-                <Chip key={p.id} on={people.includes(p.id)} onPress={() => setWho(people.includes(p.id) ? people.filter((x) => x !== p.id) : [...people, p.id])}
-                  icon={<span className={cx('fa-av', `r${discOf(trip, p.id)}`)} style={{ width: 24, height: 24, fontSize: 11 }} aria-hidden="true">{initials(p.name)}</span>}>
-                  {nome(p.id)}
-                </Chip>
-              ))}
-            </div>
+          <Micro titolo="Apertura del check-in" />
+          <div className="fa-2c dt">
+            <Campo label="Data" type="date" icon="cal" value={checkin.date} onChange={(v) => setCheckin({ ...checkin, date: v })} />
+            <Campo label="Ora" type="time" icon="clock" value={checkin.time} onChange={(v) => setCheckin({ ...checkin, time: v })} />
           </div>
-        ) : null}
-        <div className="fa-2c">
-          <Campo label="Prezzo" inputMode="decimal" value={cost} onChange={setCost} placeholder="es. 15,50" error={errors.cost} autoFocus={focus === 'prezzo'} />
-          <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, t?.currency)} />
-        </div>
-        <div className="fa-chips" role="group" aria-label="Il prezzo è">
-          <Chip on={scope === 'per_person'} onPress={() => setScope('per_person')}>A persona</Chip>
-          <Chip on={scope === 'total'} onPress={() => setScope('total')}>Totale</Chip>
-        </div>
-        <Interruttore label="Pagato" hint={paid ? 'Con un prezzo, il trasporto diventa una spesa.' : 'Non pagato'} isSelected={paid} onChange={setPaid} />
-        {paid && cost.trim() ? (
-          <ChiHaPagato travelers={trip.travelers} value={payers} onChange={setPayers} error={errors.paidBy} />
-        ) : null}
-        <div className="fa-2c">
-          <Campo label="Codice" value={refCode} onChange={(v) => setRefCode(v.toUpperCase())} autoComplete="off" />
-          <Campo label="Operatore" value={operator} onChange={setOperator} placeholder="Nome dell’operatore" />
-          <Campo label="Terminal" value={terminal} onChange={setTerminal} maxLength={10} />
-          <Campo label="Binario" value={platform} onChange={setPlatform} maxLength={10} />
-          <Campo label="Bagaglio" value={baggage} onChange={setBaggage} />
-        </div>
-        <Campo label="Cambio e rimborso" textarea value={policy} onChange={setPolicy} />
-        <div className="fa-2c">
-          <Campo label="Apre il check-in, data" type="date" icon="cal" value={checkin.date} onChange={(v) => setCheckin({ ...checkin, date: v })} />
-          <Campo label="Apre il check-in, ora" type="time" icon="clock" value={checkin.time} onChange={(v) => setCheckin({ ...checkin, time: v })} />
-        </div>
-        <Campo label="Nota" textarea value={notes} onChange={setNotes} />
+        </AltriDettagli>
         {t ? <DocumentiCollegati trip={trip} kind={'transport'} refId={t.id} /> : null}
         {errors.form ? <Errore>{errors.form}</Errore> : null}
       </form>
