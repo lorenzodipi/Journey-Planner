@@ -56,6 +56,8 @@ interface Props {
   highlight?: string | null
   /** Riordino a trascinamento delle tappe senza orario: dalla posizione `from` alla posizione `to` della lista. */
   onReorder?: (item: DayItem, to: number) => void
+  /** Tocco sullo spostamento che porta alla tappa: si sceglie il mezzo e la durata (0045). */
+  onSeg?: (item: DayItem) => void
   readOnly?: boolean
 }
 
@@ -194,7 +196,7 @@ function Riga({ icon, main, sub, action }: { icon: string; main: ReactNode; sub?
   )
 }
 
-export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle, onStatus, onEdit, onMove, onDelete, fromHere, meteoDi, highlight, onReorder, readOnly }: Props) {
+export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle, onStatus, onEdit, onMove, onDelete, fromHere, meteoDi, highlight, onReorder, onSeg, readOnly }: Props) {
   const items = day.items
   const listRef = useRef<HTMLOListElement>(null)
   const [annuncio, setAnnuncio] = useState('')
@@ -250,10 +252,18 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
               {seg && idx > 0 ? (
                 <li className={cx('seg', prevF !== 'done' && prevF !== 'skip' && 'after')} style={stile}>
                   <span className="rail" />
-                  <span className="sg">
-                    <G name={seg.icon} />
-                    {seg.text}
-                  </span>
+                  {onSeg && !readOnly ? (
+                    <button type="button" className="sg tap" aria-label={`Da ${items[idx - 1].title} a ${item.title}: ${seg.text.charAt(0).toLowerCase()}${seg.text.slice(1).replace(' · ', ', ')}. Cambia il mezzo`} onClick={() => onSeg(item)}>
+                      <G name={seg.icon} />
+                      {seg.text}
+                      <G name="g-chev" cls="chv" />
+                    </button>
+                  ) : (
+                    <span className="sg">
+                      <G name={seg.icon} />
+                      {seg.text}
+                    </span>
+                  )}
                 </li>
               ) : null}
               <li id={`tappa-${item.id}`} className={cx('stp', ndCls, open && 'sel', highlight === item.id && 'fa-flash', trascinata === idx && 'drag')} style={stile}>

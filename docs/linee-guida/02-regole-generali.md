@@ -17,8 +17,8 @@
 
 ### Database
 - Le migrazioni stanno in `supabase/migrations/NNNN_nome.sql`, numerate in ordine, **additive** (colonne nullable, tabelle nuove, `grant` espliciti) e rilanciabili (`if not exists`, `create or replace`).
-- Le esegue Lorenzo nello SQL Editor. L'app deve funzionare anche prima che siano eseguite: si scrive una colonna nuova solo quando serve e, se manca, si mostra un messaggio chiaro («Per … serve la migrazione 0044 del database.»).
-- I dati di prova si inseriscono con il suo consenso esplicito.
+- Il file si salva su Git e la migrazione la esegue Claude sul progetto Supabase (strumento `apply_migration`); se mancano i permessi, si chiede a Lorenzo. L'app deve funzionare anche prima che siano eseguite: si scrive una colonna nuova solo quando serve e, se manca, si mostra un messaggio chiaro («Per … serve la migrazione 0045 del database.»).
+- I dati di prova e le modifiche ai dati veri si fanno con il suo consenso esplicito.
 
 ### Codice
 - **Prima si cerca nella libreria, poi si costruisce**: componenti Faraway (`src/faraway/base.tsx` e vicini), poi `react-aria-components`. Solo se non c'è nulla si scrive a mano.
@@ -55,6 +55,13 @@
 
 - Le modifiche frequenti si salvano sul telefono e partono quando torna la rete. Ogni schermata dice se i dati sono aggiornati.
 - Le azioni che richiedono il server (inviti, eliminazioni di viaggio, file) dicono chiaramente che serve la connessione.
+
+## Spostamenti tra le tappe
+
+- Il viaggio ha un mezzo di solito usato («In auto», «Con i mezzi», «A piedi») e una soglia «A piedi se ci vogliono meno di» (15 minuti se non scelta), in «Modifica viaggio». Senza scelta l'app propone l'auto dove serve (paesi senza metro, noleggio auto tra le prenotazioni), ma non mostra avvisi nella pagina del giorno.
+- Ogni spostamento si può cambiare dalla sua riga tra le due tappe: mezzo e, se la si conosce, durata vera, che vince sulla stima. Quello scelto a mano resta anche se cambia il mezzo del viaggio; scegliere il mezzo che il viaggio darebbe comunque non lo fissa.
+- Ordine: scelta a mano → trasporto del giorno che copre il tratto → a piedi se breve → mezzo del viaggio. La logica sta in `src/lib/spostamenti.ts`.
+- Sulla mappa a piedi e in auto (o taxi) si va lungo le strade (OSRM, profili `foot` e `car`); con i mezzi e i trasporti del giorno in linea d'aria tratteggiata.
 
 ## Riepilogo dopo il viaggio
 

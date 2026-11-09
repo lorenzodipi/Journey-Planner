@@ -26,7 +26,7 @@ import type { BookingInput, ChecklistInput } from '../lib/planningData'
 import type { BudgetInput, ExpenseInput } from '../lib/moneyData'
 import type { FlightInput, StayInput, TransportInput } from '../lib/logistics'
 import type { InvitedInput, ItemInput, PlaceInput, TravelerInput, TripInput, TripPeople } from '../lib/tripApi'
-import type { Booking, BudgetItem, DocKind, Visibilita, ChecklistItem, Expense, Flight, ItemStatus, PlacePref, PlaceStatus, ReceivedInvite, Trip, Stay, TicketCode, TicketKind } from '../types'
+import type { Booking, BudgetItem, DocKind, Visibilita, ChecklistItem, Expense, Flight, ItemStatus, MezzoTratto, PlacePref, PlaceStatus, ReceivedInvite, Trip, Stay, TicketCode, TicketKind } from '../types'
 import { schema } from '../lib/schema'
 
 export type TripsStatus = 'loading' | 'ready' | 'error'
@@ -116,6 +116,8 @@ interface TripsValue {
   setItemParticipants: (id: string, participants: string[]) => Result
   setDayPlan: (tripId: string, dayId: string, p: api.PianoGiorno) => Result
   setItemLock: (id: string, lock: 'flexible' | 'locked', source: 'manual' | 'booking') => Result
+  /** Mezzo e durata dello spostamento che porta alla tappa (0045); `null` = quelli del viaggio e la stima. */
+  setItemArrive: (id: string, mode: MezzoTratto | null, minutes: number | null) => Result
   /** Costo della tappa = spesa collegata in Spese (#32): crea, aggiorna o (con `null`) elimina la spesa. */
   saveItemCost: (tripId: string, itemId: string, cost: ItemCost | null) => Result
   setItemDeleted: (id: string, deleted: boolean) => Result
@@ -650,6 +652,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     },
     setDayPlan: (tripId, dayId, p) => run(() => api.setDayPlan(tripId, dayId, p), ['trips']),
     setItemLock: (id, lock, source) => run(() => api.setItemLock(id, lock, source, auth.session?.user.id), ['items']),
+    setItemArrive: (id, mode, minutes) => run(() => api.setItemArrive(id, mode, minutes), ['items']),
     setItemParticipants: (id, participants) => run(() => api.setItemParticipants(id, participants), ['items']),
     setItemDone: (id, done) => queued('Tappa fatta', [{ k: 'update', table: 'day_items', id, patch: { done } }], { t: 'item.done', id, done }),
     setItemDeleted: (id, deleted) => run(() => api.setItemDeleted(id, deleted), ['items']),

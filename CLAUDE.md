@@ -8,4 +8,4 @@ In breve:
 - Prima del push: `npx tsc --noEmit -p .` e `npx vitest run`.
 - Riusa i componenti di `src/faraway/` e `react-aria-components` prima di scrivere elementi nuovi.
 - Chiaro e scuro sempre; nel tema scuro cambia solo la palette. Spaziature a multipli di 8 px, WCAG 2.2 AA, controlli a 390 e 320 px.
-- Migrazioni in `supabase/migrations/`, additive e rilanciabili: le esegue Lorenzo.
+- Migrazioni in `supabase/migrations/`, additive e rilanciabili: si salvano su Git e le esegue Claude su Supabase (se mancano i permessi, si chiede a Lorenzo).

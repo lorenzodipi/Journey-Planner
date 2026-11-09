@@ -31,15 +31,16 @@ describe('stati della tappa', () => {
 })
 
 describe('spostamenti stimati', () => {
-  it('a piedi sotto 1,2 km, in metro oltre', () => {
+  it('a piedi i tratti brevi, poi con i mezzi o col mezzo del viaggio', () => {
     const a = { lat: 35.0, lng: 135.76 }
     expect(stimaSpostamento(a, { lat: 35.005, lng: 135.76 }).text).toMatch(/^A piedi · \d+ min$/)
-    expect(stimaSpostamento(a, { lat: 35.05, lng: 135.76 }).text).toMatch(/^In metro · \d+ min$/)
+    expect(stimaSpostamento(a, { lat: 35.05, lng: 135.76 }).text).toMatch(/^Con i mezzi · \d+ min$/)
+    expect(stimaSpostamento(a, { lat: 35.05, lng: 135.76 }, [], { mezzo: 'car', sogliaMin: 15 }).text).toMatch(/^In auto · \d+ min$/)
   })
   it('riepilogo del percorso', () => {
     const r = riepilogoPercorso(3, [
-      { mode: 'walk', text: '', minutes: 8, meters: 600, icon: '' },
-      { mode: 'metro', text: '', minutes: 9, meters: 3800, icon: '' },
+      { mode: 'walk', text: '', minutes: 8, meters: 600, icon: '', fonte: 'breve', manuale: false },
+      { mode: 'metro', text: '', minutes: 9, meters: 3800, icon: '', fonte: 'scelto', manuale: false },
     ])
     expect(r.title).toBe('3 tappe · 4,4 km')
     expect(r.sub).toBe('17 min tra metro e a piedi')

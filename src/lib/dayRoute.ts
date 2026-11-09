@@ -1,10 +1,11 @@
 import { distanza } from './formati'
-// Mappa del giorno: tappe numerate, tutti gli spostamenti a piedi lungo le strade; la linea d'aria (tratteggiata)
-// compare solo per i trasporti del giorno (treno, metro…) e, in mancanza di un trasporto, per tratti troppo lunghi per andare a piedi.
-// Il calcolo dei percorsi a piedi usa OSRM (dati OpenStreetMap, senza chiave) e, per funzionare anche
+// Mappa del giorno: tappe numerate; gli spostamenti a piedi e in auto (o taxi) lungo le strade, quelli con i mezzi
+// e i trasporti del giorno in linea d'aria (tratteggiata). Il mezzo di ogni tratto lo decide lib/spostamenti.ts.
+// I percorsi si calcolano con OSRM (dati OpenStreetMap, senza chiave) e, per funzionare anche
 // offline, ogni percorso già calcolato resta salvato sul telefono.
 
 import type { Day, Place, Transport, TransportMode } from '../types'
+import { tipoSuMappa, type MezzoEffettivo } from './spostamenti'
 
 export interface LatLng {
   lat: number
@@ -51,16 +52,20 @@ export function dayStops(day: Day, places: Place[]): { stops: DayStop[]; missing
   return { stops, missing }
 }
 
-export type LegKind = 'walk' | 'line'
+export type LegKind = 'walk' | 'drive' | 'line'
 
 export interface Leg {
   key: string
   from: LatLng
   to: LatLng
-  /** 'walk' = a piedi; 'line' = si usa un mezzo (se `via` c'è, è il trasporto del giorno che copre il tratto) */
+  /** 'walk' = a piedi e 'drive' = in auto, lungo le strade; 'line' = con un mezzo, in linea d'aria (se `via` c'è, è il trasporto del giorno) */
   kind: LegKind
   straightM: number
   via?: TransportLine
+  /** id delle tappe di partenza e di arrivo (solo per i tratti tra tappe) */
+  fromId?: string
+  toId?: string
+  mezzo?: MezzoEffettivo
 }
 
 const r5 = (n: number) => n.toFixed(5)
@@ -83,27 +88,31 @@ export function transportBetween(from: LatLng, to: LatLng, transports: Transport
 }
 
 /**
- * Un tratto tra due tappe consecutive. Si va sempre a piedi, tranne quando un trasporto del giorno copre il tratto
- * (allora: a piedi fino alla partenza, mezzo in linea d'aria, a piedi dall'arrivo) o quando è troppo lontano.
+ * I tratti tra tappe consecutive. Se un trasporto del giorno copre il tratto: a piedi fino alla partenza, mezzo in linea
+ * d'aria, a piedi dall'arrivo. Altrimenti decide `mezzoDi` (il mezzo dello spostamento); senza, si va a piedi fin dove ha senso.
  */
-export function planLegs(stops: DayStop[], transports: TransportLine[] = []): Leg[] {
+export function planLegs(stops: DayStop[], transports: TransportLine[] = [], mezzoDi?: (from: DayStop, to: DayStop, straightM: number, via?: TransportLine) => MezzoEffettivo): Leg[] {
   const legs: Leg[] = []
   for (let i = 0; i + 1 < stops.length; i++) {
     const from = stops[i]
     const to = stops[i + 1]
     const straightM = distanceM(from, to)
     const via = transportBetween(from, to, transports)
-    const kind: LegKind = via || straightM > WALK_MAX_M ? 'line' : 'walk'
-    legs.push({ key: legKey(from, to), from, to, kind, straightM, ...(via ? { via } : {}) })
+    const mezzo = mezzoDi ? mezzoDi(from, to, straightM, via) : undefined
+    // il trasporto del giorno vince solo se nessuno ha scelto un altro mezzo per questo tratto
+    const viaUsato = via && (!mezzo || mezzo === via.mode) ? via : undefined
+    const tipo = viaUsato ? 'line' : mezzo ? tipoSuMappa(mezzo) : 'walk'
+    const kind: LegKind = tipo === 'walk' && straightM > WALK_MAX_M ? 'line' : tipo
+    legs.push({ key: kind === 'drive' ? `car:${legKey(from, to)}` : legKey(from, to), from, to, kind, straightM, fromId: from.id, toId: to.id, ...(viaUsato ? { via: viaUsato } : {}), ...(mezzo ? { mezzo } : {}) })
   }
   return legs
 }
 
-/** I tratti da fare a piedi: quelli tra le tappe, più il pezzo fino/dalla stazione dove un trasporto copre il tratto. */
+/** I tratti da calcolare lungo le strade: a piedi e in auto tra le tappe, più il pezzo a piedi fino/dalla stazione dove un trasporto copre il tratto. */
 export function walkLegs(legs: Leg[]): Leg[] {
   const out: Leg[] = []
   for (const leg of legs) {
-    if (leg.kind === 'walk') {
+    if (leg.kind === 'walk' || leg.kind === 'drive') {
       out.push(leg)
       continue
     }
@@ -164,21 +173,22 @@ export function parseOsrm(json: unknown): WalkRoute | null {
   return { coords: clean, meters: Number(route.distance) || 0, seconds: Number(route.duration) || 0 }
 }
 
-// Il server pubblico di OpenStreetMap (FOSSGIS) ha un'istanza per i pedoni. Il nome del profilo nell'indirizzo
-// dipende dalla versione, quindi si prova l'uno e poi l'altro.
-const ENDPOINTS = [
-  'https://routing.openstreetmap.de/routed-foot/route/v1/driving',
-  'https://routing.openstreetmap.de/routed-foot/route/v1/foot',
-]
+// Il server pubblico di OpenStreetMap (FOSSGIS) ha un'istanza per i pedoni e una per le auto. Il nome del profilo
+// nell'indirizzo dipende dalla versione, quindi si prova l'uno e poi l'altro.
+const ENDPOINTS = {
+  foot: ['https://routing.openstreetmap.de/routed-foot/route/v1/driving', 'https://routing.openstreetmap.de/routed-foot/route/v1/foot'],
+  car: ['https://routing.openstreetmap.de/routed-car/route/v1/driving', 'https://routing.openstreetmap.de/routed-car/route/v1/car'],
+}
 
 export async function fetchWalkRoute(
   a: LatLng,
   b: LatLng,
   fetchFn: typeof fetch = fetch,
   signal?: AbortSignal,
+  profilo: 'foot' | 'car' = 'foot',
 ): Promise<WalkRoute | null> {
   const coords = `${a.lng},${a.lat};${b.lng},${b.lat}`
-  for (const base of ENDPOINTS) {
+  for (const base of ENDPOINTS[profilo]) {
     try {
       const res = await fetchFn(`${base}/${coords}?overview=full&geometries=geojson`, { signal })
       if (!res.ok) continue
@@ -244,12 +254,12 @@ export interface ResolveOptions {
   gapMs?: number
 }
 
-/** Calcola (o recupera dalla cache) i percorsi dei tratti a piedi, uno alla volta. */
+/** Calcola (o recupera dalla cache) i percorsi dei tratti a piedi e in auto, uno alla volta. */
 export async function resolveWalkLegs(legs: Leg[], opts: ResolveOptions): Promise<void> {
   const { store, fetchFn = fetch, signal, onRoute, gapMs = 300 } = opts
   let first = true
   for (const leg of legs) {
-    if (leg.kind !== 'walk') continue
+    if (leg.kind !== 'walk' && leg.kind !== 'drive') continue
     if (signal?.aborted) return
     const cached = store.get(leg.key)
     if (cached) {
@@ -260,7 +270,7 @@ export async function resolveWalkLegs(legs: Leg[], opts: ResolveOptions): Promis
     first = false
     if (signal?.aborted) return
     try {
-      const route = await fetchWalkRoute(leg.from, leg.to, fetchFn, signal)
+      const route = await fetchWalkRoute(leg.from, leg.to, fetchFn, signal, leg.kind === 'drive' ? 'car' : 'foot')
       if (route) store.set(leg.key, route)
       onRoute(leg.key, route)
     } catch {
@@ -277,6 +287,7 @@ export const formatMinutes = (seconds: number) => `${Math.max(1, Math.round(seco
 export function describeLeg(leg: Pick<Leg, 'kind' | 'straightM' | 'via'>, route: WalkRoute | null | undefined): string {
   if (leg.kind === 'line' && leg.via) return `in viaggio: ${leg.via.fromName} → ${leg.via.toName}`
   if (leg.kind === 'line') return `${formatDistance(leg.straightM)} in linea d'aria: serve un mezzo`
+  if (leg.kind === 'drive') return route ? `${formatMinutes(route.seconds)} in auto · ${formatDistance(route.meters)}` : route === null ? `${formatDistance(leg.straightM)} in linea d'aria in auto (percorso non disponibile)` : 'Calcolo il percorso…'
   if (route) return `${formatMinutes(route.seconds)} a piedi · ${formatDistance(route.meters)}`
   if (route === null) return `${formatDistance(leg.straightM)} in linea d'aria a piedi (percorso non disponibile)`
   return 'Calcolo il percorso…'
@@ -307,6 +318,7 @@ export function modeSymbol(mode: TransportMode): string {
 export function hopSummary(leg: Pick<Leg, 'kind' | 'straightM' | 'via'>, route: WalkRoute | null | undefined): { symbol: string; text: string } {
   if (leg.kind === 'line' && leg.via) return { symbol: modeSymbol(leg.via.mode), text: `${MODE_IN[leg.via.mode]} · ${leg.via.fromName} → ${leg.via.toName}` }
   if (leg.kind === 'line') return { symbol: 'i-tra-bus', text: `Serve un mezzo · ${formatDistance(leg.straightM)}` }
+  if (leg.kind === 'drive') return { symbol: 'i-tra-car', text: route ? `In auto · ${formatMinutes(route.seconds)}` : route === null ? `In auto · ${formatDistance(leg.straightM)}` : 'In auto · calcolo…' }
   if (route) return { symbol: 'i-tra-walk', text: `A piedi · ${formatMinutes(route.seconds)}` }
   return { symbol: 'i-tra-walk', text: route === null ? `A piedi · ${formatDistance(leg.straightM)}` : 'A piedi · calcolo…' }
 }

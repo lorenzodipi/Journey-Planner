@@ -5,6 +5,10 @@ export type ThemeName = 'default' | 'japan' | 'iceland'
 export type PlaceStatus = 'idea' | 'planned' | 'done' | 'skipped'
 export type Scope = 'per_person' | 'total'
 export type TransportMode = 'train' | 'metro' | 'bus' | 'taxi' | 'walk' | 'car' | 'plane' | 'ferry' | 'other'
+/** Mezzo di solito usato in un viaggio tra le tappe (0045). */
+export type MezzoViaggio = 'walk' | 'transit' | 'car'
+/** Mezzo scelto a mano per uno spostamento tra due tappe (0045). */
+export type MezzoTratto = 'walk' | 'metro' | 'bus' | 'train' | 'taxi' | 'car'
 export type ItemKind = 'visit' | 'meal' | 'transport' | 'free' | 'note' | 'flight'
 /** Stato della tappa (#32): registro in `src/lib/tappaStati.ts`. */
 export type ItemStatus = 'todo' | 'done' | 'skipped' | 'late' | 'postponed' | 'cancelled'
@@ -109,6 +113,10 @@ export interface DayItem {
   lockSource?: 'manual' | 'booking'
   lockChangedBy?: string
   lockChangedAt?: string
+  /** 0045: mezzo scelto a mano per arrivare a questa tappa dalla precedente; assente = quello del viaggio */
+  arriveMode?: MezzoTratto
+  /** 0045: durata vera di quello spostamento, in minuti; assente = stimata */
+  arriveMinutes?: number
 }
 
 export interface Day {
@@ -487,6 +495,10 @@ export interface Trip {
   archivedAt?: string
   /** Margine tra le tappe (0033), minuti; assente = nessuno. */
   defaultMarginMin?: number
+  /** Come ci si sposta di solito tra le tappe (0045); assente = a piedi i tratti brevi, con i mezzi gli altri. */
+  moveMode?: MezzoViaggio
+  /** Fino a quanti minuti a piedi si va a piedi (0045); assente = 15, 0 = mai. */
+  walkMaxMin?: number
   center: { lat: number; lng: number }
   travelers: Traveler[]
   /** Ruolo di chi sta usando l'app in questo viaggio (se noto). */

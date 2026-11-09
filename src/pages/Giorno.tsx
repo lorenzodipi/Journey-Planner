@@ -14,7 +14,8 @@ import { formatMoney, round2 } from '../lib/money'
 import { parseMapsUrl } from '../lib/mapsUrl'
 import { planRoute } from '../lib/routeOrder'
 import { minutesOfDay } from '../lib/sun'
-import { fase, riepilogoPercorso, stimaSpostamento } from '../lib/tappa'
+import { durata, fase, riepilogoPercorso, stimaSpostamento } from '../lib/tappa'
+import { modoGoogle, testoMezzo } from '../lib/spostamenti'
 import { tripToday } from '../lib/today'
 import { useDaySegments } from '../state/daySegments'
 import { useHere } from '../state/here'
@@ -39,13 +40,14 @@ import { SpostaSheet } from './giorno/SpostaSheet'
 import { SpesaSheet } from './spese/SpesaSheet'
 import { iconaSpesa } from '../lib/ricevuta'
 import { TappaSheet } from './giorno/TappaSheet'
+import { SpostamentoSheet } from './giorno/SpostamentoSheet'
 import { alloggiDelGiorno } from '../lib/fattibilita'
 import { useInCorso } from '../faraway/Attesa'
 
 const wdm = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
 const fmt = (ymd: string) => wdm.format(parseYmd(ymd)).replace(/\./g, '')
 
-type Sheet = { kind: 'add' } | { kind: 'edit'; item: DayItem } | { kind: 'move'; item: DayItem; postpone: boolean } | null
+type Sheet = { kind: 'add' } | { kind: 'edit'; item: DayItem } | { kind: 'move'; item: DayItem; postpone: boolean } | { kind: 'seg'; item: DayItem } | null
 
 export function Giorno({ params }: { params: { id: string } }) {
   const trip = useTrip()
@@ -64,7 +66,7 @@ export function Giorno({ params }: { params: { id: string } }) {
 
   const index = trip.days.findIndex((d) => d.id === params.id)
   const day = trip.days[index]
-  const { route, stopById, segments } = useDaySegments(trip, day)
+  const { route, stopById, segments, imp } = useDaySegments(trip, day)
 
   // da Giorni, su un giorno libero: «Aggiungi tappa» già aperto
   useEffect(() => {
@@ -111,7 +113,7 @@ export function Giorno({ params }: { params: { id: string } }) {
   const rs = route.stops
   const routeHref =
     rs.length >= 2
-      ? `https://www.google.com/maps/dir/?api=1&origin=${ll(rs[0])}&destination=${ll(rs[rs.length - 1])}${rs.length > 2 ? `&waypoints=${rs.slice(1, -1).slice(0, 8).map(ll).join('%7C')}` : ''}&travelmode=${legs.every((l) => l.mode === 'walk') ? 'walking' : 'transit'}`
+      ? `https://www.google.com/maps/dir/?api=1&origin=${ll(rs[0])}&destination=${ll(rs[rs.length - 1])}${rs.length > 2 ? `&waypoints=${rs.slice(1, -1).slice(0, 8).map(ll).join('%7C')}` : ''}&travelmode=${modoGoogle(legs.map((l) => l.mode))}`
       : rs.length === 1
         ? `https://www.google.com/maps/search/?api=1&query=${ll(rs[0])}`
         : undefined
@@ -120,13 +122,13 @@ export function Giorno({ params }: { params: { id: string } }) {
     const stop = stopById.get(item.id)
     if (!stop) return null
     if (here && ctx.isToday) {
-      const s = stimaSpostamento(here, stop)
-      return `${s.minutes} min ${s.mode === 'walk' ? 'a piedi' : 'in metro'} da qui`
+      const s = stimaSpostamento(here, stop, [], imp)
+      return `${durata(s.minutes)} ${testoMezzo(s.mode)} da qui`
     }
     const i = day.items.indexOf(item)
     const prevItem = day.items[i - 1]
     const seg = segments.get(item.id)
-    if (prevItem && seg) return `${seg.minutes} min ${seg.mode === 'walk' ? 'a piedi' : seg.mode === 'metro' ? 'in metro' : 'con i mezzi'} da ${prevItem.title}`
+    if (prevItem && seg) return `${durata(seg.minutes)} ${testoMezzo(seg.mode)} da ${prevItem.title}`
     return null
   }
 
@@ -240,6 +242,7 @@ export function Giorno({ params }: { params: { id: string } }) {
           onDelete={(item) => void onDelete(item)}
           onReorder={(item, to) => void t.moveItemTo(day.id, item.id, to).then((m) => m && showToast(m))}
           fromHere={fromHere}
+          onSeg={(item) => setSheet({ kind: 'seg', item })}
           meteoDi={(item) => meteoDellaTappa(previsioniCitta.get(cittaTappa(trip, day, item)), day.date, item.time)}
           highlight={highlight}
         />
@@ -364,6 +367,14 @@ export function Giorno({ params }: { params: { id: string } }) {
           }}
         />
       ) : null}
+      {(() => {
+        if (sheet?.kind !== 'seg') return null
+        const i = day.items.findIndex((x) => x.id === sheet.item.id)
+        const da = day.items[i - 1]
+        const a = day.items[i]
+        const leg = da && a ? route.legs.find((l) => l.fromId === da.id && l.toId === a.id) : undefined
+        return da && a && leg ? <SpostamentoSheet key={a.id} open da={da} a={a} leg={leg} strada={route.routes[leg.key]} imp={imp} onClose={() => setSheet(null)} /> : null
+      })()}
       {stayEdit ? <AlloggioSheet key={stayEdit.id} trip={trip} stay={stayEdit} open onClose={() => setStayEdit(null)} /> : null}
       {confirmNode}
       <div className="legacy">

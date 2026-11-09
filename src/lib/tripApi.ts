@@ -1,6 +1,6 @@
 import { cleanSpec, type OpeningSpec } from './opening'
 import { noteItemRow, schema } from './schema'
-import type { Category, Day, DayItem, ItemKind, ItemStatus, MemberRole, Place, PlacePref, PlaceStatus, ReceivedInvite, StatoInvito, ThemeName, Traveler, Trip, TripCountry } from '../types'
+import type { Category, Day, DayItem, ItemKind, ItemStatus, MemberRole, MezzoTratto, MezzoViaggio, Place, PlacePref, PlaceStatus, ReceivedInvite, StatoInvito, ThemeName, Traveler, Trip, TripCountry } from '../types'
 import { todayYmd } from './dates'
 import { client } from './db'
 import { queryLogistics } from './logisticsApi'
@@ -75,6 +75,9 @@ export interface TripInput {
   /** Cambi delle valute dei paesi diversi dal principale, da unire a `fx_rates` (unità di valuta di casa per 1 unità). */
   fxRate?: number | null
   fxRates?: Record<string, number>
+  /** Spostamenti tra le tappe (0045): `undefined` = non toccare le colonne, `null` = tornare al comportamento di base. */
+  moveMode?: MezzoViaggio | null
+  walkMaxMin?: number | null
 }
 
 interface CountryRow {
@@ -167,6 +170,8 @@ interface ItemRow {
   lock_source?: 'manual' | 'booking' | null
   lock_changed_by?: string | null
   lock_changed_at?: string | null
+  arrive_mode?: MezzoTratto | null
+  arrive_minutes?: number | null
 }
 interface Extras {
   places: PlaceRow[]
@@ -210,6 +215,8 @@ interface TripRow {
   base_currency: string
   local_currency: string | null
   default_margin_min?: number | null
+  move_mode?: MezzoViaggio | null
+  walk_max_min?: number | null
   archived_at?: string | null
   fx_rate?: number | string | null
   fx_rates?: Record<string, number | string> | null
@@ -295,6 +302,8 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
       categoryId: it.category_id ?? undefined,
       position: it.position,
       ...(it.time_lock ? { timeLock: it.time_lock, lockSource: it.lock_source ?? undefined, lockChangedBy: it.lock_changed_by ?? undefined, lockChangedAt: it.lock_changed_at ?? undefined } : {}),
+      ...(it.arrive_mode ? { arriveMode: it.arrive_mode } : {}),
+      ...(it.arrive_minutes != null ? { arriveMinutes: it.arrive_minutes } : {}),
     })
     itemsByDay.set(it.day_id, list)
   }
@@ -344,6 +353,8 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     localCurrency: row.local_currency?.trim() || undefined,
     ...(row.archived_at ? { archivedAt: row.archived_at } : {}),
     ...(row.default_margin_min != null ? { defaultMarginMin: row.default_margin_min } : {}),
+    ...(row.move_mode === 'walk' || row.move_mode === 'transit' || row.move_mode === 'car' ? { moveMode: row.move_mode } : {}),
+    ...(row.walk_max_min != null ? { walkMaxMin: row.walk_max_min } : {}),
     center: {
       lat: row.center_lat ?? DEFAULT_CENTER.lat,
       lng: row.center_lng ?? DEFAULT_CENTER.lng,
@@ -598,6 +609,9 @@ function tripColumns(input: TripInput) {
     // cambi dei paesi (#35): il cambio del principale e delle altre valute
     ...(input.fxRate !== undefined ? { fx_rate: input.fxRate } : {}),
     ...(input.fxRates !== undefined ? { fx_rates: input.fxRates } : {}),
+    // migrazione 0045: solo se cambiano
+    ...(input.moveMode !== undefined ? { move_mode: input.moveMode } : {}),
+    ...(input.walkMaxMin !== undefined ? { walk_max_min: input.walkMaxMin } : {}),
   }
 }
 
@@ -1173,6 +1187,12 @@ export async function setItemLock(id: string, lock: 'flexible' | 'locked', sourc
   if (!schema.timeLock) throw new Error("Manca la migrazione 0032 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0032_orari_vincolati.sql).")
   const { error } = await client().from('day_items').update({ time_lock: lock, lock_source: lock === 'locked' ? source : null, lock_changed_by: userId ?? null, lock_changed_at: new Date().toISOString() }).eq('id', id)
   if (error) throw error
+}
+
+/** Mezzo e durata dello spostamento che porta a una tappa (0045); `null` = quelli del viaggio e la stima. */
+export async function setItemArrive(id: string, mode: MezzoTratto | null, minutes: number | null): Promise<void> {
+  const { error } = await client().from('day_items').update({ arrive_mode: mode, arrive_minutes: minutes }).eq('id', id)
+  if (error) throw /arrive_mode|arrive_minutes|schema cache/i.test(error.message) ? new Error('Per scegliere il mezzo degli spostamenti serve la migrazione 0045 del database.') : error
 }
 
 export async function setItemParticipants(id: string, participants: string[]): Promise<void> {

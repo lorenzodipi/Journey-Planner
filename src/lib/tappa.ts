@@ -2,7 +2,8 @@
 // testi della card aperta. Tutto puro: si prova nei test.
 import { distanceM, transportBetween, type TransportLine } from './dayRoute'
 import { itemDuration } from './duration'
-import type { DayItem, ItemStatus, Place, TransportMode } from '../types'
+import type { DayItem, ItemStatus, Place } from '../types'
+import { comeCiSiMuove, durata, impostazioniViaggio, spostamento, type Impostazioni, type Spostamento } from './spostamenti'
 
 export interface TappaStato {
   value: ItemStatus
@@ -42,13 +43,7 @@ export const hhmm = (min: number) => {
 }
 
 /** Durata leggibile: «45 min», «1 h 30», «2 h». */
-export function durata(min: number): string {
-  const m = Math.max(0, Math.round(min))
-  if (m < 60) return `${m} min`
-  const h = Math.floor(m / 60)
-  const r = m % 60
-  return r ? `${h} h ${String(r).padStart(2, '0')}` : `${h} h`
-}
+export { durata }
 
 /** Fine prevista della tappa (minuti dalla mezzanotte), da ora di fine o durata. */
 export function endMin(item: DayItem, place: Pick<Place, 'visitMinutes'> | undefined): number | null {
@@ -100,52 +95,24 @@ export function riepilogo(items: DayItem[], ctx: { isToday: boolean; nowMin: num
   return { line: parts.join(' · '), next: next?.time ?? null, closed, total }
 }
 
-// ---------------------------------------------------------------- spostamenti stimati
+// ---------------------------------------------------------------- spostamenti
 
-export interface Spostamento {
-  mode: 'walk' | 'metro' | 'transport'
-  /** testo: «A piedi · 8 min», «In metro · 9 min», «Treno · 25 min» */
-  text: string
-  minutes: number
-  meters: number
-  icon: string
-}
-
-const MODE_TEXT: Partial<Record<TransportMode, string>> = { train: 'In treno', metro: 'In metro', bus: 'In autobus', taxi: 'In taxi', walk: 'A piedi', car: 'In auto', ferry: 'In traghetto', plane: 'In aereo' }
-const MODE_ICON: Partial<Record<TransportMode, string>> = { train: 'g-tra-train', metro: 'g-tra-metro', bus: 'g-tra-bus', taxi: 'g-tra-taxi', walk: 'g-walk', car: 'g-tra-car', ferry: 'g-tra-ferry', plane: 'g-tra-plane' }
-
-const WALK_KMH = 5
-const TRANSIT_KMH = 25
-const DETOUR = 1.3
-const WALK_MAX_M = 1200
+export type { Spostamento } from './spostamenti'
 
 /**
- * Stima dello spostamento tra due posizioni (decisione approvata in #32): distanza in linea d'aria × 1,3;
- * fino a ~1,2 km a piedi (5 km/h), oltre in metro/con i mezzi (25 km/h di media). Se tra le due tappe
- * c'è un trasporto inserito, si usa quello. Niente servizi a pagamento.
+ * Spostamento tra due posizioni con le impostazioni del viaggio (lib/spostamenti.ts): a piedi i tratti brevi, poi il mezzo
+ * del viaggio («Con i mezzi» se non è scelto). Se tra le due tappe c'è un trasporto inserito, si usa quello.
  */
-export function stimaSpostamento(a: { lat: number; lng: number }, b: { lat: number; lng: number }, transports: TransportLine[] = []): Spostamento {
+export function stimaSpostamento(a: { lat: number; lng: number }, b: { lat: number; lng: number }, transports: TransportLine[] = [], imp: Impostazioni = impostazioniViaggio({})): Spostamento {
   const via = transportBetween(a, b, transports)
-  const meters = distanceM(a, b) * DETOUR
-  if (via) {
-    const mins = Math.max(1, Math.round((meters / 1000 / TRANSIT_KMH) * 60))
-    return { mode: 'transport', text: `${MODE_TEXT[via.mode] ?? 'Con i mezzi'} · ${durata(mins)}`, minutes: mins, meters, icon: MODE_ICON[via.mode] ?? 'g-metro' }
-  }
-  if (meters <= WALK_MAX_M) {
-    const mins = Math.max(1, Math.round((meters / 1000 / WALK_KMH) * 60))
-    return { mode: 'walk', text: `A piedi · ${durata(mins)}`, minutes: mins, meters, icon: 'g-walk' }
-  }
-  const mins = Math.max(1, Math.round((meters / 1000 / TRANSIT_KMH) * 60))
-  return { mode: 'metro', text: `In metro · ${durata(mins)}`, minutes: mins, meters, icon: 'g-metro' }
+  return spostamento(distanceM(a, b), { via: via?.mode, imp })
 }
 
-/** «5 tappe · 7,4 km» e «1 h 35 tra metro e a piedi» dalla somma degli spostamenti. */
+/** «5 tappe · 7,4 km» e «1 h 35 tra autobus e a piedi» dalla somma degli spostamenti. */
 export function riepilogoPercorso(stops: number, legs: Spostamento[]): { title: string; sub: string } {
   const km = legs.reduce((s, l) => s + l.meters, 0) / 1000
   const mins = legs.reduce((s, l) => s + l.minutes, 0)
-  const walk = legs.some((l) => l.mode === 'walk')
-  const ride = legs.some((l) => l.mode !== 'walk')
-  const how = walk && ride ? 'tra metro e a piedi' : walk ? 'a piedi' : ride ? 'con i mezzi' : ''
+  const how = comeCiSiMuove(legs.map((l) => l.mode))
   const kmText = km.toLocaleString('it-IT', { maximumFractionDigits: 1, minimumFractionDigits: km < 10 ? 1 : 0 })
   return { title: `${stops} ${stops === 1 ? 'tappa' : 'tappe'}${legs.length ? ` · ${kmText} km` : ''}`, sub: legs.length ? `${durata(mins)} ${how}`.trim() : '' }
 }

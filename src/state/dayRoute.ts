@@ -11,6 +11,7 @@ import {
   type TransportLine,
   type WalkRoute,
 } from '../lib/dayRoute'
+import { impostazioniViaggio, scegliMezzo, sceltoPer } from '../lib/spostamenti'
 import type { DayMapEnd, DayMapLine } from '../ui/MapView'
 import { MODE_LABEL } from '../ui/TransportForm'
 import type { Day, Trip } from '../types'
@@ -33,11 +34,16 @@ export interface DayRoute {
 }
 
 /** Tappe, tratti e trasporti di un giorno; i percorsi a piedi si calcolano (o si rileggono dalla cache) uno alla volta. */
-export function useDayRoute(trip: Pick<Trip, 'places' | 'transports'>, day: Day): DayRoute {
+export function useDayRoute(trip: Pick<Trip, 'places' | 'transports' | 'moveMode' | 'walkMaxMin'>, day: Day): DayRoute {
   const [routes, setRoutes] = useState<Record<string, WalkRoute | null>>({})
   const { stops, missing } = useMemo(() => dayStops(day, trip.places), [day, trip.places])
   const transports = useMemo(() => dayTransportLines(day, trip.transports), [day, trip.transports])
-  const legs = useMemo(() => planLegs(stops, transports), [stops, transports])
+  const imp = useMemo(() => impostazioniViaggio(trip), [trip.moveMode, trip.walkMaxMin]) // eslint-disable-line react-hooks/exhaustive-deps
+  const scelti = useMemo(() => new Map(day.items.map((i) => [i.id, sceltoPer(i)])), [day.items])
+  const legs = useMemo(
+    () => planLegs(stops, transports, (_from, to, straightM, via) => scegliMezzo(straightM, { scelto: scelti.get(to.id), via: via?.mode, imp }).mezzo),
+    [stops, transports, scelti, imp],
+  )
   const walks = useMemo(() => walkLegs(legs), [legs])
   const legsSig = walks.map((l) => l.key).join('|')
 

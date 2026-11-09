@@ -1392,7 +1392,7 @@
 .k-Tappa .av span{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:600 11px/1 var(--font-sans);color:var(--on-bright);border:2px solid var(--tinta-azzurro);margin-left:-8px;box-sizing:border-box}
 .k-Tappa .av span:first-child{margin-left:0}
 .k-Tappa .amt{font:500 20px/26px var(--font-display);font-variant-numeric:tabular-nums}
-.k-Tappa .seg{min-height:36px}
+.k-Tappa .seg{min-height:36px;padding:8px 0}
 .k-Tappa .seg .sg{align-self:center;display:inline-flex;align-items:center;gap:var(--space-xs);font:400 13px/18px var(--font-sans);color:var(--ink-muted)}
 .k-Tappa .seg .sg svg{width:26px;height:26px;margin-left:-8px}
 .k-Tappa h3{margin:var(--space-xl) var(--space-lg) 0;font:600 14px/20px var(--font-sans);color:var(--ink)}
@@ -2392,3 +2392,13 @@ html,body{margin:0;background:var(--canvas)}
 .fa-cont .fa-ib[hidden]{display:grid;visibility:hidden}
 .fa-cont output.vuoto{font-weight:400;color:var(--ink-muted)}
 @media (prefers-reduced-motion:reduce){.fa-altri>summary .chv{transition:none}}
+
+/* Spostamento tra due tappe che si può toccare (0045): pillola staccata dalle card, area di tocco di 44 px */
+.k-Tappa .seg .sg.tap{all:unset;box-sizing:border-box;position:relative;align-self:center;justify-self:start;display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:0 8px 0 4px;border:1px solid var(--border-strong);border-radius:var(--radius-full);background:var(--surface-card);color:var(--ink);font:500 13px/18px var(--font-sans);font-variant-numeric:tabular-nums;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform 120ms cubic-bezier(.23,1,.32,1),background-color 120ms ease}
+.k-Tappa .seg .sg.tap::after{content:"";position:absolute;inset:-4px -2px}
+.k-Tappa .seg .sg.tap svg{width:26px;height:26px;margin:0}
+.k-Tappa .seg .sg.tap svg.chv{width:16px;height:16px;color:var(--ink-muted)}
+.k-Tappa .seg .sg.tap:active{transform:scale(.97)}
+.k-Tappa .seg .sg.tap:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+@media (hover:hover) and (pointer:fine){.k-Tappa .seg .sg.tap:hover{background:var(--surface-high)}}
+@media (prefers-reduced-motion:reduce){.k-Tappa .seg .sg.tap{transition:none}.k-Tappa .seg .sg.tap:active{transform:none}}

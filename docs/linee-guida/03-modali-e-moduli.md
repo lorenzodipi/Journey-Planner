@@ -45,6 +45,8 @@ Tutti usano `<dialog>` nativo aperto con `showModal()`: focus intrappolato, sfon
 | `SegmentiFacoltativi` | Scelta breve che si può lasciare vuota (fermate) | La stessa scelta toccata di nuovo si toglie. |
 | `Micro` | Titolo dentro un gruppo (una tratta, l'apertura del check-in) | `h4` (o `h5` dentro una tratta). |
 
+Tra due tappe del giorno lo spostamento è una pillola-pulsante («In auto · 45 min» con la freccia), staccata dalle card di 8 px sopra e sotto e con un'area di tocco di 44 px; apre il foglio «Da A a B» con i mezzi a riquadri (ognuno con il suo tempo), la durata vera e «Controlla su Maps».
+
 Le chip restano per le scelte multiple e le liste lunghe (pasti e servizi, «Pagato da», «Quanto ci si ferma», «L'ora è»).
 
 ## Blocchi che si ripetono

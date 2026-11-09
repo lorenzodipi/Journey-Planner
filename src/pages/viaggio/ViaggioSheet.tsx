@@ -14,8 +14,13 @@ import type { TripInput, TripPeople } from '../../lib/tripApi'
 import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import { impattoDate } from '../../lib/gestioneViaggio'
-import type { Trip, TripCountry } from '../../types'
-import { Avatars, Banner, Campo, Pulsante } from '../../faraway/base'
+import type { MezzoViaggio, Trip, TripCountry } from '../../types'
+
+/** Soglie per andare a piedi, in minuti (0 = mai). */
+const SOGLIE: [number, string][] = [[5, '5 min'], [10, '10 min'], [15, '15 min'], [20, '20 min'], [30, '30 min'], [0, 'Mai']]
+import { Avatars, Banner, Campo, Chip, Pulsante } from '../../faraway/base'
+import { Riquadri } from '../../faraway/Moduli'
+import { mezzoSuggerito, SOGLIA_PIEDI_MIN } from '../../lib/spostamenti'
 import { Foglio, useConferma } from '../../faraway/Foglio'
 import { useConfermaCentrata } from '../../faraway/Modale'
 import { showAvviso } from '../../state/avviso'
@@ -101,6 +106,17 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [dateError, setDateError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // spostamenti tra le tappe (0045): senza scelta si propone il mezzo suggerito (auto in Islanda, con un noleggio…)
+  const [mezzo, setMezzo] = useState<MezzoViaggio | ''>(trip?.moveMode ?? '')
+  const [soglia, setSoglia] = useState<number>(trip?.walkMaxMin ?? SOGLIA_PIEDI_MIN)
+  const suggerito = mezzoSuggerito({
+    destination: paesi[0]?.name ?? trip?.destination ?? '',
+    countries: paesi.map((p, i) => ({ id: p.id, country: p.country, name: p.name, currency: p.currency, timezone: p.timezone, startDate: p.startDate, endDate: p.endDate, position: i })),
+    bookings: trip?.bookings ?? [],
+    transports: trip?.transports ?? [],
+  })
+  /** Il mezzo mostrato: quello scelto, altrimenti il suggerito, altrimenti «Con i mezzi» (come prima della 0045). */
+  const mezzoScelto: MezzoViaggio = mezzo || suggerito?.mezzo || 'transit'
   const nextId = useRef(0)
 
   const dateOk = !startDate || !endDate || endDate >= startDate
@@ -199,6 +215,9 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
       countries: list,
       fxRate: principale.currency && principale.currency !== home ? (principale.fxRate ?? null) : null,
       fxRates: altri,
+      // scritti solo se cambiano, così senza la migrazione 0045 il resto si salva lo stesso
+      ...(mezzoScelto !== (trip?.moveMode ?? 'transit') || (trip?.moveMode === undefined && mezzo) ? { moveMode: mezzoScelto } : {}),
+      ...(soglia !== (trip?.walkMaxMin ?? SOGLIA_PIEDI_MIN) ? { walkMaxMin: soglia } : {}),
     }
     const invalid = validateTrip(input)
     if (invalid) return setError(invalid)
@@ -379,6 +398,39 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
         <section style={{ display: 'grid', gap: 16 }}>
           <h2 className="fa-h3">Budget</h2>
           <Campo label="Budget (facoltativo)" icon="bag" inputMode="decimal" value={budget} onChange={setBudget} placeholder={`es. 3.000 ${casaSym}`} maxLength={12} />
+        </section>
+
+        <section style={{ display: 'grid', gap: 16 }}>
+          <h2 className="fa-h3">Spostamenti tra le tappe</h2>
+          <Riquadri<MezzoViaggio>
+            label="Di solito vi spostate"
+            cols={3}
+            value={mezzoScelto}
+            onChange={(m) => m && setMezzo(m)}
+            options={[
+              { value: 'car', label: 'In auto', glifo: 'g-tra-car', sub: 'Tempi su strada' },
+              { value: 'transit', label: 'Con i mezzi', glifo: 'g-tra-metro', sub: 'Metro, bus, treni' },
+              { value: 'walk', label: 'A piedi', glifo: 'g-tra-walk', sub: 'Sempre a piedi' },
+            ]}
+          >
+            <span className="fa-help">
+              {!mezzo && suggerito ? `Suggerito: ${suggerito.perche.charAt(0).toLowerCase()}${suggerito.perche.slice(1)} ` : ''}
+              Ogni spostamento si può cambiare dalla sua riga nel giorno.
+            </span>
+          </Riquadri>
+          {mezzoScelto !== 'walk' ? (
+            <div className="fa-fld" role="group" aria-label="A piedi se ci vogliono meno di">
+              A piedi se ci vogliono meno di
+              <div className="fa-chips wrap">
+                {SOGLIE.map(([v, l]) => (
+                  <Chip key={v} on={soglia === v} onPress={() => setSoglia(v)}>
+                    {l}
+                  </Chip>
+                ))}
+              </div>
+              <span className="fa-help">{soglia === 0 ? 'Anche i tratti brevi con il mezzo scelto sopra.' : `Oltre ${soglia} minuti a piedi si usa il mezzo scelto sopra.`}</span>
+            </div>
+          ) : null}
         </section>
 
         <section style={{ display: 'grid', gap: 16 }}>
