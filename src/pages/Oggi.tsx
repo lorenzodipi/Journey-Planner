@@ -1,5 +1,5 @@
 // Oggi (mock Fa-03…Fa-07, Fa-52…Fa-55; issue #28, #29, #30): prima, durante e dopo il viaggio.
-import { MeteoGiorno } from './giorno/MeteoGiorno'
+import { MeteoGiornoCard } from './giorno/MeteoGiornoCard'
 import { cittaDelGiorno, indiceCittaAdesso } from '../lib/meteoGiorno'
 import { ora, useRiferimento } from '../lib/formati'
 import { Foglio } from '../faraway/Foglio'
@@ -15,7 +15,7 @@ import { groupDays, rangeText, type DayGroup } from '../lib/dayGroups'
 import { riassunto } from '../lib/spese'
 import { StepperViaggio, type TappaViaggio } from '../faraway/StepperViaggio'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
-import { avvisoPioggia, descrizione, faseViaggio, momento, notteAlle, numeriViaggio, prossimeOre, rigaSole, statisticheDopo } from '../lib/oggi'
+import { avvisoPioggia, faseViaggio, momento, notteAlle, numeriViaggio, prossimeOre, statisticheDopo } from '../lib/oggi'
 import { isClosed, toMin } from '../lib/tappa'
 import { minutesOfDay, sunForDay } from '../lib/sun'
 import { tripToday } from '../lib/today'
@@ -29,7 +29,7 @@ import { useTrip, useTrips } from '../state/trip'
 import type { DayItem, ItemStatus, Trip } from '../types'
 import { Ic } from '../ui/Sprite'
 import { Banner } from '../faraway/base'
-import { AvvisoPioggia, BigliettoPiccolo, ChecklistHome, ContoAllaRovescia, DueValori, MeteoCard, Orologio, Riepilogo, Saluto, SaldoPersone, SimboloPiatto, ValutaPiccola, type VoceHome } from '../faraway/Home'
+import { AvvisoPioggia, BigliettoPiccolo, ChecklistHome, ContoAllaRovescia, DueValori, Orologio, Riepilogo, Saluto, SaldoPersone, SimboloPiatto, ValutaPiccola, type VoceHome } from '../faraway/Home'
 import { Sv } from '../faraway/icons'
 import { RigaApribile, useUnaAperta } from '../faraway/Righe'
 import { Schermata } from '../faraway/shell'
@@ -174,10 +174,8 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
   const forecast = cityForecasts.get(city) ?? tripForecast.days
   const center = cityCenters(trip, [city])[0] ?? trip.center
   const sun = sunForDay(today, center.lat, center.lng, trip.timezone)
-  const sunTomorrow = sunForDay(dateAddDays(today, 1), center.lat, center.lng, trip.timezone)
   const hour = hourIn(now, trip.timezone)
   const ore = prossimeOre(forecast, today, hour, 24)
-  const oggiMeteo = forecast.find((d) => d.date === today)
   const nightNow = notteAlle(hour, sun)
   const rain = avvisoPioggia(ore.slice(0, 12))
 
@@ -288,18 +286,8 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
           </div>
         </div>
       </Foglio>
-      {oggiMeteo && ore.length > 0 ? (
-        <MeteoCard
-          city={city}
-          t={ore[0].t}
-          code={ore[0].code}
-          night={nightNow}
-          desc={descrizione(ore[0].code, oggiMeteo.min, nightNow)}
-          hours={ore.map((h, i) => ({ label: i === 0 ? 'Ora' : `${String(h.h).padStart(2, '0')}:00`, t: h.t, code: h.code, night: notteAlle(h.h, h.date === today ? sun : sunTomorrow), rain: (h.rain ?? 0) >= 50 || (h.mm ?? 0) >= 0.5, now: i === 0 }))}
-          sun={rigaSole(sun, sunTomorrow, nowMin)}
-        />
-      ) : null}
-      {day && tratti.length > 1 && !(rif && cittaViaggio.includes(rif)) ? <MeteoGiorno trip={trip} day={day} /> : null}
+      {/* stessa card della giornata: una per città, scorrevoli, a partire da quella di adesso. Con una località scelta, solo quella. */}
+      <MeteoGiornoCard trip={trip} day={day && !(rif && cittaViaggio.includes(rif)) ? day : { date: today, city, items: [] }} />
       {rain ? <AvvisoPioggia title={rain.title} text={rain.text} /> : null}
 
       {finishedCard}

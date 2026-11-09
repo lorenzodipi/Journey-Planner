@@ -13,7 +13,7 @@ import type { Day, Trip } from '../../types'
 const pad = (n: number) => String(n).padStart(2, '0')
 const hhmm = (min: number) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`
 
-export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Day }) {
+export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Pick<Day, 'date' | 'city' | 'items'> }) {
   const tratti = useMemo(() => cittaDelGiorno(trip, day), [trip, day])
   const citta = tratti.map((t) => t.city)
   const previsioni = useCityForecasts(trip, citta)

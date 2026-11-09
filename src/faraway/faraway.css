@@ -913,6 +913,13 @@
 .k-Meteo .nxt{display:grid;text-align:center}
 .k-Meteo .nxt span{font:400 12px/16px var(--font-sans);color:var(--ink-muted)}
 .k-Meteo .nxt b{font:700 15px/20px var(--font-sans);color:var(--ink);font-variant-numeric:tabular-nums}
+/* card stretta (320 px, o una di due scorrevoli): alba e tramonto sulla prima riga, «tra» e la barra sotto, a tutta larghezza */
+.k-Meteo{container-type:inline-size}
+@container (max-width:320px){
+  .k-Meteo .sunrow{grid-template-columns:minmax(0,1fr) minmax(0,1fr);row-gap:var(--space-md)}
+  .k-Meteo .sunrow .sm{grid-column:1/-1;order:3;padding-bottom:0}
+  .k-Meteo .sunrow .se.r{justify-self:end}
+}
 .k-Meteo .tr2{position:relative;height:6px;border-radius:3px;background:var(--surface-high);margin:0 8px}
 .k-Meteo .tr2 i{position:absolute;left:0;top:0;bottom:0;border-radius:3px}
 .k-Meteo .tr2 .mk{position:absolute;top:50%;width:24px;height:24px;margin:-16px 0 0 -16px;border-radius:50%;background:var(--surface-card);display:grid;place-items:center;box-shadow:0 0 0 1.5px var(--border-strong)}
