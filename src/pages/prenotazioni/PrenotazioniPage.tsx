@@ -2,6 +2,7 @@
 // Chiuso: tipo, titolo, stato, quando e codice. Aperto in linea: costo, dati e azioni (Copia, Codice, Link, File,
 // Collega/Scollega una tappa, Modifica, Elimina).
 import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useSearch } from 'wouter'
 import { BOOKING_BUDGET_CATEGORY, BOOKING_LABEL } from '../../lib/bookingMeta'
 import { isFileCached, openBookingFile } from '../../lib/bookingFiles'
 import { formatShort } from '../../lib/dates'
@@ -46,6 +47,25 @@ export function PrenotazioniPage() {
   const tz = trip.timezone
   const shown = useMemo(() => filtraArchivio(trip.bookings, arch).filter((b) => nelFiltro(b, filtro)), [trip.bookings, filtro, arch])
   const gruppi = useMemo(() => perGiorno(shown, tz), [shown, tz])
+
+  // da un link (es. «Prossima prenotazione» in Oggi): la prenotazione indicata si apre da sola e la pagina scorre fino a lei.
+  // Il parametro si toglie subito, anche se la prenotazione non c'è più, così ricaricando non succede di nuovo.
+  const search = useSearch()
+  const [, navigate] = useLocation()
+  const daAprire = new URLSearchParams(search).get('apri')
+  useEffect(() => {
+    if (!daAprire) return
+    navigate('/altro/prenotazioni', { replace: true })
+    if (!trip.bookings.some((b) => b.id === daAprire)) return
+    setFiltro('all')
+    setArch(FILTRI_VUOTI)
+    open.setOpen(daAprire)
+    // dopo il rendering con i filtri azzerati la riga esiste: si scorre fin lì
+    window.setTimeout(() => {
+      const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      document.getElementById(`prenotazione-${daAprire}`)?.scrollIntoView({ block: 'center', behavior: calm ? 'auto' : 'smooth' })
+    }, 60)
+  }, [daAprire]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     void Promise.all(trip.bookings.filter((b) => b.filePath).map(async (b) => ((await isFileCached(b.filePath as string)) ? (b.filePath as string) : null))).then((r) => setOffline(new Set(r.filter((x): x is string => !!x))))
@@ -140,7 +160,7 @@ export function PrenotazioniPage() {
               ['Nota', b.notes ?? ''],
             ]
             return (
-              <div key={b.id} className="k-TicketOrizzontale">
+              <div key={b.id} id={`prenotazione-${b.id}`} className="k-TicketOrizzontale">
                 <div className={cx('tk tv th', stato !== 'confirmed' && 'todo', isOpen && 'open')}>
                   <div className="a v-top">
                     <button type="button" className="hdl" aria-expanded={isOpen} onClick={() => open.toggle(b.id)}>

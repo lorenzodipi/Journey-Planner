@@ -1,7 +1,7 @@
 // Pagina Checklist (mock Fa-51, #41, FRD LIST-001…012): «Tutti» (lista comune, spunte personali) | «Solo mie» (lista privata),
 // avanzamento mio, sezioni per categoria, avatar con «2 di 4», apertura in linea, «Seleziona» e «Duplica da un viaggio».
-import { useMemo, useState } from 'react'
-import { useSearch } from 'wouter'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useSearch } from 'wouter'
 import { doneCount, inLista, mioAvanzamento, sezioni, spunteDi, type ListaChecklist } from '../../lib/checklist'
 import { formatShort } from '../../lib/dates'
 import { discOf, initials } from '../../state/me'
@@ -27,6 +27,11 @@ export function ChecklistPage() {
   const v2 = !!trip.checklistV2
   const [lista, setLista] = useState<ListaChecklist>('all')
   const [sheet, setSheet] = useState<{ item?: ChecklistItem } | null>(() => (new URLSearchParams(search).get('nuova') ? {} : null))
+  // «Nuova voce» arriva da un link (Oggi): il foglio si è aperto, il parametro si toglie perché ricaricando non si riapra
+  const [, navigate] = useLocation()
+  useEffect(() => {
+    if (new URLSearchParams(search).get('nuova')) navigate('/altro/checklist', { replace: true })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [dup, setDup] = useState(false)
   const [pending, setPending] = useState<Set<string>>(new Set())
   const [selecting, setSelecting] = useState(false)
