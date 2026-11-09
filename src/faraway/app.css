@@ -61,6 +61,7 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-in input[type=time],.fa-in input[type=date]{-webkit-appearance:none;appearance:none;min-height:0;background:none}
 .fa-in select{-webkit-appearance:none;appearance:none;background:none;border:0;cursor:pointer}
 .fa-in select:not([aria-label="Valuta"]){padding-right:8px}
+.fa-in select{text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
 .fa-fld>*{min-width:0}
 .fa-in input,.fa-in textarea{width:0}
 .fa-in select[aria-label="Valuta"]{flex:none;width:auto}

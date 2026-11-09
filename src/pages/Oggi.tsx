@@ -15,7 +15,7 @@ import { groupDays, rangeText, type DayGroup } from '../lib/dayGroups'
 import { riassunto } from '../lib/spese'
 import { StepperViaggio, type TappaViaggio } from '../faraway/StepperViaggio'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
-import { avvisoPioggia, faseViaggio, momento, notteAlle, numeriViaggio, prossimeOre, statisticheDopo } from '../lib/oggi'
+import { avvisoPioggia, faseViaggio, notteAlle, numeriViaggio, prossimeOre, statisticheDopo } from '../lib/oggi'
 import { isClosed, toMin } from '../lib/tappa'
 import { minutesOfDay, sunForDay } from '../lib/sun'
 import { tripToday } from '../lib/today'
@@ -267,7 +267,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
       {showClocks ? (
         <Orologio
           here={{ label: city, time: hhmmIn(now, trip.timezone), night: nightNow, sub: nightNow ? 'Notte' : 'Giorno' }}
-          home={{ label: `${homeName}, ${momento(homeHour)}`, time: hhmmIn(now, homeTz), night: homeHour < 6 || homeHour >= 20 }}
+          home={{ label: homeName, time: hhmmIn(now, homeTz), night: homeHour < 6 || homeHour >= 20 }}
         />
       ) : null}
       {cittaViaggio.length > 1 ? (

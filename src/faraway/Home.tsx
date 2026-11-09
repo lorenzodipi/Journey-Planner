@@ -258,7 +258,7 @@ export function Orologio({ here, home }: { here: { label: string; time: string; 
         <div className="sd" role="text" aria-label={`${here.label}, ${here.time}, ${here.night ? 'notte' : 'giorno'}`}>
           <div aria-hidden="true" className="lb">
             <span className={cx('ph', here.night ? 'notte' : 'giorno')}>{here.night ? <MoonIc /> : <SunIc />}</span>
-            {here.label}
+            <span className="nm">{here.label}</span>
           </div>
           <Cifre hhmm={here.time} />
           <div aria-hidden="true" className="sb">
@@ -269,7 +269,7 @@ export function Orologio({ here, home }: { here: { label: string; time: string; 
         <div className="sd dim" role="text" aria-label={`${home.label}, ${home.time}`}>
           <div aria-hidden="true" className="lb">
             <span className={cx('ph', home.night ? 'notte' : 'giorno')}>{home.night ? <MoonIc /> : <SunIc />}</span>
-            {home.label}
+            <span className="nm">{home.label}</span>
           </div>
           <Cifre hhmm={home.time} />
           <div aria-hidden="true" className="sb">

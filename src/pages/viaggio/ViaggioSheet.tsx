@@ -19,6 +19,8 @@ import type { MezzoViaggio, Trip, TripCountry } from '../../types'
 /** Soglie per andare a piedi, in minuti (0 = mai). */
 const SOGLIE: [number, string][] = [[5, '5 min'], [10, '10 min'], [15, '15 min'], [20, '20 min'], [30, '30 min'], [0, 'Mai']]
 import { Avatars, Banner, Campo, Chip, Pulsante } from '../../faraway/base'
+import { CampoPaese } from '../../faraway/CampoPaese'
+import { CampoValuta } from '../../faraway/CampoValuta'
 import { Riquadri } from '../../faraway/Moduli'
 import { mezzoSuggerito, SOGLIA_PIEDI_MIN } from '../../lib/spostamenti'
 import { Foglio, useConferma } from '../../faraway/Foglio'
@@ -90,7 +92,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
   const meta = auth.session?.user.user_metadata as { full_name?: string; name?: string } | undefined
 
   const [title, setTitle] = useState(trip?.title ?? '')
-  const [origin, setOrigin] = useState(countryByCode(trip?.originCountry)?.name ?? '')
+  const [origin, setOrigin] = useState(trip?.originCountry ?? '')
   const [home, setHome] = useState(trip?.baseCurrency ?? 'EUR')
   const [startDate, setStartDate] = useState(trip?.startDate ?? '')
   const [endDate, setEndDate] = useState(trip?.endDate ?? '')
@@ -151,9 +153,9 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
     const start = last?.endDate || startDate
     setPaesi([...paesi, { id: `nuovo-${nextId.current++}`, country: '', name: '', currency: '', timezone: '', startDate: start && endDate && start > endDate ? endDate : start, endDate: endDate, rate: '', fonte: 'attesa', quando: false, cambio: false }])
   }
-  function cambiaCasa(name: string) {
-    setOrigin(name)
-    const c = countryByName(name)
+  function cambiaCasa(code: string) {
+    setOrigin(code)
+    const c = countryByCode(code)
     if (c) {
       setHome(c.currency)
       setPaesi((cur) => cur.map((p) => (p.fonte === 'mano' ? p : { ...p, rate: '', fonte: p.currency === c.currency ? 'salvato' : 'attesa' })))
@@ -199,7 +201,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
     const paeseInfo = countryByCode(principale.country)
     const altri: Record<string, number> = { ...(trip?.fxRates ?? {}) }
     for (const c of list) if (c.id !== principale.id && c.currency && c.currency !== home && c.fxRate) altri[c.currency] = c.fxRate
-    const origine = countryByName(origin)
+    const origine = countryByCode(origin)
     const input: TripInput = {
       title: title.trim() || principale.name,
       destination: principale.name,
@@ -304,8 +306,8 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
 
         <section style={{ display: 'grid', gap: 16 }}>
           <h2 className="fa-h3">Da dove parti</h2>
-          <Campo label="Paese di partenza" icon="globe" value={origin} onChange={cambiaCasa} list="paesi-elenco" autoComplete="off" placeholder="Scegli il paese" />
-          <Campo label="Valuta di casa" icon="bag" value={home} onChange={(v) => setHome(v.trim().toUpperCase().slice(0, 3))} placeholder="EUR" maxLength={3} hint={`${/^[A-Z]{3}$/.test(home) ? `${nomeValuta(home)}. ` : ''}Gli importi del viaggio si convertono in questa valuta.`} />
+          <CampoPaese label="Paese di partenza" value={origin} onChange={cambiaCasa} />
+          <CampoValuta label="Valuta di casa" value={home} onChange={setHome} tutte hint="Gli importi del viaggio si convertono in questa valuta." />
         </section>
 
         <section style={{ display: 'grid', gap: 16 }}>

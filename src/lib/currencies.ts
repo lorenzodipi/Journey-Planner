@@ -41,3 +41,23 @@ export function currencyOptions(...extra: string[]): SelectOption[] {
     return { value: code, label: code, hint: [name, symbol !== code ? symbol : ''].filter(Boolean).join(' · ') || undefined }
   })
 }
+
+export interface GruppoValute {
+  gruppo: string
+  valute: { code: string; label: string }[]
+}
+
+/** Per una <select> con tutte le valute: prima le più usate (e quelle in `extra`, es. il valore attuale), poi tutte le altre per codice. Ogni voce è «EUR · Euro». */
+export function currencyGroups(...extra: string[]): GruppoValute[] {
+  const voce = (code: string) => {
+    const nome = currencyName(code)
+    return { code, label: nome ? `${code} · ${nome}` : code }
+  }
+  const valide = (list: string[]) => list.map((c) => c.trim().toUpperCase()).filter((c) => /^[A-Z]{3}$/.test(c))
+  const prime = Array.from(new Set([...valide(extra).filter((c) => !COMMON_CURRENCIES.includes(c)), ...COMMON_CURRENCIES]))
+  const altre = Array.from(new Set(valide(allCurrencies()))).filter((c) => !prime.includes(c)).sort()
+  return [
+    { gruppo: 'Più usate', valute: prime.map(voce) },
+    { gruppo: 'Tutte le valute', valute: altre.map(voce) },
+  ]
+}
