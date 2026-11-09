@@ -88,6 +88,12 @@ export function App() {
     setDaScegliere(false)
   }, [status, trip, daScegliere])
 
+  // uscendo dall'account (o con la sessione scaduta) l'indirizzo torna a «/»: chi entra dopo non deve ritrovarsi nell'ultima pagina vista
+  // dall'account precedente (es. il Profilo), ma nella scelta del viaggio
+  useEffect(() => {
+    if (auth.status === 'signed-out') navigateClean('/', { replace: true })
+  }, [auth.status])
+
   // avvio, errore e caricamento con gli stati del design system (#25, #49)
   const saved = loadSnapshot()
   const title = (saved?.trips.find((t) => t.id === loadActiveId()) ?? saved?.trips[0])?.title ?? 'Faraway'
