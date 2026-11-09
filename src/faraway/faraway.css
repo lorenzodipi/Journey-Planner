@@ -888,7 +888,7 @@
 .k-Meteo .big-ic{margin-top:8px;flex:none}
 .k-Meteo .wc-top>div:first-child{min-width:0}
 .k-Meteo .rule{border-top:2px dashed var(--border-strong);opacity:.6;margin:var(--space-lg) 0 var(--space-sm)}
-.k-Meteo .hours{list-style:none;margin:0 calc(var(--space-xl)*-1);padding:var(--space-xs) var(--space-xl) var(--space-sm);display:flex;gap:var(--space-xxs);overflow-x:auto;scroll-snap-type:x proximity;scroll-padding-inline:var(--space-xl);scrollbar-width:none;-webkit-mask:linear-gradient(90deg,#000 calc(100% - 40px),#0000);mask:linear-gradient(90deg,#000 calc(100% - 40px),#0000)}
+.k-Meteo .hours{list-style:none;margin:0 calc(var(--space-xl)*-1);padding:var(--space-xs) var(--space-xl) var(--space-sm);display:flex;gap:var(--space-xxs);overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scroll-padding-inline:var(--space-xl);scrollbar-width:none;-webkit-mask:linear-gradient(90deg,#000 calc(100% - 40px),#0000);mask:linear-gradient(90deg,#000 calc(100% - 40px),#0000)}
 .k-Meteo .hours::-webkit-scrollbar{display:none}
 .k-Meteo .hours:focus-visible{outline:3px solid var(--focus);outline-offset:-3px;border-radius:var(--radius-md)}
 .k-Meteo .hr{flex:none;width:66px;scroll-snap-align:start;display:grid;justify-items:center;gap:8px;padding:var(--space-sm) 0;border-radius:var(--radius-lg)}
