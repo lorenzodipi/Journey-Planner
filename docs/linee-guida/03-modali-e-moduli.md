@@ -18,6 +18,8 @@ Tutti usano `<dialog>` nativo aperto con `showModal()`: focus intrappolato, sfon
 - **Corpo**: scorre da solo, il resto del foglio no.
 - **Piede**: un solo pulsante primario, fisso in basso e sempre visibile («Salva il trasporto»). Le azioni secondarie (Elimina) stanno nel corpo, in fondo.
 - Il foglio segue il contenuto fino al 90% dello schermo, poi scorre. Con la tastiera aperta sale sopra di essa.
+- Si chiude trascinandolo in basso dalla maniglia o dalla testata: queste due superfici hanno `touch-action: none`, altrimenti il browser prende il gesto come scroll, annulla il trascinamento e il foglio torna su.
+- I pulsanti in fondo al foglio (Salva, Elimina) stanno insieme a 8 px, anche quando sono nel corpo: non prendono lo spazio tra le sezioni.
 
 ## Moduli: l'ordine delle cose
 
@@ -81,6 +83,6 @@ Lo stesso blocco ha **lo stesso nome e lo stesso ordine** in tutti i fogli.
 ## Modale al centro
 
 - Disco con icona sopra il titolo: cestino rosso per le conferme definitive, spunta verde per gli esiti.
-- Ritmo: 24 px dal disco al titolo, 8 px tra titolo e testo (stanno insieme), 32 px dal testo ai pulsanti, 16 px tra un pulsante e l'altro.
+- Ritmo: 24 px dal disco al titolo, 8 px tra titolo e testo (stanno insieme), 24 px dal testo ai pulsanti, 8 px tra un pulsante e l'altro (i pulsanti stanno insieme).
 - Le conferme (`alert`) non si chiudono toccando il velo, solo con i pulsanti, Esc o indietro.
 - All'apertura il focus va al modale, non al primo pulsante.

@@ -183,6 +183,8 @@ function Elenco({ setVista }: { setVista: (v: Vista) => void }) {
     card.setOpen(null)
     setSelecting(true)
     setSel(new Set(id ? [id] : []))
+    // dal cestino la pagina cambia aspetto (niente filtri, «Seleziona tutti»): si riparte dall'inizio. Da una card si resta lì.
+    if (!id) window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
   }
   const toggleSel = (id: string) =>
     setSel((prev) => {
@@ -224,10 +226,10 @@ function Elenco({ setVista }: { setVista: (v: Vista) => void }) {
       sub={sottotitolo(trip.places)}
       actions={
         empty ? (
-          <PulsanteIcona icon="search" label="Cerca un luogo" pressed={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />
+          <PulsanteIcona icon={searchOpen ? 'close' : 'search'} label={searchOpen ? 'Chiudi la ricerca' : 'Cerca un luogo'} expanded={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />
         ) : (
           <>
-            <PulsanteIcona icon="search" label="Cerca un luogo" pressed={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />
+            <PulsanteIcona icon={searchOpen ? 'close' : 'search'} label={searchOpen ? 'Chiudi la ricerca' : 'Cerca un luogo'} expanded={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />
             <PulsanteIcona className="dng" icon="trash" label="Elimina dei luoghi" onPress={() => startSelecting()} />
           </>
         )
@@ -503,7 +505,7 @@ function Mappa({ setVista }: { setVista: (v: Vista) => void }) {
     <Schermata
       bare
       className="fa-mapmode"
-      bar={<BarraGrande title="Luoghi" sub={sottotitolo(trip.places)} actions={<PulsanteIcona icon="search" label="Cerca un luogo" pressed={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />} />}
+      bar={<BarraGrande title="Luoghi" sub={sottotitolo(trip.places)} actions={<PulsanteIcona icon={searchOpen ? 'close' : 'search'} label={searchOpen ? 'Chiudi la ricerca' : 'Cerca un luogo'} expanded={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />} />}
       overlay={
         <>
           {fabHidden ? null : (

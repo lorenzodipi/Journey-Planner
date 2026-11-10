@@ -39,7 +39,8 @@ dialog.fa-dlg>.fa-sheet{position:absolute;max-height:calc(100% - max(env(safe-ar
 dialog.fa-dlg>.fa-sheet.full{max-height:none}
 dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 @keyframes fa-up{from{transform:translateY(100%)}to{transform:none}}
-.fa-sheet .grab{touch-action:none}
+/* superfici del trascinamento: il gesto verso il basso è nostro, il browser non deve prenderlo (e annullarlo) come scroll */
+.fa-sheet .grab,.fa-sheet>.hd,.fa-sheet>.st{touch-action:none}
 .fa-sheet .hd .fa-ib{justify-self:start}
 .fa-sheet .hd>:last-child{justify-self:end}
 .fa-sheet form{display:grid;gap:var(--gap-campi,24px)}
@@ -568,7 +569,7 @@ dialog.fa-mod .dk.ok{background:var(--acqua-soft);color:var(--acqua-ink)}
 dialog.fa-mod .dk.danger{background:color-mix(in srgb,var(--danger) 12%,var(--surface-card));color:var(--danger)}
 dialog.fa-mod .tt{margin:0;font:600 20px/26px var(--font-display,inherit);letter-spacing:-.01em}
 dialog.fa-mod .tx{margin:0;font:400 16px/24px var(--font-sans,inherit);color:var(--ink-muted);text-wrap:pretty}
-dialog.fa-mod .ac{display:grid;gap:16px;width:100%;margin-top:24px}
+dialog.fa-mod .ac{display:grid;gap:8px;width:100%;margin-top:16px}
 dialog.fa-mod .ac .fa-btn{width:100%}
 [data-theme="dark"] dialog.fa-mod .box{box-shadow:0 0 0 1px var(--hairline),0 24px 48px -16px rgba(0,0,0,.6)}
 dialog.fa-mod:focus{outline:none}

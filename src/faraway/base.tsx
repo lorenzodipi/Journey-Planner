@@ -2,7 +2,7 @@
 // (stesse API: Button con color/size/iconLeading/onPress, Input, Toggle, Badge, Avatar, sopra
 // React Aria Components) ma con l'aspetto del mock (classi .fa-* di faraway.css).
 import type { ReactNode } from 'react'
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Button as AriaButton, Link as AriaLink, Menu as AriaMenu, MenuItem as AriaMenuItem, MenuTrigger as AriaMenuTrigger, OverlayArrow as AriaOverlayArrow, Popover as AriaPopover, Switch as AriaSwitch } from 'react-aria-components'
 import { cx } from './cx'
@@ -161,8 +161,19 @@ export function segnaposto(label: string, type: string, textarea: boolean): stri
 }
 
 /** Campo del design system (Untitled UI `Input`): 56px, etichetta sopra, aiuto o errore sotto. */
-export function Campo({ label, value, onChange, placeholder, type = 'text', inputMode, icon: ic, hint, error, positive, textarea, trailing, hideLabel, da00, onBlur, ...rest }: InputProps) {
+/** Mette il focus senza far scorrere la pagina: l'`autoFocus` del browser, con il campo in una testa fissa, saltava in cima e poi tornava giù. */
+export function useFocoIniziale<T extends HTMLElement>(attivo: boolean | undefined) {
+  const ref = useRef<T>(null)
+  useEffect(() => {
+    if (attivo) ref.current?.focus({ preventScroll: true })
+  }, [attivo])
+  return ref
+}
+
+export function Campo({ label, value, onChange, placeholder, type = 'text', inputMode, icon: ic, hint, error, positive, textarea, trailing, hideLabel, da00, onBlur, autoFocus, ...rest }: InputProps) {
   const id = useId()
+  const foco = useFocoIniziale<HTMLInputElement>(autoFocus && !textarea)
+  const focoTa = useFocoIniziale<HTMLTextAreaElement>(autoFocus && textarea)
   const [anteprima, setAnteprima] = useState(false)
   const helpId = `${id}-h`
   const described = error || hint || positive ? helpId : undefined
@@ -177,9 +188,9 @@ export function Campo({ label, value, onChange, placeholder, type = 'text', inpu
       <span className={cx('fa-in', textarea && 'ta', error && 'bad', pickerVuoto && 'vuoto')}>
         {ic ? <Sv name={ic} size={20} /> : null}
         {textarea ? (
-          <textarea id={id} value={value} placeholder={ph} onChange={(e) => onChange(e.currentTarget.value)} aria-invalid={error ? true : undefined} aria-describedby={described} maxLength={rest.maxLength} rows={3} />
+          <textarea ref={focoTa} id={id} value={value} placeholder={ph} onChange={(e) => onChange(e.currentTarget.value)} aria-invalid={error ? true : undefined} aria-describedby={described} maxLength={rest.maxLength} rows={3} />
         ) : (
-          <input id={id} type={type} inputMode={inputMode} value={mostrato} placeholder={ph} onChange={(e) => { setAnteprima(false); onChange(e.currentTarget.value) }} onBlur={() => { setAnteprima(false); onBlur?.() }} onClick={type === 'time' || type === 'date' ? (e) => { const el = e.currentTarget; if (da00 && type === 'time' && !value) flushSync(() => setAnteprima(true)); apriSelettore(el) } : undefined} aria-invalid={error ? true : undefined} aria-describedby={described} {...rest} />
+          <input ref={foco} id={id} type={type} inputMode={inputMode} value={mostrato} placeholder={ph} onChange={(e) => { setAnteprima(false); onChange(e.currentTarget.value) }} onBlur={() => { setAnteprima(false); onBlur?.() }} onClick={type === 'time' || type === 'date' ? (e) => { const el = e.currentTarget; if (da00 && type === 'time' && !value) flushSync(() => setAnteprima(true)); apriSelettore(el) } : undefined} aria-invalid={error ? true : undefined} aria-describedby={described} {...rest} />
         )}
         {pickerVuoto ? <span className="ph" aria-hidden="true">{ph}</span> : null}
         {trailing}
@@ -302,7 +313,7 @@ export function Chip({ children, on, onPress, icon: ic, label }: { children: Rea
   return (
     <AriaButton className={cx('fa-chip', on && 'on')} aria-pressed={on} onPress={(e) => (eScorrimento(e.pointerType) ? undefined : onPress?.())} aria-label={label}>
       {ic}
-      {children}
+      {children != null && children !== false ? <span className="t">{children}</span> : null}
     </AriaButton>
   )
 }

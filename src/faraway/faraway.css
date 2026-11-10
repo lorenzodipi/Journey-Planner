@@ -86,6 +86,10 @@ html{scroll-padding-top:var(--head-h,0px)}
 .fa-chip{height:36px;padding:0 16px;border-radius:9999px;border:0;background:var(--surface-soft);color:var(--ink);font:600 14px/20px var(--font-sans);display:inline-flex;align-items:center;gap:8px;white-space:nowrap;flex:none}
 .fa-chip.on{background:var(--azzurro);color:var(--on-azzurro)}
 .fa-chip svg{width:18px;height:18px}
+/* un nome lungo (categoria, città) non esce dalla riga: il chip non supera il suo contenitore e il testo finisce con i tre puntini */
+.fa-chip{max-width:100%;min-width:0}
+.fa-chip>.t{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.fa-chip>svg{flex:none}
 .fa-chips{display:flex;gap:8px;overflow:hidden;margin:0 -16px;padding:8px 16px}
 .fa-chips.scroll{mask:linear-gradient(90deg,#000 calc(100% - 32px),#0000)}
 
@@ -2432,6 +2436,9 @@ html,body{margin:0;background:var(--canvas)}
 @container (max-width:340px){.fa-2c .fa-in:has(input[type=date])>svg,.fa-2c .fa-in:has(input[type=time])>svg,.fa-perc .dt .fa-in>svg{display:none}.fa-2c .fa-in:has(input[type=date]) .ph,.fa-2c .fa-in:has(input[type=time]) .ph,.fa-perc .dt .fa-in .ph{left:16px;right:16px}}
 /* Riquadri con l'immagine e la riga di conseguenza */
 .k-ChecklistNuova .sg .seg.fa-riq{min-height:64px;gap:4px;padding:8px 4px;color:var(--ink);min-width:0}
+/* nomi lunghi (categorie scritte a mano): vanno a capo dentro il riquadro, al massimo su due righe, poi i tre puntini */
+.k-ChecklistNuova .sg .seg.fa-riq{grid-template-columns:minmax(0,1fr)}
+.k-ChecklistNuova .sg .seg.fa-riq .lb,.k-ChecklistNuova .sg .seg.fa-riq .sb{max-width:100%;min-width:0;overflow-wrap:anywhere;hyphens:auto;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
 .k-ChecklistNuova .sg .seg.fa-riq .ic{width:24px;height:24px}
 .k-ChecklistNuova .sg .seg.fa-riq .ic.gl{width:36px;height:36px;margin:-6px 0;fill:currentColor}
 .k-ChecklistNuova .sg .seg.fa-riq .sb{font:400 13px/18px var(--font-sans);color:var(--ink-muted);font-variant-numeric:tabular-nums}

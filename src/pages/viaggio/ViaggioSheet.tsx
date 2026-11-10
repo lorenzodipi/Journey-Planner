@@ -343,25 +343,25 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
                   </div>
                 )}
                 {p.name && countryByName(p.name) ? (
-                  <div style={{ display: 'grid', gap: 8, borderTop: '1px solid var(--hairline)', paddingTop: 16 }}>
-                    <button type="button" aria-expanded={p.quando} onClick={() => setPaese(p.id, { quando: !p.quando })} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, background: 'none', border: 0, padding: '8px 0', minHeight: 32, font: 'inherit', color: 'inherit', textAlign: 'left' }}>
+                  <div style={{ display: 'grid', gap: 0, borderTop: '1px solid var(--hairline)', paddingTop: 8 }}>
+                    <button type="button" aria-expanded={p.quando} onClick={() => setPaese(p.id, { quando: !p.quando })} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, background: 'none', border: 0, padding: '4px 0', minHeight: 32, font: 'inherit', color: 'inherit', textAlign: 'left' }}>
                       <span className="fa-m">Quando</span>
                       <span className="fa-b">{intervallo(p.startDate, p.endDate)}{paesi.some((x, j) => j !== i && x.startDate <= p.endDate && x.endDate >= p.startDate && p.startDate === x.endDate) ? ' · scalo' : ''}</span>
                     </button>
                     {p.quando ? (
-                      <div className="fa-2c">
+                      <div className="fa-2c" style={{ margin: '8px 0 16px' }}>
                         <Campo label="Dal" type="date" icon="cal" value={p.startDate} onChange={(v) => setPaese(p.id, { startDate: v, endDate: p.endDate < v ? v : p.endDate })} min={startDate || undefined} max={endDate || undefined} />
                         <Campo label="Al" type="date" icon="cal" value={p.endDate} onChange={(v) => setPaese(p.id, { endDate: v })} min={p.startDate || undefined} max={endDate || undefined} />
                       </div>
                     ) : null}
                     {!stessa ? (
                       <>
-                        <button type="button" aria-expanded={p.cambio} onClick={() => setPaese(p.id, { cambio: !p.cambio })} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, background: 'none', border: 0, padding: '8px 0', minHeight: 32, font: 'inherit', color: 'inherit', textAlign: 'left' }}>
+                        <button type="button" aria-expanded={p.cambio} onClick={() => setPaese(p.id, { cambio: !p.cambio })} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16, background: 'none', border: 0, padding: '4px 0', minHeight: 32, font: 'inherit', color: 'inherit', textAlign: 'left' }}>
                           <span className="fa-m">Cambio</span>
                           <span className="fa-b" style={{ fontVariantNumeric: 'tabular-nums' }}>{n ? `1 ${casaSym} = ${p.rate} ${symbolOf(p.currency)}` : p.fonte === 'attesa' ? 'Lo leggo…' : 'Da scrivere'}</span>
                         </button>
                         {p.cambio ? (
-                          <div style={{ display: 'grid', gap: 8 }}>
+                          <div style={{ display: 'grid', gap: 8, margin: '8px 0' }}>
                             <Campo label={`1 ${casaSym} = ? ${p.currency}`} inputMode="decimal" value={p.rate} onChange={(v) => setPaese(p.id, { rate: v, fonte: 'mano' })} placeholder="es. 4,02" />
                             <Pulsante size="sm" color="secondary" iconLeading="refresh" onPress={() => setPaese(p.id, { fonte: 'attesa', rate: '' })}>
                               Aggiorna dal servizio
@@ -463,15 +463,17 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
           )}
         </section>
 
-        <Pulsante type="submit" isLoading={busy}>
-          {editing ? 'Salva modifiche' : 'Crea il viaggio'}
-        </Pulsante>
-
-        {editing && organizza ? (
-          <Pulsante color="tertiary-destructive" iconLeading="trash" isLoading={occ === 'elimina'} onPress={() => void elimina()}>
-            Elimina viaggio
+        {/* i pulsanti di fine foglio stanno insieme: non prendono lo spazio tra le sezioni */}
+        <div style={{ display: 'grid', gap: 8 }}>
+          <Pulsante type="submit" isLoading={busy}>
+            {editing ? 'Salva modifiche' : 'Crea il viaggio'}
           </Pulsante>
-        ) : null}
+          {editing && organizza ? (
+            <Pulsante color="tertiary-destructive" iconLeading="trash" isLoading={occ === 'elimina'} onPress={() => void elimina()}>
+              Elimina viaggio
+            </Pulsante>
+          ) : null}
+        </div>
         <datalist id="paesi-elenco">
           {nomiPaesi.map((n) => (
             <option key={n} value={n} />

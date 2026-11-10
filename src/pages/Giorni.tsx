@@ -10,7 +10,7 @@ import { tripToday } from '../lib/today'
 import { useTrip } from '../state/trip'
 import { nowWeather, tripCities, useCityForecastsStato } from '../state/cityForecast'
 import { Ic } from '../ui/Sprite'
-import { PulsanteIcona } from '../faraway/base'
+import { PulsanteIcona, useFocoIniziale } from '../faraway/base'
 import { cx } from '../faraway/cx'
 import { BarraGrande, Schermata } from '../faraway/shell'
 import { Wx, wxKind } from '../faraway/Wx'
@@ -58,6 +58,7 @@ export function Giorni() {
   const today = tripToday(trip)
   const [searching, setSearching] = useState(false)
   const [query, setQuery] = useState('')
+  const focoRicerca = useFocoIniziale<HTMLInputElement>(searching)
   const cities = useMemo(() => tripCities(trip), [trip])
   const { map: forecasts, inAttesa } = useCityForecastsStato(trip, cities)
   const groups = useMemo(() => groupDays(trip, today), [trip, today])
@@ -92,7 +93,7 @@ export function Giorni() {
             </label>
             <span className="fa-in">
               <Sv name="search" size={20} />
-              <input id="cerca-giorni" type="search" autoFocus value={query} onChange={(e) => setQuery(e.currentTarget.value)} placeholder="Città, tappa o titolo" enterKeyHint="search" />
+              <input ref={focoRicerca} id="cerca-giorni" type="search" value={query} onChange={(e) => setQuery(e.currentTarget.value)} placeholder="Città, tappa o titolo" enterKeyHint="search" />
             </span>
           </div>
         ) : null

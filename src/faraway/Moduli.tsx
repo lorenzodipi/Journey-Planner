@@ -128,7 +128,7 @@ export function Riquadri<T extends string>({ label, cols, value, options, onChan
         {options.map((o) => (
           <button key={o.value} type="button" className={cx('seg', 'fa-riq', value === o.value && 'on')} aria-pressed={value === o.value} onClick={() => onChange(deselezionabile ? alterna(value, o.value) : o.value)}>
             {o.glifo ? <Ic name={o.glifo} size={36} className="gl" /> : o.icona ? <Sv name={o.icona} size={24} className="ic" /> : null}
-            <span className="lb">{o.label}</span>
+            <span className="lb" title={o.label}>{o.label}</span>
             {o.sub ? <span className="sb">{o.sub}</span> : null}
           </button>
         ))}
