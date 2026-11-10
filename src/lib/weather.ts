@@ -29,6 +29,7 @@ export interface DayWeather {
 }
 
 export const FORECAST_DAYS = 16
+const FORECAST_TIMEOUT_MS = 10_000
 
 export function weatherLabel(code: number): { label: string; icon: string } {
   if (code === 0) return { label: 'Sereno', icon: '☀️' }
@@ -128,7 +129,10 @@ export function forecastUrl(lat: number, lng: number, timeZone: string): string 
 }
 
 export async function fetchForecast(lat: number, lng: number, timeZone: string): Promise<DayWeather[]> {
-  const res = await fetch(forecastUrl(lat, lng, timeZone))
+  // una richiesta che non risponde non deve lasciare il caricamento acceso per sempre
+  const stop = new AbortController()
+  const timer = setTimeout(() => stop.abort(), FORECAST_TIMEOUT_MS)
+  const res = await fetch(forecastUrl(lat, lng, timeZone), { signal: stop.signal }).finally(() => clearTimeout(timer))
   if (!res.ok) throw new Error('Previsioni non raggiungibili.')
   const days = parseForecast(await res.json())
   if (days.length === 0) throw new Error('Previsioni non disponibili.')

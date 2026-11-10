@@ -16,7 +16,7 @@
 .fa-sw[data-focus-visible] .fa-tr{outline:3px solid var(--focus);outline-offset:2px}
 .fa-sw[data-disabled]{opacity:.4}
 .fa-ib{position:relative}
-.fa-avbtn{width:44px;height:44px;padding:0;border:0;border-radius:50%;background:none;display:grid;place-items:center;cursor:pointer;touch-action:manipulation}
+.fa-avbtn{width:44px;height:44px;padding:0;border:0;border-radius:50%;background:none;display:grid;place-items:center;cursor:pointer;touch-action:pan-x pan-y pinch-zoom}
 .fa-avbtn[data-pressed]{transform:scale(.96)}
 .fa-avbtn[data-focus-visible]{outline:3px solid var(--focus);outline-offset:2px}
 .fa-ibn{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 8px;border-radius:9999px;background:var(--azzurro-solid);color:var(--on-azzurro-solid);font:600 11px/18px var(--font-sans)}
@@ -42,7 +42,7 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-sheet .grab{touch-action:none}
 .fa-sheet .hd .fa-ib{justify-self:start}
 .fa-sheet .hd>:last-child{justify-self:end}
-.fa-sheet form{display:grid;gap:16px}
+.fa-sheet form{display:grid;gap:var(--gap-campi,24px)}
 
 /* righe che si aprono in linea */
 .fa-xr>.fa-row{cursor:pointer}
@@ -563,12 +563,12 @@ dialog.fa-mod .box{width:100%;max-width:360px;box-sizing:border-box;padding:24px
 dialog.fa-mod[open] .box{animation:fa-mod-in 200ms cubic-bezier(.23,1,.32,1)}
 @keyframes fa-mod-in{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){dialog.fa-mod[open] .box{animation:fa-mod-fade 150ms ease-out}@keyframes fa-mod-fade{from{opacity:0}to{opacity:1}}}
-dialog.fa-mod .dk{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;margin-bottom:8px}
+dialog.fa-mod .dk{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;margin-bottom:16px}
 dialog.fa-mod .dk.ok{background:var(--acqua-soft);color:var(--acqua-ink)}
 dialog.fa-mod .dk.danger{background:color-mix(in srgb,var(--danger) 12%,var(--surface-card));color:var(--danger)}
 dialog.fa-mod .tt{margin:0;font:600 20px/26px var(--font-display,inherit);letter-spacing:-.01em}
 dialog.fa-mod .tx{margin:0;font:400 16px/24px var(--font-sans,inherit);color:var(--ink-muted);text-wrap:pretty}
-dialog.fa-mod .ac{display:grid;gap:8px;width:100%;margin-top:16px}
+dialog.fa-mod .ac{display:grid;gap:16px;width:100%;margin-top:24px}
 dialog.fa-mod .ac .fa-btn{width:100%}
 [data-theme="dark"] dialog.fa-mod .box{box-shadow:0 0 0 1px var(--hairline),0 24px 48px -16px rgba(0,0,0,.6)}
 dialog.fa-mod:focus{outline:none}

@@ -43,8 +43,19 @@ export function tripCities(trip: Pick<Trip, 'days'>): string[] {
   return out
 }
 
+export interface PrevisioniCitta {
+  map: Map<string, DayWeather[]>
+  /** città di cui non c'è ancora nulla sul telefono e le previsioni stanno arrivando: lì va lo scheletro */
+  inAttesa: ReadonlySet<string>
+}
+
 /** Previsioni per città, dalla copia sul telefono e poi aggiornate se c'è rete (al massimo ogni 3 ore). */
 export function useCityForecasts(trip: Pick<Trip, 'places' | 'destination' | 'center' | 'timezone' | 'startDate' | 'endDate'>, cities: string[]): Map<string, DayWeather[]> {
+  return useCityForecastsStato(trip, cities).map
+}
+
+/** Come `useCityForecasts`, ma dice anche per quali città si sta ancora aspettando la prima risposta. */
+export function useCityForecastsStato(trip: Pick<Trip, 'places' | 'destination' | 'center' | 'timezone' | 'startDate' | 'endDate'>, cities: string[]): PrevisioniCitta {
   const points = useMemo(() => cityCenters(trip, cities), [trip, cities.join('|')]) // eslint-disable-line react-hooks/exhaustive-deps
   const read = () => {
     const m = new Map<string, DayWeather[]>()
@@ -54,14 +65,21 @@ export function useCityForecasts(trip: Pick<Trip, 'places' | 'destination' | 'ce
     }
     return m
   }
+  const serve = () => {
+    const today = tripToday(trip)
+    return daysBetween(today, trip.endDate) >= 0 && daysBetween(today, trip.startDate) < FORECAST_DAYS
+  }
+  // senza copia sul telefono, con rete e un viaggio nel raggio delle previsioni, la risposta sta per arrivare
+  const senzaDati = () => new Set(serve() && navigator.onLine ? points.filter((p) => !loadForecast(forecastKey(p.lat, p.lng, trip.timezone))).map((p) => p.city) : [])
   const [map, setMap] = useState<Map<string, DayWeather[]>>(read)
+  const [inAttesa, setInAttesa] = useState<ReadonlySet<string>>(senzaDati)
 
   useEffect(() => {
     setMap(read())
-    const today = tripToday(trip)
-    const relevant = daysBetween(today, trip.endDate) >= 0 && daysBetween(today, trip.startDate) < FORECAST_DAYS
-    if (!relevant || !navigator.onLine) return
+    setInAttesa(senzaDati())
+    if (!serve() || !navigator.onLine) return
     let active = true
+    const finita = (city: string) => active && setInAttesa((s) => (s.has(city) ? new Set([...s].filter((c) => c !== city)) : s))
     for (const p of points) {
       const key = forecastKey(p.lat, p.lng, trip.timezone)
       const cached = loadForecast(key)
@@ -70,8 +88,9 @@ export function useCityForecasts(trip: Pick<Trip, 'places' | 'destination' | 'ce
         (days) => {
           saveForecast({ key, savedAt: Date.now(), days })
           if (active) setMap((m) => new Map(m).set(p.city, days))
+          finita(p.city)
         },
-        () => undefined,
+        () => finita(p.city),
       )
     }
     return () => {
@@ -80,7 +99,7 @@ export function useCityForecasts(trip: Pick<Trip, 'places' | 'destination' | 'ce
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points.map((p) => `${p.city}:${p.lat.toFixed(2)},${p.lng.toFixed(2)}`).join('|'), trip.timezone, trip.startDate, trip.endDate])
 
-  return map
+  return { map, inAttesa }
 }
 
 /** Temperatura e codice dell'ora attuale (fuso del viaggio), o del giorno se mancano le ore. */

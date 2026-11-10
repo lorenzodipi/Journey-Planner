@@ -1,13 +1,13 @@
 // Meteo del Giorno: la stessa card della Home (temperatura, ora per ora, alba e tramonto), per il giorno aperto.
 // Oggi parte dall'ora attuale; per gli altri giorni mostra tutte le ore del giorno. Un giorno con più città ha una card per città.
 import { useEffect, useMemo, useRef } from 'react'
-import { MeteoCard } from '../../faraway/Home'
+import { MeteoCard, MeteoScheletro } from '../../faraway/Home'
 import { descrizione, notteAlle, rigaSole } from '../../lib/oggi'
 import { cittaDelGiorno, indiceCittaAdesso, oraDelMeteo } from '../../lib/meteoGiorno'
 import { minutesOfDay, sunForDay } from '../../lib/sun'
 import { dateAddDays } from '../../lib/dates'
 import { tripToday } from '../../lib/today'
-import { cityCenters, useCityForecasts } from '../../state/cityForecast'
+import { cityCenters, useCityForecastsStato } from '../../state/cityForecast'
 import type { Day, Trip } from '../../types'
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -16,7 +16,7 @@ const hhmm = (min: number) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`
 export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Pick<Day, 'date' | 'city' | 'items'> }) {
   const tratti = useMemo(() => cittaDelGiorno(trip, day), [trip, day])
   const citta = tratti.map((t) => t.city)
-  const previsioni = useCityForecasts(trip, citta)
+  const { map: previsioni, inAttesa } = useCityForecastsStato(trip, citta)
   const centri = cityCenters(trip, citta)
   const oggi = day.date === tripToday(trip)
   const nowMin = minutesOfDay(new Date(), trip.timezone)
@@ -36,6 +36,16 @@ export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Pick<Day, 'dat
         const g = giorni?.find((d) => d.date === day.date)
         const centro = centri.find((x) => x.city === c) ?? trip.center
         const ore = (g?.hours ?? []).filter((h) => !oggi || h.h >= Math.floor(nowMin / 60))
+        if (!g && inAttesa.has(c)) {
+          const sk = <MeteoScheletro key={c} city={c} />
+          return multi ? (
+            <div key={c} className="fa-meteo-slide">
+              {sk}
+            </div>
+          ) : (
+            sk
+          )
+        }
         if (!g || ore.length === 0) return null
         const sole = sunForDay(day.date, centro.lat, centro.lng, trip.timezone)
         const domani = sunForDay(dateAddDays(day.date, 1), centro.lat, centro.lng, trip.timezone)

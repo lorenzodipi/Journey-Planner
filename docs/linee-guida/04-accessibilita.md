@@ -59,3 +59,8 @@ Obiettivo: **WCAG 2.2 livello AA** in chiaro e in scuro, su telefono, con VoiceO
 2. Audit automatico (axe-core) delle pagine toccate: nessuna violazione di contrasto o di nome.
 3. Giro con la tastiera: ogni controllo raggiungibile, focus visibile, Esc chiude.
 4. Quello che non si è potuto verificare si dice esplicitamente.
+
+## Scorrere non è scegliere
+
+- Le righe di chip che scorrono di lato (`.fa-chips.scroll`) non devono selezionare nulla quando il dito si alza dopo uno scorrimento. Nei pulsanti e nei link non si imposta `touch-action: manipulation`: Safari, con quel valore, non annulla il «press» di react-aria durante lo scroll e il chip sotto il dito si attiva. Si usa `pan-x pan-y pinch-zoom` (come fa react-aria), che toglie comunque il ritardo del doppio tocco.
+- `Chip` ignora in più il «press» di un dito che si è mosso di oltre 10 px o che ha fatto scorrere un contenitore negli ultimi 120 ms (`eScorrimento` in `src/faraway/base.tsx`); tastiera e lettori di schermo non sono toccati.

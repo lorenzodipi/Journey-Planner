@@ -275,10 +275,32 @@ export function Sezione({ title, right, id, level = 2 }: { title: ReactNode; rig
   )
 }
 
+// Un dito che ha fatto scorrere una riga non sta scegliendo un filtro. Con il tocco, Safari a volte non annulla il «press» durante lo
+// scroll e il chip sotto il dito si selezionava al rilascio: qui si ricorda quanto si è mosso il dito e quando ha scorso l'ultimo elemento.
+const TOCCO = { tipo: '', x: 0, y: 0, mosso: false, scroll: -1e9 }
+const SOGLIA_MOVIMENTO = 10
+const SOGLIA_SCROLL_MS = 120
+if (typeof document !== 'undefined') {
+  document.addEventListener('pointerdown', (e) => Object.assign(TOCCO, { tipo: e.pointerType, x: e.clientX, y: e.clientY, mosso: false }), { capture: true, passive: true })
+  document.addEventListener(
+    'pointermove',
+    (e) => {
+      if (TOCCO.tipo !== 'mouse' && !TOCCO.mosso && Math.hypot(e.clientX - TOCCO.x, e.clientY - TOCCO.y) > SOGLIA_MOVIMENTO) TOCCO.mosso = true
+    },
+    { capture: true, passive: true },
+  )
+  document.addEventListener('scroll', () => (TOCCO.scroll = performance.now()), { capture: true, passive: true })
+}
+/** Vero se il «press» è il rilascio di un dito che stava scorrendo (tastiera e lettore di schermo non contano). */
+export function eScorrimento(pointerType: string): boolean {
+  if (pointerType !== 'touch' && pointerType !== 'pen') return false
+  return TOCCO.mosso || performance.now() - TOCCO.scroll < SOGLIA_SCROLL_MS
+}
+
 /** Chip/filtro da 36px (area tappabile 44px). */
 export function Chip({ children, on, onPress, icon: ic, label }: { children: ReactNode; on?: boolean; onPress?: () => void; icon?: ReactNode; label?: string }) {
   return (
-    <AriaButton className={cx('fa-chip', on && 'on')} aria-pressed={on} onPress={onPress} aria-label={label}>
+    <AriaButton className={cx('fa-chip', on && 'on')} aria-pressed={on} onPress={(e) => (eScorrimento(e.pointerType) ? undefined : onPress?.())} aria-label={label}>
       {ic}
       {children}
     </AriaButton>

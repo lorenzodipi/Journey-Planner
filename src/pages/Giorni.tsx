@@ -8,7 +8,7 @@ import { groupDays, type DayCell } from '../lib/dayGroups'
 import { parseYmd } from '../lib/dates'
 import { tripToday } from '../lib/today'
 import { useTrip } from '../state/trip'
-import { nowWeather, tripCities, useCityForecasts } from '../state/cityForecast'
+import { nowWeather, tripCities, useCityForecastsStato } from '../state/cityForecast'
 import { Ic } from '../ui/Sprite'
 import { PulsanteIcona } from '../faraway/base'
 import { cx } from '../faraway/cx'
@@ -59,7 +59,7 @@ export function Giorni() {
   const [searching, setSearching] = useState(false)
   const [query, setQuery] = useState('')
   const cities = useMemo(() => tripCities(trip), [trip])
-  const forecasts = useCityForecasts(trip, cities)
+  const { map: forecasts, inAttesa } = useCityForecastsStato(trip, cities)
   const groups = useMemo(() => groupDays(trip, today), [trip, today])
 
   const q = query.trim().toLowerCase()
@@ -100,6 +100,18 @@ export function Giorni() {
             <Sv name="search" size={20} />
             <input id="cerca-giorni" type="search" autoFocus value={query} onChange={(e) => setQuery(e.currentTarget.value)} placeholder="Città, tappa o titolo" enterKeyHint="search" />
           </span>
+        </div>
+      ) : null}
+
+      {weather.length === 0 && inAttesa.size > 0 && !q ? (
+        <div className="k-Meteo" role="status" aria-busy="true" aria-label="Meteo delle città in caricamento">
+          <ul className="chips sk" role="presentation" aria-hidden="true">
+            {[0, 1, 2].map((i) => (
+              <li key={i} className="chip">
+                <span className="fa-sk" style={{ height: 44, width: i === 0 ? 120 : 136 }} />
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
 

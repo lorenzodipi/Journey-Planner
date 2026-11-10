@@ -29,7 +29,7 @@ Tutti usano `<dialog>` nativo aperto con `showModal()`: focus intrappolato, sfon
    - Prenotazione: *Che cosa* · *Quando* · *Costo* · *Fornitore e allegato* · *Altri dettagli*
    - Luogo: *Trova il luogo* · *Il luogo* · *La visita* · *Posizione* · *Nel viaggio* · *Altri dettagli*
    - Spesa: niente gruppi (meno di 8 campi).
-3. **Spazio come separatore**: 16 px tra i campi dello stesso gruppo, 32 px tra un gruppo e l'altro. Niente linee in più.
+3. **Spazio come separatore**, con tre misure che stanno nei token del foglio (`--gap-titolo`, `--gap-campi`, `--gap-sezioni` su `.fa-sheet`): 16 px dal titolo di un gruppo al suo primo campo, 24 px tra i campi dello stesso gruppo, 48 px tra un gruppo e l'altro. Il rapporto campi : gruppi è 1 : 2 (le linee guida dei design system, es. Hennepin County, indicano il doppio o il triplo del passo tra i campi) e il titolo sta sempre più vicino ai suoi campi di quanto i campi lo siano tra loro. Niente linee in più, e niente `gap` fissi nei fogli: si usano i token (`.fa-sez` per una sezione con `h2`).
 4. **«Altri dettagli»** (`AltriDettagli`): l'**ultimo gruppo** del foglio, con i campi rari (terminal, binario, gate, imbarco, fusi, apertura del check-in, contatti, cancellazione, coordinate). Da chiuso è **solo un titolo** come gli altri gruppi, con la freccia e sotto che cosa contiene («Terminal, binario, check-in») o quanti campi sono compilati («2 compilati»): niente fondo, niente card. Aperto mostra i campi sotto, come un gruppo normale. Si apre da solo se in modifica un campo è compilato (non per i campi che si compilano da soli, come le coordinate) e a ogni salvataggio con un errore al suo interno.
 5. Il pulsante «Salva» non cambia posto e non si disabilita: si valida al salvataggio e si porta il foglio al primo errore.
 
@@ -81,5 +81,6 @@ Lo stesso blocco ha **lo stesso nome e lo stesso ordine** in tutti i fogli.
 ## Modale al centro
 
 - Disco con icona sopra il titolo: cestino rosso per le conferme definitive, spunta verde per gli esiti.
+- Ritmo: 24 px dal disco al titolo, 8 px tra titolo e testo (stanno insieme), 32 px dal testo ai pulsanti, 16 px tra un pulsante e l'altro.
 - Le conferme (`alert`) non si chiudono toccando il velo, solo con i pulsanti, Esc o indietro.
 - All'apertura il focus va al modale, non al primo pulsante.

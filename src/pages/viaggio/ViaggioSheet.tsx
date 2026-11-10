@@ -290,7 +290,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
 
   return (
     <Foglio open={open} full title={editing ? 'Modifica viaggio' : 'Nuovo viaggio'} onClose={onClose}>
-      <form id="viaggio-form" onSubmit={submit} noValidate className="fa-stack" style={{ gap: 24 }}>
+      <form id="viaggio-form" onSubmit={submit} noValidate className="fa-stack" style={{ gap: 'var(--gap-sezioni)' }}>
         {!dateOk ? (
           <Banner tone="cor" icon="err" title="Controlla le date.">
             Il viaggio non può finire prima di cominciare.
@@ -304,13 +304,13 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
 
         <Campo label="Nome del viaggio (facoltativo)" value={title} onChange={setTitle} placeholder="Se vuoto, il paese principale" maxLength={80} />
 
-        <section style={{ display: 'grid', gap: 16 }}>
+        <section className="fa-sez">
           <h2 className="fa-h3">Da dove parti</h2>
           <CampoPaese label="Paese di partenza" value={origin} onChange={cambiaCasa} />
           <CampoValuta label="Valuta di casa" value={home} onChange={setHome} tutte hint="Gli importi del viaggio si convertono in questa valuta." />
         </section>
 
-        <section style={{ display: 'grid', gap: 16 }}>
+        <section className="fa-sez">
           <h2 className="fa-h3">Dove vai</h2>
           {paesi.map((p, i) => {
             const stessa = !p.currency || p.currency === home
@@ -389,7 +389,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
           </Pulsante>
         </section>
 
-        <section style={{ display: 'grid', gap: 16 }}>
+        <section className="fa-sez">
           <h2 className="fa-h3">Quando</h2>
           <div className="fa-2c">
             <Campo label="Dal" type="date" icon="cal" value={startDate} onChange={(v) => cambiaDate(v, endDate)} />
@@ -397,12 +397,12 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
           </div>
         </section>
 
-        <section style={{ display: 'grid', gap: 16 }}>
+        <section className="fa-sez">
           <h2 className="fa-h3">Budget</h2>
           <Campo label="Budget (facoltativo)" icon="bag" inputMode="decimal" value={budget} onChange={setBudget} placeholder={`es. 3.000 ${casaSym}`} maxLength={12} />
         </section>
 
-        <section style={{ display: 'grid', gap: 16 }}>
+        <section className="fa-sez">
           <h2 className="fa-h3">Spostamenti tra le tappe</h2>
           <Riquadri<MezzoViaggio>
             label="Di solito vi spostate"
@@ -435,7 +435,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
           ) : null}
         </section>
 
-        <section style={{ display: 'grid', gap: 16 }}>
+        <section className="fa-sez">
           <h2 className="fa-h3">Chi viene</h2>
           {!editing ? <Campo label="Il tuo nome" value={selfName} onChange={setSelfName} maxLength={40} autoComplete="off" /> : null}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

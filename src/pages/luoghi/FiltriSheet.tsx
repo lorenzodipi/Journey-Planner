@@ -40,7 +40,7 @@ export function FiltriSheet({ trip, places, open, filters, view, onApply, onClos
       }
       footer={<Pulsante onPress={() => (onApply(f, v), onClose())}>{count === 1 ? 'Mostra 1 luogo' : `Mostra ${count} luoghi`}</Pulsante>}
     >
-      <div className="frm" style={{ gap: 16 }}>
+      <div className="frm" style={{ gap: 'var(--gap-sezioni)' }}>
         <div className="fa-fld" role="group" aria-label="Stato">
           Stato
           <div className="fa-chips wrap">

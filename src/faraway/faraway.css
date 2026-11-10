@@ -29,7 +29,7 @@
 .fa-bar .tp.back{justify-content:space-between}
 .fa-bar{position:relative}
 .fa-bar .tp:empty{display:none}
-.fa-bar .tp:not(.back):not(:empty){position:absolute;top:0;right:16px;height:44px}
+.fa-bar .tp:not(.back):not(:empty){position:absolute;top:8px;right:16px;height:44px}
 .fa-bar .tp:not(.back):not(:empty)+h1{margin-top:8px;min-height:44px;display:flex;align-items:center;padding-right:120px}
 .fa-bar .tp:empty+h1{margin-top:0}
 .fa-bar h1{margin:8px 0 0;font:600 32px/38px var(--font-display);letter-spacing:-.01em}
@@ -169,7 +169,9 @@
 .fa-sheet .st{font:600 20px/26px var(--font-display);text-align:center;margin-bottom:8px}
 .fa-sheet .hd{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;margin-bottom:8px}
 .fa-sheet .hd .st{margin:0}
-.fa-sheet .frm{display:grid;gap:16px;padding:8px 0 8px;overflow:hidden}
+/* Ritmo verticale dei fogli: 8 px titolo-etichetta, 16 titolo di gruppo → primo campo, 24 tra i campi, 48 tra le sezioni (campi : sezioni = 1 : 2) */
+.fa-sheet{--gap-campi:24px;--gap-titolo:16px;--gap-sezioni:48px}
+.fa-sheet .frm{display:grid;gap:var(--gap-campi);padding:8px 0 8px;overflow:hidden}
 .fa-sheet .r{display:grid;grid-template-columns:44px minmax(0,1fr);gap:16px;align-items:center;padding:8px 0;min-height:44px}
 .fa-sheet .r .t{font:600 16px/24px var(--font-sans);letter-spacing:.16px}
 .fa-sheet .r .m{font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
@@ -959,6 +961,21 @@
 .k-Meteo .chips::-webkit-scrollbar{display:none}
 .k-Meteo .chip{flex:none;display:flex;align-items:center;gap:var(--space-sm);height:44px;padding:0 var(--space-lg) 0 var(--space-md);border-radius:var(--radius-full);background:var(--surface-card);border:1px solid var(--border-strong);font:400 15px/20px var(--font-sans)}
 .k-Meteo .chip b{font-weight:600}
+/* ---- Scheletri: stessa forma e altezza del contenuto che sta per arrivare, così nulla si sposta ---- */
+.fa-sk{display:block;background:var(--surface-high);border-radius:var(--radius-md);animation:fa-sk 1.4s ease-in-out infinite}
+@keyframes fa-sk{0%,100%{opacity:1}50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.fa-sk{animation:none}}
+.k-Meteo.sk .wc{pointer-events:none}
+.k-Meteo .sk-top{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--space-md);min-height:152px}
+.k-Meteo .sk-txt{display:grid;gap:2px;flex:1;min-width:0}
+.k-Meteo .sk-ic{width:72px;height:72px;border-radius:50%;flex:none;margin-top:var(--space-sm)}
+.k-Meteo .sk-hours{display:flex;gap:var(--space-xxs);margin:0 calc(var(--space-xl)*-1);padding:var(--space-xs) var(--space-xl) var(--space-sm);overflow:hidden}
+.k-Meteo .sk-hr{flex:none;width:66px;height:106px;border-radius:var(--radius-lg)}
+.k-Meteo .sk-sun{box-sizing:border-box;height:83px;margin-top:var(--space-xs);border-top:1px solid var(--hairline);padding-top:var(--space-md);display:flex;justify-content:space-between;gap:var(--space-md)}
+.k-Meteo .sk-sun .fa-sk{height:40px}
+@container (max-width:320px){.k-Meteo .sk-sun{height:151px;flex-direction:column;gap:var(--space-xs)}.k-Meteo .sk-sun .fa-sk{width:100%!important;height:38px}}
+.k-Meteo .chips.sk .chip{border-color:transparent;background:none;padding:0}
+.k-Meteo .chips.sk .fa-sk{border-radius:var(--radius-full)}
 /* ---- Orologio ---- */
 .k-Orologio h3{margin:var(--space-xl) 0 var(--space-sm);font:600 14px/20px var(--font-sans);color:var(--ink)}
 .k-Orologio h3 small{display:block;font:400 13px/18px var(--font-sans);color:var(--ink-muted);margin-top:2.0px}
@@ -2353,23 +2370,28 @@ html,body{margin:0;background:var(--canvas)}
 .fa-phone .fa-fab{position:fixed;right:max(16px,calc(50vw - 240px + 16px));bottom:calc(64px + env(safe-area-inset-bottom,0px) + 16px);z-index:41}
 .fa-phone:not(.has-tabs) .fa-fab{bottom:calc(env(safe-area-inset-bottom,0px) + 24px)}
 .fa-phone.has-fab .fa-main{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px) + 96px)}
-.fa-phone button,.fa-phone a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.fa-phone button,.fa-phone a{-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y pinch-zoom}
 .fa-phone :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.fa-phone *,.fa-phone *::before,.fa-phone *::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
 
 /* ---- Moduli dei fogli (Moduli.tsx, docs/linee-guida/03-modali-e-moduli.md) ---- */
-.fa-sheet .frm.grp{gap:32px;container-type:inline-size}
-.fa-grp{display:grid;gap:16px;min-width:0}
+.fa-sheet .frm.grp{gap:var(--gap-sezioni);container-type:inline-size}
+.fa-grp{display:grid;gap:var(--gap-campi,24px);min-width:0}
 .fa-grp>h3,.fa-altri>summary .t{margin:0;font:600 18px/24px var(--font-display);letter-spacing:-.01em;color:var(--ink)}
+/* il titolo sta più vicino ai suoi campi di quanto i campi lo siano tra loro */
+.fa-grp>h3{margin-bottom:calc(var(--gap-titolo,16px) - var(--gap-campi,24px))}
+/* sezione di un foglio con un titolo h2 (Modifica viaggio) */
+.fa-sez{display:grid;gap:var(--gap-campi,24px);min-width:0}
+.fa-sez>h2{margin:0 0 calc(var(--gap-titolo,16px) - var(--gap-campi,24px))}
 .fa-micro{margin:0;display:flex;flex-wrap:wrap;gap:0 8px;align-items:baseline;font:600 16px/24px var(--font-sans);color:var(--ink)}
 .fa-micro>span{font:400 14px/20px var(--font-sans);color:var(--ink-muted);font-variant-numeric:tabular-nums}
-.fa-tratta{display:grid;gap:16px;min-width:0}
+.fa-tratta{display:grid;gap:var(--gap-campi,24px);min-width:0}
 .fa-grp>.fa-tratta+.fa-tratta,.fa-grp>.fa-scalo+.fa-tratta,.fa-grp>.fa-tratta+.fa-scalo,.fa-altri>.in>.fa-tratta+.fa-tratta,.fa-altri>.in>.fa-tratta+.fa-micro{margin-top:8px}
 .fa-2c.riempi{align-items:end}
 .fa-2c.riempi>:last-child:nth-child(odd){grid-column:1/-1}
 .fa-2c.dt,.fa-perc .dt{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start}
 /* Altri dettagli: da chiuso è un titolo di gruppo con la freccia, senza fondo */
-.fa-altri{display:grid;gap:16px;min-width:0}
+.fa-altri{display:grid;gap:var(--gap-titolo,16px);min-width:0}
 .fa-altri:not([open]){gap:0}
 .fa-altri>summary{list-style:none;display:grid;grid-template-columns:minmax(0,1fr) 32px;gap:16px;align-items:center;min-height:48px;cursor:pointer;border-radius:8px;color:var(--ink)}
 .fa-altri>summary::-webkit-details-marker{display:none}
@@ -2378,7 +2400,7 @@ html,body{margin:0;background:var(--canvas)}
 .fa-altri>summary .chv{width:32px;height:32px;border-radius:9999px;display:grid;place-items:center;background:var(--surface-high);color:var(--ink);transition:transform 180ms cubic-bezier(.23,1,.32,1)}
 .fa-altri[open]>summary .chv{transform:rotate(180deg)}
 .fa-altri>summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
-.fa-altri>.in{display:grid;gap:16px;min-width:0}
+.fa-altri>.in{display:grid;gap:var(--gap-campi,24px);min-width:0}
 /* Percorso: due punti e una linea, la durata in mezzo */
 .fa-perc{display:grid;min-width:0}
 .fa-perc .tp{display:grid;grid-template-columns:16px minmax(0,1fr);column-gap:12px}

@@ -40,7 +40,7 @@ export function FiltriPrenotazioniSheet({ bookings, filters, onApply, onClose }:
       }
       footer={<Pulsante onPress={() => (onApply(f), onClose())}>{count === 1 ? 'Mostra 1 prenotazione' : `Mostra ${count} prenotazioni`}</Pulsante>}
     >
-      <div className="frm" style={{ gap: 16 }}>
+      <div className="frm" style={{ gap: 'var(--gap-sezioni)' }}>
         <div className="fa-fld" role="group" aria-label="Stato">
           Stato
           <div className="fa-chips wrap">

@@ -50,6 +50,7 @@
 - Il pulsante premuto mostra la rotellina (`isLoading` di `Pulsante`, con `useInCorso()` per sapere quale). Dove c'è una conferma, la rotellina parte dopo la conferma.
 - Le modifiche frequenti (spunte, stato delle tappe) passano dalla coda locale e non aspettano: lì non serve caricamento.
 - Il primo caricamento dell'app usa gli skeleton (`SchermataCaricamento`).
+- Quello che arriva dalla rete dopo (il meteo, l'anteprima di un file) mostra uno **scheletro** con la stessa forma e altezza del contenuto (`.fa-sk`, `MeteoScheletro`), così quando arriva non sposta nulla. Lo scheletro compare solo se c'è una risposta da aspettare (rete presente, niente copia sul telefono) e sparisce anche se la richiesta fallisce o non risponde. Le rotelle (`Loader`) restano per le azioni dell'utente (ricerca, mappa).
 
 ## Offline
 

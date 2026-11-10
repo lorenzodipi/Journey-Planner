@@ -274,6 +274,7 @@ export function DocumentoDettaglio({ trip, doc, onClose }: { trip: Trip; doc: Do
   const [access, setAccess] = useState<string[]>(doc.access)
   const [offline, setOffline] = useState(isDocOffline(doc.id))
   const [img, setImg] = useState<string | null>(null)
+  const [imgFallita, setImgFallita] = useState(false)
   const [busy, setBusy] = useState(false)
   const me = useMe(trip)
   const spesa = spesaDelDocumento(trip, doc.id)
@@ -286,7 +287,7 @@ export function DocumentoDettaglio({ trip, doc, onClose }: { trip: Trip; doc: Do
     let off = false
     void imageUrl(doc.path)
       .then((u) => !off && setImg(u))
-      .catch(() => undefined)
+      .catch(() => !off && setImgFallita(true))
     return () => {
       off = true
     }
@@ -353,7 +354,8 @@ export function DocumentoDettaglio({ trip, doc, onClose }: { trip: Trip; doc: Do
         </Pulsante>
       }
     >
-      <div style={{ display: 'grid', gap: 16 }}>
+      <div style={{ display: 'grid', gap: 'var(--gap-campi)' }}>
+        {!img && !imgFallita && anteprimaImmagine(doc) ? <span className="fa-sk" role="status" aria-busy="true" aria-label="Anteprima in caricamento" style={{ height: 200, borderRadius: 12 }} /> : null}
         {img ? (
           <img
             src={img}

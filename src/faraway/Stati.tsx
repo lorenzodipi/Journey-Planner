@@ -50,7 +50,7 @@ export function VuotoFiltro({ title, text, action, onAction }: { title: string; 
   )
 }
 
-const bar = (h: number, w: string, r = 8) => <span style={{ display: 'block', height: h, width: w, borderRadius: r, background: 'var(--surface-high)' }} />
+const bar = (h: number, w: string, r = 8) => <span className="fa-sk" style={{ height: h, width: w, borderRadius: r }} />
 
 /** Caricamento a scheletro (niente rotelle infinite): card e righe grigie con una frase. */
 export function Caricamento({ text = 'Sto caricando il viaggio', rows = 4 }: { text?: string; rows?: number }) {

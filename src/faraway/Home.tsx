@@ -298,6 +298,35 @@ const RiseIc = ({ down }: { down?: boolean }) => (
   </svg>
 )
 
+/** Scheletro della card meteo (stessa struttura della vera) finché le previsioni non arrivano. */
+export function MeteoScheletro({ city }: { city?: string }) {
+  return (
+    <div className="k-Meteo" role="status" aria-busy="true" aria-label={city ? `Meteo di ${city} in caricamento` : 'Meteo in caricamento'}>
+      <div className="wc det" aria-hidden="true">
+        <div className="sk-top">
+          <div className="sk-txt">
+            <span className="fa-sk" style={{ height: 20, width: '38%' }} />
+            <span className="fa-sk" style={{ height: 80, width: '52%' }} />
+            <span className="fa-sk" style={{ height: 24, width: '68%' }} />
+          </div>
+          <span className="fa-sk sk-ic" />
+        </div>
+        <div className="rule" />
+        <div className="sk-hours">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <span key={i} className="fa-sk sk-hr" />
+          ))}
+        </div>
+        <div className="sk-sun">
+          <span className="fa-sk" style={{ width: 72 }} />
+          <span className="fa-sk" style={{ width: 96 }} />
+          <span className="fa-sk" style={{ width: 72 }} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /** Card del meteo (componente Meteo, «Adesso, con alba e tramonto»). */
 export function MeteoCard({ city, t, code, night, desc, hours, sun }: { city: string; t: number; code: number; night: boolean; desc: string; hours: OraMeteo[]; sun?: { first: { k: string; v: string; down: boolean }; second: { k: string; v: string; down: boolean }; next: string; inText: string; pct: number; moon: boolean } }) {
   return (
