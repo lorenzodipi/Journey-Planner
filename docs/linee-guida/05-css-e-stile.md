@@ -51,6 +51,21 @@ I componenti del design system (`.k-Ticket`, `.k-Riepilogo`, …) vengono dalle 
 - Raggi: 8 px pulsanti e campi, 12 px card, 16 px card in evidenza e biglietti, 24 px fogli e modali, `9999px` chip e pillole.
 - Ombre poche: `--shadow-xs` su pulsanti e campi, `--shadow-card` sulle card in tinta nel chiaro. La profondità viene dalla superficie.
 
+## Pieghevoli e schermi grandi
+
+Le soglie sono le classi di larghezza di Android/Material, in px CSS (= dp nella WebView):
+
+| Larghezza | Dispositivi | Che cosa cambia |
+| --- | --- | --- |
+| < 600 | Telefoni, schermo esterno dei pieghevoli | Niente: è l'app di sempre (colonna fino a 480 px, barra delle schede in basso) |
+| 600–839 | Pieghevole aperto | Barra laterale (navigation rail, 80 px) al posto di quella in basso; colonna fino a 840 px con margini di 24 px; fogli dal basso fino a 640 px; calendarietti dei giorni e card dei luoghi a griglia |
+| ≥ 840 | Pieghevole aperto in orizzontale, tablet | Come sopra, margini di 32 px |
+
+- Tutto sta nel blocco «Schermi grandi e pieghevoli» in fondo a `faraway.css`, con `@media (min-width: 600px)`: sotto i 600 px nessuna regola cambia. Ogni modifica qui va controllata anche a 320, 360, 390 e 412 px, confrontando gli screenshot prima e dopo.
+- **Cerniera** (Viewport Segments API, Chrome 138+): con il pieghevole mezzo aperto a libro (`horizontal-viewport-segments: 2`) l'app sta tutta nel segmento destro, come su un telefono, e niente finisce sotto la piega; a tavolino (`vertical-viewport-segments: 2`) i fogli si aprono nella metà bassa. Le misure vengono da `env(viewport-segment-*)`.
+- **Android**: sotto i 600 dp di lato corto l'app resta in verticale; da 600 in su gira con il dispositivo (`MainActivity`), senza riavviarsi quando si piega o si apre. Mai bloccare l'orientamento sugli schermi grandi: da Android 16 il sistema lo ignora comunque.
+- Le liste che diventano griglie usano `repeat(auto-fill, minmax(…, 1fr))` e `align-items: start`, così una card aperta non allunga quella accanto.
+
 ## Tipografia
 
 - Tutto in **Inter** (variabile, caricata in locale da `src/fonts/`). Il nome «faraway» del logo è disegnato da Fredoka; le etichette giapponesi usano Zen Kaku Gothic New, solo nei viaggi in Giappone.
