@@ -1,7 +1,7 @@
 // Struttura delle schermate Faraway: barra in alto (grande o con «indietro»), contenuto,
 // barra delle schede (BarraSchede) e pulsante volante «+ …» (FAB), come nel mock.
 import type { CSSProperties, ReactNode } from 'react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import { cx } from './cx'
 import { tornaSu } from '../lib/indietro'
@@ -111,11 +111,47 @@ interface ScreenProps {
   bare?: boolean
   /** Banner delle modifiche in coda in cima e «Sei offline» in fondo (#49); `pill: false` senza la pillola. */
   rete?: boolean | { pill: false }
+  /** Barra (e `fissa`) sempre visibile in cima: solo il resto scorre. Per le pagine principali. */
+  fisso?: boolean
+  /** Contenuto che resta fermo sotto la barra insieme a lei (ricerca, scelta della vista, filtri). Richiede `fisso`. */
+  fissa?: ReactNode
+}
+
+/**
+ * Testa fissa della pagina. Dice quando il contenuto sta scorrendo sotto di lei (per il filo sottile in fondo) e tiene in
+ * `--head-h` la sua altezza, così `scrollIntoView` e i salti ai punti della pagina non finiscono nascosti dietro.
+ */
+function useTestaFissa(attiva: boolean) {
+  const testa = useRef<HTMLDivElement>(null)
+  const sentinella = useRef<HTMLDivElement>(null)
+  const [scorre, setScorre] = useState(false)
+  useEffect(() => {
+    if (!attiva || !sentinella.current) return
+    const io = new IntersectionObserver(([e]) => setScorre(!e.isIntersecting), { threshold: 0 })
+    io.observe(sentinella.current)
+    return () => io.disconnect()
+  }, [attiva])
+  useEffect(() => {
+    const el = testa.current
+    if (!attiva || !el) return
+    const root = document.documentElement
+    const misura = () => root.style.setProperty('--head-h', `${Math.round(el.getBoundingClientRect().height)}px`)
+    misura()
+    const ro = new ResizeObserver(misura)
+    ro.observe(el)
+    return () => {
+      ro.disconnect()
+      root.style.removeProperty('--head-h')
+    }
+  }, [attiva])
+  return { testa, sentinella, scorre }
 }
 
 /** Una schermata dell'app: la «cornice del telefono» del mock è la pagina intera. */
-export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, overlay, className, bare, rete = true }: ScreenProps) {
+export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, overlay, className, bare, rete = true, fisso, fissa }: ScreenProps) {
   const main = useRef<HTMLElement>(null)
+  const fissata = !!fisso && !bare
+  const { testa, sentinella, scorre } = useTestaFissa(fissata)
   useVaiAllErrore(main)
   useEffect(() => {
     const root = document.documentElement
@@ -124,8 +160,21 @@ export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, ove
   }, [tabs])
   return (
     <div className={cx('fa-phone', tabs && 'has-tabs', fab && 'has-fab', className)}>
-      <div className="fa-top" />
-      {bar}
+      {fissata ? (
+        <>
+          <div ref={sentinella} className="fa-sent" aria-hidden="true" />
+          <div ref={testa} className="fa-head" data-scrolled={scorre || undefined}>
+            <div className="fa-top" />
+            {bar}
+            {fissa ? <div className="fa-fissa">{fissa}</div> : null}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="fa-top" />
+          {bar}
+        </>
+      )}
       {bare ? (
         children
       ) : (

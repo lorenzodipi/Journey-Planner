@@ -137,9 +137,8 @@ function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string 
   const checklist = useLeMieCose(trip, me?.id)
   const tappeViaggio = tappeDelViaggio(groups)
   return (
-    <Schermata gap={16} rete={{ pill: false }}>
+    <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now)} greeting="Ciao" name={firstName(me?.name)} />}>
       <h1 className="sr-only">Oggi, {trip.destination}</h1>
-      <Saluto date={longIn(now)} greeting="Ciao" name={firstName(me?.name)} />
       <Offline />
       <ContoAllaRovescia days={days} meta={meta} next={next} />
       <AvvisoNotti trip={trip} />
@@ -260,9 +259,8 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
   ) : null
 
   return (
-    <Schermata gap={16} rete={{ pill: false }}>
+    <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now, trip.timezone)} greeting="Ciao" name={firstName(me?.name)} />}>
       <h1 className="sr-only">Oggi, {trip.destination}</h1>
-      <Saluto date={longIn(now, trip.timezone)} greeting="Ciao" name={firstName(me?.name)} />
       <Offline />
       {showClocks ? (
         <Orologio
@@ -410,9 +408,8 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
   }
 
   return (
-    <Schermata gap={16} rete={{ pill: false }}>
+    <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now)} greeting="Bentornato" name={firstName(me?.name)} />}>
       <h1 className="sr-only">Oggi, {trip.destination}</h1>
-      <Saluto date={longIn(now)} greeting="Bentornato" name={firstName(me?.name)} />
       <Offline />
       <RimborsiOggi trip={trip} />
       <Riepilogo dove={trip.destination} speso={r.speso} currency={trip.baseCurrency} limit={r.limit} simbolo={false} second={secondaRiga} />

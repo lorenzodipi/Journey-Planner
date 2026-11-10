@@ -241,6 +241,24 @@ function Elenco({ setVista }: { setVista: (v: Vista) => void }) {
       tabs={!selecting}
       fab={empty || selecting ? null : { label: 'Luogo', aria: 'Aggiungi un luogo', onPress: az.create }}
       className={selecting ? 'fa-selmode' : undefined}
+      fisso
+      fissa={
+        selecting ? null : (
+          <>
+            {searchOpen ? <CampoCerca value={text} onChange={setText} /> : null}
+            <Segmenti
+              label="Vista"
+              value="elenco"
+              options={[
+                { value: 'elenco', label: 'Elenco' },
+                { value: 'mappa', label: 'Mappa' },
+              ]}
+              onChange={(v) => setVista(v as Vista)}
+            />
+            {empty ? null : <RigaFiltri filters={filters} onChange={setFilters} onOpen={() => setFiltriOpen(true)} />}
+          </>
+        )
+      }
       overlay={
         <>
           {selecting ? (
@@ -268,23 +286,10 @@ function Elenco({ setVista }: { setVista: (v: Vista) => void }) {
         </>
       }
     >
-      {searchOpen && !selecting ? <CampoCerca value={text} onChange={setText} /> : null}
-      {selecting ? null : (
-        <Segmenti
-          label="Vista"
-          value="elenco"
-          options={[
-            { value: 'elenco', label: 'Elenco' },
-            { value: 'mappa', label: 'Mappa' },
-          ]}
-          onChange={(v) => setVista(v as Vista)}
-        />
-      )}
       {empty ? (
         <Vuoto art="vuotoLuoghi" title="Nessun luogo salvato" text="Salva qui ristoranti, templi e viste da non perdere. Poi li metti nei giorni che vuoi." action="Aggiungi un luogo" onAction={az.create} />
       ) : (
         <>
-          {selecting ? null : <RigaFiltri filters={filters} onChange={setFilters} onOpen={() => setFiltriOpen(true)} />}
           {selecting ? null : <TrovaPosizioni />}
           {visible.length === 0 ? (
             only ? (

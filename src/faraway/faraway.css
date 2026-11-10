@@ -18,6 +18,17 @@
 .fa-phone ul,.fa-phone ol{margin:0;padding:0;list-style:none}
 .fa-phone svg.ic{display:block;flex:none}
 .fa-top{height:max(env(safe-area-inset-top,0px),24px);flex:none}
+/* testa fissa delle pagine principali: la barra (e ricerca/vista/filtri) resta in cima, scorre solo il resto */
+.fa-sent{height:1px;margin-bottom:-1px;flex:none;pointer-events:none}
+.fa-head{position:sticky;top:0;z-index:30;flex:none;background:var(--canvas);transition:box-shadow 150ms ease-out}
+.fa-head[data-scrolled]{box-shadow:0 1px 0 var(--hairline)}
+.fa-fissa{padding:8px 16px;display:grid;gap:16px;min-width:0}
+.fa-fissa>*{min-width:0}
+.fa-bar+.fa-fissa{padding-top:0}
+html{scroll-padding-top:var(--head-h,0px)}
+/* telefoni bassi (es. 667 px): la testa fissa non deve mangiare metà schermo, quindi niente sottotitolo e meno aria tra i controlli */
+@media (max-height:700px){.fa-head .fa-bar .sub{display:none}.fa-fissa{gap:8px}}
+@media (prefers-reduced-motion:reduce){.fa-head{transition:none}}
 .fa-main{flex:1;padding:8px 16px 24px;display:grid;gap:16px;align-content:start;min-width:0}
 .fa-main>*{min-width:0}
 .fa-stack{display:grid;gap:16px}

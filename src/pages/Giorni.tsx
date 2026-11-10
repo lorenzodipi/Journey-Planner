@@ -83,6 +83,20 @@ export function Giorni() {
   return (
     <Schermata
       gap={16}
+      fisso
+      fissa={
+        searching ? (
+          <div className="fa-fld">
+            <label htmlFor="cerca-giorni" className="sr-only">
+              Cerca nei giorni
+            </label>
+            <span className="fa-in">
+              <Sv name="search" size={20} />
+              <input id="cerca-giorni" type="search" autoFocus value={query} onChange={(e) => setQuery(e.currentTarget.value)} placeholder="Città, tappa o titolo" enterKeyHint="search" />
+            </span>
+          </div>
+        ) : null
+      }
       bar={
         <BarraGrande
           title={trip.title}
@@ -91,17 +105,6 @@ export function Giorni() {
         />
       }
     >
-      {searching ? (
-        <div className="fa-fld">
-          <label htmlFor="cerca-giorni" className="sr-only">
-            Cerca nei giorni
-          </label>
-          <span className="fa-in">
-            <Sv name="search" size={20} />
-            <input id="cerca-giorni" type="search" autoFocus value={query} onChange={(e) => setQuery(e.currentTarget.value)} placeholder="Città, tappa o titolo" enterKeyHint="search" />
-          </span>
-        </div>
-      ) : null}
 
       {weather.length === 0 && inAttesa.size > 0 && !q ? (
         <div className="k-Meteo" role="status" aria-busy="true" aria-label="Meteo delle città in caricamento">

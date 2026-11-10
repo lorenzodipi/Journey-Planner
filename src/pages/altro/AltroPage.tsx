@@ -57,6 +57,8 @@ export function AltroPage() {
 
   return (
     <Schermata
+      fisso
+      fissa={cerca ? <Campo label="Cerca nel viaggio" hideLabel icon="search" type="search" value={q} onChange={setQ} placeholder="Luoghi, tappe, prenotazioni, alloggi, trasporti" autoFocus enterKeyHint="search" /> : null}
       bar={
         <BarraGrande
           title="Altro"
@@ -79,7 +81,6 @@ export function AltroPage() {
         </>
       }
     >
-      {cerca ? <Campo label="Cerca nel viaggio" hideLabel icon="search" type="search" value={q} onChange={setQ} placeholder="Luoghi, tappe, prenotazioni, alloggi, trasporti" autoFocus enterKeyHint="search" /> : null}
       {mostraRisultati ? (
         <RisultatiRicerca trip={trip} q={q} />
       ) : (
