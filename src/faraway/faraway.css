@@ -2479,17 +2479,30 @@ html,body{margin:0;background:var(--canvas)}
 
 /* ==== Schermi grandi e pieghevoli (docs/linee-guida/05-css-e-stile.md · «Pieghevoli») ====
    Classi di larghezza Android/Material: compatta < 600 px (telefoni, schermo esterno dei pieghevoli: nulla cambia),
-   media 600–839 (pieghevole aperto), espansa ≥ 840 (pieghevole aperto in orizzontale, tablet).
-   Da media in su: la barra delle schede diventa una barra laterale (navigation rail), la colonna si allarga fino a 840 px,
-   i fogli arrivano a 640 px. Con la cerniera (viewport segments) niente va sotto la piega. */
+   media 600–839 (pieghevole aperto in verticale), espansa ≥ 840 (pieghevole aperto in orizzontale, tablet).
+   Media: barra delle schede in basso a tutta larghezza (lo schermo resta simmetrico rispetto alla piega) e contenuti
+   in due colonne. Espansa: barra laterale (navigation rail), colonna fino a 840 px, due colonne. Fogli fino a 640 px. */
 @media (min-width:600px){
-  :root{--rail:80px;--colonna:840px}
+  :root{--rail:0px;--colonna:840px;--margine:24px}
   .fa-phone{max-width:none}
-  .fa-phone.has-tabs{padding-left:calc(var(--rail) + env(safe-area-inset-left,0px))}
   .fa-phone>.fa-main,.fa-phone>.fa-top,.fa-phone>.fa-bar,.fa-head>*{width:100%;max-width:var(--colonna);margin-inline:auto;box-sizing:border-box}
-  .fa-phone>.fa-main{padding-inline:24px}
-  .fa-phone>.fa-bar,.fa-head>.fa-bar,.fa-head>.fa-fissa{padding-inline:24px}
-  .fa-head>.fa-bar .tp:not(.back):not(:empty){right:24px}
+  .fa-phone>.fa-main{padding-inline:var(--margine)}
+  .fa-phone>.fa-bar,.fa-head>.fa-bar,.fa-head>.fa-fissa{padding-inline:var(--margine)}
+  .fa-head>.fa-bar .tp:not(.back):not(:empty){right:var(--margine)}
+  /* barra in basso: a tutta larghezza invece che a 480 px */
+  .fa-phone .fa-tabs{max-width:none}
+  .fa-phone .fa-fab{right:var(--margine)}
+  .fa-toasts{max-width:calc(var(--colonna) - 2 * var(--margine))}
+  .fa-selbar{max-width:var(--colonna);padding-inline:var(--margine)}
+  /* liste che con più spazio diventano griglie: i calendarietti dei giorni e le card dei luoghi */
+  .k-SelettoreGiorni .grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+  .k-Luoghi .list{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));align-items:start}
+  /* fogli dal basso: al massimo 640 px (Material), centrati */
+  .fa-sheet,dialog.fa-dlg>.fa-sheet{max-width:640px}
+}
+@media (min-width:840px){
+  :root{--rail:80px;--margine:32px}
+  .fa-phone.has-tabs{padding-left:calc(var(--rail) + env(safe-area-inset-left,0px))}
   /* barra laterale: le stesse cinque schede, in colonna e centrate in altezza */
   .fa-phone .fa-tabs{top:0;bottom:0;left:0;right:auto;width:calc(var(--rail) + env(safe-area-inset-left,0px));max-width:none;margin:0;height:auto;min-height:0;grid-template-columns:none;grid-auto-rows:min-content;align-content:center;gap:12px;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);border-top:0;border-right:1px solid var(--hairline)}
   .fa-phone .fa-tabs .fa-tab{min-height:56px;align-content:center}
@@ -2498,20 +2511,9 @@ html,body{margin:0;background:var(--canvas)}
   .fa-phone .fa-fab,.fa-phone:not(.has-tabs) .fa-fab{bottom:calc(env(safe-area-inset-bottom,0px) + 24px);right:max(24px,calc((100vw - var(--rail) - var(--colonna)) / 2 + 24px))}
   .fa-phone:not(.has-tabs) .fa-fab{right:max(24px,calc((100vw - var(--colonna)) / 2 + 24px))}
   /* messaggi e barra della selezione: nella colonna, non sotto la barra laterale */
-  .fa-toasts,.fa-phone:not(.has-tabs)~.fa-toasts,html[data-no-tabs] .fa-toasts{left:var(--rail);max-width:calc(var(--colonna) - 48px);bottom:calc(env(safe-area-inset-bottom,0px) + 24px)}
+  .fa-toasts,.fa-phone:not(.has-tabs)~.fa-toasts,html[data-no-tabs] .fa-toasts{left:var(--rail);bottom:calc(env(safe-area-inset-bottom,0px) + 24px)}
   html[data-no-tabs] .fa-toasts{left:0}
-  .fa-selbar{left:0;max-width:var(--colonna);padding-inline:24px}
   .fa-mapmode .fa-map{margin-bottom:0}
-  /* liste che con più spazio diventano griglie: i calendarietti dei giorni e le card dei luoghi */
-  .k-SelettoreGiorni .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
-  .k-Luoghi .list{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));align-items:start}
-  /* fogli dal basso: al massimo 640 px (Material), centrati */
-  .fa-sheet,dialog.fa-dlg>.fa-sheet{max-width:640px}
-}
-@media (min-width:840px){
-  .fa-phone>.fa-main{padding-inline:32px}
-  .fa-phone>.fa-bar,.fa-head>.fa-bar,.fa-head>.fa-fissa{padding-inline:32px}
-  .fa-head>.fa-bar .tp:not(.back):not(:empty){right:32px}
 }
 
 /* Pieghevole a libro mezzo aperto (due segmenti affiancati): l'app sta tutta nel segmento destro, come su un telefono,
@@ -2538,3 +2540,48 @@ html,body{margin:0;background:var(--canvas)}
   dialog.fa-dlg>.fa-sheet.full{top:calc(env(viewport-segment-top 0 1) + 16px)}
   dialog.fa-mod{padding-top:calc(env(viewport-segment-top 0 1) + 16px)}
 }
+
+/* ---- Due colonne a «bento» (Affianca/Colonna in shell.tsx): da 600 px; sul telefono i contenitori non esistono ---- */
+.fa-duo,.fa-duo-c{display:contents}
+/* dentro i contenitori trasparenti valgono le stesse regole dei figli diretti di .fa-main */
+.fa-duo>*,.fa-duo-c>*{min-width:0}
+@media (min-width:600px){
+  .fa-duo{--duo-gap:24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-flow:row dense;gap:16px var(--duo-gap);align-items:start;min-width:0}
+  .fa-duo>*{min-width:0}
+  .fa-duo-c{display:grid;gap:16px;align-content:start;min-width:0}
+  .fa-duo-c.l{grid-column:1}
+  .fa-duo-c.r{grid-column:2}
+  .fa-duo-c.alta{grid-row:span 2}
+  .fa-duo-c.tutta{grid-column:1/-1}
+  .fa-duo-c:empty{display:none}
+  /* un elenco di righe a tutta larghezza va su due colonne, con lo stesso spazio delle colonne */
+  .fa-duo .fa-list.fa-list-duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--duo-gap)}
+  /* con la piega verticale (plugin capacitor-foldable) le colonne si dividono esattamente sulla piega: la sua banda
+     (--fold-width, 0 se senza giunzione) è lo spazio tra le colonne, mai meno di 24 px. Le coordinate sono del viewport:
+     si tolgono barra laterale e margine finché la colonna non è centrata (schermo non più largo di colonna + barra). */
+  .fold-vertical .fa-duo{--duo-gap:max(24px,var(--fold-width,0px));grid-template-columns:calc(var(--fold-left) + var(--fold-width,0px) / 2 - var(--duo-gap) / 2 - var(--rail) - var(--margine)) minmax(0,1fr)}
+}
+@media (min-width:921px){.fold-vertical .fa-duo{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* A libro mezzo aperto l'app sta in un segmento (vedi sopra): lì è un telefono, quindi una colonna sola */
+@media (horizontal-viewport-segments:2){.fa-duo,.fa-duo-c{display:contents}}
+
+/* Le stesse regole della cerniera con le classi del plugin: nella WebView di Android e iOS la Viewport Segments API è spenta
+   e la riempie il polyfill di capacitor-foldable (classi su <html> e variabili --viewport-segment-*-colonna-riga). */
+.horizontal-viewport-segments-2 .fa-phone,.horizontal-viewport-segments-2 .fa-phone.has-tabs{margin-left:var(--viewport-segment-left-1-0);margin-right:0;max-width:var(--viewport-segment-width-1-0);padding-left:0}
+.horizontal-viewport-segments-2 .fa-phone>.fa-main,.horizontal-viewport-segments-2 .fa-phone>.fa-top,.horizontal-viewport-segments-2 .fa-phone>.fa-bar,.horizontal-viewport-segments-2 .fa-head>*{max-width:none}
+.horizontal-viewport-segments-2 .fa-phone>.fa-main{padding-inline:16px}
+.horizontal-viewport-segments-2 .fa-phone>.fa-bar,.horizontal-viewport-segments-2 .fa-head>.fa-bar,.horizontal-viewport-segments-2 .fa-head>.fa-fissa{padding-inline:16px}
+.horizontal-viewport-segments-2 .fa-head>.fa-bar .tp:not(.back):not(:empty){right:16px}
+.horizontal-viewport-segments-2 .k-SelettoreGiorni .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.horizontal-viewport-segments-2 .k-Luoghi .list{grid-template-columns:none}
+.horizontal-viewport-segments-2 .fa-duo,.horizontal-viewport-segments-2 .fa-duo-c{display:contents}
+.horizontal-viewport-segments-2 .fa-phone .fa-tabs{top:auto;bottom:0;left:var(--viewport-segment-left-1-0);right:auto;width:var(--viewport-segment-width-1-0);grid-template-columns:repeat(5,minmax(0,1fr));grid-auto-rows:auto;align-content:start;gap:0;padding:8px 8px env(safe-area-inset-bottom,0px);border-right:0;border-top:1px solid var(--hairline)}
+.horizontal-viewport-segments-2 .fa-phone.has-tabs .fa-main{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px) + 24px)}
+.horizontal-viewport-segments-2 .fa-phone.has-fab .fa-main{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px) + 96px)}
+.horizontal-viewport-segments-2 .fa-phone .fa-fab{right:16px;bottom:calc(64px + env(safe-area-inset-bottom,0px) + 16px)}
+.horizontal-viewport-segments-2 .fa-toasts,.horizontal-viewport-segments-2 .fa-selbar,.horizontal-viewport-segments-2 .fa-sheet,.horizontal-viewport-segments-2 dialog.fa-dlg>.fa-sheet{left:var(--viewport-segment-left-1-0);right:auto;width:var(--viewport-segment-width-1-0);max-width:none;margin:0}
+.horizontal-viewport-segments-2 .fa-toasts{bottom:calc(64px + env(safe-area-inset-bottom,0px) + 12px)}
+.horizontal-viewport-segments-2 dialog.fa-mod{padding-left:calc(var(--viewport-segment-left-1-0) + 16px)}
+.vertical-viewport-segments-2 dialog.fa-dlg>.fa-sheet{max-height:calc(var(--viewport-segment-height-0-1) - 16px)}
+.vertical-viewport-segments-2 dialog.fa-dlg>.fa-sheet.full{top:calc(var(--viewport-segment-top-0-1) + 16px)}
+.vertical-viewport-segments-2 dialog.fa-mod{padding-top:calc(var(--viewport-segment-top-0-1) + 16px)}

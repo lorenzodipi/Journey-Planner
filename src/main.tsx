@@ -19,6 +19,8 @@ setupInvioSenzaInvio()
 if (!__NATIVE__) registerSW({ immediate: true })
 else {
   // App Android: gesto/tasto "indietro"; app iOS: swipe dal bordo sinistro
+  // pieghevoli: dove sta la piega (--fold-*, .fold-vertical/.fold-horizontal) e la cerniera (viewport segments) per il CSS
+  void import('@erkamyaman/capacitor-foldable').then((m) => m.installFoldablePolyfill()).catch(() => undefined)
   void import('@capacitor/core').then(({ Capacitor }) => {
     if (Capacitor.getPlatform() === 'ios') {
       void import('./lib/swipeBack').then((m) => m.setupSwipeBack())

@@ -56,6 +56,20 @@ export function BarraSchede() {
   )
 }
 
+/**
+ * Due colonne affiancate sui pieghevoli aperti e sugli schermi larghi; sul telefono non esiste (display: contents), quindi
+ * ordine, spazi e aspetto restano quelli di sempre. Con la piega verticale le colonne si dividono esattamente sulla piega.
+ * Figli diretti senza `Colonna`: si alternano sinistra/destra. Con `Colonna` si sceglie il lato; `alta` occupa due righe.
+ */
+export function Affianca({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={cx('fa-duo', className)}>{children}</div>
+}
+
+/** Un gruppo di elementi nella stessa colonna di `Affianca` (sul telefono anche questo è trasparente); `tutta` va da un bordo all'altro. */
+export function Colonna({ lato, alta, children }: { lato: 'sinistra' | 'destra' | 'tutta'; alta?: boolean; children: ReactNode }) {
+  return <div className={cx('fa-duo-c', lato === 'sinistra' ? 'l' : lato === 'destra' ? 'r' : 'tutta', alta && 'alta')}>{children}</div>
+}
+
 /** Barra grande delle pagine principali: azioni rotonde in alto a destra, titolo grande e sottotitolo. */
 export function BarraGrande({ title, sub, actions }: { title: ReactNode; sub?: ReactNode; actions?: ReactNode }) {
   return (

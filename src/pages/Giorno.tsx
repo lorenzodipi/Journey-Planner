@@ -33,7 +33,7 @@ import { Sv } from '../faraway/icons'
 import { RigaAlloggio } from '../faraway/CartaAlloggio'
 import { Riga, useUnaAperta } from '../faraway/Righe'
 import { AlloggioSheet } from './alloggi/AlloggioSheet'
-import { BarraIndietro, Schermata } from '../faraway/shell'
+import { Affianca, BarraIndietro, Colonna, Schermata } from '../faraway/shell'
 import { Vuoto } from '../faraway/Stati'
 import { linkedExpense, TappeLista } from '../faraway/Tappe'
 import { SpostaSheet } from './giorno/SpostaSheet'
@@ -195,139 +195,147 @@ export function Giorno({ params }: { params: { id: string } }) {
       gap={32}
       bar={<BarraIndietro title="Giorni" back="/giorni" right={<PulsanteIcona icon="dots" label="Modifica il giorno" onPress={() => setLegacy({ kind: 'day', day })} />} />}
     >
-      {day.items.length > 0 || route.transports.length > 0 ? (
-        <section className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }} aria-label="Mappa del giorno">
-          <div className="fa-dm" style={{ position: 'relative' }}>
-            <DayMapPanel route={route} center={dayView.center} selectedId={openId} onSelect={onPin} height={240} bare stopState={stopState} />
-            {route.stops.length > 1 ? (
-              <span className="fa-pillst soft" style={{ position: 'absolute', left: 12, top: 12, background: 'var(--surface-card)', zIndex: 2 }}>
-                Percorso migliore
-              </span>
-            ) : null}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '16px 16px' }}>
-            <div>
-              <div className="fa-b">{percorso.title}</div>
-              {percorso.sub ? (
-                <div className="fa-m" style={{ color: 'var(--ink-muted)' }}>
-                  {percorso.sub}
+      <Affianca>
+        {/* pieghevole aperto: mappa, meteo, alloggio, spese e prenotazioni a sinistra; le tappe a destra */}
+        <Colonna lato="sinistra">
+          {day.items.length > 0 || route.transports.length > 0 ? (
+            <section className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }} aria-label="Mappa del giorno">
+              <div className="fa-dm" style={{ position: 'relative' }}>
+                <DayMapPanel route={route} center={dayView.center} selectedId={openId} onSelect={onPin} height={240} bare stopState={stopState} />
+                {route.stops.length > 1 ? (
+                  <span className="fa-pillst soft" style={{ position: 'absolute', left: 12, top: 12, background: 'var(--surface-card)', zIndex: 2 }}>
+                    Percorso migliore
+                  </span>
+                ) : null}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '16px 16px' }}>
+                <div>
+                  <div className="fa-b">{percorso.title}</div>
+                  {percorso.sub ? (
+                    <div className="fa-m" style={{ color: 'var(--ink-muted)' }}>
+                      {percorso.sub}
+                    </div>
+                  ) : route.missing > 0 ? (
+                    <div className="fa-m">{route.missing === 1 ? '1 tappa senza posizione' : `${route.missing} tappe senza posizione`}</div>
+                  ) : null}
                 </div>
-              ) : route.missing > 0 ? (
-                <div className="fa-m">{route.missing === 1 ? '1 tappa senza posizione' : `${route.missing} tappe senza posizione`}</div>
-              ) : null}
-            </div>
-            {routeHref ? (
-              <a className="fa-btn sm out" href={routeHref} target="_blank" rel="noopener noreferrer">
-                <Sv name="pin" size={18} />
-                Maps
-              </a>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
+                {routeHref ? (
+                  <a className="fa-btn sm out" href={routeHref} target="_blank" rel="noopener noreferrer">
+                    <Sv name="pin" size={18} />
+                    Maps
+                  </a>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
 
-      <MeteoGiornoCard trip={trip} day={day} />
-      <div className="fa-stack" style={{ gap: 0 }}>
-        <TappeLista
-          trip={trip}
-          day={day}
-          header={{ title: `Giorno ${n} · ${city}`, date: fmt(day.date) }}
-          ctx={ctx}
-          segments={segments}
-          openId={openId}
-          onToggle={(id) => setOpenId((c) => (c === id ? null : id))}
-          onStatus={(i, s) => void onStatus(i, s)}
-          onEdit={(item) => setSheet({ kind: 'edit', item })}
-          onMove={(item) => setSheet({ kind: 'move', item, postpone: false })}
-          onDelete={(item) => void onDelete(item)}
-          onReorder={(item, to) => void t.moveItemTo(day.id, item.id, to).then((m) => m && showToast(m))}
-          fromHere={fromHere}
-          onSeg={(item) => setSheet({ kind: 'seg', item })}
-          meteoDi={(item) => meteoDellaTappa(previsioniCitta.get(cittaTappa(trip, day, item)), day.date, item.time)}
-          highlight={highlight}
-        />
-        {day.items.length === 0 ? <p className="fa-m">Giornata ancora libera: aggiungi la prima tappa.</p> : null}
-      </div>
-
-      <Pulsante iconLeading="plus" onPress={() => setSheet({ kind: 'add' })}>
-        Aggiungi tappa
-      </Pulsante>
-      {plan && day.items.filter((i) => !i.time).length > 1 ? (
-        <Pulsante color="secondary" iconLeading="move" isLoading={occ === 'ottimizza'} onPress={() => void optimize()}>
-          Ottimizza percorso
-        </Pulsante>
-      ) : null}
-
-      {spostamenti.length > 0 ? (
-        <section style={{ display: 'grid', gap: 16 }} aria-label="Voli e spostamenti">
-          <Sezione title="Voli e spostamenti" />
-          <div className="fa-list">
-            {spostamenti.map((e, i) => (
-              <Riga
-                key={`${e.ref?.id ?? i}-${e.at}`}
-                icon={e.kind === 'flight' ? 'i-tra-plane' : `i-tra-${e.mode && ['bus', 'car', 'ferry', 'metro', 'taxi', 'train', 'plane'].includes(e.mode) ? e.mode : 'train'}`}
-                title={e.title}
-                sub={[e.time ? (e.endTime ? `${e.time} → ${e.endTime}` : e.time) : null, e.sub].filter(Boolean).join(' · ')}
-                onPress={() => navigate(e.kind === 'flight' ? '/altro/voli' : '/altro/trasporti')}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {stayList.length > 0 ? (
-        <section style={{ display: 'grid', gap: 16 }} aria-label="Alloggio">
-          <Sezione title="Alloggio" right={<Link href="/altro/alloggi" className="fa-lnk">Tutti</Link>} />
-          <div className="fa-list">
-          {stayList.map((s) => (
-            <RigaAlloggio
-              key={s.id}
+          <MeteoGiornoCard trip={trip} day={day} />
+        </Colonna>
+        <Colonna lato="destra" alta>
+          <div className="fa-stack" style={{ gap: 0 }}>
+            <TappeLista
               trip={trip}
-              stay={s}
-              date={day.date}
-              open={stayOpen.isOpen(s.id)}
-              onToggle={() => stayOpen.toggle(s.id)}
-              onEdit={() => setStayEdit(s)}
-              onDelete={async () => {
-                const ok = await ask({ title: 'Eliminare l’alloggio?', message: conDipendenze(`${s.name} sparisce dagli alloggi e dalle spese. Puoi annullare subito dopo.`, dipendenze(trip, 'alloggio', s.id)), confirm: 'Elimina l’alloggio', cancel: 'Tieni l’alloggio', destructive: true })
-                if (!ok) return
-                const m = await t.setStayDeleted(s.id, true)
-                showToast(m ?? 'Alloggio eliminato', m ? undefined : { label: 'Annulla', run: () => void t.setStayDeleted(s.id, false) })
-              }}
+              day={day}
+              header={{ title: `Giorno ${n} · ${city}`, date: fmt(day.date) }}
+              ctx={ctx}
+              segments={segments}
+              openId={openId}
+              onToggle={(id) => setOpenId((c) => (c === id ? null : id))}
+              onStatus={(i, s) => void onStatus(i, s)}
+              onEdit={(item) => setSheet({ kind: 'edit', item })}
+              onMove={(item) => setSheet({ kind: 'move', item, postpone: false })}
+              onDelete={(item) => void onDelete(item)}
+              onReorder={(item, to) => void t.moveItemTo(day.id, item.id, to).then((m) => m && showToast(m))}
+              fromHere={fromHere}
+              onSeg={(item) => setSheet({ kind: 'seg', item })}
+              meteoDi={(item) => meteoDellaTappa(previsioniCitta.get(cittaTappa(trip, day, item)), day.date, item.time)}
+              highlight={highlight}
             />
-          ))}
+            {day.items.length === 0 ? <p className="fa-m">Giornata ancora libera: aggiungi la prima tappa.</p> : null}
           </div>
-        </section>
-      ) : null}
 
-      {expenses.length > 0 ? (
-        <section style={{ display: 'grid', gap: 16 }} aria-label="Spese del giorno">
-          <Sezione title="Spese del giorno" right={<span className="fa-c">{formatMoney(total, trip.baseCurrency)}</span>} />
-          <div className="fa-list">
-            {expenses.map((e) => (
-              <Riga
-                key={e.id}
-                icon={iconaSpesa(e)}
-                title={e.label}
-                sub={[e.paidBy ? `Pagata da ${payer.get(e.paidBy) ?? '—'}` : null, e.category].filter(Boolean).join(' · ')}
-                end={<span className="amt">{formatMoney(e.amount, e.currency)}</span>}
-                onPress={() => setSpesa(e)}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
+          <Pulsante iconLeading="plus" onPress={() => setSheet({ kind: 'add' })}>
+            Aggiungi tappa
+          </Pulsante>
+          {plan && day.items.filter((i) => !i.time).length > 1 ? (
+            <Pulsante color="secondary" iconLeading="move" isLoading={occ === 'ottimizza'} onPress={() => void optimize()}>
+              Ottimizza percorso
+            </Pulsante>
+          ) : null}
+        </Colonna>
+        <Colonna lato="sinistra">
+          {spostamenti.length > 0 ? (
+            <section style={{ display: 'grid', gap: 16 }} aria-label="Voli e spostamenti">
+              <Sezione title="Voli e spostamenti" />
+              <div className="fa-list">
+                {spostamenti.map((e, i) => (
+                  <Riga
+                    key={`${e.ref?.id ?? i}-${e.at}`}
+                    icon={e.kind === 'flight' ? 'i-tra-plane' : `i-tra-${e.mode && ['bus', 'car', 'ferry', 'metro', 'taxi', 'train', 'plane'].includes(e.mode) ? e.mode : 'train'}`}
+                    title={e.title}
+                    sub={[e.time ? (e.endTime ? `${e.time} → ${e.endTime}` : e.time) : null, e.sub].filter(Boolean).join(' · ')}
+                    onPress={() => navigate(e.kind === 'flight' ? '/altro/voli' : '/altro/trasporti')}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
 
-      {bookings.length > 0 ? (
-        <section style={{ display: 'grid', gap: 16 }} aria-label="Prenotazioni del giorno">
-          <Sezione title="Prenotazioni del giorno" right={<Link href="/altro/prenotazioni" className="fa-lnk">Tutte</Link>} />
-          <div className="fa-list">
-            {bookings.map(({ booking: b, tappa }) => (
-              <Riga key={b.id} icon="i-sez-ticket" title={b.title} sub={[tappa ? `Tappa: ${tappa.title}` : trip.bookingLinks ? 'Non collegata a una tappa' : '', b.code ? `Codice ${b.code}` : ''].filter(Boolean).join(' · ') || 'Prenotazione'} onPress={() => setLegacy({ kind: 'edit-booking', booking: b })} />
-            ))}
-          </div>
-        </section>
-      ) : null}
+          {stayList.length > 0 ? (
+            <section style={{ display: 'grid', gap: 16 }} aria-label="Alloggio">
+              <Sezione title="Alloggio" right={<Link href="/altro/alloggi" className="fa-lnk">Tutti</Link>} />
+              <div className="fa-list">
+              {stayList.map((s) => (
+                <RigaAlloggio
+                  key={s.id}
+                  trip={trip}
+                  stay={s}
+                  date={day.date}
+                  open={stayOpen.isOpen(s.id)}
+                  onToggle={() => stayOpen.toggle(s.id)}
+                  onEdit={() => setStayEdit(s)}
+                  onDelete={async () => {
+                    const ok = await ask({ title: 'Eliminare l’alloggio?', message: conDipendenze(`${s.name} sparisce dagli alloggi e dalle spese. Puoi annullare subito dopo.`, dipendenze(trip, 'alloggio', s.id)), confirm: 'Elimina l’alloggio', cancel: 'Tieni l’alloggio', destructive: true })
+                    if (!ok) return
+                    const m = await t.setStayDeleted(s.id, true)
+                    showToast(m ?? 'Alloggio eliminato', m ? undefined : { label: 'Annulla', run: () => void t.setStayDeleted(s.id, false) })
+                  }}
+                />
+              ))}
+              </div>
+            </section>
+          ) : null}
+
+          {expenses.length > 0 ? (
+            <section style={{ display: 'grid', gap: 16 }} aria-label="Spese del giorno">
+              <Sezione title="Spese del giorno" right={<span className="fa-c">{formatMoney(total, trip.baseCurrency)}</span>} />
+              <div className="fa-list">
+                {expenses.map((e) => (
+                  <Riga
+                    key={e.id}
+                    icon={iconaSpesa(e)}
+                    title={e.label}
+                    sub={[e.paidBy ? `Pagata da ${payer.get(e.paidBy) ?? '—'}` : null, e.category].filter(Boolean).join(' · ')}
+                    end={<span className="amt">{formatMoney(e.amount, e.currency)}</span>}
+                    onPress={() => setSpesa(e)}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {bookings.length > 0 ? (
+            <section style={{ display: 'grid', gap: 16 }} aria-label="Prenotazioni del giorno">
+              <Sezione title="Prenotazioni del giorno" right={<Link href="/altro/prenotazioni" className="fa-lnk">Tutte</Link>} />
+              <div className="fa-list">
+                {bookings.map(({ booking: b, tappa }) => (
+                  <Riga key={b.id} icon="i-sez-ticket" title={b.title} sub={[tappa ? `Tappa: ${tappa.title}` : trip.bookingLinks ? 'Non collegata a una tappa' : '', b.code ? `Codice ${b.code}` : ''].filter(Boolean).join(' · ') || 'Prenotazione'} onPress={() => setLegacy({ kind: 'edit-booking', booking: b })} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </Colonna>
+      </Affianca>
 
       {prev || next ? (
         <nav aria-label="Giorni vicini" style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>

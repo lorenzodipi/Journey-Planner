@@ -11,7 +11,7 @@ import { Banner } from '../../faraway/base'
 import { CartaAlloggio } from '../../faraway/CartaAlloggio'
 import { useConferma } from '../../faraway/Foglio'
 import { useUnaAperta } from '../../faraway/Righe'
-import { BarraIndietro, Schermata } from '../../faraway/shell'
+import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
 import { AlloggioSheet } from './AlloggioSheet'
 
@@ -57,18 +57,21 @@ export function AlloggiPage() {
       {gruppi.length === 0 ? (
         <Vuoto title="Nessun alloggio" text="Hotel e case con date, orari di check-in, camera e codice di prenotazione." action="Aggiungi un alloggio" onAction={() => setSheet({})} />
       ) : null}
-      {gruppi.map((g) => (
-        <section key={g.city} aria-label={g.city} style={{ display: 'grid', gap: 16 }}>
-          <div className="fa-sech">
-            <h2 className="fa-h3">
-              {g.city} · {notti(g.nights)}
-            </h2>
-          </div>
-          {g.stays.map((s) => (
-            <CartaAlloggio key={s.id} trip={trip} stay={s} open={open.isOpen(s.id)} onToggle={() => open.toggle(s.id)} onEdit={() => setSheet({ stay: s })} onDelete={() => void elimina(s)} />
-          ))}
-        </section>
-      ))}
+      <Affianca>
+        {/* pieghevole aperto: le città a due a due */}
+          {gruppi.map((g) => (
+          <section key={g.city} aria-label={g.city} style={{ display: 'grid', gap: 16 }}>
+            <div className="fa-sech">
+              <h2 className="fa-h3">
+                {g.city} · {notti(g.nights)}
+              </h2>
+            </div>
+            {g.stays.map((s) => (
+              <CartaAlloggio key={s.id} trip={trip} stay={s} open={open.isOpen(s.id)} onToggle={() => open.toggle(s.id)} onEdit={() => setSheet({ stay: s })} onDelete={() => void elimina(s)} />
+            ))}
+          </section>
+        ))}
+      </Affianca>
     </Schermata>
   )
 }

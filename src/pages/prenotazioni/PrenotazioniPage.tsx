@@ -22,7 +22,7 @@ import { cx } from '../../faraway/cx'
 import { useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { useUnaAperta } from '../../faraway/Righe'
-import { BarraIndietro, Schermata } from '../../faraway/shell'
+import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto, VuotoFiltro } from '../../faraway/Stati'
 import { giornoSpese } from '../spese/testi'
 import { filtriAttivi, FiltriPrenotazioniSheet } from './FiltriSheet'
@@ -134,137 +134,140 @@ export function PrenotazioniPage() {
       ) : shown.length === 0 ? (
         <VuotoFiltro title="Nessuna prenotazione trovata" text="Prova con un altro tipo o togli i filtri." action="Mostra tutte" onAction={() => (setFiltro('all'), setArch(FILTRI_VUOTI))} />
       ) : null}
-      {gruppi.map((g) => (
-        <section key={g.ymd || 'senza'} aria-label={g.ymd ? giornoSpese(g.ymd, today) : 'Da pianificare'} style={{ display: 'grid', gap: 16 }}>
-          <div className="fa-sech">
-            <h2 className="fa-h3">{g.ymd ? giornoSpese(g.ymd, today) : 'Da pianificare'}</h2>
-          </div>
-          {g.items.map((b) => {
-            const isOpen = open.isOpen(b.id)
-            const ora = oraPrenotazione(b, tz)
-            const sub = sottotitolo(b, tz) || BOOKING_LABEL[b.type]
-            const payer = trip.travelers.find((p) => p.id === b.paidBy)
-            const cached = !!b.filePath && offline.has(b.filePath)
-            const stato = statoDi(b)
-            const tappe = trip.bookingLinks ? tappeDi(trip, b.id) : []
-            const giornoB = b.validFrom ? giornoSpese(dateInZone(b.validFrom, tz), today) : ''
-            const righe: [string, string][] = [
-              ['Validità', b.validFrom && b.validTo && dateInZone(b.validTo, tz) > dateInZone(b.validFrom, tz) ? `${formatShort(dateInZone(b.validFrom, tz))} → ${formatShort(dateInZone(b.validTo, tz))}` : ''],
-              ['Fornitore', b.provider ?? ''],
-              ['Contatto', b.contact ?? ''],
-              ['Cancellazione', b.cancellationPolicy ?? ''],
-              ['Tappa', trip.bookingLinks ? (tappe.length === 0 ? 'Non collegata' : tappe.map((id) => giornoDellaTappa(trip, id)?.title ?? 'Tappa').join(', ')) : ''],
-              ['Allegato', b.filePath ? (cached ? 'Disponibile offline' : b.keepOffline ? 'Sarà disponibile offline' : 'Serve la rete per aprirlo') : ''],
-              ['Fuori periodo', quando(b, trip) === 'fuori-periodo' ? 'Fuori dalle date del viaggio' : ''],
-              ['Manca', mancanti(trip, b).join(' · ')],
-              ['Nota', b.notes ?? ''],
-            ]
-            return (
-              <div key={b.id} id={`prenotazione-${b.id}`} className="k-TicketOrizzontale">
-                <div className={cx('tk tv th', stato !== 'confirmed' && 'todo', isOpen && 'open')}>
-                  <div className="a v-top">
-                    <button type="button" className="hdl" aria-expanded={isOpen} onClick={() => open.toggle(b.id)}>
-                      <span className="kd kd-disco" aria-hidden="true">
-                        <Ic name={icona(b)} size={40} />
-                      </span>
-                      <span className="ti">
-                        <b>{b.title}</b>
-                        <span>{sub}</span>
-                        <span className={cx('pl3b', stato === 'confirmed' ? 'ok' : 'td')}>
-                          <Sv name={stato === 'confirmed' ? 'check' : stato === 'cancelled' ? 'close' : 'clock'} size={16} />
-                          {STATO_LABEL[stato]}
+      <Affianca>
+        {/* pieghevole aperto: i giorni a due a due */}
+          {gruppi.map((g) => (
+          <section key={g.ymd || 'senza'} aria-label={g.ymd ? giornoSpese(g.ymd, today) : 'Da pianificare'} style={{ display: 'grid', gap: 16 }}>
+            <div className="fa-sech">
+              <h2 className="fa-h3">{g.ymd ? giornoSpese(g.ymd, today) : 'Da pianificare'}</h2>
+            </div>
+            {g.items.map((b) => {
+              const isOpen = open.isOpen(b.id)
+              const ora = oraPrenotazione(b, tz)
+              const sub = sottotitolo(b, tz) || BOOKING_LABEL[b.type]
+              const payer = trip.travelers.find((p) => p.id === b.paidBy)
+              const cached = !!b.filePath && offline.has(b.filePath)
+              const stato = statoDi(b)
+              const tappe = trip.bookingLinks ? tappeDi(trip, b.id) : []
+              const giornoB = b.validFrom ? giornoSpese(dateInZone(b.validFrom, tz), today) : ''
+              const righe: [string, string][] = [
+                ['Validità', b.validFrom && b.validTo && dateInZone(b.validTo, tz) > dateInZone(b.validFrom, tz) ? `${formatShort(dateInZone(b.validFrom, tz))} → ${formatShort(dateInZone(b.validTo, tz))}` : ''],
+                ['Fornitore', b.provider ?? ''],
+                ['Contatto', b.contact ?? ''],
+                ['Cancellazione', b.cancellationPolicy ?? ''],
+                ['Tappa', trip.bookingLinks ? (tappe.length === 0 ? 'Non collegata' : tappe.map((id) => giornoDellaTappa(trip, id)?.title ?? 'Tappa').join(', ')) : ''],
+                ['Allegato', b.filePath ? (cached ? 'Disponibile offline' : b.keepOffline ? 'Sarà disponibile offline' : 'Serve la rete per aprirlo') : ''],
+                ['Fuori periodo', quando(b, trip) === 'fuori-periodo' ? 'Fuori dalle date del viaggio' : ''],
+                ['Manca', mancanti(trip, b).join(' · ')],
+                ['Nota', b.notes ?? ''],
+              ]
+              return (
+                <div key={b.id} id={`prenotazione-${b.id}`} className="k-TicketOrizzontale">
+                  <div className={cx('tk tv th', stato !== 'confirmed' && 'todo', isOpen && 'open')}>
+                    <div className="a v-top">
+                      <button type="button" className="hdl" aria-expanded={isOpen} onClick={() => open.toggle(b.id)}>
+                        <span className="kd kd-disco" aria-hidden="true">
+                          <Ic name={icona(b)} size={40} />
                         </span>
-                      </span>
-                      <span className="chv" aria-hidden="true">
-                        <Sv name="chev" size={20} />
-                      </span>
-                    </button>
-                    {ora || giornoB || b.code ? (
-                      <div className="hz3">
-                        {ora || giornoB ? (
-                          <div className="hs l">
-                            <span className={cx('tm', !ora && 'cod')}>{ora || giornoB}</span>
-                            <b>{ora ? giornoB || 'Ora' : 'Data'}</b>
+                        <span className="ti">
+                          <b>{b.title}</b>
+                          <span>{sub}</span>
+                          <span className={cx('pl3b', stato === 'confirmed' ? 'ok' : 'td')}>
+                            <Sv name={stato === 'confirmed' ? 'check' : stato === 'cancelled' ? 'close' : 'clock'} size={16} />
+                            {STATO_LABEL[stato]}
+                          </span>
+                        </span>
+                        <span className="chv" aria-hidden="true">
+                          <Sv name="chev" size={20} />
+                        </span>
+                      </button>
+                      {ora || giornoB || b.code ? (
+                        <div className="hz3">
+                          {ora || giornoB ? (
+                            <div className="hs l">
+                              <span className={cx('tm', !ora && 'cod')}>{ora || giornoB}</span>
+                              <b>{ora ? giornoB || 'Ora' : 'Data'}</b>
+                            </div>
+                          ) : null}
+                          {b.code ? (
+                            <div className={cx('hs', ora || giornoB ? 'r' : 'l')}>
+                              <span className="tm cod">{b.code}</span>
+                              <b>Codice</b>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                    {isOpen ? (
+                      <div className="b">
+                        <div className="pr">
+                          <div>
+                            <div className="pv" style={b.cost == null ? { color: 'var(--ink-muted)' } : undefined}>
+                              {b.cost == null ? 'Costo non inserito' : `${formatMoney(b.cost, b.currency ?? trip.baseCurrency)}${b.scope === 'per_person' ? ' a persona' : ''}`}
+                            </div>
+                            {b.cost != null ? <div className="pn">{payer ? `Pagato da ${payer.name.split(/\s+/)[0]}` : 'Costo'}</div> : null}
                           </div>
-                        ) : null}
-                        {b.code ? (
-                          <div className={cx('hs', ora || giornoB ? 'r' : 'l')}>
-                            <span className="tm cod">{b.code}</span>
-                            <b>Codice</b>
-                          </div>
-                        ) : null}
+                          {b.cost == null ? (
+                            <Pulsante size="sm" iconLeading="plus" onPress={() => setSheet({ booking: b })}>
+                              Aggiungi costo
+                            </Pulsante>
+                          ) : null}
+                        </div>
+                        <dl className="dl">
+                          {righe
+                            .filter(([, v]) => v)
+                            .map(([k, v]) => (
+                              <div key={k}>
+                                <dt>{k}</dt>
+                                <dd style={k === 'Nota' ? { whiteSpace: 'pre-line' } : undefined}>{v}</dd>
+                              </div>
+                            ))}
+                        </dl>
+                        <div className="acts2">
+                          {b.code ? (
+                            <Pulsante size="sm" color="secondary" iconLeading="copy" onPress={() => void copia(b.code as string)} aria-label={`Copia il codice ${b.code}`}>
+                              Copia
+                            </Pulsante>
+                          ) : null}
+                          <Pulsante size="sm" color="secondary" iconLeading="qr" onPress={() => setCodice(b)}>
+                            Codice
+                          </Pulsante>
+                          {b.url ? (
+                            <Pulsante size="sm" color="secondary" iconLeading="globe" href={b.url} target="_blank">
+                              Link
+                            </Pulsante>
+                          ) : null}
+                          {b.filePath ? (
+                            <Pulsante size="sm" color="secondary" iconLeading="file" isLoading={occ === `apri:${b.id}`} onPress={() => void faiOcc(`apri:${b.id}`, () => apri(b))}>
+                              File
+                            </Pulsante>
+                          ) : null}
+                          {trip.bookingLinks && tappe.length === 0 ? (
+                            <Pulsante size="sm" color="secondary" iconLeading="pin" onPress={() => setSheet({ booking: b })}>
+                              Collega
+                            </Pulsante>
+                          ) : null}
+                          {tappe.map((id) => (
+                            <Pulsante key={id} size="sm" color="secondary" iconLeading="pin" isLoading={occ === `scollega:${id}`} onPress={() => void scollega(b, id)} aria-label={`Scollega dalla tappa ${giornoDellaTappa(trip, id)?.title ?? ''}`}>
+                              Scollega
+                            </Pulsante>
+                          ))}
+                          <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => setSheet({ booking: b })}>
+                            Modifica
+                          </Pulsante>
+                          <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" isLoading={occ === `elimina:${b.id}`} onPress={() => void elimina(b)}>
+                            Elimina
+                          </Pulsante>
+                        </div>
                       </div>
                     ) : null}
                   </div>
-                  {isOpen ? (
-                    <div className="b">
-                      <div className="pr">
-                        <div>
-                          <div className="pv" style={b.cost == null ? { color: 'var(--ink-muted)' } : undefined}>
-                            {b.cost == null ? 'Costo non inserito' : `${formatMoney(b.cost, b.currency ?? trip.baseCurrency)}${b.scope === 'per_person' ? ' a persona' : ''}`}
-                          </div>
-                          {b.cost != null ? <div className="pn">{payer ? `Pagato da ${payer.name.split(/\s+/)[0]}` : 'Costo'}</div> : null}
-                        </div>
-                        {b.cost == null ? (
-                          <Pulsante size="sm" iconLeading="plus" onPress={() => setSheet({ booking: b })}>
-                            Aggiungi costo
-                          </Pulsante>
-                        ) : null}
-                      </div>
-                      <dl className="dl">
-                        {righe
-                          .filter(([, v]) => v)
-                          .map(([k, v]) => (
-                            <div key={k}>
-                              <dt>{k}</dt>
-                              <dd style={k === 'Nota' ? { whiteSpace: 'pre-line' } : undefined}>{v}</dd>
-                            </div>
-                          ))}
-                      </dl>
-                      <div className="acts2">
-                        {b.code ? (
-                          <Pulsante size="sm" color="secondary" iconLeading="copy" onPress={() => void copia(b.code as string)} aria-label={`Copia il codice ${b.code}`}>
-                            Copia
-                          </Pulsante>
-                        ) : null}
-                        <Pulsante size="sm" color="secondary" iconLeading="qr" onPress={() => setCodice(b)}>
-                          Codice
-                        </Pulsante>
-                        {b.url ? (
-                          <Pulsante size="sm" color="secondary" iconLeading="globe" href={b.url} target="_blank">
-                            Link
-                          </Pulsante>
-                        ) : null}
-                        {b.filePath ? (
-                          <Pulsante size="sm" color="secondary" iconLeading="file" isLoading={occ === `apri:${b.id}`} onPress={() => void faiOcc(`apri:${b.id}`, () => apri(b))}>
-                            File
-                          </Pulsante>
-                        ) : null}
-                        {trip.bookingLinks && tappe.length === 0 ? (
-                          <Pulsante size="sm" color="secondary" iconLeading="pin" onPress={() => setSheet({ booking: b })}>
-                            Collega
-                          </Pulsante>
-                        ) : null}
-                        {tappe.map((id) => (
-                          <Pulsante key={id} size="sm" color="secondary" iconLeading="pin" isLoading={occ === `scollega:${id}`} onPress={() => void scollega(b, id)} aria-label={`Scollega dalla tappa ${giornoDellaTappa(trip, id)?.title ?? ''}`}>
-                            Scollega
-                          </Pulsante>
-                        ))}
-                        <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => setSheet({ booking: b })}>
-                          Modifica
-                        </Pulsante>
-                        <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" isLoading={occ === `elimina:${b.id}`} onPress={() => void elimina(b)}>
-                          Elimina
-                        </Pulsante>
-                      </div>
-                    </div>
-                  ) : null}
                 </div>
-              </div>
-            )
-          })}
-        </section>
-      ))}
+              )
+            })}
+          </section>
+        ))}
+      </Affianca>
     </Schermata>
   )
 }

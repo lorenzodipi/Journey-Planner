@@ -14,7 +14,7 @@ import { Pulsante } from '../../faraway/base'
 import { useConferma } from '../../faraway/Foglio'
 import { DueValori, Riepilogo, SaldoPersone } from '../../faraway/Home'
 import { Ricevuta } from '../../faraway/Ricevuta'
-import { BarraGrande, Schermata } from '../../faraway/shell'
+import { Affianca, BarraGrande, Colonna, Schermata } from '../../faraway/shell'
 import { SpesaSheet } from './SpesaSheet'
 import { RimborsiCard } from './Rimborsi'
 import { finoAl, inQuanti, intervallo } from './testi'
@@ -113,24 +113,33 @@ export function SpesePage() {
         </>
       }
     >
-      <Riepilogo dove={trip.destination} speso={r.speso} currency={cur} limit={r.limit} onSetBudget={() => navigate('/spese/budget')} onOpenBudget={() => navigate('/spese/budget')} second={second} />
-      <RimborsiCard trip={trip} />
-      <Ricevuta
-        trip={trip}
-        dati={dati}
-        sub={[trip.destination, intervallo(trip.startDate, trip.endDate), inQuanti(n)].filter(Boolean).join(' · ')}
-        onPlanned={onPlanned}
-        onRename={onRename}
-        onDelete={onDelete}
-      />
-      <Pulsante color="secondary" iconTrailing="chevr" onPress={() => navigate('/spese/dettaglio')}>
-        Vedi il dettaglio delle spese
-      </Pulsante>
-      {n > 1 ? (
-        <Pulsante color="tertiary" iconTrailing="chevr" onPress={() => navigate('/spese/bilancio')}>
-          Il mio bilancio e i rimborsi
-        </Pulsante>
-      ) : null}
+      {/* pieghevole aperto: riepilogo, saldi e collegamenti a sinistra, la ricevuta a destra */}
+      <Affianca>
+        <Colonna lato="sinistra">
+          <Riepilogo dove={trip.destination} speso={r.speso} currency={cur} limit={r.limit} onSetBudget={() => navigate('/spese/budget')} onOpenBudget={() => navigate('/spese/budget')} second={second} />
+          <RimborsiCard trip={trip} />
+        </Colonna>
+        <Colonna lato="destra" alta>
+          <Ricevuta
+            trip={trip}
+            dati={dati}
+            sub={[trip.destination, intervallo(trip.startDate, trip.endDate), inQuanti(n)].filter(Boolean).join(' · ')}
+            onPlanned={onPlanned}
+            onRename={onRename}
+            onDelete={onDelete}
+          />
+        </Colonna>
+        <Colonna lato="sinistra">
+          <Pulsante color="secondary" iconTrailing="chevr" onPress={() => navigate('/spese/dettaglio')}>
+            Vedi il dettaglio delle spese
+          </Pulsante>
+          {n > 1 ? (
+            <Pulsante color="tertiary" iconTrailing="chevr" onPress={() => navigate('/spese/bilancio')}>
+              Il mio bilancio e i rimborsi
+            </Pulsante>
+          ) : null}
+        </Colonna>
+      </Affianca>
     </Schermata>
   )
 }

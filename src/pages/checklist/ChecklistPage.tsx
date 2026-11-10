@@ -12,7 +12,7 @@ import { Pulsante, PulsanteIcona, Segmenti } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
 import { Foglio, useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
-import { BarraIndietro, Schermata } from '../../faraway/shell'
+import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
 import { VoceSheet } from './VoceSheet'
 import { useInCorso } from '../../faraway/Attesa'
@@ -273,17 +273,20 @@ export function ChecklistPage() {
               onAction={() => setSheet({})}
             />
           ) : null}
-          {gruppi.map((g) => (
-            <section key={g.category} className="card" aria-label={g.category}>
-              <div className="grp">
-                <b>{g.category}</b>
-                <span>
-                  {g.done} di {g.items.length}
-                </span>
-              </div>
-              <ul className="l">{g.items.map((i) => riga(i))}</ul>
-            </section>
-          ))}
+          <Affianca>
+            {/* pieghevole aperto: le categorie a due a due */}
+              {gruppi.map((g) => (
+              <section key={g.category} className="card" aria-label={g.category}>
+                <div className="grp">
+                  <b>{g.category}</b>
+                  <span>
+                    {g.done} di {g.items.length}
+                  </span>
+                </div>
+                <ul className="l">{g.items.map((i) => riga(i))}</ul>
+              </section>
+            ))}
+          </Affianca>
           {!selecting && !vuota && altri.length > 0 ? (
             <Pulsante color="secondary" iconLeading="copy" onPress={() => setDup(true)}>
               Duplica da un viaggio

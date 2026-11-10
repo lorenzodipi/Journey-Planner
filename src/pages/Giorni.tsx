@@ -12,7 +12,7 @@ import { nowWeather, tripCities, useCityForecastsStato } from '../state/cityFore
 import { Ic } from '../ui/Sprite'
 import { PulsanteIcona, useFocoIniziale } from '../faraway/base'
 import { cx } from '../faraway/cx'
-import { BarraGrande, Schermata } from '../faraway/shell'
+import { Affianca, BarraGrande, Schermata } from '../faraway/shell'
 import { Wx, wxKind } from '../faraway/Wx'
 import { Sv } from '../faraway/icons'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
@@ -138,21 +138,24 @@ export function Giorni() {
       {trip.days.length === 0 ? <Vuoto art="calendario" title="Nessun giorno" text="Imposta le date del viaggio da Altro → Modifica viaggio: i giorni si creano da soli." /> : null}
       {trip.days.length > 0 && shown.length === 0 ? <Vuoto art="calendario" title="Nessun giorno trovato" text="Prova con un'altra città o tappa." /> : null}
 
-      {shown.map((g, gi) => (
-        <section key={`${gi}-${g.cells[0].day.id}`} style={{ display: 'grid', gap: 16 }} aria-label={g.title}>
-          <div className="fa-sech">
-            <h2 className="fa-h3">{g.title}</h2>
-            <span className="fa-c">{paesiDi(trip).length > 1 ? `${paeseDelGiorno(trip, g.cells[0].day.date).name} · ${g.meta}` : g.meta}</span>
-          </div>
-          <div className="k-SelettoreGiorni">
-            <div className="grid">
-              {g.cells.map((c) => (
-                <Calendarietto key={c.day.id} cell={c} onOpen={() => open(c)} scoperta={scoperte.has(c.day.date)} />
-              ))}
+      <Affianca>
+        {/* pieghevole aperto: le città a due a due */}
+          {shown.map((g, gi) => (
+          <section key={`${gi}-${g.cells[0].day.id}`} style={{ display: 'grid', gap: 16 }} aria-label={g.title}>
+            <div className="fa-sech">
+              <h2 className="fa-h3">{g.title}</h2>
+              <span className="fa-c">{paesiDi(trip).length > 1 ? `${paeseDelGiorno(trip, g.cells[0].day.date).name} · ${g.meta}` : g.meta}</span>
             </div>
-          </div>
-        </section>
-      ))}
+            <div className="k-SelettoreGiorni">
+              <div className="grid">
+                {g.cells.map((c) => (
+                  <Calendarietto key={c.day.id} cell={c} onOpen={() => open(c)} scoperta={scoperte.has(c.day.date)} />
+                ))}
+              </div>
+            </div>
+          </section>
+        ))}
+      </Affianca>
     </Schermata>
   )
 }

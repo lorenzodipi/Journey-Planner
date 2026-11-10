@@ -8,7 +8,7 @@ import type { Transport } from '../../types'
 import { CartaTrasporto } from '../../faraway/CartaTrasporto'
 import { useConferma } from '../../faraway/Foglio'
 import { useUnaAperta } from '../../faraway/Righe'
-import { BarraIndietro, Schermata } from '../../faraway/shell'
+import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
 import { CodiceBiglietto } from '../../faraway/CodiceBiglietto'
 import { TrasportoSheet } from './TrasportoSheet'
@@ -44,16 +44,19 @@ export function TrasportiPage() {
       {gruppi.length === 0 ? (
         <Vuoto title="Nessun trasporto" text="Treni, autobus, metro e taxi: orari, prezzo e se è già pagato." action="Aggiungi un trasporto" onAction={() => setSheet({})} />
       ) : null}
-      {gruppi.map((g) => (
-        <section key={g.key} aria-label={g.title} style={{ display: 'grid', gap: 16 }}>
-          <div className="fa-sech">
-            <h2 className="fa-h3">{g.title}</h2>
-          </div>
-          {g.items.map((x) => (
-            <CartaTrasporto key={x.id} trip={trip} transport={x} open={open.isOpen(x.id)} onToggle={() => open.toggle(x.id)} onEdit={(focus) => setSheet({ transport: x, focus })} onDelete={() => void elimina(x)} onCode={() => setCodice(x)} />
-          ))}
-        </section>
-      ))}
+      <Affianca>
+        {/* pieghevole aperto: i giorni a due a due */}
+          {gruppi.map((g) => (
+          <section key={g.key} aria-label={g.title} style={{ display: 'grid', gap: 16 }}>
+            <div className="fa-sech">
+              <h2 className="fa-h3">{g.title}</h2>
+            </div>
+            {g.items.map((x) => (
+              <CartaTrasporto key={x.id} trip={trip} transport={x} open={open.isOpen(x.id)} onToggle={() => open.toggle(x.id)} onEdit={(focus) => setSheet({ transport: x, focus })} onDelete={() => void elimina(x)} onCode={() => setCodice(x)} />
+            ))}
+          </section>
+        ))}
+      </Affianca>
     </Schermata>
   )
 }

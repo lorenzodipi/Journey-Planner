@@ -33,7 +33,7 @@ import { Banner } from '../faraway/base'
 import { AvvisoPioggia, BigliettoPiccolo, ChecklistHome, ContoAllaRovescia, DueValori, Orologio, Riepilogo, Saluto, SaldoPersone, SimboloPiatto, ValutaPiccola, type VoceHome } from '../faraway/Home'
 import { Sv } from '../faraway/icons'
 import { RigaApribile, useUnaAperta } from '../faraway/Righe'
-import { Schermata } from '../faraway/shell'
+import { Affianca, Colonna, Schermata } from '../faraway/shell'
 import { TappeLista } from '../faraway/Tappe'
 import { useConferma } from '../faraway/Foglio'
 
@@ -153,10 +153,21 @@ function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string 
     <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now)} greeting="Ciao" name={firstName(me?.name)} />}>
       <h1 className="sr-only">Oggi, {trip.destination}</h1>
       <Offline />
-      <ContoAllaRovescia days={days} meta={meta} next={next} />
-      <AvvisoNotti trip={trip} />
-      {checklist}
-      {tappeViaggio.length > 1 ? <StepperViaggio tappe={tappeViaggio} /> : null}
+      {/* pieghevole aperto: il biglietto e le tappe a sinistra, «Le mie cose» a destra */}
+      <Affianca>
+        <Colonna lato="sinistra">
+          <ContoAllaRovescia days={days} meta={meta} next={next} />
+          <AvvisoNotti trip={trip} />
+        </Colonna>
+        <Colonna lato="destra" alta>
+          {checklist}
+        </Colonna>
+        {tappeViaggio.length > 1 ? (
+          <Colonna lato="sinistra">
+            <StepperViaggio tappe={tappeViaggio} />
+          </Colonna>
+        ) : null}
+      </Affianca>
     </Schermata>
   )
 }
@@ -275,6 +286,9 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
     <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now, trip.timezone)} greeting="Ciao" name={firstName(me?.name)} />}>
       <h1 className="sr-only">Oggi, {trip.destination}</h1>
       <Offline />
+      {/* pieghevole aperto: a sinistra ora, meteo, prossima prenotazione e cambio; a destra il programma di oggi */}
+      <Affianca>
+      <Colonna lato="sinistra">
       {showClocks ? (
         <Orologio
           here={{ label: city, time: hhmmIn(now, trip.timezone), night: nightNow, sub: nightNow ? 'Notte' : 'Giorno' }}
@@ -300,7 +314,9 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
       {/* stessa card della giornata: una per città, scorrevoli, a partire da quella di adesso. Con una località scelta, solo quella. */}
       <MeteoGiornoCard trip={trip} day={day && !(rif && cittaViaggio.includes(rif)) ? day : { date: today, city, items: [] }} />
       {rain ? <AvvisoPioggia title={rain.title} text={rain.text} /> : null}
+      </Colonna>
 
+      <Colonna lato="destra" alta>
       {finishedCard}
       {!finished && day && items.length > 0 ? (
         <div className="fa-stack" style={{ gap: 0 }}>
@@ -329,7 +345,9 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
           </button>
         </section>
       ) : null}
+      </Colonna>
 
+      <Colonna lato="sinistra">
       {nextBooking ? (
         <section style={{ display: 'grid', gap: 8 }}>
           <div className="fa-sech">
@@ -355,6 +373,8 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
           <ValutaPiccola base={trip.baseCurrency} local={trip.localCurrency as string} rate={rate as number} baseName={cap(currencyName(trip.baseCurrency) ?? trip.baseCurrency)} localName={cap(currencyName(trip.localCurrency as string) ?? (trip.localCurrency as string))} />
         </section>
       ) : null}
+      </Colonna>
+      </Affianca>
       {confirmNode}
     </Schermata>
   )
@@ -424,9 +444,14 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
     <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now)} greeting="Bentornato" name={firstName(me?.name)} />}>
       <h1 className="sr-only">Oggi, {trip.destination}</h1>
       <Offline />
+      {/* pieghevole aperto: riepilogo e giorni a sinistra, il viaggio in numeri a destra */}
+      <Affianca>
+      <Colonna lato="sinistra">
       <RimborsiOggi trip={trip} />
       <Riepilogo dove={trip.destination} speso={r.speso} currency={trip.baseCurrency} limit={r.limit} simbolo={false} second={secondaRiga} />
+      </Colonna>
 
+      <Colonna lato="destra" alta>
       <section ref={ticket} aria-label="Il viaggio in numeri" className="fa-r2 fa-tkt" role="group">
         <div className="tp hero">
           <SimboloPiatto style={{ right: 14, top: 14, width: 40 }} />
@@ -543,8 +568,10 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
           </div>
         </div>
       </section>
+      </Colonna>
 
 
+      <Colonna lato="sinistra">
       {cityGroups.length > 0 ? (
         <section className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ padding: '16px 16px 8px' }}>
@@ -577,6 +604,8 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
           })}
         </section>
       ) : null}
+      </Colonna>
+      </Affianca>
     </Schermata>
   )
 }

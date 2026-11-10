@@ -7,7 +7,7 @@ import { useTrip, useTrips } from '../../state/trip'
 import { CartaVolo } from '../../faraway/CartaVolo'
 import { useConferma } from '../../faraway/Foglio'
 import { useUnaAperta } from '../../faraway/Righe'
-import { BarraIndietro, Schermata } from '../../faraway/shell'
+import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
 import type { Flight } from '../../types'
 import { codiciDi } from '../../lib/codici'
@@ -45,16 +45,19 @@ export function VoliPage() {
       {gruppi.length === 0 ? (
         <Vuoto title="Nessun volo" text="Aggiungi i voli del viaggio: li trovi qui come carte d'imbarco, con gli scali." action="Aggiungi un volo" onAction={() => setSheet({})} />
       ) : null}
-      {gruppi.map((g) => (
-        <section key={g.key} aria-label={g.title} style={{ display: 'grid', gap: 16 }}>
-          <div className="fa-sech">
-            <h2 className="fa-h3">{g.title}</h2>
-          </div>
-          {g.flights.map((f) => (
-            <CartaVolo key={f.id} trip={trip} flight={f} open={open.isOpen(f.id)} onToggle={() => open.toggle(f.id)} onEdit={() => setSheet({ flight: f })} onCode={codiciDi(trip, 'flight', f.id).length > 0 ? () => setCodice(f) : undefined} onDelete={() => void elimina(f)} />
-          ))}
-        </section>
-      ))}
+      <Affianca>
+        {/* pieghevole aperto: i gruppi di voli a due a due */}
+          {gruppi.map((g) => (
+          <section key={g.key} aria-label={g.title} style={{ display: 'grid', gap: 16 }}>
+            <div className="fa-sech">
+              <h2 className="fa-h3">{g.title}</h2>
+            </div>
+            {g.flights.map((f) => (
+              <CartaVolo key={f.id} trip={trip} flight={f} open={open.isOpen(f.id)} onToggle={() => open.toggle(f.id)} onEdit={() => setSheet({ flight: f })} onCode={codiciDi(trip, 'flight', f.id).length > 0 ? () => setCodice(f) : undefined} onDelete={() => void elimina(f)} />
+            ))}
+          </section>
+        ))}
+      </Affianca>
     </Schermata>
   )
 }
