@@ -4,11 +4,15 @@ import { App } from './app'
 import { AuthProvider } from './lib/auth'
 import { pingSupabase } from './lib/supabase'
 import { initTheme } from './lib/theme'
+import { setupInvioSenzaInvio } from './lib/invio'
 import { TripProvider } from './state/trip'
 import './styles.css'
 
 // Tema chiaro/scuro (la scelta sta in Impostazioni account)
 initTheme()
+
+// Invio in un campo chiude la tastiera, non salva il modulo
+setupInvioSenzaInvio()
 
 // Service worker: l'app si apre anche senza rete e si aggiorna da sola.
 // Nell'app Android/iOS i file sono già dentro il pacchetto: nessun service worker.

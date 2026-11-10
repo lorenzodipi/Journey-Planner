@@ -32,7 +32,9 @@ function makeIndicator(): HTMLElement {
     'transform:translateY(-64px)',
   ].join(';')
   el.innerHTML =
-    '<svg class="jp-ptr-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>'
+    // mentre si tira: la freccia dritta (si gira quando basta); mentre aggiorna: l'icona circolare dell'aggiornamento che gira
+    '<svg class="jp-ptr-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>' +
+    '<svg class="jp-ptr-ref" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M19 12a7 7 0 1 1-2-4.9M19 4v4h-4"/></svg>'
   document.body.appendChild(el)
   return el
 }
@@ -44,13 +46,21 @@ export function setupPullToRefresh(onRefresh: () => Promise<void>): () => void {
   let busy = false
   let pill: HTMLElement | null = null
   const icon = () => pill?.querySelector<SVGElement>('.jp-ptr-icon')
+  const ref = () => pill?.querySelector<SVGElement>('.jp-ptr-ref')
+  /** freccia dritta mentre si tira, icona di aggiornamento mentre carica */
+  const aggiorna = (si: boolean) => {
+    const a = icon()
+    const r = ref()
+    if (a) a.style.display = si ? 'none' : ''
+    if (r) (r.style.display = si ? '' : 'none'), r.classList.toggle('jp-spin', si)
+  }
 
   const hide = () => {
     if (!pill) return
     pill.style.transition = 'transform .2s ease, opacity .2s ease'
     pill.style.opacity = '0'
     pill.style.transform = 'translateY(-64px)'
-    icon()?.classList.remove('jp-spin')
+    aggiorna(false)
     const i = icon()
     if (i) i.style.transform = ''
   }
@@ -101,7 +111,7 @@ export function setupPullToRefresh(onRefresh: () => Promise<void>): () => void {
     pill.style.transform = 'translateY(0px)'
     const i = icon()
     if (i) i.style.transform = ''
-    i?.classList.add('jp-spin')
+    aggiorna(true)
     void onRefresh()
       .catch(() => undefined)
       .finally(() => {

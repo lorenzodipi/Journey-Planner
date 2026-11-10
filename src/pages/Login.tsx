@@ -32,7 +32,7 @@ export function Login() {
 
   return (
     <Schermata tabs={false} rete={false} mainStyle={{ paddingTop: 56 }}>
-      <form onSubmit={onSubmit} noValidate style={{ display: 'grid', gap: 24 }}>
+      <form onSubmit={onSubmit} noValidate data-invio style={{ display: 'grid', gap: 24 }}>
         <div style={{ display: 'grid', gap: 8 }}>
           <img className="logo lt" src={ART.lockup} alt="Faraway" width="232" height="58" />
           <img className="logo dk" src={ART.lockupReverse} alt="Faraway" width="232" height="58" />

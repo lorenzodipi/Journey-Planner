@@ -17,7 +17,7 @@ import { impattoDate } from '../../lib/gestioneViaggio'
 import type { MezzoViaggio, Trip, TripCountry } from '../../types'
 
 /** Soglie per andare a piedi, in minuti (0 = mai). */
-const SOGLIE: [number, string][] = [[5, '5 min'], [10, '10 min'], [15, '15 min'], [20, '20 min'], [30, '30 min'], [0, 'Mai']]
+const SOGLIE: [number, string][] = [[5, 'Fino a 5 min'], [10, 'Fino a 10 min'], [15, 'Fino a 15 min'], [20, 'Fino a 20 min'], [30, 'Fino a 30 min'], [0, 'Mai']]
 import { Avatars, Banner, Campo, Chip, Pulsante } from '../../faraway/base'
 import { CampoPaese } from '../../faraway/CampoPaese'
 import { CampoValuta } from '../../faraway/CampoValuta'
@@ -399,7 +399,17 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
 
         <section className="fa-sez">
           <h2 className="fa-h3">Budget</h2>
-          <Campo label="Budget (facoltativo)" icon="bag" inputMode="decimal" value={budget} onChange={setBudget} placeholder={`es. 3.000 ${casaSym}`} maxLength={12} />
+          <Campo
+            label="Budget totale (facoltativo)"
+            icon="bag"
+            inputMode="decimal"
+            value={budget}
+            onChange={setBudget}
+            placeholder="es. 3.000"
+            maxLength={12}
+            trailing={<span className="fa-suf" aria-hidden="true">{home}</span>}
+            hint={`In ${currencyName(home) ? `${currencyName(home)} (${home})` : home}, la tua valuta di casa.`}
+          />
         </section>
 
         <section className="fa-sez">
@@ -421,8 +431,8 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
             </span>
           </Riquadri>
           {mezzoScelto !== 'walk' ? (
-            <div className="fa-fld" role="group" aria-label="A piedi se ci vogliono meno di">
-              A piedi se ci vogliono meno di
+            <div className="fa-fld" role="group" aria-label="Tragitti brevi a piedi">
+              Tragitti brevi a piedi
               <div className="fa-chips wrap">
                 {SOGLIE.map(([v, l]) => (
                   <Chip key={v} on={soglia === v} onPress={() => setSoglia(v)}>
@@ -430,7 +440,11 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
                   </Chip>
                 ))}
               </div>
-              <span className="fa-help">{soglia === 0 ? 'Anche i tratti brevi con il mezzo scelto sopra.' : `Oltre ${soglia} minuti a piedi si usa il mezzo scelto sopra.`}</span>
+              <span className="fa-help">
+                {soglia === 0
+                  ? `Tra una tappa e l'altra si va sempre ${mezzoScelto === 'car' ? 'in auto' : 'con i mezzi'}, anche se è vicina.`
+                  : `Se la tappa successiva è a ${soglia} minuti di cammino o meno ci si va a piedi; se è più lontana, ${mezzoScelto === 'car' ? 'in auto' : 'con i mezzi'}.`}
+              </span>
             </div>
           ) : null}
         </section>

@@ -1,4 +1,5 @@
 // Oggi (mock Fa-03…Fa-07, Fa-52…Fa-55; issue #28, #29, #30): prima, durante e dopo il viaggio.
+import { doneCount } from '../lib/checklist'
 import { MeteoGiornoCard } from './giorno/MeteoGiornoCard'
 import { cittaDelGiorno, indiceCittaAdesso } from '../lib/meteoGiorno'
 import { ora, useRiferimento } from '../lib/formati'
@@ -92,7 +93,14 @@ function useLeMieCose(trip: Trip, me: string | undefined) {
   const mine = trip.checklist.filter((c) => !c.travelerId || c.travelerId === me).sort((a, b) => a.position - b.position)
   const done = mine.filter((c) => c.done).length
   const todo = mine.filter((c) => !c.done)
-  const items: VoceHome[] = todo.slice(0, 4).map((c) => ({ id: c.id, text: c.text, done: c.done, tag: c.private || c.travelerId ? 'Solo io' : 'Tutti', tagAll: !c.private && !c.travelerId }))
+  const items: VoceHome[] = todo.slice(0, 4).map((c) => ({
+    id: c.id,
+    text: c.text,
+    done: c.done,
+    tag: c.private || c.travelerId ? 'Solo io' : 'Tutti',
+    tagAll: !c.private && !c.travelerId,
+    pezzi: (c.quantity ?? 1) > 1 ? { fatti: doneCount(c), totale: c.quantity as number, unita: c.unit || undefined } : undefined,
+  }))
   return (
     <ChecklistHome
       done={done}
@@ -102,7 +110,8 @@ function useLeMieCose(trip: Trip, me: string | undefined) {
       onToggle={async (id) => {
         const c = mine.find((x) => x.id === id)
         if (!c) return
-        const m = await t.setChecklistDone(id, !c.done)
+        // con più pezzi la spunta li mette tutti a posto (o li toglie), come nella pagina Checklist
+        const m = (c.quantity ?? 1) > 1 ? await t.setChecklistCount(id, c.done ? 0 : (c.quantity as number)) : await t.setChecklistDone(id, !c.done)
         if (m) showToast(m)
       }}
       onOpen={() => navigate('/altro/checklist')}

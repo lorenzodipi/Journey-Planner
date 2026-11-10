@@ -131,6 +131,8 @@ export interface VoceHome {
   tag: string
   tagAll: boolean
   done: boolean
+  /** voci con più pezzi (es. 3 magliette): quanti sono a posto su quanti */
+  pezzi?: { fatti: number; totale: number; unita?: string }
 }
 
 /** «Le mie cose» (ChecklistHome, variante a tondo): anello, fino a 4 voci, stati quasi finita / tutto fatto / vuota. */
@@ -191,13 +193,21 @@ export function ChecklistHome({ done, total, items, rest, onToggle, onOpen, onCr
           <ul className="l">
             {items.map((i) => (
               <li className="it" key={i.id}>
-                <button type="button" className="ck" role="checkbox" aria-checked={i.done} aria-label={i.text} onClick={() => onToggle(i.id)}>
+                <button type="button" className={cx('ck', i.pezzi && i.pezzi.fatti > 0 && !i.done && 'p')} role="checkbox" aria-checked={i.done ? true : i.pezzi && i.pezzi.fatti > 0 ? 'mixed' : false} aria-label={i.pezzi ? `${i.text}, ${i.pezzi.fatti} su ${i.pezzi.totale}` : i.text} onClick={() => onToggle(i.id)}>
                   <b>
                     <G name="g-check" />
                   </b>
                 </button>
                 <div className="tx">
-                  <span className="n">{i.text}</span>
+                  <span className="nr">
+                    <span className="n">{i.text}</span>
+                    {i.pezzi ? (
+                      <span className="qt" aria-hidden="true">
+                        {i.pezzi.fatti}/{i.pezzi.totale}
+                        {i.pezzi.unita ? ` ${i.pezzi.unita}` : ''}
+                      </span>
+                    ) : null}
+                  </span>
                   <div className="mt">
                     <span className={cx('tag', i.tagAll && 'all')}>
                       <G name={i.tagAll ? 'g-users' : 'g-user'} />
