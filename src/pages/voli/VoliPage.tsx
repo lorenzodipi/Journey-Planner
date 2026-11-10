@@ -45,8 +45,8 @@ export function VoliPage() {
       {gruppi.length === 0 ? (
         <Vuoto title="Nessun volo" text="Aggiungi i voli del viaggio: li trovi qui come carte d'imbarco, con gli scali." action="Aggiungi un volo" onAction={() => setSheet({})} />
       ) : null}
-      <Affianca>
-        {/* pieghevole aperto: i gruppi di voli a due a due */}
+      <Affianca pesi={gruppi.map((g) => g.flights.length * 3 + 1)}>
+        {/* pieghevole aperto: i gruppi di voli in due colonne */}
           {gruppi.map((g) => (
           <section key={g.key} aria-label={g.title} style={{ display: 'grid', gap: 16 }}>
             <div className="fa-sech">

@@ -1,7 +1,7 @@
 // Struttura delle schermate Faraway: barra in alto (grande o con «indietro»), contenuto,
 // barra delle schede (BarraSchede) e pulsante volante «+ …» (FAB), come nel mock.
 import type { CSSProperties, ReactNode } from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { Children, useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import { cx } from './cx'
 import { tornaSu } from '../lib/indietro'
@@ -61,8 +61,31 @@ export function BarraSchede() {
  * ordine, spazi e aspetto restano quelli di sempre. Con la piega verticale le colonne si dividono esattamente sulla piega.
  * Figli diretti senza `Colonna`: si alternano sinistra/destra. Con `Colonna` si sceglie il lato; `alta` occupa due righe.
  */
-export function Affianca({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cx('fa-duo', className)}>{children}</div>
+export function Affianca({ children, className, pesi }: { children: ReactNode; className?: string; pesi?: number[] }) {
+  if (!pesi) return <div className={cx('fa-duo', className)}>{children}</div>
+  // Elenco di gruppi: due colonne indipendenti (nessuna riga in comune, quindi nessun vuoto) divise dove i pesi si
+  // bilanciano. L'ordine resta quello del codice (prima tutta la sinistra), così sul telefono e per lo screen reader non cambia nulla.
+  const figli = Children.toArray(children)
+  if (figli.length < 2) return <div className={cx('fa-duo', className)}><Colonna lato="tutta">{figli}</Colonna></div>
+  const k = taglio(pesi.length === figli.length ? pesi : figli.map(() => 1))
+  return (
+    <div className={cx('fa-duo', className)}>
+      <Colonna lato="sinistra">{figli.slice(0, k)}</Colonna>
+      <Colonna lato="destra">{figli.slice(k)}</Colonna>
+    </div>
+  )
+}
+
+/** Dove dividere una sequenza di pesi in due parti consecutive il più possibile uguali (almeno uno per parte). */
+export function taglio(pesi: number[]): number {
+  const tot = pesi.reduce((a, b) => a + b, 0)
+  let k = 1, best = Infinity, acc = 0
+  for (let i = 1; i < pesi.length; i++) {
+    acc += pesi[i - 1]
+    const d = Math.abs(tot - 2 * acc)
+    if (d < best) (best = d), (k = i)
+  }
+  return k
 }
 
 /** Un gruppo di elementi nella stessa colonna di `Affianca` (sul telefono anche questo è trasparente); `tutta` va da un bordo all'altro. */

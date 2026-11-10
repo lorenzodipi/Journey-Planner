@@ -134,8 +134,8 @@ export function PrenotazioniPage() {
       ) : shown.length === 0 ? (
         <VuotoFiltro title="Nessuna prenotazione trovata" text="Prova con un altro tipo o togli i filtri." action="Mostra tutte" onAction={() => (setFiltro('all'), setArch(FILTRI_VUOTI))} />
       ) : null}
-      <Affianca>
-        {/* pieghevole aperto: i giorni a due a due */}
+      <Affianca pesi={gruppi.map((g) => g.items.length * 2 + 1)}>
+        {/* pieghevole aperto: i giorni in due colonne */}
           {gruppi.map((g) => (
           <section key={g.ymd || 'senza'} aria-label={g.ymd ? giornoSpese(g.ymd, today) : 'Da pianificare'} style={{ display: 'grid', gap: 16 }}>
             <div className="fa-sech">

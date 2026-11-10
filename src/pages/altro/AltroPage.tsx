@@ -85,7 +85,7 @@ export function AltroPage() {
         <RisultatiRicerca trip={trip} q={q} />
       ) : (
         <Affianca>
-          {/* pieghevole aperto: viaggio attuale e account affiancati, poi le sezioni su due colonne */}
+          {/* pieghevole aperto: a sinistra il viaggio attuale e Faraway, a destra account e sezioni del viaggio */}
           <Colonna lato="sinistra">
             <section aria-label="Viaggio attuale" style={{ position: 'relative', display: 'grid', gap: 8, padding: 24, borderRadius: 'var(--radius-xl)', background: 'var(--tinta-azzurro)', color: 'var(--on-tinta)', border: '1px solid var(--bordo-azzurro)' }}>
               <Simbolo style={{ position: 'absolute', right: 18, top: 16, width: 46, height: 54 }} />
@@ -107,21 +107,19 @@ export function AltroPage() {
               ) : null}
             </section>
           </Colonna>
-          <Colonna lato="destra">
+          <Colonna lato="destra" alta>
             <section className="fa-list" aria-label="Account">
               <Riga icon={<Avatar initials={initials(nome)} n={me ? discOf(trip, me.id) : 1} large />} title={nome} sub="Account e profilo" onPress={() => navigate('/altro/account')} />
               <Riga icon="i-sez-bag" title="Tutti i viaggi" sub={viaggiText(t.trips.length)} onPress={() => navigate('/viaggi')} />
             </section>
-          </Colonna>
-          <Colonna lato="tutta">
             <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Il viaggio</h2>
-            <div className="fa-list fa-list-duo">
+            <div className="fa-list">
               {righe.map((x) => (
                 <Riga key={x.title} icon={x.icon} title={x.title} sub={x.sub} onPress={() => (x.to ? navigate(x.to) : x.onPress?.())} />
               ))}
             </div>
           </Colonna>
-          <Colonna lato="tutta">
+          <Colonna lato="sinistra">
             <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Faraway</h2>
             <div className="fa-list">
               <Riga icon="i-azi-settings" title="Impostazioni" sub={t.pending > 0 ? `Aspetto, notifiche e dati · ${t.pending === 1 ? '1 modifica' : `${t.pending} modifiche`} in coda` : 'Aspetto, notifiche, lingua e dati'} onPress={() => navigate('/altro/impostazioni')} />

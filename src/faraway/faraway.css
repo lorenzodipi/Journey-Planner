@@ -1304,6 +1304,8 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-Riepilogo .hero{color:var(--on-tinta);position:relative;overflow:hidden;background:var(--tinta-azzurro);border-radius:var(--radius-xl);padding:var(--space-xl);display:grid;gap:var(--space-xs)}
 .k-Riepilogo .hero svg{position:absolute;right:var(--space-xl);top:var(--space-lg);width:62px;height:73px;pointer-events:none}
 .k-Riepilogo .l{font:400 14px/20px var(--font-sans);color:var(--on-tinta-muted);position:relative}
+/* l'etichetta non passa sotto la mongolfiera (62 px a destra) */
+.k-Riepilogo .hero svg~.l{padding-right:72px}
 .k-Riepilogo .big{font:500 40px/44px var(--font-display);letter-spacing:-0.02em;font-variant-numeric:tabular-nums;position:relative;margin-top:var(--space-xl)}
 .k-Riepilogo .c{font:400 13px/18px var(--font-sans);color:var(--on-tinta-muted);position:relative}
 .k-Riepilogo .bar{height:8px;border-radius:var(--radius-full);background:#FFFFFFB8;overflow:hidden;margin-top:var(--space-sm);position:relative}
@@ -1784,6 +1786,9 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-Ticket .cdl .un span{font:400 16px/22px var(--font-sans);color:var(--ink-muted)}
 .k-Ticket .cd2-bot{padding:var(--space-lg) var(--space-xl) var(--space-xl)}
 .k-Ticket .cd2-bot .rr3{display:flex;align-items:center;gap:var(--space-md);font:800 54px/60px var(--font-sans);letter-spacing:-.02em;margin-top:var(--space-sm)}
+/* i codici si stringono con la carta (a 320 px o in una colonna del pieghevole uscivano dal bordo): mai oltre 54 px */
+.k-Ticket .cd2-bot{container-type:inline-size}
+.k-Ticket .cd2-bot .rr3{font-size:min(54px,17.5cqi)}
 .k-Ticket .rr3 .pl3{color:var(--azzurro-ink);display:grid;place-items:center}
 .k-Ticket .cd2-bot .dt{font:400 17px/24px var(--font-sans);color:var(--ink-muted);margin-top:var(--space-sm)}
 .k-Ticket .th .hz{display:grid;grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr);gap:var(--space-sm);align-items:start;padding:0 var(--space-xl) var(--space-lg)}
@@ -1992,6 +1997,9 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-TicketOrizzontale .cdl .un span{font:400 16px/22px var(--font-sans);color:var(--ink-muted)}
 .k-TicketOrizzontale .cd2-bot{padding:var(--space-lg) var(--space-xl) var(--space-xl)}
 .k-TicketOrizzontale .cd2-bot .rr3{display:flex;align-items:center;gap:var(--space-md);font:800 54px/60px var(--font-sans);letter-spacing:-.02em;margin-top:var(--space-sm)}
+/* i codici si stringono con la carta (a 320 px o in una colonna del pieghevole uscivano dal bordo): mai oltre 54 px */
+.k-TicketOrizzontale .cd2-bot{container-type:inline-size}
+.k-TicketOrizzontale .cd2-bot .rr3{font-size:min(54px,17.5cqi)}
 .k-TicketOrizzontale .rr3 .pl3{color:var(--azzurro-ink);display:grid;place-items:center}
 .k-TicketOrizzontale .cd2-bot .dt{font:400 17px/24px var(--font-sans);color:var(--ink-muted);margin-top:var(--space-sm)}
 .k-TicketOrizzontale .th .hz{display:grid;grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr);gap:var(--space-sm);align-items:start;padding:0 var(--space-xl) var(--space-lg)}
@@ -2153,6 +2161,9 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-TicketTrasporti .cdl .un span{font:400 16px/22px var(--font-sans);color:var(--ink-muted)}
 .k-TicketTrasporti .cd2-bot{padding:var(--space-lg) var(--space-xl) var(--space-xl)}
 .k-TicketTrasporti .cd2-bot .rr3{display:flex;align-items:center;gap:var(--space-md);font:800 54px/60px var(--font-sans);letter-spacing:-.02em;margin-top:var(--space-sm)}
+/* i codici si stringono con la carta (a 320 px o in una colonna del pieghevole uscivano dal bordo): mai oltre 54 px */
+.k-TicketTrasporti .cd2-bot{container-type:inline-size}
+.k-TicketTrasporti .cd2-bot .rr3{font-size:min(54px,17.5cqi)}
 .k-TicketTrasporti .rr3 .pl3{color:var(--azzurro-ink);display:grid;place-items:center}
 .k-TicketTrasporti .cd2-bot .dt{font:400 17px/24px var(--font-sans);color:var(--ink-muted);margin-top:var(--space-sm)}
 .k-TicketTrasporti .th .hz{display:grid;grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr);gap:var(--space-sm);align-items:start;padding:0 var(--space-xl) var(--space-lg)}
@@ -2552,10 +2563,11 @@ html,body{margin:0;background:var(--canvas)}
   .fa-duo-c.l{grid-column:1}
   .fa-duo-c.r{grid-column:2}
   .fa-duo-c.alta{grid-row:span 2}
+  /* sinistra, destra alta, sinistra: la prima riga è alta quanto il primo gruppo di sinistra e tutto ciò che la colonna
+     alta ha in più va nella seconda, così il secondo gruppo di sinistra sta subito sotto il primo, senza vuoti */
+  .fa-duo:has(>.fa-duo-c.alta){grid-template-rows:auto 1fr}
   .fa-duo-c.tutta{grid-column:1/-1}
   .fa-duo-c:empty{display:none}
-  /* un elenco di righe a tutta larghezza va su due colonne, con lo stesso spazio delle colonne */
-  .fa-duo .fa-list.fa-list-duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--duo-gap)}
   /* con la piega verticale (plugin capacitor-foldable) le colonne si dividono esattamente sulla piega: la sua banda
      (--fold-width, 0 se senza giunzione) è lo spazio tra le colonne, mai meno di 24 px. Le coordinate sono del viewport:
      si tolgono barra laterale e margine finché la colonna non è centrata (schermo non più largo di colonna + barra). */

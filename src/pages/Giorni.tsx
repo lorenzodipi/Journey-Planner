@@ -138,8 +138,8 @@ export function Giorni() {
       {trip.days.length === 0 ? <Vuoto art="calendario" title="Nessun giorno" text="Imposta le date del viaggio da Altro → Modifica viaggio: i giorni si creano da soli." /> : null}
       {trip.days.length > 0 && shown.length === 0 ? <Vuoto art="calendario" title="Nessun giorno trovato" text="Prova con un'altra città o tappa." /> : null}
 
-      <Affianca>
-        {/* pieghevole aperto: le città a due a due */}
+      <Affianca pesi={shown.map((g) => Math.ceil(g.cells.length / 2) * 2 + 1)}>
+        {/* pieghevole aperto: le città in due colonne */}
           {shown.map((g, gi) => (
           <section key={`${gi}-${g.cells[0].day.id}`} style={{ display: 'grid', gap: 16 }} aria-label={g.title}>
             <div className="fa-sech">

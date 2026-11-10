@@ -273,8 +273,8 @@ export function ChecklistPage() {
               onAction={() => setSheet({})}
             />
           ) : null}
-          <Affianca>
-            {/* pieghevole aperto: le categorie a due a due */}
+          <Affianca pesi={gruppi.map((g) => g.items.length + 2)}>
+            {/* pieghevole aperto: le categorie in due colonne */}
               {gruppi.map((g) => (
               <section key={g.category} className="card" aria-label={g.category}>
                 <div className="grp">
