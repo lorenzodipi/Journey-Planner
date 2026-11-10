@@ -114,6 +114,10 @@ function useLeMieCose(trip: Trip, me: string | undefined) {
         const m = (c.quantity ?? 1) > 1 ? await t.setChecklistCount(id, c.done ? 0 : (c.quantity as number)) : await t.setChecklistDone(id, !c.done)
         if (m) showToast(m)
       }}
+      onCount={async (id, n) => {
+        const m = await t.setChecklistCount(id, n)
+        if (m) showToast(m)
+      }}
       onOpen={() => navigate('/altro/checklist')}
       onCreate={() => navigate('/altro/checklist?nuova=1')}
     />

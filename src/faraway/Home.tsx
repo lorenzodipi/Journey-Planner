@@ -9,6 +9,7 @@ import { decimalsOf } from '../lib/fx'
 import { initials } from '../state/me'
 import { Ic } from '../ui/Sprite'
 import { cx } from './cx'
+import { PulsanteIcona } from './base'
 import { G } from './Tappe'
 import { Wx, wxKind } from './Wx'
 
@@ -136,7 +137,7 @@ export interface VoceHome {
 }
 
 /** «Le mie cose» (ChecklistHome, variante a tondo): anello, fino a 4 voci, stati quasi finita / tutto fatto / vuota. */
-export function ChecklistHome({ done, total, items, rest, onToggle, onOpen, onCreate }: { done: number; total: number; items: VoceHome[]; rest: number; onToggle: (id: string) => void; onOpen: () => void; onCreate: () => void }) {
+export function ChecklistHome({ done, total, items, rest, onToggle, onCount, onOpen, onCreate }: { done: number; total: number; items: VoceHome[]; rest: number; onToggle: (id: string) => void; onCount?: (id: string, n: number) => void; onOpen: () => void; onCreate: () => void }) {
   const r = 18
   const circ = 2 * Math.PI * r
   if (total === 0)
@@ -201,10 +202,14 @@ export function ChecklistHome({ done, total, items, rest, onToggle, onOpen, onCr
                 <div className="tx">
                   <span className="nr">
                     <span className="n">{i.text}</span>
-                    {i.pezzi ? (
-                      <span className="qt" aria-hidden="true">
-                        {i.pezzi.fatti}/{i.pezzi.totale}
-                        {i.pezzi.unita ? ` ${i.pezzi.unita}` : ''}
+                    {i.pezzi && onCount ? (
+                      <span role="group" aria-label={`Pezzi a posto: ${i.text}`} className="fa-qta qt">
+                        <PulsanteIcona icon="minus" label={`Meno: ${i.text}`} isDisabled={i.pezzi.fatti <= 0} onPress={() => onCount(i.id, (i.pezzi?.fatti ?? 0) - 1)} />
+                        <b aria-live="polite">
+                          {i.pezzi.fatti}/{i.pezzi.totale}
+                          {i.pezzi.unita ? ` ${i.pezzi.unita}` : ''}
+                        </b>
+                        <PulsanteIcona icon="plus" label={`Più: ${i.text}`} isDisabled={i.pezzi.fatti >= i.pezzi.totale} onPress={() => onCount(i.id, (i.pezzi?.fatti ?? 0) + 1)} />
                       </span>
                     ) : null}
                   </span>
