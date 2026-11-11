@@ -2569,6 +2569,19 @@ html,body{margin:0;background:var(--canvas)}
   .fa-gpanel .fa-phone{--colonna:720px;--margine:16px;min-height:100%}
   .fa-gpanel .fa-duo,.fa-gpanel .fa-duo-c{display:contents}
   .fa-gpanel .fa-phone .fa-fab{right:16px;bottom:24px}
+  /* card dei luoghi accanto alla mappa: tre colonne (disco, testo, freccia sopra e «Maps» sotto). Freccia e pulsante
+     finiscono allo stesso bordo destro; il pulsante è largo fisso, così il testo sa quanto spazio ha. Card stretta:
+     solo l'icona (il nome resta nell'aria-label) */
+  .fa-phone.fa-lmappa .k-Luoghi .ph:has(>.btn.mp){--mpw:44px;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:minmax(0,1fr) auto;row-gap:0}
+  .fa-phone.fa-lmappa .k-Luoghi .ph:has(>.btn.mp)>.tg{grid-area:1/1/3/3;min-height:calc(24px + var(--space-sm) + 44px)}
+  .fa-phone.fa-lmappa .k-Luoghi .ph:has(>.btn.mp)>.tg .chv{align-self:flex-start;width:var(--mpw);justify-items:end}
+  .fa-phone.fa-lmappa .k-Luoghi .ph>.btn.mp{grid-area:2/2;position:relative;z-index:1;margin:0;width:var(--mpw);padding:0;font-size:0;gap:0}
+  .fa-phone.fa-lmappa .k-Luoghi .ph>.btn.mp svg{width:20px;height:20px;transform:scale(1.35)}
+  @container (min-width:380px){
+    .fa-phone.fa-lmappa .k-Luoghi .ph:has(>.btn.mp){--mpw:96px}
+    .fa-phone.fa-lmappa .k-Luoghi .ph>.btn.mp{font-size:14px;gap:8px}
+    .fa-phone.fa-lmappa .k-Luoghi .ph>.btn.mp svg{width:18px;height:18px;transform:none}
+  }
 }
 
 
