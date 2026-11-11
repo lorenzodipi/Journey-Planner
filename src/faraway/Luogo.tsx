@@ -41,9 +41,11 @@ interface Props {
   lead?: ReactNode
   /** Riga in fondo ai dettagli (es. il credito della foto). */
   foot?: ReactNode
+  /** Id da ritrovare nella pagina (Luoghi con la mappa accanto: toccando il pin si scorre fino alla card). */
+  ancora?: string
 }
 
-export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay, onEdit, onDelete, selecting, selected, onSelect, onLongPress, lead, foot }: Props) {
+export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay, onEdit, onDelete, selecting, selected, onSelect, onLongPress, lead, foot, ancora }: Props) {
   const stato = statoLuogo(trip, place)
   const s = STATO_LUOGO[stato]
   const tappa = tappaDelLuogo(trip, place.id)
@@ -83,7 +85,7 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
   }
 
   return (
-    <div className={cx('pl', open && 'open', selected && 'fa-sel')}>
+    <div className={cx('pl', open && 'open', selected && 'fa-sel')} data-luogo={ancora}>
       <div className="ph">
         <button type="button" className="tg" aria-expanded={selecting ? undefined : open} aria-pressed={selecting ? selected : undefined} onClick={click} {...longPress}>
           {selecting ? (

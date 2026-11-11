@@ -23,6 +23,7 @@ import { Sv } from '../faraway/icons'
 import { discOfPlace, LuogoCard } from '../faraway/Luogo'
 import { useUnaAperta } from '../faraway/Righe'
 import { BarraGrande, Schermata } from '../faraway/shell'
+import { useMappaAccanto } from '../faraway/mappaAccanto'
 import { Vuoto, VuotoFiltro } from '../faraway/Stati'
 import { SpostaSheet } from './giorno/SpostaSheet'
 import { FiltriSheet } from './luoghi/FiltriSheet'
@@ -139,6 +140,9 @@ export function Luoghi() {
   const [, navigate] = useLocation()
   const vista: Vista = new URLSearchParams(search).get('vista') === 'mappa' ? 'mappa' : 'elenco'
   const setVista = (v: Vista) => navigate(v === 'mappa' ? '/luoghi?vista=mappa' : '/luoghi', { replace: true })
+  // finestra espansa (pieghevole in orizzontale, computer): elenco a sinistra largo come un telefono e mappa a destra
+  const accanto = useMappaAccanto()
+  if (accanto) return <Elenco setVista={setVista} conMappa />
   return vista === 'mappa' ? <Mappa setVista={setVista} /> : <Elenco setVista={setVista} />
 }
 
@@ -155,7 +159,7 @@ function CampoCerca({ value, onChange }: { value: string; onChange: (v: string) 
 
 /* ------------------------------------------------------------------ Elenco */
 
-function Elenco({ setVista }: { setVista: (v: Vista) => void }) {
+function Elenco({ setVista, conMappa }: { setVista: (v: Vista) => void; conMappa?: boolean }) {
   const trip = useTrip()
   const places = useMemo(() => conStato(trip), [trip])
   const [filters, setFilters] = usePlaceFilters('luoghi', trip.id)
@@ -168,6 +172,8 @@ function Elenco({ setVista }: { setVista: (v: Vista) => void }) {
   const card = useUnaAperta()
   const az = useAzioniLuogo(trip)
   const [archOpen, setArchOpen] = useState(false)
+  // con la mappa accanto: il luogo scelto (pin acceso sulla mappa, card evidenziata nell'elenco)
+  const [evidenza, setEvidenza] = useState<string | null>(null)
   const archiviati = trip.archivedPlaces ?? []
   const t = useTrips()
 
@@ -177,6 +183,18 @@ function Elenco({ setVista }: { setVista: (v: Vista) => void }) {
   const chosen = visible.filter((p) => sel.has(p.id))
   const allSelected = visible.length > 0 && chosen.length === visible.length
   const original = (p: Place) => trip.places.find((x) => x.id === p.id) ?? p
+
+  /** Pin toccato sulla mappa: l'elenco scorre fino alla card del luogo e la evidenzia (la mappa resta dov'è). */
+  function daMappa(id: string | null) {
+    setEvidenza(id)
+    if (!id) return
+    const el = document.querySelector<HTMLElement>(`[data-luogo="${CSS.escape(id)}"]`)
+    if (!el) return
+    const piano = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    el.scrollIntoView({ block: 'center', behavior: piano ? 'auto' : 'smooth' })
+    // il focus va sulla card (per chi usa la tastiera) senza l'anello: la card è già evidenziata
+    el.querySelector<HTMLElement>('.tg')?.focus({ preventScroll: true, focusVisible: false } as FocusOptions)
+  }
 
   const stopSelecting = () => (setSelecting(false), setSel(new Set()))
   const startSelecting = (id?: string) => {
@@ -242,12 +260,13 @@ function Elenco({ setVista }: { setVista: (v: Vista) => void }) {
       bar={bar}
       tabs={!selecting}
       fab={empty || selecting ? null : { label: 'Luogo', aria: 'Aggiungi un luogo', onPress: az.create }}
-      className={selecting ? 'fa-selmode' : undefined}
+      className={cx(selecting && 'fa-selmode', conMappa && 'fa-lmappa')}
       fisso
       fissa={
         selecting ? null : (
           <>
             {searchOpen ? <CampoCerca value={text} onChange={setText} /> : null}
+            {conMappa ? null : (
             <Segmenti
               label="Vista"
               value="elenco"
@@ -257,6 +276,7 @@ function Elenco({ setVista }: { setVista: (v: Vista) => void }) {
               ]}
               onChange={(v) => setVista(v as Vista)}
             />
+            )}
             {empty ? null : <RigaFiltri filters={filters} onChange={setFilters} onOpen={() => setFiltriOpen(true)} />}
           </>
         )
@@ -285,6 +305,7 @@ function Elenco({ setVista }: { setVista: (v: Vista) => void }) {
             />
           ) : null}
           {az.nodes}
+          {conMappa ? <MappaAccanto places={visible} selectedId={selecting ? null : evidenza} onSelect={daMappa} /> : null}
         </>
       }
     >
@@ -333,13 +354,15 @@ function Elenco({ setVista }: { setVista: (v: Vista) => void }) {
                       trip={trip}
                       place={original(p)}
                       open={card.isOpen(p.id)}
-                      onToggle={() => card.toggle(p.id)}
+                      // con la mappa accanto la card accende il suo pin, ma la mappa non si sposta
+                      onToggle={() => (card.toggle(p.id), conMappa && setEvidenza(p.id))}
                       onAddToDay={(dayId) => az.addToDay(original(p), dayId)}
                       onChangeDay={() => az.changeDay(original(p))}
                       onEdit={() => az.edit(original(p))}
                       onDelete={() => void az.remove([original(p)])}
                       selecting={selecting}
-                      selected={sel.has(p.id)}
+                      selected={selecting ? sel.has(p.id) : conMappa && evidenza === p.id}
+                      ancora={conMappa ? p.id : undefined}
                       onSelect={() => toggleSel(p.id)}
                       onLongPress={() => startSelecting(p.id)}
                     />
@@ -408,6 +431,76 @@ function CreditoFoto({ trip, place }: { trip: Trip; place: Place }) {
       </a>{' '}
       (da «{photo.photo.title}»)
     </p>
+  )
+}
+
+/** La mappa a destra dell'elenco (finestra espansa): gli stessi luoghi dell'elenco, con gli stessi filtri e la ricerca.
+ *  Toccare un pin non apre una card sulla mappa: lo dice all'elenco, che scorre fino al luogo. */
+function MappaAccanto({ places, selectedId, onSelect }: { places: Place[]; selectedId: string | null; onSelect: (id: string | null) => void }) {
+  const trip = useTrip()
+  const [View, setView] = useState<MapViewComponent | null>(null)
+  const [loadError, setLoadError] = useState(false)
+  const api = useRef<MapApi | null>(null)
+  const box = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    let active = true
+    import('../ui/MapView').then(
+      (m) => active && setView(() => m.MapView),
+      () => active && setLoadError(true),
+    )
+    return () => {
+      active = false
+    }
+  }, [])
+
+  // la mappa parte sotto quello che sta sopra l'app (il banner della demo) e sale con lo scorrimento fino al bordo in alto
+  useEffect(() => {
+    const el = box.current
+    const phone = el?.closest<HTMLElement>('.fa-phone')
+    if (!el || !phone) return
+    let raf = 0
+    const aggiorna = () => {
+      raf = 0
+      el.style.top = `${Math.max(0, Math.round(phone.getBoundingClientRect().top))}px`
+    }
+    const presto = () => {
+      if (!raf) raf = requestAnimationFrame(aggiorna)
+    }
+    aggiorna()
+    window.addEventListener('scroll', presto, { passive: true })
+    window.addEventListener('resize', presto)
+    return () => {
+      window.removeEventListener('scroll', presto)
+      window.removeEventListener('resize', presto)
+      cancelAnimationFrame(raf)
+    }
+  }, [])
+
+  const withPos = places.filter((p) => p.lat != null && p.lng != null)
+  const pins: MapPin[] = useMemo(
+    () => withPos.map((p) => ({ id: p.id, lat: p.lat as number, lng: p.lng as number, name: p.name, color: '', symbol: `${discOfPlace(p)}-w` })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [withPos.map((p) => `${p.id}:${p.lat}:${p.lng}:${p.category}`).join('|')],
+  )
+
+  return (
+    <aside ref={box} className="fa-lmap" aria-label="Mappa">
+      <div className="fa-map">
+        {View ? (
+          <View pins={pins} center={trip.center} selectedId={selectedId} onSelect={onSelect} bare cluster onCluster={(ids) => api.current?.zoomTo(ids)} apiRef={api} />
+        ) : (
+          <p className="fa-m fa-mapmsg" role="status">
+            {loadError ? 'Non riesco a caricare la mappa: serve la connessione la prima volta.' : <Loader size={32} label="Caricamento della mappa" />}
+          </p>
+        )}
+        <div className="fa-mapctl">
+          <button type="button" className="fa-ib" aria-label="La mia posizione" onClick={() => api.current?.locate()}>
+            <Sv name="pin" size={22} />
+          </button>
+        </div>
+      </div>
+    </aside>
   )
 }
 
