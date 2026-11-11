@@ -1,6 +1,8 @@
 // Ricerca luoghi con OpenStreetMap (Nominatim). Regole d'uso del servizio pubblico:
 // al massimo 1 richiesta al secondo, solo su azione esplicita dell'utente (niente
 // autocompletamento a ogni tasto) e con il Referer del sito, che il browser invia da solo.
+// Se Nominatim non risponde (rete, limite di richieste: il browser lo vede come un errore CORS, perché la risposta
+// d'errore non ha l'intestazione Access-Control-Allow-Origin) si prova Photon di Komoot, sempre con i dati di OpenStreetMap.
 
 export interface GeoResult {
   name: string
@@ -89,11 +91,19 @@ export function searchPlaces(query: string, near?: { lat: number; lng: number })
       const d = 4
       params.set('viewbox', `${near.lng - d},${near.lat + d},${near.lng + d},${near.lat - d}`)
     }
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
-      headers: { Accept: 'application/json' },
-    })
-    if (!res.ok) throw new Error(`Ricerca non disponibile (${res.status})`)
-    return parseNominatim((await res.json()) as NominatimItem[])
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+        headers: { Accept: 'application/json' },
+      })
+      if (!res.ok) throw new Error(`Ricerca non disponibile (${res.status})`)
+      return parseNominatim((await res.json()) as NominatimItem[])
+    } catch (primo) {
+      const ph = new URLSearchParams({ q: query.trim(), limit: '6', lang: 'en' })
+      if (near) (ph.set('lat', String(near.lat)), ph.set('lon', String(near.lng)))
+      const res = await fetch(`https://photon.komoot.io/api/?${ph}`, { headers: { Accept: 'application/json' } }).catch(() => null)
+      if (!res?.ok) throw primo instanceof Error ? primo : new Error('Ricerca non disponibile')
+      return parsePhoton((await res.json()) as PhotonRisposta)
+    }
   })
   queue = job.catch(() => undefined)
   return job
@@ -123,10 +133,75 @@ export function reverseGeocode(lat: number, lng: number): Promise<{ address: str
     if (wait > 0) await new Promise((r) => setTimeout(r, wait))
     lastCall = Date.now()
     const params = new URLSearchParams({ lat: String(lat), lon: String(lng), format: 'jsonv2', addressdetails: '1', zoom: '18', 'accept-language': 'it' })
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`, { headers: { Accept: 'application/json' } })
-    if (!res.ok) throw new Error(`Indirizzo non disponibile (${res.status})`)
-    return parseReverse((await res.json()) as NominatimReverse)
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`, { headers: { Accept: 'application/json' } })
+      if (!res.ok) throw new Error(`Indirizzo non disponibile (${res.status})`)
+      return parseReverse((await res.json()) as NominatimReverse)
+    } catch (primo) {
+      const ph = new URLSearchParams({ lat: String(lat), lon: String(lng), lang: 'en', limit: '1' })
+      const res = await fetch(`https://photon.komoot.io/reverse?${ph}`, { headers: { Accept: 'application/json' } }).catch(() => null)
+      if (!res?.ok) throw primo instanceof Error ? primo : new Error('Indirizzo non disponibile')
+      return parsePhotonReverse((await res.json()) as PhotonRisposta)
+    }
   })
   queue = job.catch(() => undefined)
   return job
+}
+
+// ---- Photon (photon.komoot.io): GeoJSON con le proprietà di OpenStreetMap; si riportano ai nomi di Nominatim
+interface PhotonProps {
+  name?: string
+  street?: string
+  housenumber?: string
+  postcode?: string
+  city?: string
+  district?: string
+  locality?: string
+  county?: string
+  state?: string
+  country?: string
+  countrycode?: string
+  type?: string
+}
+export interface PhotonRisposta {
+  features?: { geometry?: { coordinates?: [number, number] }; properties?: PhotonProps }[]
+}
+
+function indirizzoPhoton(p: PhotonProps): Record<string, string> {
+  const a: Record<string, string> = {}
+  const metti = (k: string, v?: string) => (v ? (a[k] = v) : undefined)
+  // un risultato che è esso stesso una città ha il nome al posto di «city»
+  metti('city', p.city || (p.type === 'city' ? p.name : undefined))
+  metti('road', p.street)
+  metti('house_number', p.housenumber)
+  metti('postcode', p.postcode)
+  metti('suburb', p.district || p.locality)
+  metti('county', p.county)
+  metti('state', p.state)
+  metti('country', p.country)
+  if (p.countrycode === 'JP' && /tokyo/i.test(p.state ?? '')) a['ISO3166-2-lvl4'] = 'JP-13'
+  return a
+}
+
+/** Indirizzo e città dal primo risultato di Photon /reverse. */
+export function parsePhotonReverse(r: PhotonRisposta | null | undefined): { address: string; city: string } {
+  const p = r?.features?.[0]?.properties
+  return p ? parseReverse({ address: indirizzoPhoton(p) }) : { address: '', city: '' }
+}
+
+/** Risultati di Photon /api come quelli di Nominatim. */
+export function parsePhoton(r: PhotonRisposta | null | undefined): GeoResult[] {
+  const out: GeoResult[] = []
+  for (const f of r?.features ?? []) {
+    const p = f.properties ?? {}
+    const [lng, lat] = f.geometry?.coordinates ?? [NaN, NaN]
+    const name = (p.name || p.street || '').trim()
+    if (!name || !Number.isFinite(lat) || !Number.isFinite(lng)) continue
+    const a = indirizzoPhoton(p)
+    const city = cittaDa(a)
+    const via = p.street ? `${p.street}${p.housenumber ? ` ${p.housenumber}` : ''}` : ''
+    const address = [name, via, [p.postcode, city].filter(Boolean).join(' '), p.country].filter((x, i, all) => x && all.indexOf(x) === i).join(', ')
+    out.push({ name, address, city, lat, lng })
+  }
+  return out
 }

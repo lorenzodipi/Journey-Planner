@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cittaDa, parseNominatim, parseReverse } from './geocode'
+import { cittaDa, parseNominatim, parsePhoton, parsePhotonReverse, parseReverse } from './geocode'
 
 describe('parseNominatim', () => {
   it('estrae nome, nome locale, città e coordinate', () => {
@@ -59,4 +59,22 @@ describe('città dei quartieri di Tokyo', () => {
     expect(cittaDa({ city: 'Kita', state: 'Osaka' })).toBe('Kita')
     expect(cittaDa({ town: 'Siena' })).toBe('Siena')
   })
+})
+
+describe('Photon (quando Nominatim non risponde)', () => {
+  const disney = {
+    features: [
+      {
+        geometry: { coordinates: [139.7658449, 35.6775185] as [number, number] },
+        properties: { name: 'Disney FANTASY SHOP', street: 'Marunouchi', housenumber: '1', postcode: '100-0005', district: 'Marunouchi', city: 'Chiyoda', state: 'Tokyo', country: 'Japan', countrycode: 'JP', type: 'house' },
+      },
+    ],
+  }
+  it('reverse: indirizzo e città, con i quartieri di Tokyo riportati a Tokyo', () =>
+    expect(parsePhotonReverse(disney)).toEqual({ address: 'Marunouchi 1, 100-0005 Tokyo, Japan', city: 'Tokyo' }))
+  it('reverse vuoto', () => expect(parsePhotonReverse({ features: [] })).toEqual({ address: '', city: '' }))
+  it('ricerca: nome, indirizzo, città e coordinate (GeoJSON è lng, lat)', () =>
+    expect(parsePhoton(disney)).toEqual([{ name: 'Disney FANTASY SHOP', address: 'Disney FANTASY SHOP, Marunouchi 1, 100-0005 Tokyo, Japan', city: 'Tokyo', lat: 35.6775185, lng: 139.7658449 }]))
+  it('una città trovata come tale ha il suo nome come città', () =>
+    expect(parsePhoton({ features: [{ geometry: { coordinates: [11.33, 43.32] }, properties: { name: 'Siena', type: 'city', state: 'Toscana', country: 'Italy' } }] })[0].city).toBe('Siena'))
 })
