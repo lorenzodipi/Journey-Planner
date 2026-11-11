@@ -800,6 +800,20 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-Luoghi .tx b{font:600 17px/22px var(--font-sans)}
 .k-Luoghi .tx .ct{display:inline-flex;align-items:center;gap:8px;font:400 13px/18px var(--font-sans);color:var(--ink-muted)}
 .k-Luoghi .tx .ct .ic{width:14px;height:14px}
+/* la città resta nella sua colonna: una parola lunga («Bláskógabyggð») va a capo invece di finire sotto la freccia */
+.k-Luoghi .tx .ct,.k-LuoghiAperti .tx .ct{max-width:100%;min-width:0}
+.k-Luoghi .tx .ct .cn,.k-LuoghiAperti .tx .ct .cn{min-width:0;overflow-wrap:anywhere}
+/* card stretta (telefono da 360 px in giù, colonna dell'elenco accanto alla mappa): il testo non ci sta accanto al pulsante
+   «Maps» e finirebbe sotto la freccia. Il pulsante scende su una riga sua, allineato al testo. */
+.k-Luoghi .pl{container-type:inline-size}
+.k-Luoghi .tx>*{max-width:100%}
+/* poco più larga (telefono da 390 px): basta stringere gli spazi tra disco, testo e freccia perché «In programma» ci stia */
+@container (max-width:359px){.k-Luoghi .tg{gap:var(--space-sm)}}
+@container (max-width:349px){
+  .k-Luoghi .ph{flex-wrap:wrap;row-gap:var(--space-sm)}
+  .k-Luoghi .ph>.tg{flex:1 1 100%}
+  .k-Luoghi .ph>.btn.mp{margin-left:calc(44px + var(--space-md))}
+}
 .k-Luoghi .tx .st{margin-top:2.0px}
 .k-Luoghi .chv{display:grid;place-items:center;width:24px;height:24px;color:var(--ink-muted);flex:none;transition:transform .2s}
 .k-Luoghi .pl.open .chv{transform:rotate(180deg)}
@@ -2635,3 +2649,14 @@ html,body{margin:0;background:var(--canvas)}
 .vertical-viewport-segments-2 dialog.fa-dlg>.fa-sheet{max-height:calc(var(--viewport-segment-height-0-1) - 16px)}
 .vertical-viewport-segments-2 dialog.fa-dlg>.fa-sheet.full{top:calc(var(--viewport-segment-top-0-1) + 16px)}
 .vertical-viewport-segments-2 dialog.fa-mod{padding-top:calc(var(--viewport-segment-top-0-1) + 16px)}
+
+/* Biglietti stretti (telefono da 320 px): niente più sovrapposizioni. Il numero dei giorni e gli spazi del tragitto si
+   stringono con la carta; da 390 px in su i valori restano quelli di sempre (min/clamp arrivano ai massimi). */
+.k-Ticket .cdl,.k-TicketOrizzontale .cdl{container-type:inline-size;flex-wrap:wrap;row-gap:0}
+.k-Ticket .cdl .num,.k-TicketOrizzontale .cdl .num{font-size:min(136px,46cqi)}
+.k-TicketOrizzontale{container:tko / inline-size}
+@container tko (max-width:339px){
+  .k-TicketOrizzontale .hz2.hz2{column-gap:8px}
+  .k-TicketOrizzontale .hz2 .rt2 .rl{gap:4px;justify-content:center}
+  .k-TicketOrizzontale .hz2 .rt2 .ln{display:none}
+}
