@@ -124,14 +124,14 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
       <form id="trasporto-form" className="frm grp" onSubmit={submit} noValidate>
         <Gruppo titolo="Tragitto">
           <Riquadri<TransportMode> label="Mezzo" cols={3} value={mode} onChange={(m) => m && setMode(m)} options={MODI.map((m) => ({ value: m, label: m === 'other' ? 'Altro' : MODE_NOME[m], glifo: MODE_GLIFO[m] }))} />
-          <Campo label="Nome o numero del mezzo" value={title} onChange={setTitle} placeholder="es. Hikari 513" maxLength={60} />
+          <Campo label="Nome o numero del mezzo" value={title} onChange={setTitle} placeholder="es. Treno 9512" maxLength={60} />
           <Percorso
             durata={durata}
             da={{
               titolo: 'Partenza',
               children: (
                 <>
-                  <Campo label="Luogo" icon="pin" value={from} onChange={setFrom} placeholder="es. Kamakura" error={errors.from} />
+                  <Campo label="Luogo" icon="pin" value={from} onChange={setFrom} placeholder="Città o stazione" error={errors.from} />
                   <div className="dt">
                     <Campo label="Data" type="date" icon="cal" value={dd} onChange={(v) => (setDd(v), !ad || ad < v ? setAd(v) : null)} />
                     <Campo label="Ora" type="time" icon="clock" value={dt} onChange={setDt} />
@@ -143,7 +143,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
               titolo: 'Arrivo',
               children: (
                 <>
-                  <Campo label="Luogo" icon="pin" value={to} onChange={setTo} placeholder="es. Kyoto" error={errors.to} />
+                  <Campo label="Luogo" icon="pin" value={to} onChange={setTo} placeholder="Città o stazione" error={errors.to} />
                   <div className="dt">
                     <Campo label="Data" type="date" icon="cal" value={ad} onChange={setAd} min={dd || undefined} />
                     <Campo label="Ora" type="time" icon="clock" value={at} onChange={setAt} />
@@ -182,7 +182,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
           {paid && cost.trim() ? <ChiHaPagato travelers={trip.travelers} value={payers} onChange={setPayers} error={errors.paidBy} /> : null}
         </Gruppo>
         <Gruppo titolo="Biglietto">
-          <Campo label="Operatore" value={operator} onChange={setOperator} placeholder="es. JR Central" />
+          <Campo label="Operatore" value={operator} onChange={setOperator} placeholder="Nome della compagnia" />
           <Campo label="Codice di prenotazione" value={refCode} onChange={(v) => setRefCode(v.toUpperCase())} placeholder="es. 4K7QX2" autoComplete="off" />
         </Gruppo>
         <Gruppo titolo="Regole e note">

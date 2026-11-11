@@ -252,7 +252,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
               type="search"
               value={query}
               onChange={setQuery}
-              placeholder="es. Fushimi Inari"
+              placeholder="Nome o indirizzo"
               enterKeyHint="search"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -307,7 +307,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
         </Gruppo>
 
         <Gruppo titolo="Il luogo">
-          <Campo label="Nome" value={name} onChange={setName} maxLength={120} placeholder="es. Fushimi Inari" />
+          <Campo label="Nome" value={name} onChange={setName} maxLength={120} placeholder="es. Mercato centrale" />
           {doppioni.length > 0 ? (
             <span className="fa-help" role="status">
               <Sv name="warn" size={16} />
@@ -315,7 +315,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
             </span>
           ) : null}
           <Campo label="Nome nella lingua del posto" value={nameLocal} onChange={setNameLocal} maxLength={120} hint="Da mostrare a un tassista" placeholder="Copialo da Google Maps" />
-          <Campo label="Città" icon="pin" value={city} onChange={setCity} autoComplete="off" placeholder="es. Kyoto" />
+          <Campo label="Città" icon="pin" value={city} onChange={setCity} autoComplete="off" placeholder="Città" />
           <Riquadri<string>
             label="Categoria"
             cols={4}
@@ -328,13 +328,13 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
             }}
             options={[...catOpzioni.map((c) => ({ value: c, label: c, glifo: glifoCategoria(c) })), { value: ALTRA, label: 'Altra…', glifo: 'g-plus' }]}
           >
-            {otherCat ? <Campo label="Nuova categoria" hideLabel value={category} onChange={setCategory} placeholder="es. Onsen" maxLength={40} autoFocus /> : null}
+            {otherCat ? <Campo label="Nuova categoria" hideLabel value={category} onChange={setCategory} placeholder="es. Terme" maxLength={40} autoFocus /> : null}
             {otherCat ? <SceltaIcona value={icona ?? iconaDalNome(category)} onChange={setIcona} /> : null}
           </Riquadri>
           <Riquadri<PlaceStatus> label="Stato" cols={3} value={status} onChange={(v) => v && setStatus(v)} options={SCELTE}>
             <span className="fa-help">«In programma» si mette da solo quando il luogo è in una tappa.</span>
           </Riquadri>
-          <Campo label="Sito web" icon="link" type="url" inputMode="url" value={website} onChange={setWebsite} placeholder="es. inari.jp" autoComplete="off" />
+          <Campo label="Sito web" icon="link" type="url" inputMode="url" value={website} onChange={setWebsite} placeholder="https://…" autoComplete="off" />
         </Gruppo>
 
         <Gruppo titolo="La visita">
@@ -368,7 +368,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
 
         <div ref={posRef} style={{ scrollMarginTop: 16, display: 'grid' }}>
           <Gruppo titolo="Posizione">
-            <Campo label="Indirizzo" icon="pin" value={address} onChange={setAddress} placeholder="es. 68 Fukakusa, Kyoto" />
+            <Campo label="Indirizzo" icon="pin" value={address} onChange={setAddress} placeholder="Via e numero" />
             {showMap ? (
               <div style={{ display: 'grid', gap: 8 }}>
                 {Picker ? (

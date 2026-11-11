@@ -153,9 +153,9 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
       <form id="prenotazione-form" className="frm grp" onSubmit={submit} noValidate>
         <Gruppo titolo="Che cosa">
           <Riquadri<BookingType> label="Tipo" cols={3} value={type} onChange={(x) => x && setType(x)} options={tipi.map((x) => ({ value: x, label: TIPO_BREVE[x] ?? BOOKING_LABEL[x], glifo: TIPO_GLIFO[x] }))} />
-          <Campo label="Titolo" value={title} onChange={setTitle} placeholder="es. Cena a Gion" error={errors.title} />
+          <Campo label="Titolo" value={title} onChange={setTitle} placeholder="es. Cena al ristorante" error={errors.title} />
           <div className="fa-2c">
-            <Campo label="Luogo" icon="pin" value={place} onChange={setPlace} placeholder="es. Gion" />
+            <Campo label="Luogo" icon="pin" value={place} onChange={setPlace} placeholder="Città" />
             <Campo label="Dettaglio" value={detail} onChange={setDetail} placeholder="es. Tavolo 6" maxLength={40} />
           </div>
           <Contatore label="Persone" hint="Quante persone sono nella prenotazione" value={party.trim() && Number.isFinite(Number(party)) ? Number(party) : null} onChange={(n) => (setParty(n === null ? '' : String(n)), setErrors({ ...errors, party: undefined }))} vuoto />
@@ -227,9 +227,9 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
           )}
         </Gruppo>
         <Gruppo titolo="Fornitore e allegato">
-          <Campo label="Fornitore" value={provider} onChange={setProvider} placeholder="es. Gion Karyo" />
+          <Campo label="Fornitore" value={provider} onChange={setProvider} placeholder="Ristorante, sito o agenzia" />
           <Campo label="Codice di prenotazione" value={code} onChange={(v) => setCode(v.toUpperCase())} autoComplete="off" placeholder="es. 4K7QX2" />
-          <Campo label="Link" type="url" icon="link" value={url} onChange={setUrl} placeholder="es. tablecheck.com/…" error={errors.url} />
+          <Campo label="Link" type="url" icon="link" value={url} onChange={setUrl} placeholder="https://…" error={errors.url} />
           <div className="fa-fld">
             Allegato
             {hasFile && !file ? (
@@ -254,7 +254,7 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
           <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="es. Arrivare 15 minuti prima" />
         </Gruppo>
         <AltriDettagli pieni={altri} contenuto="Contatto, politica di cancellazione">
-          <Campo label="Contatto" value={contact} onChange={setContact} placeholder="es. +81 75 123 4567" />
+          <Campo label="Contatto" value={contact} onChange={setContact} placeholder="Telefono o email" />
           <Campo label="Politica di cancellazione" textarea value={policy} onChange={setPolicy} placeholder="es. Gratis fino a 24 ore prima" />
         </AltriDettagli>
         {errors.form ? <Errore>{errors.form}</Errore> : null}

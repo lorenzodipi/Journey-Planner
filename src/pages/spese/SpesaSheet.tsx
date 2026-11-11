@@ -251,7 +251,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
       }
     >
       <form id="spesa-form" className="frm" onSubmit={submit} noValidate>
-        <Campo label="Nome della spesa" value={label} onChange={setLabel} placeholder="es. Cena a Gion Karyo" maxLength={120} error={errors.label} />
+        <Campo label="Nome della spesa" value={label} onChange={setLabel} placeholder="es. Cena al ristorante" maxLength={120} error={errors.label} />
         <div className="fa-fld">
           <span>Importo</span>
           {others.length > 1 ? (

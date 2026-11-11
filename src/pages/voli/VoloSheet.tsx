@@ -163,7 +163,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
       <form id="volo-form" className="frm grp" onSubmit={submit} noValidate>
         <Gruppo titolo="Volo">
           <Campo label="Nome del volo" value={title} onChange={setTitle} placeholder="es. Andata" maxLength={60} error={errors.title} />
-          <Campo label="Compagnia" value={airline} onChange={setAirline} placeholder="es. Emirates" />
+          <Campo label="Compagnia" value={airline} onChange={setAirline} placeholder="Nome della compagnia" />
           <Campo label="Codice di prenotazione" value={bookingRef} onChange={(v) => setBookingRef(v.toUpperCase())} autoComplete="off" placeholder="es. 4K7QX2" />
         </Gruppo>
 
@@ -188,7 +188,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
                       titolo: 'Partenza',
                       children: (
                         <>
-                          <Campo label="Aeroporto" icon="plane" value={l.from} onChange={(v) => setAirport(l, 'from', v)} placeholder="es. MXP" autoComplete="off" />
+                          <Campo label="Aeroporto" icon="plane" value={l.from} onChange={(v) => setAirport(l, 'from', v)} placeholder="Sigla di 3 lettere" autoComplete="off" />
                           <div className="dt">
                             <Campo label="Data" type="date" icon="cal" value={l.departDate} onChange={(v) => patchLeg(l.key, { departDate: v, ...(v && l.arriveDate && l.arriveDate < v ? { arriveDate: v } : {}) })} />
                             <Campo label="Ora" type="time" icon="clock" value={l.departTime} onChange={(v) => patchLeg(l.key, { departTime: v })} />
@@ -200,7 +200,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
                       titolo: 'Arrivo',
                       children: (
                         <>
-                          <Campo label="Aeroporto" icon="plane" value={l.to} onChange={(v) => setAirport(l, 'to', v)} placeholder="es. HND" autoComplete="off" />
+                          <Campo label="Aeroporto" icon="plane" value={l.to} onChange={(v) => setAirport(l, 'to', v)} placeholder="Sigla di 3 lettere" autoComplete="off" />
                           <div className="dt">
                             <Campo label="Data" type="date" icon="cal" value={l.arriveDate} onChange={(v) => patchLeg(l.key, { arriveDate: v })} min={l.departDate || undefined} />
                             <Campo label="Ora" type="time" icon="clock" value={l.arriveTime} onChange={(v) => patchLeg(l.key, { arriveTime: v })} />

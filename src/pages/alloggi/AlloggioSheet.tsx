@@ -181,10 +181,10 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
               ) : undefined
             }
           />
-          <Campo label="Nome" value={name} onChange={setName} placeholder="es. U-BELL Hotel" error={errors.name} />
+          <Campo label="Nome" value={name} onChange={setName} placeholder="es. Hotel del centro" error={errors.name} />
           <div className="fa-2c">
-            <Campo label="Città" icon="pin" value={city} onChange={setCity} placeholder="es. Kyoto" />
-            <Campo label="Indirizzo" value={address} onChange={setAddress} placeholder="es. 1-2 Gion" />
+            <Campo label="Città" icon="pin" value={city} onChange={setCity} placeholder="Città" />
+            <Campo label="Indirizzo" value={address} onChange={setAddress} placeholder="Via e numero" />
           </div>
         </Gruppo>
         <Gruppo titolo="Quando">
@@ -244,8 +244,8 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
         <AltriDettagli pieni={altri} contenuto={trip.travelers.length > 1 ? 'Ospiti, telefono, email, chi dorme qui' : 'Ospiti, telefono, email'} errore={errors.email || errors.guests ? errors : undefined}>
           <Contatore label="Ospiti" value={guests.trim() && Number.isFinite(Number(guests)) ? Number(guests) : null} onChange={(n) => setGuests(n === null ? '' : String(n))} vuoto />
           {errors.guests ? <Errore>{errors.guests}</Errore> : null}
-          <Campo label="Telefono" type="tel" value={phone} onChange={setPhone} placeholder="es. +81 75 123 4567" />
-          <Campo label="Email" type="email" value={email} onChange={setEmail} placeholder="es. info@hotel.jp" error={errors.email} />
+          <Campo label="Telefono" type="tel" value={phone} onChange={setPhone} placeholder="es. +39 333 123 4567" />
+          <Campo label="Email" type="email" value={email} onChange={setEmail} placeholder="nome@esempio.it" error={errors.email} />
           {trip.travelers.length > 1 ? (
             <div className="fa-fld" role="group" aria-label="Chi dorme qui">
               Chi dorme qui
