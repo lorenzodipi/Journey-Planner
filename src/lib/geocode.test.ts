@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseNominatim, parseReverse } from './geocode'
+import { cittaDa, parseNominatim, parseReverse } from './geocode'
 
 describe('parseNominatim', () => {
   it('estrae nome, nome locale, città e coordinate', () => {
@@ -43,5 +43,20 @@ describe('parseReverse', () => {
   it('senza via usa il quartiere; risposta vuota non rompe', () => {
     expect(parseReverse({ address: { suburb: 'Asakusa', city: 'Taito' } })).toEqual({ address: 'Asakusa, Taito', city: 'Taito' })
     expect(parseReverse(null)).toEqual({ address: '', city: '' })
+  })
+})
+
+describe('città dei quartieri di Tokyo', () => {
+  it('Chiyoda, Shibuya… dentro la prefettura di Tokyo diventano Tokyo', () => {
+    expect(cittaDa({ city: 'Chiyoda', state: 'Tokyo', 'ISO3166-2-lvl4': 'JP-13' })).toBe('Tokyo')
+    expect(cittaDa({ city: '千代田区', province: '東京都' })).toBe('Tokyo')
+    expect(cittaDa({ city: 'Shibuya-ku', state: 'Tokyo' })).toBe('Tokyo')
+    expect(cittaDa({ city: 'Ōta City', 'ISO3166-2-lvl4': 'JP-13' })).toBe('Tokyo')
+    expect(parseReverse({ address: { road: 'Marunouchi', postcode: '100-0005', city: 'Chiyoda', state: 'Tokyo', country: 'Giappone' } })).toEqual({ address: 'Marunouchi, 100-0005 Tokyo, Giappone', city: 'Tokyo' })
+  })
+  it('le città vere della prefettura e i quartieri omonimi altrove restano', () => {
+    expect(cittaDa({ city: 'Hachiōji', state: 'Tokyo' })).toBe('Hachiōji')
+    expect(cittaDa({ city: 'Kita', state: 'Osaka' })).toBe('Kita')
+    expect(cittaDa({ town: 'Siena' })).toBe('Siena')
   })
 })

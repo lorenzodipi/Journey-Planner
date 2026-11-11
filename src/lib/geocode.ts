@@ -20,6 +20,27 @@ interface NominatimItem {
   address?: Record<string, string>
 }
 
+// Tokyo: per OpenStreetMap ognuno dei 23 quartieri speciali è una «città» (Chiyoda, Shibuya…), ma per chi viaggia la città
+// è Tokyo. Si cambia solo dentro la prefettura di Tokyo (le città vere della zona di Tama, come Hachiōji, restano).
+const QUARTIERI_TOKYO = new Set(
+  'chiyoda chuo minato shinjuku bunkyo taito sumida koto shinagawa meguro ota setagaya shibuya nakano suginami toshima kita arakawa itabashi nerima adachi katsushika edogawa 千代田 中央 港 新宿 文京 台東 墨田 江東 品川 目黒 大田 世田谷 渋谷 中野 杉並 豊島 北 荒川 板橋 練馬 足立 葛飾 江戸川'.split(' '),
+)
+const semplice = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/(?:[\s-]*(?:ku|city|ward))+$|区$/u, '')
+    .trim()
+
+/** La città da un indirizzo di Nominatim (città, paese, villaggio…), con i quartieri di Tokyo riportati a Tokyo. */
+export function cittaDa(a: Record<string, string>): string {
+  const city = a.city || a.town || a.village || a.municipality || a.suburb || a.county || ''
+  const prefettura = `${a['ISO3166-2-lvl4'] ?? ''} ${a.state ?? ''} ${a.province ?? ''}`
+  const aTokyo = /JP-13|tokyo|tōkyō|東京/i.test(prefettura)
+  return aTokyo && city && QUARTIERI_TOKYO.has(semplice(city)) ? 'Tokyo' : city
+}
+
 export function parseNominatim(items: NominatimItem[]): GeoResult[] {
   const out: GeoResult[] = []
   for (const it of items) {
@@ -36,7 +57,7 @@ export function parseNominatim(items: NominatimItem[]): GeoResult[] {
       name,
       nameLocal: local && local !== name ? local : undefined,
       address: display,
-      city: a.city || a.town || a.village || a.municipality || a.suburb || a.county || '',
+      city: cittaDa(a),
       lat,
       lng,
     })
@@ -87,7 +108,7 @@ interface NominatimReverse {
 /** Indirizzo completo come lo scrive Google («Via 12, 846 Flúðir, Islanda») e città da una risposta di Nominatim /reverse. */
 export function parseReverse(item: NominatimReverse | null | undefined): { address: string; city: string } {
   const a = item?.address ?? {}
-  const city = a.city || a.town || a.village || a.municipality || a.suburb || a.county || ''
+  const city = cittaDa(a)
   const via = a.road || a.pedestrian || a.footway || a.path || a.square || a.neighbourhood || ''
   const strada = via ? `${via}${a.house_number ? ` ${a.house_number}` : ''}` : a.suburb || a.quarter || ''
   const zona = [a.postcode, city].filter(Boolean).join(' ')

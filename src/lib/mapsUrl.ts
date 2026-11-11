@@ -21,12 +21,27 @@ function safeDecode(text: string): string {
   }
 }
 
+/** Il nome del posto dal pezzo «/maps/place/…» del link. Google a volte ci mette anche l'indirizzo dopo una virgola
+ *  («Disney FANTASY SHOP, 1-chome-9-1 Marunouchi, Chiyoda City, Tokyo 100-0005, Japan»): si tiene solo il nome.
+ *  Se il pezzo è solo un indirizzo o delle coordinate, nessun nome (lo scrive chi usa l'app). */
+export function nomeDalLink(pezzo: string): string | undefined {
+  const testo = safeDecode(pezzo).replace(/\s+/g, ' ').trim()
+  if (!testo) return undefined
+  // coordinate scritte come nome: «35°40'39.1"N 139°45'57.0"E» o «35.6775,139.7658»
+  if (/^-?\d+(?:[.,]\d+)?°/.test(testo) || /^-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?$/.test(testo)) return undefined
+  const parti = testo.split(/\s*,\s*/).filter(Boolean)
+  const nome = parti.length > 1 && (parti.length > 2 || /\d/.test(parti.slice(1).join(' '))) ? parti[0] : testo
+  // un indirizzo puro comincia col numero civico («1-chome-9-1 Marunouchi», «12 Via Roma»): non è un nome
+  if (/^\d+[\s-]/.test(nome) && parti.length > 1) return undefined
+  return nome || undefined
+}
+
 export function parseMapsUrl(raw: string): MapsInfo | null {
   const text = raw.trim()
   if (!/^https?:\/\//i.test(text)) return null
 
   const nameMatch = text.match(/\/maps\/place\/([^/@?]+)/)
-  const name = nameMatch ? safeDecode(nameMatch[1]).trim() || undefined : undefined
+  const name = nameMatch ? nomeDalLink(nameMatch[1]) : undefined
 
   const patterns: RegExp[] = [
     /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/, // pin preciso del luogo
