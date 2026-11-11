@@ -486,7 +486,7 @@ export function ValutaPiccola({ base, local, rate, baseName, localName }: { base
           {name} · {cur}
         </label>
         <div className="fv2">
-          <input id={`vp-${which}`} className="n" inputMode="decimal" value={text} onChange={(e) => setText(e.currentTarget.value)} aria-label={`Importo in ${name}`} />
+          <input id={`vp-${which}`} className="n" inputMode="decimal" value={text} placeholder="0" onChange={(e) => setText(e.currentTarget.value)} aria-label={`Importo in ${name}`} />
           <span className="u">{sym(cur)}</span>
         </div>
       </div>

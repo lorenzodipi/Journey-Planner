@@ -251,7 +251,7 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
             {errors.file ? <Errore>{errors.file}</Errore> : <span className="fa-help">PDF o immagine, fino a 10 MB.</span>}
           </div>
           <Interruttore label="Disponibile offline" hint="Il file resta sul telefono e si apre anche senza rete." isSelected={offline} onChange={setOffline} />
-          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="" />
+          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="es. Arrivare 15 minuti prima" />
         </Gruppo>
         <AltriDettagli pieni={altri} contenuto="Contatto, politica di cancellazione">
           <Campo label="Contatto" value={contact} onChange={setContact} placeholder="es. +81 75 123 4567" />

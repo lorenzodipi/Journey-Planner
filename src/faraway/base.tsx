@@ -138,9 +138,9 @@ interface InputProps {
 /** Segnaposto di riserva: ogni campo vuoto dice cosa scrivere o scegliere, anche dove chi lo usa non ne ha dato uno. */
 export function segnaposto(label: string, type: string, textarea: boolean): string {
   const l = label.toLowerCase()
-  // con l'etichetta «Data» o «Ora» (dentro «Partenza», «Check-in»…) il segnaposto la ripeterebbe: niente segnaposto
-  if (type === 'date') return l === 'data' ? '' : 'Data'
-  if (type === 'time') return l === 'ora' || l === 'imbarco' ? '' : 'Ora'
+  // date e orari mostrano il formato, uguale a come apparirà il valore (anche con l'etichetta «Data» o «Ora»)
+  if (type === 'date') return 'gg/mm/aaaa'
+  if (type === 'time') return 'hh:mm'
   if (/codice/.test(l)) return 'es. AB12CD'
   if (/terminal/.test(l)) return 'es. T1'
   if (/gate/.test(l)) return 'es. B12'

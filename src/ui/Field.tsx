@@ -1,5 +1,6 @@
 import type React from 'react'
 import { apriSelettore } from '../lib/picker'
+import { segnaposto } from '../faraway/base'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { currencyName, extraCurrencies } from '../lib/money'
@@ -28,7 +29,7 @@ interface TextProps {
   optional?: boolean
 }
 
-export function TextField({ label, value, onChange, type = 'text', list, optional, ...rest }: TextProps) {
+export function TextField({ label, value, onChange, type = 'text', list, optional, placeholder, ...rest }: TextProps) {
   // le date hanno il calendario nostro, dove i giorni oltre il limite non si possono toccare
   if (type === 'date') return <DatePicker label={label} value={value} onChange={onChange} min={rest.min} optional={optional} />
   const common = {
@@ -43,6 +44,8 @@ export function TextField({ label, value, onChange, type = 'text', list, optiona
       onChange(input.value)
     },
     className: 'v',
+    // come in Campo: ogni campo vuoto dice cosa scrivere, anche dove chi lo usa non ha dato un segnaposto
+    placeholder: placeholder ?? segnaposto(label, type, false),
     ...rest,
   }
   return (
@@ -76,7 +79,7 @@ export function TextArea({
     <label className="fld" style={{ alignItems: 'flex-start' }}>
       <div>
         <span className="l">{label}</span>
-        <textarea rows={3} value={value} placeholder={placeholder} onChange={(e) => onChange(e.currentTarget.value)} className="v" />
+        <textarea rows={3} value={value} placeholder={placeholder ?? segnaposto(label, 'text', true)} onChange={(e) => onChange(e.currentTarget.value)} className="v" />
       </div>
     </label>
   )

@@ -170,7 +170,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
             type="url"
             value={mapsUrl}
             onChange={(v) => void leggiLink(v)}
-            placeholder=""
+            placeholder="Incolla il link"
             autoComplete="off"
             hint={mapsInfo || 'Incollalo e compilo da solo nome, città e indirizzo.'}
             trailing={
@@ -239,7 +239,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
               <Chip on={kitchen} onPress={() => setKitchen(!kitchen)}>Cucina</Chip>
             </div>
           </div>
-          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="" />
+          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="es. Deposito bagagli dopo il check-out" />
         </Gruppo>
         <AltriDettagli pieni={altri} contenuto={trip.travelers.length > 1 ? 'Ospiti, telefono, email, chi dorme qui' : 'Ospiti, telefono, email'} errore={errors.email || errors.guests ? errors : undefined}>
           <Contatore label="Ospiti" value={guests.trim() && Number.isFinite(Number(guests)) ? Number(guests) : null} onChange={(n) => setGuests(n === null ? '' : String(n))} vuoto />

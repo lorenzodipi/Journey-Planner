@@ -67,7 +67,9 @@ Lo stesso blocco ha **lo stesso nome e lo stesso ordine** in tutti i fogli.
 ## Campi
 
 - Ogni campo ha un'**etichetta visibile** (`Campo label=…`). Il segnaposto non la sostituisce mai.
-- Il **segnaposto** è un esempio realistico e corto, sempre con «es.»: «es. 15,50», «es. Doppia». Non ripete l'etichetta (i campi «Data» e «Ora» non ne hanno), non sembra un valore già inserito, nei campi a metà larghezza sta in circa 16 caratteri. Se non c'è un buon esempio, niente segnaposto.
+- **Ogni campo ha un segnaposto**, nessuno escluso: `Campo` e i campi vecchi (`TextField`, `TextArea`) ne mettono uno di riserva con `segnaposto()` quando chi li usa non lo dà, e `placeholder=""` non si usa.
+- Il segnaposto è un esempio realistico e corto, con «es.»: «es. 15,50», «es. Doppia». Se non c'è un buon esempio dice cosa fare («Incolla il link», «Copialo da Google Maps»). Non ripete l'etichetta, non sembra un valore già inserito e sta intero nel campo anche a 320 px (nei campi a metà larghezza circa 16 caratteri).
+- Date e orari mostrano il formato del valore: «gg/mm/aaaa» e «hh:mm»; le durate «1h 30min».
 - Due campi affiancati (`.fa-2c`) solo se le etichette stanno su una riga e i valori sono corti (data e ora, città e indirizzo). Un nome che può essere lungo (nome del volo) va a tutta larghezza. Un campo da solo va a tutta larghezza: niente buchi a metà riga (`.fa-2c.riempi` allarga l'ultimo se sono dispari).
 - Data e ora affiancate usano `.dt` (data più larga dell'ora). Sotto i 340 px di modulo le icone di calendario e orologio spariscono, così il valore si legge intero. Un orario scritto a mano («15:00–22:00») va a tutta larghezza.
 - Dentro un gruppo (es. una tratta del volo) niente bordo e padding in più: il titolo basta.

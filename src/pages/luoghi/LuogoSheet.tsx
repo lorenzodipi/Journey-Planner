@@ -314,7 +314,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
               {testoDoppione(name.trim(), doppioni[0])}. Puoi salvare lo stesso.
             </span>
           ) : null}
-          <Campo label="Nome nella lingua del posto" value={nameLocal} onChange={setNameLocal} maxLength={120} hint="Da mostrare a un tassista" placeholder="" />
+          <Campo label="Nome nella lingua del posto" value={nameLocal} onChange={setNameLocal} maxLength={120} hint="Da mostrare a un tassista" placeholder="Copialo da Google Maps" />
           <Campo label="Città" icon="pin" value={city} onChange={setCity} autoComplete="off" placeholder="es. Kyoto" />
           <Riquadri<string>
             label="Categoria"
@@ -363,7 +363,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
           </div>
           {altraDurata || (rapida === null && !!visit.trim()) ? <CampoDurata label="Durata" value={visit} onChange={setVisit} placeholder="es. 1h 15min" /> : null}
           <OrariEditor value={spec} onChange={setSpec} legacyText={place?.openingHours} />
-          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="" />
+          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="es. Meglio andarci al mattino presto" />
         </Gruppo>
 
         <div ref={posRef} style={{ scrollMarginTop: 16, display: 'grid' }}>

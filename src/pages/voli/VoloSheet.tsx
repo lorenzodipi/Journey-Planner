@@ -265,7 +265,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
         <Gruppo titolo="Bagaglio e regole">
           <Campo label="Bagaglio" value={baggage} onChange={setBaggage} placeholder="es. 1 valigia da 23 kg" />
           <Campo label="Cambio e rimborso" textarea value={policy} onChange={setPolicy} placeholder="es. Cambio gratuito fino a 24 ore prima" />
-          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="" />
+          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="es. Check-in online 24 ore prima" />
         </Gruppo>
 
         <AltriDettagli pieni={altri} contenuto="Terminal, gate, imbarco, fusi orari, check-in">

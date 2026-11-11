@@ -140,7 +140,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
               setTitle(v)
               setFocusTitle(true)
             }}
-            placeholder="Cerca tra i luoghi salvati o scrivi"
+            placeholder="Cerca tra i luoghi o scrivi"
             maxLength={120}
             autoComplete="off"
           />
@@ -270,7 +270,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
             ) : null}
           </>
         ) : null}
-        <Campo label="Note" value={notes} onChange={setNotes} placeholder="Scarpe comode, ingresso dal lato nord…" />
+        <Campo label="Note" value={notes} onChange={setNotes} placeholder="es. Scarpe comode" />
         {item ? <UltimaModifica trip={trip} table="day_items" rowId={item.id} /> : null}
         {error ? (
           <span className="fa-help bad" role="alert">

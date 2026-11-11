@@ -209,7 +209,8 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 
 /* data e ora vuote: il segnaposto sostituisce «--:--» / «gg/mm/aaaa» finché non si sceglie */
 .fa-in{position:relative}
-.fa-in.vuoto .ph{position:absolute;left:48px;right:48px;top:50%;transform:translateY(-50%);color:var(--ink-muted);pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:400 16px/24px var(--font-sans)}
+/* a destra solo il margine del campo (l'icona del selettore è nascosta), così «gg/mm/aaaa» e «hh:mm» stanno interi anche nei campi a metà */
+.fa-in.vuoto .ph{position:absolute;left:48px;right:16px;top:50%;transform:translateY(-50%);color:var(--ink-muted);pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:400 16px/24px var(--font-sans)}
 .fa-in.vuoto:not(:focus-within) input::-webkit-datetime-edit{color:transparent}
 .fa-in.vuoto:focus-within .ph{display:none}
 

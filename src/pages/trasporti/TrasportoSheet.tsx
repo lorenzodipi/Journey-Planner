@@ -188,7 +188,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
         <Gruppo titolo="Regole e note">
           <Campo label="Bagaglio" value={baggage} onChange={setBaggage} placeholder="es. 1 valigia grande" />
           <Campo label="Cambio e rimborso" textarea value={policy} onChange={setPolicy} placeholder="es. Cambio gratuito fino alla partenza" />
-          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="" />
+          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="es. Biglietto da ritirare in stazione" />
         </Gruppo>
         <AltriDettagli pieni={altri} contenuto="Terminal, binario, check-in">
           <div className="fa-2c">
