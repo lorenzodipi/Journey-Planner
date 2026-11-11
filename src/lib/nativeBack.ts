@@ -28,7 +28,7 @@ export function goBack(): boolean {
     return true
   }
   // 3) da una pagina interna si sale alla pagina madre (da un giorno a «Giorni»), come il bottone in alto a sinistra
-  const madre = genitore(percorsoAttuale())
+  const madre = genitore(percorsoAttuale(), (history.state as { from?: string } | null)?.from)
   if (madre) {
     tornaSu(madre)
     return true

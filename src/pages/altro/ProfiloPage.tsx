@@ -1,9 +1,12 @@
 // Profilo (mock Fa-47, #45): avatar, tre numeri e distintivi calcolati dai dati. Niente foto né «Ricordi».
+import { useState } from 'react'
 import { useAuth } from '../../lib/auth'
+import { showToast } from '../../state/toast'
 import { distintivi, numeriProfilo, sottotitoloProfilo } from '../../lib/profilo'
 import { discOf, initials, useMe } from '../../state/me'
 import { useTrips } from '../../state/trip'
-import { Avatar, Barra, Pulsante } from '../../faraway/base'
+import { Avatar, Barra, Campo, Pulsante } from '../../faraway/base'
+import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
 
@@ -13,17 +16,47 @@ export function ProfiloPage() {
   const trip = t.active
   const me = useMe(trip)
   const email = auth.session?.user.email ?? ''
-  const nome = me?.name || (email ? email.split('@')[0].replace(/^./, (c) => c.toUpperCase()) : 'Anteprima demo')
+  const [cambia, setCambia] = useState(false)
+  const [bozza, setBozza] = useState('')
+  const [errore, setErrore] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const nome = auth.profileName || me?.name || (email ? email.split('@')[0].replace(/^./, (c) => c.toUpperCase()) : 'Anteprima demo')
   const n = numeriProfilo(t.trips)
   const dist = distintivi(n)
   const sub = sottotitoloProfilo(auth.session?.user.created_at, t.trips)
 
+  async function salva(e: React.FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    const err = await auth.setProfileName(bozza)
+    setBusy(false)
+    if (err) return setErrore(err)
+    setCambia(false)
+    showToast(bozza.trim() ? 'Nome del profilo salvato' : 'Nome del profilo tolto')
+  }
+
   return (
-    <Schermata bar={<BarraIndietro title="Profilo" back="/altro" />}>
+    <Schermata
+      bar={<BarraIndietro title="Profilo" back="/altro" />}
+      overlay={
+        <Foglio open={cambia} title="Nome del profilo" onClose={() => setCambia(false)}>
+          <form onSubmit={salva} noValidate style={{ display: 'grid', gap: 16 }}>
+            <p className="fa-m" style={{ margin: 0 }}>È il nome che trovi già scritto quando crei un viaggio. In ogni viaggio puoi cambiarlo.</p>
+            <Campo label="Il tuo nome" value={bozza} onChange={setBozza} maxLength={40} autoComplete="off" placeholder="Come vuoi essere chiamato" error={errore} autoFocus />
+            <Pulsante type="submit" isLoading={busy}>
+              Salva il nome
+            </Pulsante>
+          </form>
+        </Foglio>
+      }
+    >
       <section style={{ display: 'grid', justifyItems: 'center', gap: 8, textAlign: 'center', padding: '8px 0' }}>
         <Avatar initials={initials(nome)} n={trip && me ? discOf(trip, me.id) : 1} large />
         <h2 className="fa-h2" style={{ margin: 0 }}>{nome}</h2>
         <p className="fa-m" style={{ margin: 0 }}>{sub}</p>
+        <Pulsante color="secondary" iconLeading="pencil" onPress={() => (setBozza(auth.profileName || nome), setErrore(null), setCambia(true))}>
+          Cambia il nome
+        </Pulsante>
         {email ? <p className="fa-c" style={{ margin: 0, color: 'var(--ink-muted)' }}>{email}</p> : null}
       </section>
 

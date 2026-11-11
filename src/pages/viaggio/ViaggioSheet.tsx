@@ -102,7 +102,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
     const base = trip.countries && trip.countries.length > 0 ? trip.countries : [{ id: 'unico', country: countryByName(trip.destination)?.code ?? '', name: trip.destination, currency: trip.localCurrency ?? '', timezone: trip.timezone, startDate: trip.startDate, endDate: trip.endDate, fxRate: trip.fxRate, position: 0 }]
     return base.map((c) => daPaese(c, 'salvato'))
   })
-  const [selfName, setSelfName] = useState(meta?.full_name || meta?.name || (ownEmail ? nameFromEmail(ownEmail) : auth.status === 'demo' ? 'Tu' : ''))
+  const [selfName, setSelfName] = useState(auth.profileName || meta?.full_name || meta?.name || (ownEmail ? nameFromEmail(ownEmail) : auth.status === 'demo' ? 'Tu' : ''))
   const [others, setOthers] = useState<{ email: string; name: string }[]>([])
   const [invito, setInvito] = useState<{ email: string; name: string } | null>(null)
   const [error, setError] = useState<string | null>(null)

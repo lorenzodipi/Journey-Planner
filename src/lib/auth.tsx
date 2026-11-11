@@ -16,6 +16,22 @@ export type AuthStatus = 'loading' | 'signed-out' | 'signed-in' | 'demo' | 'unre
 /** Tempo limite per sapere se si è dentro (#25). */
 export const AUTH_TIMEOUT_MS = 12_000
 const LAST_UID = 'jp.lastUid'
+const NOME_PROFILO = 'jp.nomeProfilo'
+
+/** Il nome scelto per il profilo (account) o, in demo e con i dati salvati, quello tenuto sul telefono. */
+export function nomeProfiloDa(user: { user_metadata?: unknown } | null | undefined, sulTelefono = ''): string {
+  const meta = user?.user_metadata as { profile_name?: unknown } | undefined
+  const scelto = typeof meta?.profile_name === 'string' ? meta.profile_name.trim() : ''
+  return scelto || sulTelefono.trim()
+}
+
+function leggiNomeTelefono(): string {
+  try {
+    return localStorage.getItem(NOME_PROFILO) ?? ''
+  } catch {
+    return ''
+  }
+}
 
 /** L'ultimo account entrato su questo telefono: serve a riconoscere «me» nei dati salvati. */
 export function lastUid(): string | null {
@@ -31,6 +47,10 @@ interface AuthValue {
   session: Session | null
   signIn: (email: string, password: string) => Promise<string | null>
   signOut: () => Promise<void>
+  /** Il nome scelto per il profilo: è quello proposto in ogni nuovo viaggio (vuoto se non scelto). */
+  profileName: string
+  /** Cambia il nome del profilo; stringa vuota = tornare al nome dell'account. Restituisce un errore, o `null`. */
+  setProfileName: (name: string) => Promise<string | null>
   /** Riprova a sapere se si è dentro. */
   retry: () => void
   /** Continua con i dati salvati sul telefono (servizio irraggiungibile). */
@@ -42,6 +62,8 @@ const AuthContext = createContext<AuthValue>({
   session: null,
   signIn: async () => 'Non pronto',
   signOut: async () => undefined,
+  profileName: '',
+  setProfileName: async () => 'Non pronto',
   retry: () => undefined,
   useSaved: () => undefined,
 })
@@ -59,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
 
   const [attempt, setAttempt] = useState(0)
+  const [nomeTelefono, setNomeTelefono] = useState(leggiNomeTelefono)
 
   useEffect(() => {
     if (!supabase) return
@@ -107,6 +130,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthValue = {
     status,
     session,
+    profileName: nomeProfiloDa(session?.user, nomeTelefono),
+    async setProfileName(name) {
+      const nuovo = name.trim().slice(0, 40)
+      if (supabase && session) {
+        const { error } = await supabase.auth.updateUser({ data: { profile_name: nuovo } })
+        if (error) return translateError(error.message)
+      }
+      // sul telefono si tiene sempre una copia: serve in demo, con i dati salvati e se il servizio non risponde
+      try {
+        if (nuovo) localStorage.setItem(NOME_PROFILO, nuovo)
+        else localStorage.removeItem(NOME_PROFILO)
+      } catch {
+        // ignorato
+      }
+      setNomeTelefono(nuovo)
+      return null
+    },
     async signIn(email, password) {
       if (!supabase) return 'Supabase non è configurato.'
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })

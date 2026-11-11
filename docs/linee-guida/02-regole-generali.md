@@ -31,6 +31,7 @@
 
 - La freccia in alto a sinistra **sale alla pagina madre** della sezione, non torna alla pagina precedente. Da un giorno si torna a Giorni anche dopo aver scorso tre giorni di fila. Lo swipe dal bordo (iOS) e il tasto indietro (Android) fanno lo stesso, dopo aver chiuso un foglio aperto.
 - Le pagine sorelle (giorno precedente e successivo) si sostituiscono nella cronologia invece di accumularsi.
+- Le pagine che si aprono da due schede (oggi solo Budget, da Spese e da Altro) tornano a quella da cui si è arrivati: l'elenco è `DA_PIU_SCHEDE` in `indietro.ts`.
 - La logica sta in `src/lib/indietro.ts`: `genitore()` dice la madre di ogni percorso, `tornaSu()` ci va.
 - **Testa fissa nelle pagine principali** (Oggi, Giorni, Luoghi, Spese, Altro): la barra con titolo e sottotitolo resta sempre visibile in cima, scorre solo il resto. Si attiva con `fisso` su `Schermata`; quello che deve restare fermo insieme alla barra va in `fissa`: il saluto con il profilo in Oggi, la ricerca in Giorni e Altro, la ricerca, la scelta Elenco/Mappa e i filtri in Luoghi. Il meteo, i banner e gli avvisi scorrono. Un filo sottile compare in fondo alla testa solo quando il contenuto scorre sotto di lei. La sua altezza è in `--head-h`, usata da `scroll-padding-top` perché gli scroll automatici non finiscano nascosti. Sotto i 700 px di altezza il sottotitolo si nasconde per lasciare spazio alla lista. Le pagine interne (un giorno, una prenotazione) non la usano.
 
@@ -75,3 +76,5 @@
 
 - «Dove» compare solo in gruppo: due persone → «Tutti» e «Solo io»; da tre in su anche «Scegli».
 - Quando entra una persona nuova, le voci «per tutti» già scritte restano delle persone di prima (trigger `checklist_fissa_per_chi`).
+
+- **Nome del profilo**: si imposta da Altro → Profilo → «Cambia il nome» ed è quello già scritto in «Il tuo nome» quando si crea un viaggio (poi si cambia per ogni viaggio). Sta nell'account (`user_metadata.profile_name`, nessuna migrazione); in demo e con i dati salvati, sul telefono. Senza nome scelto si usa quello dell'account o, in mancanza, l'email.
