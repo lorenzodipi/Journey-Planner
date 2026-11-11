@@ -2507,7 +2507,12 @@ html,body{margin:0;background:var(--canvas)}
   .fa-selbar{max-width:var(--colonna);padding-inline:var(--margine)}
   /* liste che con più spazio diventano griglie: i calendarietti dei giorni e le card dei luoghi */
   .k-SelettoreGiorni .grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
-  .k-Luoghi .list{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));align-items:start}
+  /* card dei luoghi sulla stessa riga alte uguali, con il contenuto al centro; una card aperta non allunga quella accanto
+     (con 300 px a card le colonne sono al massimo due: la vicina è la successiva per una dispari, la precedente per una pari) */
+  .k-Luoghi .list{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));align-items:stretch}
+  .k-Luoghi .list>.pl{display:flex;flex-direction:column}
+  .k-Luoghi .list>.pl:not(.open)>.ph{flex:1 0 auto}
+  .k-Luoghi .list>.pl.open:nth-child(odd)+.pl,.k-Luoghi .list>.pl:has(+.pl.open:nth-child(even)){align-self:start}
   /* fogli dal basso: al massimo 640 px (Material), centrati */
   .fa-sheet,dialog.fa-dlg>.fa-sheet{max-width:640px}
 }
@@ -2551,6 +2556,23 @@ html,body{margin:0;background:var(--canvas)}
   dialog.fa-dlg>.fa-sheet.full{top:calc(env(viewport-segment-top 0 1) + 16px)}
   dialog.fa-mod{padding-top:calc(env(viewport-segment-top 0 1) + 16px)}
 }
+
+/* ---- Giorni sul pieghevole: «città in fila». Ogni città è un blocco largo quanto i suoi giorni (--n) e i blocchi vanno a
+   capo come le parole di un testo, sempre in ordine di data da sinistra a destra. Sul telefono il contenitore non esiste e
+   ogni città resta a tutta larghezza come prima. Sulla stessa riga blocchi e calendarietti hanno tutti la stessa altezza:
+   intestazione su due righe fisse (nome, poi giorni e date) e calendarietti che si allungano fino al più alto. ---- */
+.fa-flusso{display:contents}
+.fa-gsez{display:grid;gap:16px}
+@media (min-width:600px){
+  html:not(.horizontal-viewport-segments-2) .fa-flusso{--cl-w:128px;display:flex;flex-wrap:wrap;align-items:stretch;gap:32px 24px;min-width:0}
+  html:not(.horizontal-viewport-segments-2) .fa-flusso>.fa-gsez{flex:0 0 auto;display:flex;flex-direction:column;gap:12px;box-sizing:border-box;width:calc(var(--n) * var(--cl-w) + (var(--n) - 1) * var(--space-sm));min-width:176px;max-width:100%}
+  html:not(.horizontal-viewport-segments-2) .fa-flusso .fa-sech{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:0;min-height:0}
+  html:not(.horizontal-viewport-segments-2) .fa-flusso .fa-sech>*{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  html:not(.horizontal-viewport-segments-2) .fa-flusso .k-SelettoreGiorni{flex:1;display:flex;flex-direction:column}
+  html:not(.horizontal-viewport-segments-2) .fa-flusso .k-SelettoreGiorni .grid{flex:1;grid-template-columns:repeat(auto-fill,var(--cl-w));grid-auto-rows:1fr}
+}
+/* a libro mezzo aperto l'app sta in un segmento ed è un telefono: le città tornano a tutta larghezza */
+@media (horizontal-viewport-segments:2){.fa-flusso{display:contents}.fa-flusso>.fa-gsez{display:grid;width:auto;min-width:0}}
 
 /* ---- Due colonne a «bento» (Affianca/Colonna in shell.tsx): da 600 px; sul telefono i contenitori non esistono ---- */
 .fa-duo,.fa-duo-c{display:contents}

@@ -12,7 +12,7 @@ import { nowWeather, tripCities, useCityForecastsStato } from '../state/cityFore
 import { Ic } from '../ui/Sprite'
 import { PulsanteIcona, useFocoIniziale } from '../faraway/base'
 import { cx } from '../faraway/cx'
-import { Affianca, BarraGrande, Schermata } from '../faraway/shell'
+import { BarraGrande, Schermata } from '../faraway/shell'
 import { Wx, wxKind } from '../faraway/Wx'
 import { Sv } from '../faraway/icons'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
@@ -138,10 +138,10 @@ export function Giorni() {
       {trip.days.length === 0 ? <Vuoto art="calendario" title="Nessun giorno" text="Imposta le date del viaggio da Altro → Modifica viaggio: i giorni si creano da soli." /> : null}
       {trip.days.length > 0 && shown.length === 0 ? <Vuoto art="calendario" title="Nessun giorno trovato" text="Prova con un'altra città o tappa." /> : null}
 
-      <Affianca pesi={shown.map((g) => Math.ceil(g.cells.length / 2) * 2 + 1)}>
-        {/* pieghevole aperto: le città in due colonne */}
-          {shown.map((g, gi) => (
-          <section key={`${gi}-${g.cells[0].day.id}`} style={{ display: 'grid', gap: 16 }} aria-label={g.title}>
+      {/* pieghevole aperto: le città una dopo l'altra, che vanno a capo come un testo (sul telefono il contenitore non esiste) */}
+      <div className="fa-flusso">
+        {shown.map((g, gi) => (
+          <section key={`${gi}-${g.cells[0].day.id}`} className="fa-gsez" style={{ '--n': g.cells.length } as React.CSSProperties} aria-label={g.title}>
             <div className="fa-sech">
               <h2 className="fa-h3">{g.title}</h2>
               <span className="fa-c">{paesiDi(trip).length > 1 ? `${paeseDelGiorno(trip, g.cells[0].day.date).name} · ${g.meta}` : g.meta}</span>
@@ -155,7 +155,7 @@ export function Giorni() {
             </div>
           </section>
         ))}
-      </Affianca>
+      </div>
     </Schermata>
   )
 }
