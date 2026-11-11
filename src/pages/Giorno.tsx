@@ -34,6 +34,8 @@ import { RigaAlloggio } from '../faraway/CartaAlloggio'
 import { Riga, useUnaAperta } from '../faraway/Righe'
 import { AlloggioSheet } from './alloggi/AlloggioSheet'
 import { Affianca, BarraIndietro, Colonna, Schermata } from '../faraway/shell'
+import { useVistaAccanto } from '../faraway/mappaAccanto'
+import { GiorniAccanto } from './Giorni'
 import { Vuoto } from '../faraway/Stati'
 import { linkedExpense, TappeLista } from '../faraway/Tappe'
 import { SpostaSheet } from './giorno/SpostaSheet'
@@ -51,6 +53,15 @@ type Sheet = { kind: 'add' } | { kind: 'edit'; item: DayItem } | { kind: 'move';
 
 export function Giorno({ params }: { params: { id: string } }) {
   const trip = useTrip()
+  // finestra espansa (pieghevole in orizzontale, computer): Giorni a sinistra e questo giorno a destra, nella stessa pagina
+  const accanto = useVistaAccanto()
+  if (accanto && trip.days.length > 0) return <GiorniAccanto scelto={params.id} />
+  return <DettaglioGiorno id={params.id} />
+}
+
+/** Il dettaglio di un giorno. `incastrato`: dentro il pannello di destra di Giorni (niente schede né «Indietro»). */
+export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: boolean }) {
+  const trip = useTrip()
   const t = useTrips()
   const [, navigate] = useLocation()
   const search = useSearch()
@@ -64,7 +75,7 @@ export function Giorno({ params }: { params: { id: string } }) {
   const [stayEdit, setStayEdit] = useState<Stay | null>(null)
   const here = useHere()
 
-  const index = trip.days.findIndex((d) => d.id === params.id)
+  const index = trip.days.findIndex((d) => d.id === id)
   const day = trip.days[index]
   const { route, stopById, segments, imp } = useDaySegments(trip, day)
 
@@ -87,7 +98,7 @@ export function Giorno({ params }: { params: { id: string } }) {
 
   if (!day) {
     return (
-      <Schermata bar={<BarraIndietro title="Giorni" back="/giorni" />}>
+      <Schermata bar={<BarraIndietro title="Giorni" back="/giorni" senzaIndietro={incastrato} />} tabs={!incastrato} incastrata={incastrato} rete={!incastrato}>
         <Vuoto art="calendario" title="Giorno non trovato" text="Questo giorno non esiste più: torna all'elenco e scegline un altro." action="Vai ai giorni" actionIcon="back" onAction={() => navigate('/giorni')} />
       </Schermata>
     )
@@ -193,7 +204,10 @@ export function Giorno({ params }: { params: { id: string } }) {
   return (
     <Schermata
       gap={32}
-      bar={<BarraIndietro title="Giorni" back="/giorni" right={<PulsanteIcona icon="dots" label="Modifica il giorno" onPress={() => setLegacy({ kind: 'day', day })} />} />}
+      tabs={!incastrato}
+      incastrata={incastrato}
+      rete={!incastrato}
+      bar={<BarraIndietro title={incastrato ? fmt(day.date).replace(/^./, (c) => c.toUpperCase()) : 'Giorni'} back="/giorni" senzaIndietro={incastrato} right={<PulsanteIcona icon="dots" label="Modifica il giorno" onPress={() => setLegacy({ kind: 'day', day })} />} />}
     >
       <Affianca>
         {/* pieghevole aperto: mappa, meteo, alloggio, spese e prenotazioni a sinistra; le tappe a destra */}
@@ -263,7 +277,7 @@ export function Giorno({ params }: { params: { id: string } }) {
             </Pulsante>
           ) : null}
         </Colonna>
-        <Colonna lato="sinistra">
+        <Colonna lato="sinistra" mobile>
           {spostamenti.length > 0 ? (
             <section style={{ display: 'grid', gap: 16 }} aria-label="Voli e spostamenti">
               <Sezione title="Voli e spostamenti" />

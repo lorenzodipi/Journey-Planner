@@ -23,7 +23,7 @@ import { Sv } from '../faraway/icons'
 import { discOfPlace, LuogoCard } from '../faraway/Luogo'
 import { useUnaAperta } from '../faraway/Righe'
 import { BarraGrande, Schermata } from '../faraway/shell'
-import { useMappaAccanto } from '../faraway/mappaAccanto'
+import { useMappaAccanto, useSottoIlBanner } from '../faraway/mappaAccanto'
 import { Vuoto, VuotoFiltro } from '../faraway/Stati'
 import { SpostaSheet } from './giorno/SpostaSheet'
 import { FiltriSheet } from './luoghi/FiltriSheet'
@@ -455,27 +455,7 @@ function MappaAccanto({ places, selectedId, onSelect }: { places: Place[]; selec
   }, [])
 
   // la mappa parte sotto quello che sta sopra l'app (il banner della demo) e sale con lo scorrimento fino al bordo in alto
-  useEffect(() => {
-    const el = box.current
-    const phone = el?.closest<HTMLElement>('.fa-phone')
-    if (!el || !phone) return
-    let raf = 0
-    const aggiorna = () => {
-      raf = 0
-      el.style.top = `${Math.max(0, Math.round(phone.getBoundingClientRect().top))}px`
-    }
-    const presto = () => {
-      if (!raf) raf = requestAnimationFrame(aggiorna)
-    }
-    aggiorna()
-    window.addEventListener('scroll', presto, { passive: true })
-    window.addEventListener('resize', presto)
-    return () => {
-      window.removeEventListener('scroll', presto)
-      window.removeEventListener('resize', presto)
-      cancelAnimationFrame(raf)
-    }
-  }, [])
+  useSottoIlBanner(box)
 
   const withPos = places.filter((p) => p.lat != null && p.lng != null)
   const pins: MapPin[] = useMemo(

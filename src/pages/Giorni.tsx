@@ -2,7 +2,7 @@
 // calendarietti del componente SelettoreGiorni (passato grigio, oggi, futuro, libero).
 import { paesiDi, paeseDelGiorno } from '../lib/paesi'
 import { gradi } from '../lib/formati'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'wouter'
 import { groupDays, type DayCell } from '../lib/dayGroups'
 import { parseYmd } from '../lib/dates'
@@ -13,6 +13,8 @@ import { Ic } from '../ui/Sprite'
 import { PulsanteIcona, useFocoIniziale } from '../faraway/base'
 import { cx } from '../faraway/cx'
 import { BarraGrande, Schermata } from '../faraway/shell'
+import { useSottoIlBanner, useVistaAccanto } from '../faraway/mappaAccanto'
+import { DettaglioGiorno } from './Giorno'
 import { Wx, wxKind } from '../faraway/Wx'
 import { Sv } from '../faraway/icons'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
@@ -28,12 +30,12 @@ function hourIn(timeZone: string): number {
   return Number(new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hourCycle: 'h23', timeZone }).format(new Date()))
 }
 
-function Calendarietto({ cell, onOpen, scoperta }: { cell: DayCell; onOpen: () => void; scoperta?: boolean }) {
+function Calendarietto({ cell, onOpen, scoperta, scelto }: { cell: DayCell; onOpen: () => void; scoperta?: boolean; scelto?: boolean }) {
   const d = parseYmd(cell.day.date)
   const w = cap(wk.format(d))
   const m = cap(mo.format(d))
   return (
-    <button type="button" className={cx('cl', cell.state !== 'future' && cell.state)} aria-label={`${w} ${d.getDate()} ${m}, ${cell.label}, ${cell.status}${scoperta ? ', notte senza alloggio' : ''}`} onClick={onOpen}>
+    <button type="button" className={cx('cl', cell.state !== 'future' && cell.state, scelto && 'sel')} aria-current={scelto ? 'true' : undefined} data-giorno={cell.day.id} aria-label={`${w} ${d.getDate()} ${m}, ${cell.label}, ${cell.status}${scoperta ? ', notte senza alloggio' : ''}`} onClick={onOpen}>
       <span className="mo">{m}</span>
       {scoperta ? <span style={{ position: 'absolute', top: 6, right: 8, display: 'inline-flex' }} title="Notte senza alloggio"><Sv name="moon" size={16} /></span> : null}
       <i className="rg1" />
@@ -53,6 +55,42 @@ function Calendarietto({ cell, onOpen, scoperta }: { cell: DayCell; onOpen: () =
 
 export function Giorni() {
   const trip = useTrip()
+  // finestra espansa (pieghevole in orizzontale, computer): il dettaglio di un giorno accanto all'elenco
+  const accanto = useVistaAccanto()
+  if (accanto && trip.days.length > 0) return <GiorniAccanto />
+  return <ElencoGiorni />
+}
+
+/** Il giorno mostrato a destra quando nessuno è stato scelto: oggi durante il viaggio, altrimenti il primo giorno. */
+export function giornoIniziale(days: { id: string; date: string }[], today: string): string | undefined {
+  return (days.find((d) => d.date === today) ?? days[0])?.id
+}
+
+/** Giorni a sinistra, larghi come un telefono, e il giorno scelto a destra. Il giorno scelto è nell'indirizzo (/giorni/:id),
+ *  così «Indietro» e i link funzionano come sul telefono; toccando un altro giorno l'indirizzo si sostituisce. */
+export function GiorniAccanto({ scelto }: { scelto?: string }) {
+  const trip = useTrip()
+  const id = scelto ?? giornoIniziale(trip.days, tripToday(trip)) ?? ''
+  return <ElencoGiorni scelto={id} />
+}
+
+function PannelloGiorno({ id }: { id: string }) {
+  const box = useRef<HTMLElement>(null)
+  useSottoIlBanner(box)
+  // un altro giorno riparte dall'inizio
+  useEffect(() => {
+    box.current?.scrollTo({ top: 0 })
+  }, [id])
+  return (
+    <aside ref={box} className="fa-gpanel" aria-label="Giorno scelto">
+      <DettaglioGiorno key={id} id={id} incastrato />
+    </aside>
+  )
+}
+
+function ElencoGiorni({ scelto }: { scelto?: string }) {
+  const trip = useTrip()
+  const accanto = scelto !== undefined
   const scoperte = new Set(nottiScoperte(trip))
   const [, navigate] = useLocation()
   const today = tripToday(trip)
@@ -79,11 +117,19 @@ export function Giorni() {
   // temperatura attuale di ogni città; fuori dal periodo di previsione la riga non compare
   const weather = cities.map((c) => ({ city: c, w: nowWeather(forecasts.get(c), today, hour) })).filter((x) => x.w)
 
-  const open = (cell: DayCell) => navigate(`/giorni/${cell.day.id}${cell.state === 'free' ? '?aggiungi=1' : ''}`)
+  const open = (cell: DayCell) => navigate(`/giorni/${cell.day.id}${cell.state === 'free' ? '?aggiungi=1' : ''}`, accanto ? { replace: true } : undefined)
+
+  // con il dettaglio accanto: il giorno scelto (anche da «giorno successivo» a destra) resta in vista nell'elenco
+  useEffect(() => {
+    if (!scelto) return
+    document.querySelector<HTMLElement>(`[data-giorno="${CSS.escape(scelto)}"]`)?.scrollIntoView({ block: 'nearest' })
+  }, [scelto])
 
   return (
     <Schermata
       gap={16}
+      className={accanto ? 'fa-lmappa fa-gaccanto' : undefined}
+      overlay={accanto && scelto ? <PannelloGiorno id={scelto} /> : undefined}
       fisso
       fissa={
         searching ? (
@@ -149,7 +195,7 @@ export function Giorni() {
             <div className="k-SelettoreGiorni">
               <div className="grid">
                 {g.cells.map((c) => (
-                  <Calendarietto key={c.day.id} cell={c} onOpen={() => open(c)} scoperta={scoperte.has(c.day.date)} />
+                  <Calendarietto key={c.day.id} cell={c} onOpen={() => open(c)} scoperta={scoperte.has(c.day.date)} scelto={accanto && c.day.id === scelto} />
                 ))}
               </div>
             </div>

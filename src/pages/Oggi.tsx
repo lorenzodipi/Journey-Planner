@@ -163,7 +163,7 @@ function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string 
           {checklist}
         </Colonna>
         {tappeViaggio.length > 1 ? (
-          <Colonna lato="sinistra">
+          <Colonna lato="sinistra" mobile>
             <StepperViaggio tappe={tappeViaggio} />
           </Colonna>
         ) : null}
@@ -347,7 +347,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
       ) : null}
       </Colonna>
 
-      <Colonna lato="sinistra">
+      <Colonna lato="sinistra" mobile>
       {nextBooking ? (
         <section style={{ display: 'grid', gap: 8 }}>
           <div className="fa-sech">
@@ -571,7 +571,7 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
       </Colonna>
 
 
-      <Colonna lato="sinistra">
+      <Colonna lato="sinistra" mobile>
       {cityGroups.length > 0 ? (
         <section className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ padding: '16px 16px 8px' }}>

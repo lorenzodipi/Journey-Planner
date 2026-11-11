@@ -1,9 +1,9 @@
 // Foglio «Nuovo viaggio» e «Modifica viaggio» (mock Fa-13, #35): da dove parti, dove vai (più paesi con date e cambio),
 // quando, budget, chi viene. «Elimina viaggio» solo in modifica e solo per chi organizza.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'wouter'
 import { useAuth } from '../../lib/auth'
-import { COUNTRIES, countryByCode, countryByName, themeForCountry } from '../../lib/countries'
+import { countryByCode, countryByName, themeForCountry } from '../../lib/countries'
 import { currencyName, parseAmount, parseRate } from '../../lib/money'
 import { fetchFxRate } from '../../lib/moneyApi'
 import { formatShort } from '../../lib/dates'
@@ -122,7 +122,6 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
   const nextId = useRef(0)
 
   const dateOk = !startDate || !endDate || endDate >= startDate
-  const nomiPaesi = useMemo(() => COUNTRIES.map((c) => c.name), [])
   const persone = trip ? trip.travelers.map((p, i) => ({ initials: initials(p.name), n: i + 1 })) : [{ initials: initials(selfName || '?'), n: 1 }, ...others.map((o, i) => ({ initials: initials(o.name || nameFromEmail(o.email) || o.email), n: i + 2 }))]
 
   // il tasso si legge da solo (BCE, poi ripiego), ma solo se non è già salvato o scritto a mano
@@ -334,7 +333,8 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gap: 8 }}>
-                    <Campo label="Paese" icon="globe" value={p.name} onChange={(v) => scegliPaese(p.id, v)} list="paesi-elenco" autoComplete="off" placeholder="Scegli il paese" autoFocus={!editing} />
+                    {/* una select vera, con tutti i paesi: prima era un campo di testo con suggerimenti che sembrava una select */}
+                    <CampoPaese label="Paese" value={p.country} onChange={(code) => scegliPaese(p.id, countryByCode(code)?.name ?? '')} vuoto="Scegli il paese" />
                     {paesi.length > 1 ? (
                       <button type="button" className="fa-lnk" style={{ color: 'var(--danger)', justifySelf: 'start' }} onClick={() => setPaesi(paesi.filter((x) => x.id !== p.id))}>
                         Rimuovi
@@ -488,11 +488,6 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
             </Pulsante>
           ) : null}
         </div>
-        <datalist id="paesi-elenco">
-          {nomiPaesi.map((n) => (
-            <option key={n} value={n} />
-          ))}
-        </datalist>
       </form>
       {confirmNode}
       {confermaCentro}

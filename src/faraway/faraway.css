@@ -2552,15 +2552,25 @@ html,body{margin:0;background:var(--canvas)}
 @media (min-width:840px){
   .fa-phone.fa-lmappa{--lista:clamp(360px,36vw,440px);--colonna:var(--lista);--margine:16px}
   .fold-vertical .fa-phone.fa-lmappa{--lista:clamp(360px,calc(var(--fold-left) - var(--rail)),480px)}
-  .fa-phone.fa-lmappa>.fa-main,.fa-phone.fa-lmappa>.fa-top,.fa-phone.fa-lmappa>.fa-bar,.fa-phone.fa-lmappa .fa-head>*{margin-inline:0}
+  /* solo i figli diretti: nel pannello di Giorni c'è un'altra pagina intera, che ha le sue regole */
+  .fa-phone.fa-lmappa>.fa-main,.fa-phone.fa-lmappa>.fa-top,.fa-phone.fa-lmappa>.fa-bar,.fa-phone.fa-lmappa>.fa-head>*{margin-inline:0}
   .fa-lmap{position:fixed;top:0;bottom:0;right:0;left:calc(var(--rail) + var(--lista));z-index:35;background:var(--surface-high)}
-  .fa-phone.fa-lmappa:not(.has-tabs) .fa-lmap{left:var(--lista)}
+  .fa-phone.fa-lmappa:not(.has-tabs)>.fa-lmap{left:var(--lista)}
   .fa-lmap .fa-map{position:absolute;inset:0;min-height:0;border-top:0;border-left:1px solid var(--hairline)}
   /* il pulsante «+ Luogo» e la barra della selezione restano sull'elenco, non sulla mappa */
-  .fa-phone.fa-lmappa .fa-fab,.fa-phone.fa-lmappa:not(.has-tabs) .fa-fab{right:calc(100% - var(--rail) - var(--lista) + 16px)}
-  .fa-phone.fa-lmappa:not(.has-tabs) .fa-fab{right:calc(100% - var(--lista) + 16px)}
-  .fa-lmappa .fa-selbar{left:0;right:auto;width:var(--lista);max-width:none;margin:0;box-sizing:border-box}
+  .fa-phone.fa-lmappa>.fa-fab{right:calc(100% - var(--rail) - var(--lista) + 16px)}
+  .fa-phone.fa-lmappa:not(.has-tabs)>.fa-fab{right:calc(100% - var(--lista) + 16px)}
+  .fa-phone.fa-lmappa>.fa-selbar{left:0;right:auto;width:var(--lista);max-width:none;margin:0;box-sizing:border-box}
+  /* Giorni accanto al giorno scelto: a sinistra i calendarietti come sul telefono (tre colonne, niente «città in fila») */
+  .fa-phone.fa-gaccanto .k-SelettoreGiorni .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  /* il giorno scelto: la pagina di un giorno come sul telefono, in un pannello che scorre da solo. Il transform fa sì che
+     quello che dentro è «fisso» (pulsanti volanti) stia nel pannello e non nella finestra */
+  .fa-gpanel{position:fixed;top:0;bottom:0;right:0;left:calc(var(--rail) + var(--lista));z-index:35;overflow-y:auto;overscroll-behavior:contain;background:var(--canvas);border-left:1px solid var(--hairline);transform:translateZ(0)}
+  .fa-gpanel .fa-phone{--colonna:720px;--margine:16px;min-height:100%}
+  .fa-gpanel .fa-duo,.fa-gpanel .fa-duo-c{display:contents}
+  .fa-gpanel .fa-phone .fa-fab{right:16px;bottom:24px}
 }
+
 
 /* Pieghevole a libro mezzo aperto (due segmenti affiancati): l'app sta tutta nel segmento destro, come su un telefono,
    e nulla finisce sotto la cerniera. Le regole della larghezza media qui non valgono: si torna alla barra in basso. */
@@ -2594,12 +2604,12 @@ html,body{margin:0;background:var(--canvas)}
 .fa-flusso{display:contents}
 .fa-gsez{display:grid;gap:16px}
 @media (min-width:600px){
-  html:not(.horizontal-viewport-segments-2) .fa-flusso{--cl-w:128px;display:flex;flex-wrap:wrap;align-items:stretch;gap:32px 24px;min-width:0}
-  html:not(.horizontal-viewport-segments-2) .fa-flusso>.fa-gsez{flex:0 0 auto;display:flex;flex-direction:column;gap:12px;box-sizing:border-box;width:calc(var(--n) * var(--cl-w) + (var(--n) - 1) * var(--space-sm));min-width:176px;max-width:100%}
-  html:not(.horizontal-viewport-segments-2) .fa-flusso .fa-sech{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:0;min-height:0}
-  html:not(.horizontal-viewport-segments-2) .fa-flusso .fa-sech>*{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  html:not(.horizontal-viewport-segments-2) .fa-flusso .k-SelettoreGiorni{flex:1;display:flex;flex-direction:column}
-  html:not(.horizontal-viewport-segments-2) .fa-flusso .k-SelettoreGiorni .grid{flex:1;grid-template-columns:repeat(auto-fill,var(--cl-w));grid-auto-rows:1fr}
+  html:not(.horizontal-viewport-segments-2) .fa-phone:not(.fa-gaccanto) .fa-flusso{--cl-w:128px;display:flex;flex-wrap:wrap;align-items:stretch;gap:32px 24px;min-width:0}
+  html:not(.horizontal-viewport-segments-2) .fa-phone:not(.fa-gaccanto) .fa-flusso>.fa-gsez{flex:0 0 auto;display:flex;flex-direction:column;gap:12px;box-sizing:border-box;width:calc(var(--n) * var(--cl-w) + (var(--n) - 1) * var(--space-sm));min-width:176px;max-width:100%}
+  html:not(.horizontal-viewport-segments-2) .fa-phone:not(.fa-gaccanto) .fa-flusso .fa-sech{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:0;min-height:0}
+  html:not(.horizontal-viewport-segments-2) .fa-phone:not(.fa-gaccanto) .fa-flusso .fa-sech>*{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  html:not(.horizontal-viewport-segments-2) .fa-phone:not(.fa-gaccanto) .fa-flusso .k-SelettoreGiorni{flex:1;display:flex;flex-direction:column}
+  html:not(.horizontal-viewport-segments-2) .fa-phone:not(.fa-gaccanto) .fa-flusso .k-SelettoreGiorni .grid{flex:1;grid-template-columns:repeat(auto-fill,var(--cl-w));grid-auto-rows:1fr}
 }
 /* a libro mezzo aperto l'app sta in un segmento ed è un telefono: le città tornano a tutta larghezza */
 @media (horizontal-viewport-segments:2){.fa-flusso{display:contents}.fa-flusso>.fa-gsez{display:grid;width:auto;min-width:0}}
@@ -2618,6 +2628,11 @@ html,body{margin:0;background:var(--canvas)}
   /* sinistra, destra alta, sinistra: la prima riga è alta quanto il primo gruppo di sinistra e tutto ciò che la colonna
      alta ha in più va nella seconda, così il secondo gruppo di sinistra sta subito sotto il primo, senza vuoti */
   .fa-duo:has(>.fa-duo-c.alta){grid-template-rows:auto 1fr}
+  /* il secondo gruppo di sinistra passa sotto la colonna alta (deciso in DueColonne): la destra ha la riga 1, la sinistra
+     le occupa tutte e due, così niente vuoti né da una parte né dall'altra */
+  .fa-duo[data-mobile-a-destra]>.fa-duo-c.l:not(.mob){grid-row:1 / span 2}
+  .fa-duo[data-mobile-a-destra]>.fa-duo-c.alta{grid-row:1}
+  .fa-duo[data-mobile-a-destra]>.fa-duo-c.mob{grid-column:2;grid-row:2}
   .fa-duo-c.tutta{grid-column:1/-1}
   .fa-duo-c:empty{display:none}
   /* con la piega verticale (plugin capacitor-foldable) le colonne si dividono esattamente sulla piega: la sua banda

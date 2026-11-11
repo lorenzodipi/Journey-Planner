@@ -62,7 +62,7 @@ export function BarraSchede() {
  * Figli diretti senza `Colonna`: si alternano sinistra/destra. Con `Colonna` si sceglie il lato; `alta` occupa due righe.
  */
 export function Affianca({ children, className, pesi }: { children: ReactNode; className?: string; pesi?: number[] }) {
-  if (!pesi) return <div className={cx('fa-duo', className)}>{children}</div>
+  if (!pesi) return <DueColonne className={className}>{children}</DueColonne>
   // Elenco di gruppi: due colonne indipendenti (nessuna riga in comune, quindi nessun vuoto) divise dove i pesi si
   // bilanciano. L'ordine resta quello del codice (prima tutta la sinistra), così sul telefono e per lo screen reader non cambia nulla.
   const figli = Children.toArray(children)
@@ -72,6 +72,41 @@ export function Affianca({ children, className, pesi }: { children: ReactNode; c
     <div className={cx('fa-duo', className)}>
       <Colonna lato="sinistra">{figli.slice(0, k)}</Colonna>
       <Colonna lato="destra">{figli.slice(k)}</Colonna>
+    </div>
+  )
+}
+
+/** Il gruppo `mobile` (il secondo di sinistra) passa a destra, sotto la colonna alta, solo se lì ci sta senza superare il
+ *  primo gruppo di sinistra: così la destra non resta vuota quando ha poco, e non si allunga quando ha molto. */
+export function spostaADestra(primoSinistra: number, alta: number, mobile: number, spazio = 16): boolean {
+  return primoSinistra > 0 && alta + spazio + mobile <= primoSinistra
+}
+
+function DueColonne({ children, className }: { children: ReactNode; className?: string }) {
+  const box = useRef<HTMLDivElement>(null)
+  const [destra, setDestra] = useState(false)
+  useEffect(() => {
+    const el = box.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const misura = () => {
+      // le colonne esistono solo come griglia (da 600 px, non a libro mezzo aperto né nel pannello di Giorni)
+      if (getComputedStyle(el).display !== 'grid') return setDestra(false)
+      const l = el.querySelector<HTMLElement>(':scope>.fa-duo-c.l:not(.mob)')
+      const a = el.querySelector<HTMLElement>(':scope>.fa-duo-c.alta')
+      const m = el.querySelector<HTMLElement>(':scope>.fa-duo-c.mob')
+      if (!l || !a || !m) return setDestra(false)
+      const h = (x: HTMLElement) => x.getBoundingClientRect().height
+      setDestra(spostaADestra(h(l), h(a), h(m)))
+    }
+    const ro = new ResizeObserver(misura)
+    for (const c of Array.from(el.children)) ro.observe(c)
+    ro.observe(el)
+    misura()
+    return () => ro.disconnect()
+  })
+  return (
+    <div ref={box} className={cx('fa-duo', className)} data-mobile-a-destra={destra || undefined}>
+      {children}
     </div>
   )
 }
@@ -89,8 +124,8 @@ export function taglio(pesi: number[]): number {
 }
 
 /** Un gruppo di elementi nella stessa colonna di `Affianca` (sul telefono anche questo è trasparente); `tutta` va da un bordo all'altro. */
-export function Colonna({ lato, alta, children }: { lato: 'sinistra' | 'destra' | 'tutta'; alta?: boolean; children: ReactNode }) {
-  return <div className={cx('fa-duo-c', lato === 'sinistra' ? 'l' : lato === 'destra' ? 'r' : 'tutta', alta && 'alta')}>{children}</div>
+export function Colonna({ lato, alta, mobile, children }: { lato: 'sinistra' | 'destra' | 'tutta'; alta?: boolean; /** secondo gruppo di sinistra che passa sotto la colonna alta se lì c'è posto (vedi `spostaADestra`) */ mobile?: boolean; children: ReactNode }) {
+  return <div className={cx('fa-duo-c', lato === 'sinistra' ? 'l' : lato === 'destra' ? 'r' : 'tutta', alta && 'alta', mobile && 'mob')}>{children}</div>
 }
 
 /** Barra grande delle pagine principali: azioni rotonde in alto a destra, titolo grande e sottotitolo. */
@@ -152,6 +187,8 @@ interface ScreenProps {
   fisso?: boolean
   /** Contenuto che resta fermo sotto la barra insieme a lei (ricerca, scelta della vista, filtri). Richiede `fisso`. */
   fissa?: ReactNode
+  /** Pagina dentro un pannello di un'altra (Giorno accanto a Giorni): niente schede e non tocca lo stato della pagina. */
+  incastrata?: boolean
 }
 
 /**
@@ -185,16 +222,17 @@ function useTestaFissa(attiva: boolean) {
 }
 
 /** Una schermata dell'app: la «cornice del telefono» del mock è la pagina intera. */
-export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, overlay, className, bare, rete = true, fisso, fissa }: ScreenProps) {
+export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, overlay, className, bare, rete = true, fisso, fissa, incastrata }: ScreenProps) {
   const main = useRef<HTMLElement>(null)
   const fissata = !!fisso && !bare
   const { testa, sentinella, scorre } = useTestaFissa(fissata)
   useVaiAllErrore(main)
   useEffect(() => {
+    if (incastrata) return
     const root = document.documentElement
     if (tabs) root.removeAttribute('data-no-tabs')
     else root.setAttribute('data-no-tabs', '')
-  }, [tabs])
+  }, [tabs, incastrata])
   return (
     <div className={cx('fa-phone', tabs && 'has-tabs', fab && 'has-fab', className)}>
       {fissata ? (
