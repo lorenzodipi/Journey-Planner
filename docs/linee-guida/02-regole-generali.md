@@ -77,4 +77,4 @@
 - «Dove» compare solo in gruppo: due persone → «Tutti» e «Solo io»; da tre in su anche «Scegli».
 - Quando entra una persona nuova, le voci «per tutti» già scritte restano delle persone di prima (trigger `checklist_fissa_per_chi`).
 
-- **Nome del profilo**: si imposta da Altro → Profilo → «Cambia il nome» ed è quello già scritto in «Il tuo nome» quando si crea un viaggio (poi si cambia per ogni viaggio). Sta nell'account (`user_metadata.profile_name`, nessuna migrazione); in demo e con i dati salvati, sul telefono. Senza nome scelto si usa quello dell'account o, in mancanza, l'email.
+- **Nome del profilo**: si imposta da Altro → Profilo → «Cambia il nome» ed è quello già scritto in «Il tuo nome» quando si crea un viaggio (poi si cambia per ogni viaggio). Sta nell'account (`user_metadata.display_name`, il «Display name» che si vede anche in Supabase, nessuna migrazione); in demo e con i dati salvati, sul telefono. Senza nome scelto si usa quello dell'account o, in mancanza, l'email.

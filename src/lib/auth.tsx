@@ -20,9 +20,11 @@ const NOME_PROFILO = 'jp.nomeProfilo'
 
 /** Il nome scelto per il profilo (account) o, in demo e con i dati salvati, quello tenuto sul telefono. */
 export function nomeProfiloDa(user: { user_metadata?: unknown } | null | undefined, sulTelefono = ''): string {
-  const meta = user?.user_metadata as { profile_name?: unknown } | undefined
-  const scelto = typeof meta?.profile_name === 'string' ? meta.profile_name.trim() : ''
-  return scelto || sulTelefono.trim()
+  // «display_name» è il campo «Display name» di Supabase (si vede e si corregge anche dalla dashboard);
+  // «profile_name» è la chiave usata per poche ore in una versione precedente: si legge ancora, non si scrive più
+  const meta = user?.user_metadata as { display_name?: unknown; profile_name?: unknown } | undefined
+  const testo = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
+  return testo(meta?.display_name) || testo(meta?.profile_name) || sulTelefono.trim()
 }
 
 function leggiNomeTelefono(): string {
@@ -134,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async setProfileName(name) {
       const nuovo = name.trim().slice(0, 40)
       if (supabase && session) {
-        const { error } = await supabase.auth.updateUser({ data: { profile_name: nuovo } })
+        const { error } = await supabase.auth.updateUser({ data: { display_name: nuovo, profile_name: null } })
         if (error) return translateError(error.message)
       }
       // sul telefono si tiene sempre una copia: serve in demo, con i dati salvati e se il servizio non risponde
