@@ -948,7 +948,7 @@ html{scroll-padding-top:var(--head-h,0px)}
 }
 .k-Meteo .tr2{position:relative;height:6px;border-radius:3px;background:var(--surface-high);margin:0 8px}
 .k-Meteo .tr2 i{position:absolute;left:0;top:0;bottom:0;border-radius:3px}
-.k-Meteo .tr2 .mk{position:absolute;top:50%;width:24px;height:24px;margin:-16px 0 0 -16px;border-radius:50%;background:var(--surface-card);display:grid;place-items:center;box-shadow:0 0 0 1.5px var(--border-strong)}
+.k-Meteo .tr2 .mk{position:absolute;top:50%;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;background:var(--surface-card);display:grid;place-items:center;box-shadow:0 0 0 1.5px var(--border-strong)}
 .k-Meteo .card{padding:var(--space-xl)}
 .k-Meteo .dt{display:flex;gap:var(--space-md);align-items:flex-start}
 .k-Meteo .dsk{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--glifo);flex:none}
@@ -1040,7 +1040,7 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-Orologio .nxt b{font:700 15px/20px var(--font-sans);color:var(--ink);font-variant-numeric:tabular-nums}
 .k-Orologio .tr2{position:relative;height:6px;border-radius:3px;background:var(--surface-high);margin:0 8px}
 .k-Orologio .tr2 i{position:absolute;left:0;top:0;bottom:0;border-radius:3px}
-.k-Orologio .tr2 .mk{position:absolute;top:50%;width:24px;height:24px;margin:-16px 0 0 -16px;border-radius:50%;background:var(--surface-card);display:grid;place-items:center;box-shadow:0 0 0 1.5px var(--border-strong)}
+.k-Orologio .tr2 .mk{position:absolute;top:50%;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;background:var(--surface-card);display:grid;place-items:center;box-shadow:0 0 0 1.5px var(--border-strong)}
 .k-Orologio .card{padding:var(--space-xl)}
 .k-Orologio .dt{display:flex;gap:var(--space-md);align-items:flex-start}
 .k-Orologio .dsk{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--glifo);flex:none}
