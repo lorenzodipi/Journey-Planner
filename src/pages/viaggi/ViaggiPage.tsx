@@ -19,7 +19,7 @@ import { Button as AriaButton } from 'react-aria-components'
 import { Avatar, Avatars, Campo, Pillola, Pulsante } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
 import { Foglio } from '../../faraway/Foglio'
-import { BarraGrande, Schermata } from '../../faraway/shell'
+import { Affianca, BarraGrande, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
 import { ViaggioSheet } from '../viaggio/ViaggioSheet'
 import { DuplicaSheet } from './DuplicaSheet'
@@ -213,13 +213,13 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
         />
       ) : (
         <>
-          {lista.map(conAzioni)}
+          <Affianca>{lista.map(conAzioni)}</Affianca>
           {archiviati.length ? (
             <section aria-label="Viaggi archiviati" style={{ display: 'grid', gap: 16 }}>
               <button type="button" className="fa-lnk" style={{ justifySelf: 'center' }} aria-expanded={mostraArch} onClick={() => setMostraArch(!mostraArch)}>
                 {mostraArch ? 'Nascondi' : 'Mostra'} i viaggi archiviati ({archiviati.length})
               </button>
-              {mostraArch ? archiviati.map(conAzioni) : null}
+              {mostraArch ? <Affianca>{archiviati.map(conAzioni)}</Affianca> : null}
             </section>
           ) : null}
           <Pulsante color="tertiary" onPress={() => setInvito(true)}>

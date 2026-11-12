@@ -34,6 +34,7 @@ Rumore noto del confronto: i pin della mappa nella pagina di un giorno e una rig
   - **Luoghi**: elenco + mappa (`.fa-lmappa`). Card a tre colonne: freccia sopra, «Maps» sotto, stesso bordo destro.
   - **Giorni**: elenco + giorno scelto (`.fa-gaccanto`, `.fa-gpanel`). All'apertura il primo giorno, o oggi durante il viaggio; toccando un giorno l'indirizzo si sostituisce.
   - Regola in `src/faraway/mappaAccanto.ts`.
+- **Ogni pagina a colonna unica si controlla anche da 600 px in su** (690, 882, 1280): se resta a tutta larghezza si divide con `Affianca`/`Colonna` (elenco delle pagine già fatte in `05-css-e-stile`).
 - **A libro mezzo aperto** l'app sta in un segmento ed è un telefono. Le classi del plugin `capacitor-foldable` sono `.fold-vertical`, `--fold-left` e `.horizontal-viewport-segments-2`.
 - Stessa riga, stessa altezza: calendarietti, card dei luoghi, riquadri affiancati. Le card strette si adattano con le container query, non con la larghezza della finestra.
 
@@ -47,6 +48,7 @@ Rumore noto del confronto: i pin della mappa nella pagina di un giorno e una rig
 - Migrazioni in `supabase/migrations/NNNN_nome.sql`, additive e rilanciabili. Si salvano su Git e le esegue Claude su Supabase; se mancano i permessi, si chiede a Lorenzo. L'app deve funzionare anche prima della migrazione.
 - **Scritture sui dati veri solo con il consenso esplicito di Lorenzo**, anche per correggere dati sbagliati (per esempio luoghi con città «Chiyoda» invece di «Tokyo»).
 - Nome del profilo: `user_metadata.display_name`, cioè il «Display name» in Authentication → Users, con una copia sul telefono in demo. Nessuna tabella. È il nome proposto in ogni nuovo viaggio; nel viaggio vale quello del viaggiatore.
+- Dati sul telefono: ogni dato dell'account usa una chiave `jp.…` e al logout (o al cambio account) si cancella tutto con `cancellaDatiLocali()` (`src/lib/datiLocali.ts`); restano solo tema, ora e unità, stile mappa. Per cambiare cosa resta si modifica `CHIAVI_DA_TENERE`. Controllo da rifare se tocchi auth o salvi qualcosa in locale.
 - Geocodifica: Nominatim, con Photon come riserva quando è bloccato o per CORS. I quartieri di Tokyo diventano «Tokyo».
 
 ## Provare in locale

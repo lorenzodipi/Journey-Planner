@@ -10,7 +10,7 @@ import { Avatar, Campo, Pillola, Pulsante } from '../../faraway/base'
 import { Foglio, useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { Azioni, KV, RigaApribile, useUnaAperta } from '../../faraway/Righe'
-import { BarraIndietro, Schermata } from '../../faraway/shell'
+import { Affianca, BarraIndietro, Colonna, Schermata } from '../../faraway/shell'
 import { useInCorso } from '../../faraway/Attesa'
 
 const TONO = { inviato: 'soft', accettato: 'acq', rifiutato: 'mut', scaduto: 'cor' } as const
@@ -118,6 +118,8 @@ export function ViaggiatoriPage() {
         </>
       }
     >
+      <Affianca>
+        <Colonna lato="sinistra">
       <p className="fa-m" style={{ margin: 0 }}>{riepilogoPartecipanti(trip)}</p>
       <div className="fa-list">
         {trip.travelers.map((p) => {
@@ -158,7 +160,9 @@ export function ViaggiatoriPage() {
           )
         })}
       </div>
+        </Colonna>
 
+        <Colonna lato="destra">
       {inviti.length > 0 ? (
         <>
           <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Inviti</h2>
@@ -186,6 +190,8 @@ export function ViaggiatoriPage() {
           </div>
         </>
       ) : null}
+        </Colonna>
+      </Affianca>
     </Schermata>
   )
 }

@@ -4,9 +4,10 @@ import type { ReactNode } from 'react'
 import { cittaDaAlloggi } from '../lib/cittaGiorno'
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { demoTrip } from '../demo/demoTrip'
-import { useAuth } from '../lib/auth'
-import { clearSnapshot, loadActiveId, loadSnapshot, saveActiveId, saveSnapshot } from '../lib/cache'
-import { clearQueue, flushQueue, loadQueue, saveQueue, type Entry, type Local, type Op } from '../lib/outbox'
+import { lastUid, useAuth } from '../lib/auth'
+import { loadActiveId, loadSnapshot, saveActiveId, saveSnapshot } from '../lib/cache'
+import { cancellaDatiLocali } from '../lib/datiLocali'
+import { flushQueue, loadQueue, saveQueue, type Entry, type Local, type Op } from '../lib/outbox'
 import { execOp } from '../lib/outboxExec'
 import { countChange } from '../lib/checklist'
 import { applyQueue, checklistEntry, deletedPatch, expenseEntry } from '../lib/outboxLocal'
@@ -286,9 +287,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
     if (demo) return
     if (!signedIn) {
       if (auth.status === 'signed-out') {
-        // niente dati di un utente rimasti sul dispositivo dopo l'uscita
-        clearSnapshot()
-        clearQueue()
+        // niente dati di un utente rimasti sul dispositivo dopo l'uscita (anche se la sessione è finita da sola)
+        cancellaDatiLocali()
         queueRef.current = []
         setQueueState([])
         hasData.current = false
@@ -298,6 +298,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
         setStatus('loading')
       }
       return
+    }
+    // entra un account diverso dall'ultimo: dei dati e delle modifiche in coda del precedente non si tiene niente
+    const uid = auth.session?.user.id
+    const precedente = lastUid()
+    if (uid && precedente && precedente !== uid) {
+      cancellaDatiLocali()
+      queueRef.current = []
+      setQueueState([])
     }
     const snapshot = loadSnapshot()
     if (snapshot) {

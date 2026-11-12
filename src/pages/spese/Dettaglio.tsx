@@ -22,7 +22,7 @@ import { CalendarioIntervallo, type Intervallo } from '../../faraway/CalendarioI
 import { rangeText } from '../../lib/dayGroups'
 import { Sv } from '../../faraway/icons'
 import { useUnaAperta } from '../../faraway/Righe'
-import { BarraIndietro, Schermata } from '../../faraway/shell'
+import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { VuotoFiltro } from '../../faraway/Stati'
 import { SpesaSheet } from './SpesaSheet'
 import { giornoSpese, inQuanti, pagataDa, rigaSpesa, sorgente, tutteLePersone } from './testi'
@@ -180,6 +180,7 @@ export function Dettaglio() {
           <VuotoFiltro title="Nessuna spesa trovata" text={date ? "Prova con altre date, un'altra categoria o un altro nome." : "Prova con un'altra categoria o un altro nome."} action="Mostra tutte le spese" onAction={() => (setCat(null), setText(''), setDate(null))} />
         )
       ) : null}
+      <Affianca pesi={giorni.map(([, l]) => l.length + 1)}>
       {giorni.map(([ymd, list]) => (
         <section key={ymd} aria-label={giornoSpese(ymd, today)} style={{ display: 'grid', gap: 8 }}>
           <div className="fa-sech">
@@ -340,6 +341,7 @@ export function Dettaglio() {
           </div>
         </section>
       ))}
+      </Affianca>
     </Schermata>
   )
 }

@@ -24,6 +24,7 @@
 - **Prima si cerca nella libreria, poi si costruisce**: componenti Faraway (`src/faraway/base.tsx` e vicini), poi `react-aria-components`. Solo se non c'è nulla si scrive a mano.
 - Nessuna dipendenza nuova se non serve.
 - `localStorage` sempre in `try/catch`, solo per comodità del singolo dispositivo.
+- **Uscire dall'account non lascia niente sul telefono** (`src/lib/datiLocali.ts`, `cancellaDatiLocali()`): copia dei viaggi, coda delle modifiche, nome del profilo, ultimo account, percorsi, meteo, foto, documenti offline e la loro chiave, file dei biglietti (IndexedDB), sessione, avvisi programmati. Si cancella ogni chiave che inizia per `jp.` o `sb-`, quindi **ogni dato nuovo dell'app va salvato con una chiave `jp.…`**: viene cancellato da solo. Restano solo l'aspetto (tema, ora e unità, stile della mappa: `CHIAVI_DA_TENERE`); una nuova impostazione che è del telefono e non dell'account va aggiunta lì. Lo stesso pulisce quando la sessione finisce da sola e quando entra un account diverso dall'ultimo (la coda del precedente non parte mai con l'account nuovo). L'app non usa cookie. Se ci sono modifiche non inviate, «Esci dall'account» chiede conferma.
 - Azioni di massa in **una sola chiamata API**; dopo una scrittura si ricarica solo il gruppo di dati toccato.
 - La logica che si può testare sta in `src/lib/` con il suo `*.test.ts`.
 

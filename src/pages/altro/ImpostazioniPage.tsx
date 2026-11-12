@@ -7,7 +7,7 @@ import { MARGINI_RAPIDI } from '../../lib/fattibilita'
 import { useTrip, useTrips } from '../../state/trip'
 import { Sv } from '../../faraway/icons'
 import { Riga } from '../../faraway/Righe'
-import { BarraIndietro, Schermata } from '../../faraway/shell'
+import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { attivaNotifica, statoPermesso } from '../../lib/notificheDevice'
 import { useConferma } from '../../faraway/Foglio'
 import { showToast } from '../../state/toast'
@@ -48,6 +48,8 @@ export function ImpostazioniPage() {
 
   return (
     <Schermata bar={<BarraIndietro title="Impostazioni" back="/altro" />} overlay={confirmNode}>
+      <Affianca pesi={[14, 12, 3, 14]}>
+        <>
       <h2 className="fa-h3" style={{ margin: 0 }}>Aspetto</h2>
       <Segmenti label="Aspetto dell'app" value={tema} options={TEMI} onChange={setTema} />
       <p className="fa-m" style={{ margin: 0 }}>Con Automatico segue il tema del telefono.</p>
@@ -66,7 +68,8 @@ export function ImpostazioniPage() {
         </div>
         <span className="fa-help">Per tutto il viaggio: si somma agli spostamenti quando l’app controlla che gli orari reggano.</span>
       </div>
-
+        </>
+        <>
       <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Notifiche</h2>
       <div className="fa-card xl pad" style={{ display: 'grid', gap: 16 }}>
         {NOTIFICHE_TESTI.map((n) => (
@@ -74,13 +77,15 @@ export function ImpostazioniPage() {
         ))}
       </div>
       <p className="fa-m" style={{ margin: 0 }}>Gli avvisi restano su questo telefono: non servono server né email.</p>
-
+        </>
+        <>
       <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Lingua</h2>
       <div className="fa-list">
         <Riga icon={<Sv name="globe" size={22} />} title={lingua.nome} sub={LINGUE.length > 1 ? 'Cambia lingua' : 'Altre lingue arriveranno'} chevron={LINGUE.length > 1} />
       </div>
-
-      <SezioniDati ask={ask} />
+        </>
+        <SezioniDati ask={ask} />
+      </Affianca>
 
       <p className="fa-c" style={{ margin: '8px 0 0', textAlign: 'center', color: 'var(--ink-muted)' }}>
         Faraway 1.0{build ? ` · ${new Date(Date.parse(build)).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}

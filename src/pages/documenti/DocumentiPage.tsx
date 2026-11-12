@@ -8,7 +8,7 @@ import { DiscoSprite } from '../../faraway/DiscoSprite'
 import { useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { useUnaAperta } from '../../faraway/Righe'
-import { BarraIndietro, Schermata } from '../../faraway/shell'
+import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { useAuth } from '../../lib/auth'
 import { openBookingFile } from '../../lib/bookingFiles'
 import { chiVede, dimensione, puoCambiare, senzaCollegamenti, VIS_LABEL } from '../../lib/documenti'
@@ -65,7 +65,8 @@ export function DocumentiPage() {
       ) : lista.length === 0 ? (
         <p className="fa-m" style={{ margin: 0 }}>Qui metti ciò che non ha un luogo: eSIM, assicurazione, passaporti, visti. Per ogni file scegli chi lo vede.</p>
       ) : (
-        lista.map((d) => {
+        <Affianca pesi={lista.map(() => 1)}>
+        {lista.map((d) => {
           const isOpen = open.isOpen(d.id)
           const mio = puoCambiare(d, uid)
           const spesa = spesaDelDocumento(trip, d.id)
@@ -139,7 +140,8 @@ export function DocumentiPage() {
               </div>
             </div>
           )
-        })
+        })}
+        </Affianca>
       )}
     </Schermata>
   )

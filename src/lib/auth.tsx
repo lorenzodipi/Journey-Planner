@@ -2,6 +2,7 @@ import { createContext } from 'react'
 import { useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
+import { cancellaDatiLocali } from './datiLocali'
 import { isSupabaseConfigured, supabase } from './supabase'
 
 /** Segnata all'accesso, tolta quando si sceglie il viaggio: l'app apre «Tutti i viaggi» invece dell'ultima pagina. */
@@ -120,6 +121,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [attempt])
 
   useEffect(() => {
+    if (status === 'signed-out') setNomeTelefono('')
+  }, [status])
+
+  useEffect(() => {
     const uid = session?.user.id
     if (!uid) return
     try {
@@ -163,11 +168,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     async signOut() {
       await supabase?.auth.signOut()
-      try {
-        localStorage.removeItem(LAST_UID)
-      } catch {
-        // ignorato
-      }
+      // sul telefono non resta niente dell'account: copia dei viaggi, coda, nome, file, avvisi (vedi `cancellaDatiLocali`)
+      cancellaDatiLocali()
+      setNomeTelefono('')
     },
     retry() {
       setStatus('loading')

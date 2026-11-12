@@ -21,6 +21,7 @@ import type { Trip } from '../../types'
 import { DecidiSheet, DichiaraSheet } from './Rimborsi'
 import { SpesaSheet } from './SpesaSheet'
 import { sorgente, testoVerso } from './testi'
+import { Affianca } from '../../faraway/shell'
 
 
 function Stato({ d }: { d: DebitoSpesa }) {
@@ -76,6 +77,7 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
   ]
   return (
     <>
+      <Affianca>
       {sezioni.map(({ verso, titolo }) => {
         const list = righe.filter((d) => d.verso === verso)
         if (list.length === 0) return null
@@ -124,6 +126,7 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
           </section>
         )
       })}
+      </Affianca>
       {modifica ? <SpesaSheet key={modifica.id} trip={trip} expense={modifica} open onClose={() => setModifica(null)} /> : null}
       {paga ? <DichiaraSheet trip={trip} toId={paga.otherId} dovuto={paga.residuo} expenseId={paga.expenseId} onClose={() => setPaga(null)} /> : null}
       {rispondi ? <DecidiSheet trip={trip} r={rispondi} onClose={() => setRispondi(null)} /> : null}
