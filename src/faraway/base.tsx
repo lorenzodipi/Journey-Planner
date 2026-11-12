@@ -1,6 +1,5 @@
-// Componenti di base del design system Faraway, costruiti come in Untitled UI React
-// (stesse API: Button con color/size/iconLeading/onPress, Input, Toggle, Badge, Avatar, sopra
-// React Aria Components) ma con l'aspetto del mock (classi .fa-* di faraway.css).
+// Componenti di base del design system Faraway: Button con color/size/iconLeading/onPress, Input, Toggle,
+// Badge, Avatar, sopra React Aria Components, con l'aspetto del mock (classi .fa-* di faraway.css).
 import type { ReactNode } from 'react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
@@ -44,7 +43,7 @@ interface ButtonProps {
 
 const icon = (i: SvName | ReactNode) => (typeof i === 'string' ? <Sv name={i as SvName} size={20} /> : i)
 
-/** Pulsante del design system (Untitled UI `Button`): `primary` azzurro, uno per schermata. */
+/** Pulsante del design system: `primary` azzurro, uno per schermata. */
 export function Pulsante({ children, color = 'primary', size = 'md', iconLeading, iconTrailing, onPress, isDisabled, isLoading, type = 'button', href, target, className, form, ...aria }: ButtonProps) {
   const cls = cx('fa-btn', COLOR_CLASS[color], size === 'sm' && 'sm', !children && 'ico', (isDisabled || isLoading) && 'dis', className)
   const body = (
@@ -160,7 +159,7 @@ export function segnaposto(label: string, type: string, textarea: boolean): stri
   return textarea ? 'Scrivi qui' : 'Scrivi qui'
 }
 
-/** Campo del design system (Untitled UI `Input`): 56px, etichetta sopra, aiuto o errore sotto. */
+/** Campo del design system: 56px, etichetta sopra, aiuto o errore sotto. */
 /** Mette il focus senza far scorrere la pagina: l'`autoFocus` del browser, con il campo in una testa fissa, saltava in cima e poi tornava giù. */
 export function useFocoIniziale<T extends HTMLElement>(attivo: boolean | undefined) {
   const ref = useRef<T>(null)
@@ -215,7 +214,7 @@ export function Campo({ label, value, onChange, placeholder, type = 'text', inpu
 
 /* ---------------------------------------------------------------- Interruttore (Toggle) */
 
-/** Interruttore del design system (Untitled UI `Toggle`): riga da 44px con l'etichetta a sinistra. */
+/** Interruttore del design system: riga da 44px con l'etichetta a sinistra. */
 export function Interruttore({ label, hint, isSelected, onChange, isDisabled }: { label: ReactNode; hint?: ReactNode; isSelected: boolean; onChange: (v: boolean) => void; isDisabled?: boolean }) {
   return (
     <AriaSwitch className="fa-sw" isSelected={isSelected} onChange={onChange} isDisabled={isDisabled}>
@@ -232,7 +231,7 @@ export function Interruttore({ label, hint, isSelected, onChange, isDisabled }: 
 
 /* ---------------------------------------------------------------- Badge, stati, avatar */
 
-/** Pillola di stato (Untitled UI `Badge` pill-color). */
+/** Pillola di stato (Badge). */
 export function Pillola({ children, tone, icon: ic }: { children: ReactNode; tone?: 'soft' | 'acq' | 'cor' | 'mut'; icon?: SvName }) {
   return (
     <span className={cx('fa-pillst', tone)}>
