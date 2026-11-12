@@ -135,6 +135,8 @@ export interface Day {
 
 export interface Stay {
   id: string
+  /** Quando la voce è stata inserita nell'app (ISO): dà il giorno d'acquisto nel Dettaglio spese. */
+  createdAt?: string
   name: string
   city: string
   checkIn: string // "YYYY-MM-DD"
@@ -169,6 +171,8 @@ export interface Stay {
 
 export interface Transport {
   id: string
+  /** Quando la voce è stata inserita nell'app (ISO): dà il giorno d'acquisto nel Dettaglio spese. */
+  createdAt?: string
   from: string
   to: string
   mode: TransportMode
@@ -229,6 +233,8 @@ export interface FlightLeg {
 
 export interface Flight {
   id: string
+  /** Quando la voce è stata inserita nell'app (ISO): dà il giorno d'acquisto nel Dettaglio spese. */
+  createdAt?: string
   title: string
   airline?: string
   bookingRef?: string
@@ -413,6 +419,8 @@ export type BookingType = 'flight' | 'hotel' | 'train' | 'ticket' | 'insurance' 
 
 export interface Booking {
   id: string
+  /** Quando la voce è stata inserita nell'app (ISO): dà il giorno d'acquisto nel Dettaglio spese. */
+  createdAt?: string
   type: BookingType
   title: string
   code?: string // codice di conferma

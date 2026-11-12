@@ -35,6 +35,7 @@ export interface CheckRow {
 
 export interface BookingRow {
   id: string
+  created_at?: string | null
   trip_id: string
   type: BookingType
   title: string
@@ -134,6 +135,7 @@ export function mapBookings(rows: BookingRow[], tripId: string): Booking[] {
     .filter((r) => r.trip_id === tripId)
     .map((r) => ({
       id: r.id,
+      createdAt: r.created_at ?? undefined,
       type: r.type,
       title: r.title,
       code: r.confirmation_code ?? undefined,

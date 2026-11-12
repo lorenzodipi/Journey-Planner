@@ -425,6 +425,12 @@ sup{margin-left:0}
 .acts2 .fa-btn,.fa-acts .fa-btn{min-width:fit-content}
 /* Codici IATA dei biglietti: su schermi stretti si riducono, così non toccano la rotta (320px) */
 .k-Ticket .code,.k-TicketOrizzontale .code,.k-TicketTrasporti .code{font-size:clamp(32px,11vw,44px);line-height:1.1}
+/* Nel volo, in una colonna del pieghevole (da 600 px) la finestra è larga ma la carta no: i codici seguono la larghezza
+   del corpo della carta, lasciando alla rotta (punto, aereo, cerchio) lo spazio che le serve. Sotto i 600 px non cambia nulla. */
+.k-Ticket .body{container-type:inline-size}
+@media (min-width:600px){
+  .k-Ticket .code{font-size:clamp(24px,calc((100cqi - 120px) / 4.1),44px)}
+}
 /* Il menu del popover non mostra l'anello di focus globale (bordo azzurro): resta solo la voce */
 .fa-pop .fa-popm,.fa-pop .fa-popm:focus,.fa-pop .fa-popm:focus-visible,.fa-pop .fa-popi:focus,.fa-pop .fa-popi:focus-visible,.fa-pop:focus-visible{outline:none!important;box-shadow:none}
 /* Freccia del popover (OverlayArrow di react-aria): stesso fondo e bordo del pannello, punta al pulsante che l'ha aperto */
@@ -497,12 +503,14 @@ sup{margin-left:0}
 .k-TicketOrizzontale .tv:not(.open) .hz3{padding-bottom:var(--space-xl)}
 .k-TicketOrizzontale .hz3 .hs b{min-height:0;overflow-wrap:anywhere}
 .k-TicketOrizzontale .hz3 .hs .tm{overflow-wrap:anywhere}
+/* in una colonna stretta del pieghevole data e codice vanno a capo invece di toccarsi (sotto i 600 px resta com'era) */
+@media (min-width:600px){.k-TicketOrizzontale .hz3 .hs .tm{white-space:normal}}
 .k-TicketOrizzontale .hz3 .hs .tm.cod{font:700 20px/32px var(--font-sans);letter-spacing:.02em}
 .k-TicketOrizzontale .tv .ti{min-width:0;flex:1 1 0}
 /* i documenti non hanno uno stato pagato/da pagare: biglietto azzurro neutro; i testi d'aiuto usano il colore del biglietto */
 .k-TicketOrizzontale .tv.doc{--bg:var(--tinta-azzurro);--btnbg:#FFFFFF}
 .k-TicketOrizzontale .tv .fa-help{color:var(--fgm)}
-.k-TicketOrizzontale .tv .ti b{overflow-wrap:break-word}
+.k-TicketOrizzontale .tv .ti b{overflow-wrap:anywhere}
 /* stato sotto il titolo (Prenotazioni, Documenti): il titolo ha tutta la riga */
 .k-TicketOrizzontale .tv .ti .pl3b{justify-self:start;margin-top:8px;font:600 12px/16px var(--font-sans)}
 .k-TicketOrizzontale .tv .ti .pl3b.ok{color:var(--on-tinta)}

@@ -66,7 +66,8 @@ export function Affianca({ children, className, pesi }: { children: ReactNode; c
   // Elenco di gruppi: due colonne indipendenti (nessuna riga in comune, quindi nessun vuoto) divise dove i pesi si
   // bilanciano. L'ordine resta quello del codice (prima tutta la sinistra), così sul telefono e per lo screen reader non cambia nulla.
   const figli = Children.toArray(children)
-  if (figli.length < 2) return <div className={cx('fa-duo', className)}><Colonna lato="tutta">{figli}</Colonna></div>
+  // un gruppo solo resta in una colonna (a sinistra), mai a tutta larghezza
+  if (figli.length < 2) return <div className={cx('fa-duo', className)}><Colonna lato="sinistra">{figli}</Colonna></div>
   const k = taglio(pesi.length === figli.length ? pesi : figli.map(() => 1))
   return (
     <div className={cx('fa-duo', className)}>

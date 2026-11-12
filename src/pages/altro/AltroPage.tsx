@@ -1,7 +1,4 @@
 // Altro (mock Fa-36, #42): «Viaggio attuale» con il simbolo, account, righe del viaggio con riepiloghi calcolati e sezione Faraway.
-import { esportaRiepilogo } from '../../lib/riepilogoImmagine'
-import { riepilogoViaggio } from '../../lib/ricerca'
-import { showToast } from '../../state/toast'
 import { useState, type ReactNode } from 'react'
 import { DiscoGlifo, DiscoSprite, GLIFI } from '../../faraway/DiscoSprite'
 import { useLocation } from 'wouter'
@@ -47,7 +44,6 @@ export function AltroPage() {
     { icon: 'i-tra-train', title: 'Trasporti', sub: riepilogoTrasportiAltro(trip), to: '/altro/trasporti' },
     { icon: 'i-sez-ticket', title: 'Prenotazioni', sub: riepilogoPrenotazioni(trip), to: '/altro/prenotazioni' },
     { icon: <DiscoSprite name="i-sez-file" colore="#FF7C80" />, title: 'Documenti', sub: riepilogoDocumenti(trip), to: '/altro/documenti' },
-    { icon: <DiscoSprite name="i-azi-download" colore="#FFB45C" />, title: 'Esporta il riepilogo', sub: 'Immagine con statistiche e il tuo bilancio', onPress: () => void esportaRiepilogo(riepilogoViaggio(trip)).catch((e) => showToast(e instanceof Error ? e.message : 'Esportazione non riuscita')) },
     { icon: <DiscoSprite name="i-nav-clock" colore="#79A1FC" />, title: 'Registro modifiche', sub: 'Chi ha cambiato cosa', to: '/altro/registro' },
     { icon: 'i-sez-checklist', title: 'Checklist', sub: riepilogoChecklist(trip), to: '/altro/checklist' },
     { icon: 'i-con-spese', title: 'Budget', sub: riepilogoBudget(r.speso, r.limit, trip.baseCurrency), to: '/spese/budget' },

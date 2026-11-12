@@ -7,6 +7,7 @@ import { instantToZoned, isCompleteZoned, zonedToInstant } from './zoned'
 
 export interface StayRow {
   id: string
+  created_at?: string | null
   trip_id: string
   city: string | null
   name: string
@@ -39,6 +40,7 @@ export interface StayRow {
 
 export interface TransportRow {
   id: string
+  created_at?: string | null
   trip_id: string
   day_id: string | null
   from_label: string
@@ -76,6 +78,7 @@ export interface TransportRow {
 
 export interface FlightRow {
   id: string
+  created_at?: string | null
   trip_id: string
   title: string
   airline: string | null
@@ -125,6 +128,7 @@ export function mapStays(rows: StayRow[], tripId: string): Stay[] {
     .filter((r) => r.trip_id === tripId)
     .map((r) => ({
       id: r.id,
+      createdAt: r.created_at ?? undefined,
       name: r.name,
       city: r.city ?? '',
       checkIn: r.check_in,
@@ -159,6 +163,7 @@ export function mapTransports(rows: TransportRow[], tripId: string): Transport[]
     .filter((r) => r.trip_id === tripId)
     .map((r) => ({
       id: r.id,
+      createdAt: r.created_at ?? undefined,
       from: r.from_label,
       to: r.to_label,
       mode: r.mode,
@@ -197,6 +202,7 @@ export function mapFlights(rows: FlightRow[], legs: FlightLegRow[], tripId: stri
     .filter((r) => r.trip_id === tripId)
     .map((r) => ({
       id: r.id,
+      createdAt: r.created_at ?? undefined,
       title: r.title,
       airline: r.airline ?? undefined,
       bookingRef: r.booking_ref ?? undefined,

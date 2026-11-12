@@ -5,6 +5,7 @@
 import { expenseBase, expenseOwed, fxOf, summarizeExpenses, type ExpenseSummary, type FxContext } from './budget'
 import { BOOKING_BUDGET_CATEGORY } from './bookingMeta'
 import { daysBetween } from './dates'
+import { dateInZone } from './flights'
 import { round2 } from './money'
 import { zonedToInstant } from './zoned'
 import type { Expense, ExpenseSourceKind, Traveler, Trip } from '../types'
@@ -12,6 +13,21 @@ import type { Expense, ExpenseSourceKind, Traveler, Trip } from '../types'
 export interface SpesaVista extends Expense {
   /** Nata da una voce pagata (alloggio, volo…) senza una spesa registrata: si modifica dalla voce. */
   derived?: boolean
+  /** Quando la voce da cui nasce la spesa è stata inserita nell'app (ISO): è il suo giorno d'acquisto. */
+  acquistoAt?: string
+}
+
+/** Fuso del telefono: il giorno in cui si inserisce una voce è quello di chi la inserisce, non quello della meta. */
+export const fusoDispositivo = () => Intl.DateTimeFormat().resolvedOptions().timeZone
+
+/**
+ * Giorno (YYYY-MM-DD) in cui la spesa è stata fatta, per il Dettaglio spese. Le spese registrate a mano hanno la data
+ * scelta (`spentAt`, nel fuso del viaggio). Quelle che nascono da voci pagate (alloggi, voli, trasporti, prenotazioni)
+ * hanno il giorno d'inserimento della voce nell'app, nel fuso del telefono; senza quella data (dati vecchi, demo)
+ * vale il giorno d'uso.
+ */
+export function giornoAcquisto(e: Pick<SpesaVista, 'spentAt' | 'acquistoAt'>, fusoViaggio: string, fusoLocale: string = fusoDispositivo()): string {
+  return e.acquistoAt ? dateInZone(e.acquistoAt, fusoLocale) : dateInZone(e.spentAt, fusoViaggio)
 }
 
 const midday = (ymd: string, tz: string) => zonedToInstant(ymd, '12:00', tz)
@@ -36,28 +52,28 @@ export function tutteLeSpese(trip: Pick<Trip, 'expenses' | 'stays' | 'flights' |
   for (const s of trip.stays) {
     if (s.totalCost == null || !s.paid) continue
     const who = s.forTravelers?.length ? s.forTravelers : everyone
-    add('stay', s.id, { label: s.name, category: 'Alloggi', amount: s.totalCost, currency: s.currency, paidBy: s.paidBy, spentAt: midday(s.checkIn, trip.timezone), shares: who.map((travelerId) => ({ travelerId, weight: 1 })) })
+    add('stay', s.id, { label: s.name, category: 'Alloggi', amount: s.totalCost, currency: s.currency, paidBy: s.paidBy, spentAt: midday(s.checkIn, trip.timezone), acquistoAt: s.createdAt, shares: who.map((travelerId) => ({ travelerId, weight: 1 })) })
   }
   for (const f of trip.flights) {
     if (f.cost == null || !f.paid) continue
     const who = f.forTravelers?.length ? f.forTravelers : everyone
     const at = f.legs[0]?.departAt ?? midday(trip.startDate, trip.timezone)
     const tot = total(f.cost, f.scope, who.length)
-    add('flight', f.id, { label: f.title, category: 'Voli', amount: tot, currency: f.currency, paidBy: f.paidBy, ...paganti(f.payerIds, tot), spentAt: at, shares: who.map((travelerId) => ({ travelerId, weight: 1 })) })
+    add('flight', f.id, { label: f.title, category: 'Voli', amount: tot, currency: f.currency, paidBy: f.paidBy, ...paganti(f.payerIds, tot), spentAt: at, acquistoAt: f.createdAt, shares: who.map((travelerId) => ({ travelerId, weight: 1 })) })
   }
   for (const t of trip.transports) {
     if (t.cost == null || !t.bought) continue
     const who = t.forTravelers?.length ? t.forTravelers : everyone
     const at = t.departAt ?? (t.departDate ? midday(t.departDate, trip.timezone) : midday(trip.startDate, trip.timezone))
     const tot = total(t.cost, t.scope, who.length)
-    add('transport', t.id, { label: `${t.from} → ${t.to}`, category: 'Trasporti', amount: tot, currency: t.currency, paidBy: t.paidBy, ...paganti(t.payerIds, tot), spentAt: at, shares: who.map((travelerId) => ({ travelerId, weight: 1 })) })
+    add('transport', t.id, { label: `${t.from} → ${t.to}`, category: 'Trasporti', amount: tot, currency: t.currency, paidBy: t.paidBy, ...paganti(t.payerIds, tot), spentAt: at, acquistoAt: t.createdAt, shares: who.map((travelerId) => ({ travelerId, weight: 1 })) })
   }
   for (const b of trip.bookings) {
     if (b.cost == null) continue
     const who = b.forTravelers?.length ? b.forTravelers : everyone
     const at = b.validFrom ?? midday(trip.startDate, trip.timezone)
     const payer = b.paidBy ?? (b.payerIds?.length === 1 ? b.payerIds[0] : undefined)
-    add('booking', b.id, { label: b.title, category: BOOKING_BUDGET_CATEGORY[b.type], amount: total(b.cost, b.scope ?? 'per_person', who.length), currency: b.currency ?? 'EUR', paidBy: payer, spentAt: at, shares: who.map((travelerId) => ({ travelerId, weight: 1 })) })
+    add('booking', b.id, { label: b.title, category: BOOKING_BUDGET_CATEGORY[b.type], amount: total(b.cost, b.scope ?? 'per_person', who.length), currency: b.currency ?? 'EUR', paidBy: payer, spentAt: at, acquistoAt: b.createdAt, shares: who.map((travelerId) => ({ travelerId, weight: 1 })) })
   }
   return out.sort((a, b) => b.spentAt.localeCompare(a.spentAt))
 }

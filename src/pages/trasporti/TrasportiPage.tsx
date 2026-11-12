@@ -44,8 +44,8 @@ export function TrasportiPage() {
       {gruppi.length === 0 ? (
         <Vuoto title="Nessun trasporto" text="Treni, autobus, metro e taxi: orari, prezzo e se è già pagato." action="Aggiungi un trasporto" onAction={() => setSheet({})} />
       ) : null}
-      <Affianca pesi={gruppi.map((g) => g.items.length * 3 + 1)}>
-        {/* pieghevole aperto: i giorni in due colonne */}
+      <Affianca>
+        {/* pieghevole aperto: a righe, 1 a sinistra, 2 a destra, 3 sotto l’1… */}
           {gruppi.map((g) => (
           <section key={g.key} aria-label={g.title} style={{ display: 'grid', gap: 16 }}>
             <div className="fa-sech">

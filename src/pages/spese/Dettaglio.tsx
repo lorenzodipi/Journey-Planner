@@ -1,14 +1,13 @@
-// Dettaglio spese (mock Fa-27, #34): Di tutti | Mie, pillole per categoria, gruppi per giorno con il totale,
+// Dettaglio spese (mock Fa-27, #34): Di tutti | Mie, pillole per categoria, gruppi per giorno d'acquisto con il totale,
 // righe che si aprono in linea (pagata da, divisione, categoria, Modifica / Elimina). Le spese che non mi
 // riguardano non compaiono in nessuna lista (ma contano nei totali della pagina Spese).
 import { useMemo, useState } from 'react'
 import { useLocation } from 'wouter'
-import { dateInZone } from '../../lib/flights'
 import { formatMoney, round2 } from '../../lib/money'
 import { expenseBalance, payersOf, puoModificareSpesa, SPLIT_LABEL } from '../../lib/ripartizione'
 import { expenseOwed, expensePaid } from '../../lib/budget'
 import { CATEGORIE_BASE, catKey, categoriaDi, iconaSpesa } from '../../lib/ricevuta'
-import { beneficiari, expenseBase, riassunto, sezioneSpesa, type SpesaVista } from '../../lib/spese'
+import { beneficiari, expenseBase, giornoAcquisto, riassunto, sezioneSpesa, type SpesaVista } from '../../lib/spese'
 import { tripToday } from '../../lib/today'
 import { useMe } from '../../state/me'
 import { useOnline } from '../../state/online'
@@ -64,15 +63,16 @@ export function Dettaglio() {
   const q = text.trim().toLowerCase()
   const nelleDate = (e: SpesaVista) => {
     if (!date) return true
-    const d = dateInZone(e.spentAt, trip.timezone)
+    const d = giornoAcquisto(e, trip.timezone)
     return d >= date.dal && d <= date.al
   }
   const shown = inVista.filter((e) => (!cat || catKey(categoriaDi(e)) === catKey(cat)) && nelleDate(e) && (!q || `${e.label} ${e.category ?? ''}`.toLowerCase().includes(q)))
   const testoDate = date ? rangeText(date.dal, date.al) : ''
   const giorni = useMemo(() => {
     const m = new Map<string, SpesaVista[]>()
-    for (const e of shown) {
-      const d = dateInZone(e.spentAt, trip.timezone)
+    // un giorno per acquisto (non per utilizzo); dentro il giorno, le più recenti in alto
+    for (const e of [...shown].sort((a, b) => (b.acquistoAt ?? b.spentAt).localeCompare(a.acquistoAt ?? a.spentAt))) {
+      const d = giornoAcquisto(e, trip.timezone)
       m.set(d, [...(m.get(d) ?? []), e])
     }
     return [...m.entries()].sort((a, b) => b[0].localeCompare(a[0]))

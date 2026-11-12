@@ -1,8 +1,10 @@
-// Dati sul telefono (#42, #45): sincronizzazione, riscarico, esporta, ripristina, importa da Google Maps.
+// Dati sul telefono (#42, #45): sincronizzazione, riscarico, esporta (riepilogo e file), ripristina, importa da Google Maps.
 // Non è più una pagina a sé: le sezioni stanno dentro Impostazioni.
 import { useState } from 'react'
 import { clearSnapshot, loadSnapshot } from '../../lib/cache'
 import { buildExport, downloadJson, exportFileName, serializeExport } from '../../lib/exportData'
+import { riepilogoViaggio } from '../../lib/ricerca'
+import { esportaRiepilogo } from '../../lib/riepilogoImmagine'
 import { showToast } from '../../state/toast'
 import { useTrip, useTrips } from '../../state/trip'
 import { FindPositions } from '../../ui/FindPositions'
@@ -78,6 +80,7 @@ export function SezioniDati({ ask }: { ask: ReturnType<typeof useConferma>[0] })
         Copie e file
       </h2>
       <div className="fa-list">
+        <Riga icon={<Sv name="share" size={22} />} title="Esporta il riepilogo" sub="Immagine con statistiche e il tuo bilancio" onPress={() => void esportaRiepilogo(riepilogoViaggio(trip)).catch((e) => showToast(e instanceof Error ? e.message : 'Esportazione non riuscita'))} />
         <Riga icon={<Sv name="download" size={22} />} title="Esporta questo viaggio" sub={`«${trip.title}» in un file, con i codici di prenotazione`} onPress={() => void esporta(false)} />
         {t.trips.length > 1 ? <Riga icon={<Sv name="download" size={22} />} title={`Esporta tutti i ${t.trips.length} viaggi`} sub="Un solo file con tutto, da conservare" onPress={() => void esporta(true)} /> : null}
         <Riga icon={<Sv name="file" size={22} />} title="Ripristina da file" sub="Riporta i viaggi da un file esportato" onPress={() => toggle('ripristina')} />

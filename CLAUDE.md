@@ -25,11 +25,11 @@ Rumore noto del confronto: i pin della mappa nella pagina di un giorno e una rig
 ## Telefoni: non cambiano
 - Sotto i 600 px l'app è quella di sempre. Una modifica pensata per pieghevoli o computer **non deve cambiare un pixel sui telefoni**, salvo che sia la correzione di un bug: va verificato con il confronto pixel per pixel, non a occhio.
 - Larghezze da controllare: **320, 344, 360, 390, 412** (telefoni), **600, 690, 839** (pieghevole in verticale), **882 con la piega** e **1280** (pieghevole in orizzontale, computer). Sempre in chiaro **e** scuro.
-- Controlla anche che nulla esca dai bordi (testi sotto le icone, pulsanti sopra le frecce, scorrimento orizzontale).
+- Controlla anche che nulla esca dai bordi (testi sotto le icone, pulsanti sopra le frecce, scorrimento orizzontale). Nelle card in colonna (600–690 px la colonna è larga ~260–310 px) controlla anche che testi e componenti non si sovrappongano, a card chiuse e aperte, e con nomi e codici molto lunghi: la finestra è larga ma la carta no, quindi le misure vanno legate alla carta (container query), non a `vw`.
 
 ## Finestre e pieghevoli (dettagli in 05-css-e-stile)
 - **< 600**: telefono.
-- **600–839**: due colonne «a bento» con `Affianca` e `Colonna` di `src/faraway/shell.tsx`. Mai vuoti tra i blocchi. `Colonna mobile` passa sotto la colonna alta solo se ci sta (`spostaADestra`); non va usata dove l'ordine conta (in Spese i pulsanti restano sotto «Siete in pari»).
+- **600–839**: due colonne «a bento» con `Affianca` e `Colonna` di `src/faraway/shell.tsx`. Mai vuoti tra i blocchi. `Colonna mobile` passa sotto la colonna alta solo se ci sta (`spostaADestra`); non va usata dove l'ordine conta (in Spese i pulsanti restano sotto «Siete in pari»). Gli elenchi di card (Trasporti, Alloggi, Voli, Prenotazioni, Documenti, Viaggi) vanno **a righe**: 1 a sinistra, 2 a destra, 3 sotto l'1 (`Affianca` senza `pesi`); `pesi` solo per sezioni lunghe e disuguali (Dettaglio spese, Checklist, Impostazioni).
 - **≥ 840** (e non a libro mezzo aperto): barra laterale e viste affiancate.
   - **Luoghi**: elenco + mappa (`.fa-lmappa`). Card a tre colonne: freccia sopra, «Maps» sotto, stesso bordo destro.
   - **Giorni**: elenco + giorno scelto (`.fa-gaccanto`, `.fa-gpanel`). All'apertura il primo giorno, o oggi durante il viaggio; toccando un giorno l'indirizzo si sostituisce.
