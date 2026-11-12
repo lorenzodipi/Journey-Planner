@@ -1,30 +1,29 @@
-import { dismissToast, useToast } from '../state/toast'
+// Avvisi in basso (regione degli avvisi di react-aria-components) con lo stile Faraway: sopra la barra delle schede,
+// in fondo dove non ci sono schede, accanto alla barra laterale sugli schermi grandi (regole .fa-toasts / .fa-toast).
+import { Button, Text, UNSTABLE_Toast as Toast, UNSTABLE_ToastContent as ToastContent, UNSTABLE_ToastRegion as ToastRegion } from 'react-aria-components'
+import { codaAvvisi } from '../state/toast'
 
 export function ToastHost() {
-  const toast = useToast()
-  if (!toast) return null
-  const action = toast.action
   return (
-    <div
-      role="status"
-      className="toast-host"
-      style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}
-    >
-      <div className={`toast${action ? ' has-act' : ''}`}>
-        <span className="toast-t">{toast.message}</span>
-        {action && (
-          <button
-            type="button"
-            onClick={() => {
-              action.run()
-              dismissToast()
-            }}
-            className="toast-b"
-          >
-            {action.label}
-          </button>
-        )}
-      </div>
-    </div>
+    <ToastRegion queue={codaAvvisi} className="fa-toasts" aria-label="Avvisi">
+      {({ toast }) => (
+        <Toast toast={toast} className="fa-toast">
+          <ToastContent className="t">
+            <Text slot="title">{toast.content.message}</Text>
+          </ToastContent>
+          {toast.content.action ? (
+            <Button
+              className="a"
+              onPress={() => {
+                toast.content.action?.run()
+                codaAvvisi.close(toast.key)
+              }}
+            >
+              {toast.content.action.label}
+            </Button>
+          ) : null}
+        </Toast>
+      )}
+    </ToastRegion>
   )
 }

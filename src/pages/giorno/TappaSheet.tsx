@@ -3,6 +3,7 @@
 // il costo diventa la spesa collegata in Spese.
 import { useConflitto } from '../../faraway/useConflitto'
 import { useMemo, useState } from 'react'
+import { Autocomplete, Input as AriaInput, Label as AriaLabel, ListBox, ListBoxItem, Text, TextField as AriaTextField } from 'react-aria-components'
 import { formatDuration, parseDuration } from '../../lib/duration'
 import { formatMoney, parseAmount, round2, tripCurrencies } from '../../lib/money'
 import type { ItemInput } from '../../lib/tripApi'
@@ -132,38 +133,42 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
     >
       <form id="tappa-form" className="frm" onSubmit={submit} noValidate style={{ overflow: 'visible' }}>
         <div style={{ position: 'relative', display: 'grid', gap: 8 }}>
-          <Campo
-            label="Luogo o attività"
-            icon="pin"
-            value={title}
-            onChange={(v) => {
+          {/* Autocomplete della libreria: testo libero, e con le frecce si scorrono i luoghi salvati senza lasciare il campo.
+              L'elenco resta sotto il campo (un pannello sopra la pagina finirebbe dietro il foglio). */}
+          <Autocomplete
+            inputValue={title}
+            onInputChange={(v) => {
               setTitle(v)
               setFocusTitle(true)
             }}
-            placeholder="Cerca tra i luoghi o scrivi"
-            maxLength={120}
-            autoComplete="off"
-          />
-          {suggestions.length > 0 ? (
-            <ul className="fa-list" role="listbox" aria-label="Luoghi salvati">
-              {suggestions.map((p) => (
-                <li key={p.id} role="option" aria-selected={false}>
-                  <button type="button" className="fa-row" style={{ minHeight: 52, gridTemplateColumns: '20px minmax(0,1fr) auto' }} onClick={() => pickPlace(p.id)}>
+            disableAutoFocusFirst
+          >
+            <AriaTextField className="fa-fld" maxLength={120}>
+              <AriaLabel>Luogo o attività</AriaLabel>
+              <span className="fa-in">
+                <Sv name="pin" size={20} />
+                <AriaInput className="" placeholder="Cerca tra i luoghi o scrivi" autoComplete="off" />
+              </span>
+            </AriaTextField>
+            {suggestions.length > 0 ? (
+              <ListBox className="fa-list fa-sugg" aria-label="Luoghi salvati" onAction={(k) => pickPlace(String(k))}>
+                {suggestions.map((p) => (
+                  <ListBoxItem key={p.id} id={p.id} textValue={p.name} className="fa-row" style={{ minHeight: 52, gridTemplateColumns: '20px minmax(0,1fr) auto' }}>
                     <Sv name="pin" size={20} />
                     <span style={{ minWidth: 0 }}>
-                      <span className="t" style={{ display: 'block' }}>
+                      <Text slot="label" className="t" style={{ display: 'block' }}>
                         {p.name}
-                      </span>
-                      <span className="s" style={{ display: 'block' }}>
+                      </Text>
+                      <Text slot="description" className="s" style={{ display: 'block' }}>
                         {[p.city, p.category].filter(Boolean).join(' · ')}
-                      </span>
+                      </Text>
                     </span>
                     <span />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
+                  </ListBoxItem>
+                ))}
+              </ListBox>
+            ) : null}
+          </Autocomplete>
         </div>
         {kind === 'visit' || kind === 'meal' || kind === 'free' || kind === 'note' ? (
           <div className="fa-fld" role="group" aria-label="Tipo di tappa">

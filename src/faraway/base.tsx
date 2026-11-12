@@ -4,7 +4,7 @@
 import type { ReactNode } from 'react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { Button as AriaButton, Link as AriaLink, Menu as AriaMenu, MenuItem as AriaMenuItem, MenuTrigger as AriaMenuTrigger, OverlayArrow as AriaOverlayArrow, Popover as AriaPopover, Switch as AriaSwitch } from 'react-aria-components'
+import { Button as AriaButton, Link as AriaLink, Menu as AriaMenu, MenuItem as AriaMenuItem, MenuTrigger as AriaMenuTrigger, OverlayArrow as AriaOverlayArrow, Popover as AriaPopover, Switch as AriaSwitch, Radio as AriaRadio, RadioGroup as AriaRadioGroup } from 'react-aria-components'
 import { cx } from './cx'
 import { apriSelettore } from '../lib/picker'
 import { Loader } from './Loader'
@@ -318,16 +318,17 @@ export function Chip({ children, on, onPress, icon: ic, label }: { children: Rea
   )
 }
 
-/** Selettore a due o più segmenti (es. Elenco | Mappa, Di tutti | Mie). */
+/** Selettore a due o più segmenti (es. Elenco | Mappa, Di tutti | Mie). RadioGroup della libreria: una sola fermata del Tab
+ *  e le frecce cambiano la scelta. Le opzioni sono <label> con la classe `fa-segr`, disegnate come i pulsanti di prima. */
 export function Segmenti<T extends string>({ value, options, onChange, label }: { value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; label: string }) {
   return (
-    <div className="fa-seg" role="radiogroup" aria-label={label} style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
+    <AriaRadioGroup className="fa-seg" aria-label={label} orientation="horizontal" value={value} onChange={(v) => onChange(v as T)} style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
       {options.map((o) => (
-        <button key={o.value} type="button" role="radio" aria-checked={value === o.value} className={value === o.value ? 'on' : undefined} onClick={() => onChange(o.value)}>
+        <AriaRadio key={o.value} value={o.value} className={({ isSelected }) => cx('fa-segr', isSelected && 'on')}>
           {o.label}
-        </button>
+        </AriaRadio>
       ))}
-    </div>
+    </AriaRadioGroup>
   )
 }
 

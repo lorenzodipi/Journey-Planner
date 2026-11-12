@@ -9,8 +9,8 @@
 .fa-in:focus-within{border-color:var(--azzurro-ink);outline:3px solid var(--focus);outline-offset:2px}
 .fa-in.bad:focus-within{border-color:var(--danger)}
 .fa-fld>label{cursor:default}
-.fa-seg button{display:flex;align-items:center;justify-content:center;border-radius:9999px;font:600 14px/20px var(--font-sans);color:var(--ink-muted);border:0;background:none;cursor:pointer;min-height:40px}
-.fa-seg button.on{background:var(--azzurro-solid);color:var(--on-azzurro-solid)}
+.fa-seg button,.fa-seg>.fa-segr{display:flex;align-items:center;justify-content:center;border-radius:9999px;font:600 14px/20px var(--font-sans);color:var(--ink-muted);border:0;background:none;cursor:pointer;min-height:40px}
+.fa-seg button.on,.fa-seg>.fa-segr.on{background:var(--azzurro-solid);color:var(--on-azzurro-solid)}
 .fa-sw{cursor:pointer;width:100%}
 .fa-swl{display:grid;gap:2.0px;min-width:0}
 .fa-sw[data-focus-visible] .fa-tr{outline:3px solid var(--focus);outline-offset:2px}
@@ -27,6 +27,11 @@
 .fa-btn{transition:transform 100ms cubic-bezier(.23,1,.32,1),background-color 100ms}
 .fa-btn[data-disabled]{cursor:not-allowed}
 .fa-row:focus-visible,.fa-ib:focus-visible,.fa-btn:focus-visible,.fa-chip:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+/* opzioni dei segmenti e righe a scelta (RadioGroup): il focus da tastiera si vede come sui pulsanti */
+.fa-segr[data-focus-visible],.fa-segr-riga[data-focus-visible]{outline:3px solid var(--focus);outline-offset:2px}
+.fa-segr,.fa-segr-riga{-webkit-user-select:none;user-select:none}
+/* come i pulsanti di prima: un'opzione non si stringe sotto la sua parola più lunga (es. «Automatico» a 320 px) */
+.fa-seg>.fa-segr{min-width:auto}
 .fa-ib[data-focus-visible],.fa-btn[data-focus-visible],.fa-chip[data-focus-visible]{outline:3px solid var(--focus);outline-offset:2px}
 .fa-lnk:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
 .fa-sech .fa-lnk{display:inline-flex;align-items:center;box-sizing:border-box}
@@ -245,7 +250,7 @@ html{overscroll-behavior:none}
 
 /* Segmenti: il selettore riempie la pillola e il testo sta al centro in verticale */
 .fa-seg{height:56px;align-items:stretch}
-.fa-seg button{min-height:0;height:100%;line-height:20px;padding:0 8px}
+.fa-seg button,.fa-seg>.fa-segr{min-height:0;height:100%;line-height:20px;padding:0 8px}
 
 /* chip in riga: scorrono in orizzontale con il dito, senza barra */
 .fa-chips{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
@@ -515,7 +520,7 @@ sup{margin-left:0}
 /* ---- Palette scura (5 nov 2026): solo colori, la forma dei componenti non cambia. Superfici blu-grigie poco sature con
    salti di luce netti, azzurro più chiaro delle superfici (testo scuro sopra), tinte scure. ---- */
 /* Segmentato: binario più scuro della pagina, scelta = pillola chiara */
-[data-theme="dark"] .fa-seg button.on,[data-theme="dark"] .fa-seg span.on{background:#E6ECF7;color:var(--on-azzurro-solid)}
+[data-theme="dark"] .fa-seg button.on,[data-theme="dark"] .fa-seg>.fa-segr.on,[data-theme="dark"] .fa-seg span.on{background:#E6ECF7;color:var(--on-azzurro-solid)}
 /* Calendarietti dei Giorni: intestazione azzurro pieno con anelli scuri; «oggi» ha l'intestazione chiara e il bordo azzurro */
 [data-theme="dark"] .k-SelettoreGiorni .cl:not(.free):not(.sel):not(.past):not(.move){--hb:var(--azzurro-solid);--hf:var(--on-azzurro-solid)}
 [data-theme="dark"] .k-SelettoreGiorni .cl:not(.free):not(.sel):not(.past):not(.move) .rg1,[data-theme="dark"] .k-SelettoreGiorni .cl:not(.free):not(.sel):not(.past):not(.move) .rg2{background:var(--on-azzurro-solid)}

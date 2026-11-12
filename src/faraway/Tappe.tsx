@@ -3,9 +3,10 @@
 // con orari, apertura, indirizzo, Maps, costo, menu «Stato della tappa» e Modifica · Sposta · Elimina.
 // La usa la pagina Giorno e «Il programma di oggi» in Oggi (#29).
 import { Pulsante } from './base'
+import { MenuScelta } from './MenuScelta'
 import { ora } from '../lib/formati'
 import type { ReactNode } from 'react'
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useRef, useState } from 'react'
 import { useTrascinaTappe } from './useTrascinaTappe'
 import { categoryIcon } from '../lib/categoryIcon'
 import { formatMoney, round2 } from '../lib/money'
@@ -116,68 +117,47 @@ function Pill({ item, f, ctx }: { item: DayItem; f: Fase; ctx: TappeCtx }) {
   return null
 }
 
-/** Menu «Stato della tappa» (listbox) dentro la card aperta. */
+/** Menu «Stato della tappa» dentro la card aperta (Select della libreria: vedi MenuScelta). */
 function StatoMenu({ item, onPick, disabled }: { item: DayItem; onPick: (s: ItemStatus) => void; disabled?: boolean }) {
-  const [open, setOpen] = useState(false)
   const cur = statoOf(statusOf(item))
-  const listRef = useRef<HTMLUListElement>(null)
-  useEffect(() => {
-    if (open) listRef.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus()
-  }, [open])
   return (
-    <>
-      <button type="button" className="stbtn" aria-expanded={open} aria-haspopup="listbox" onClick={() => setOpen(!open)} disabled={disabled}>
-        <span className={cx('cn', cur.cls)}>
-          <G name={cur.icon} />
-        </span>
-        <span className="sx">
-          <span className="sl">Stato</span>
-          <b className="sn">{cur.label}</b>
-        </span>
-        <span className="sc">
-          <G name="g-chev" />
-        </span>
-      </button>
-      {open ? (
-        <div className="menu">
-          <div className="mh">Stato della tappa</div>
-          <ul role="listbox" aria-label="Stato della tappa" ref={listRef}>
-            {TAPPA_STATI.map((s) => (
-              <li
-                key={s.value}
-                role="option"
-                tabIndex={0}
-                aria-selected={s.value === cur.value}
-                className={cx('op', s.value === cur.value && 'on')}
-                onClick={() => {
-                  setOpen(false)
-                  if (s.value !== cur.value) onPick(s.value)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    setOpen(false)
-                    if (s.value !== cur.value) onPick(s.value)
-                  } else if (e.key === 'Escape') setOpen(false)
-                  else if (e.key === 'ArrowDown') ((e.currentTarget.nextElementSibling as HTMLElement | null) ?? e.currentTarget).focus()
-                  else if (e.key === 'ArrowUp') ((e.currentTarget.previousElementSibling as HTMLElement | null) ?? e.currentTarget).focus()
-                }}
-              >
-                <span className={cx('cn', s.cls)}>
-                  <G name={s.icon} />
-                </span>
-                <span className="ox">
-                  <b>{s.label}</b>
-                  <span>{s.hint}</span>
-                </span>
-                {s.value === cur.value ? <G name="g-check" /> : null}
-              </li>
-            ))}
-          </ul>
-          <div className="mf">Nuovi stati si aggiungono al registro e compaiono qui; la lista scorre dopo sei voci.</div>
-        </div>
-      ) : null}
-    </>
+    <MenuScelta<ItemStatus>
+      label="Stato della tappa"
+      titolo="Stato della tappa"
+      nota="Nuovi stati si aggiungono al registro e compaiono qui; la lista scorre dopo sei voci."
+      value={cur.value}
+      onChange={(v) => {
+        if (v !== cur.value) onPick(v)
+      }}
+      isDisabled={disabled}
+      ambito="k-Tappa"
+      classePulsante="stbtn"
+      pulsante={
+        <>
+          <span className={cx('cn', cur.cls)}>
+            <G name={cur.icon} />
+          </span>
+          <span className="sx">
+            <span className="sl">Stato</span>
+            <b className="sn">{cur.label}</b>
+          </span>
+          <span className="sc">
+            <G name="g-chev" />
+          </span>
+        </>
+      }
+      spunta={<G name="g-check" />}
+      voci={TAPPA_STATI.map((s) => ({
+        id: s.value,
+        nome: s.label,
+        descrizione: s.hint,
+        segno: (
+          <span className={cx('cn', s.cls)}>
+            <G name={s.icon} />
+          </span>
+        ),
+      }))}
+    />
   )
 }
 

@@ -92,6 +92,11 @@ Le soglie sono le classi di larghezza di Android/Material, in px CSS (= dp nella
 
 Prima di scrivere un elemento nuovo: cercarlo in `src/faraway/`, poi in `react-aria-components`.
 
+- `MenuScelta` (`src/faraway/MenuScelta.tsx`): il pulsante lo disegna chi lo usa; il pannello `.fa-selpop` sta sopra il contenuto (z-index 50, sopra la barra delle schede), largo come il pulsante. Prende la classe del componente (`ambito`, es. `k-Tappa`) così le regole delle righe (`.op`, `.ox`, `.cn`, `.dn`) valgono anche fuori dalla card.
+- Nomi delle classi: prima di sceglierne una nuova, cercarla nel CSS (`fa-sel` esisteva già e dava uno sfondo al contenitore).
+- Le opzioni di `Segmenti` sono `<label class="fa-segr">` del `RadioGroup` e hanno le stesse regole dei pulsanti dei segmenti, compresa la larghezza minima della parola più lunga.
+- Avvisi in basso: `.fa-toasts` (posizione) e `.fa-toast` (pillola scura sul chiaro, chiara sullo scuro).
+
 ## Movimento
 
 - Transizioni, non keyframe, per gli stati interattivi. Proprietà nominate (`transition: transform 180ms …`), mai `all`.

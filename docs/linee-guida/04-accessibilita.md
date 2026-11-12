@@ -19,6 +19,9 @@ Obiettivo: **WCAG 2.2 livello AA** in chiaro e in scuro, su telefono, con VoiceO
 - Tutto si raggiunge e si usa con la tastiera. Esc chiude fogli e modali; il focus torna a chi li ha aperti.
 - Focus visibile: anello `--focus` da 3 px con scarto di 2 px, su `:focus-visible`. Mai `outline: none` senza un sostituto.
 - Niente `tabindex` positivi.
+- Gruppi di scelte: una sola fermata del Tab e le frecce che cambiano la scelta (`Segmenti`, giorni in «Sposta», fatti con `RadioGroup` della libreria).
+- Elenchi aperti da un pulsante («Stato della tappa», «Scegli il giorno»): `MenuScelta` (`Select` della libreria). Frecce, Home/Fine, iniziale per saltare, Esc chiude e il focus torna al pulsante. Ogni voce ha un nome (`slot="label"`) e una descrizione (`slot="description"`), letti separati.
+- Suggerimenti sotto un campo di testo («Luogo o attività» con i luoghi salvati): `Autocomplete` della libreria con l'elenco in linea; le frecce scorrono i suggerimenti senza lasciare il campo, Invio sceglie quello evidenziato. Dentro un foglio niente pannelli sopra la pagina: finirebbero dietro il `<dialog>`.
 
 ## Moduli
 
@@ -45,7 +48,8 @@ Obiettivo: **WCAG 2.2 livello AA** in chiaro e in scuro, su telefono, con VoiceO
 
 ## Annunci
 
-- Messaggi in basso e barra d'attesa: regione `role="status"` già montata, il testo cambia dentro.
+- Messaggi in basso: `showToast()` e la regione degli avvisi della libreria (`ToastHost`, «Avvisi»). Un avviso alla volta, sopra la barra delle schede; il tempo si ferma con il mouse sopra o il focus dentro, F6 lo raggiunge da tastiera, il lettore di schermo lo legge.
+- Barra d'attesa: regione `role="status"` già montata, il testo cambia dentro.
 - Errori di campo: `role="alert"` sul testo collegato al campo.
 
 ## Zoom e larghezze

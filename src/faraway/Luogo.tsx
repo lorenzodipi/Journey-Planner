@@ -14,6 +14,7 @@ import type { Place, Trip } from '../types'
 import { Ic } from '../ui/Sprite'
 import { cx } from './cx'
 import { G } from './Tappe'
+import { MenuScelta } from './MenuScelta'
 
 const wdm = (ymd: string) => new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).format(parseYmd(ymd)).replace(/\./g, '')
 
@@ -177,55 +178,41 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
           ) : trip.days.length > 0 ? (
             <div className="add">
               <div className="k">Aggiungi a una tappa</div>
-              <button type="button" className="fld" aria-expanded={picking} aria-haspopup="listbox" onClick={() => setPicking(!picking)}>
-                <span className="fi">
-                  <G name="g-cal" />
-                </span>
-                <span className="fx">
-                  <span className="fl">Giorno</span>
-                  <span className={cx('fv', !chosen && 'pk')}>{chosen ? `Giorno ${trip.days.indexOf(chosen) + 1} · ${wdm(chosen.date)}` : 'Scegli il giorno'}</span>
-                </span>
-                <span className="sc">
-                  <G name="g-chev" />
-                </span>
-              </button>
-              {picking ? (
-                <div className="menu">
-                  <div className="mh">Scegli il giorno</div>
-                  <ul role="listbox" aria-label="Giorno" style={{ listStyle: 'none', margin: 0, padding: 0, maxHeight: 320, overflow: 'auto' }}>
-                    {days.map((d) => {
-                      const n = trip.days.indexOf(d) + 1
-                      const on = d.id === day
-                      return (
-                        <li
-                          key={d.id}
-                          role="option"
-                          tabIndex={0}
-                          aria-selected={on}
-                          className={cx('op', on && 'on')}
-                          onClick={() => (setDay(d.id), setPicking(false))}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              setDay(d.id)
-                              setPicking(false)
-                            }
-                          }}
-                        >
-                          <span className="dn">{n}</span>
-                          <span className="ox">
-                            <b>
-                              Giorno {n} · {wdm(d.date)}
-                            </b>
-                            <span>{[d.city, `${d.items.length} ${d.items.length === 1 ? 'tappa' : 'tappe'}`].filter(Boolean).join(' · ')}</span>
-                          </span>
-                          {on ? <G name="g-check" /> : null}
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </div>
-              ) : null}
+              <MenuScelta<string>
+                label="Giorno"
+                titolo="Scegli il giorno"
+                value={day}
+                onChange={setDay}
+                isOpen={picking}
+                onOpenChange={setPicking}
+                ambito="k-Luoghi"
+                classePulsante="fld"
+                altezza={320}
+                pulsante={
+                  <>
+                    <span className="fi">
+                      <G name="g-cal" />
+                    </span>
+                    <span className="fx">
+                      <span className="fl">Giorno</span>
+                      <span className={cx('fv', !chosen && 'pk')}>{chosen ? `Giorno ${trip.days.indexOf(chosen) + 1} · ${wdm(chosen.date)}` : 'Scegli il giorno'}</span>
+                    </span>
+                    <span className="sc">
+                      <G name="g-chev" />
+                    </span>
+                  </>
+                }
+                spunta={<G name="g-check" />}
+                voci={days.map((d) => {
+                  const n = trip.days.indexOf(d) + 1
+                  return {
+                    id: d.id,
+                    nome: `Giorno ${n} · ${wdm(d.date)}`,
+                    descrizione: [d.city, `${d.items.length} ${d.items.length === 1 ? 'tappa' : 'tappe'}`].filter(Boolean).join(' · '),
+                    segno: <span className="dn">{n}</span>,
+                  }
+                })}
+              />
               <button
                 type="button"
                 className="btn pri"

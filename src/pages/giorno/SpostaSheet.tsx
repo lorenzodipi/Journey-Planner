@@ -1,6 +1,7 @@
 // Foglio «Sposta in un altro giorno» (mock Fa-15 chiaro): giorni con numero, data, città e tappe;
 // il giorno attuale evidenziato. Lo stesso foglio serve per «Rimandata» (#32).
 import { useState } from 'react'
+import { Radio, RadioGroup } from 'react-aria-components'
 import { parseYmd } from '../../lib/dates'
 import type { Day, Trip } from '../../types'
 import { Pulsante } from '../../faraway/base'
@@ -29,12 +30,13 @@ export function SpostaSheet({ trip, current, open, title = 'Sposta in un altro g
 
   return (
     <Foglio open={open} title={title} onClose={onClose} plain>
-      <div role="radiogroup" aria-label="Giorni del viaggio" style={{ display: 'grid', maxHeight: '50vh', overflow: 'auto' }}>
+      {/* RadioGroup della libreria: una sola fermata del Tab, frecce su e giù per cambiare giorno */}
+      <RadioGroup aria-label="Giorni del viaggio" orientation="vertical" value={sel} onChange={setSel} style={{ display: 'grid', maxHeight: '50vh', overflow: 'auto' }}>
         {days.map((d) => {
           const n = trip.days.indexOf(d) + 1
           const on = d.id === sel
           return (
-            <button key={d.id} type="button" role="radio" aria-checked={on} className="r" style={{ gridTemplateColumns: '44px 1fr auto', background: 'none', border: 0, textAlign: 'left', color: 'inherit', cursor: 'pointer' }} onClick={() => setSel(d.id)}>
+            <Radio key={d.id} value={d.id} className="r fa-segr-riga" style={{ gridTemplateColumns: '44px 1fr auto', background: 'none', border: 0, textAlign: 'left', color: 'inherit', cursor: 'pointer' }}>
               <span style={{ display: 'grid', placeItems: 'center', width: 44, height: 44, borderRadius: 12, background: on ? 'var(--azzurro-solid)' : 'var(--surface-high)', color: on ? 'var(--on-azzurro-solid)' : 'var(--ink)', font: '600 18px/20px var(--font-sans)' }}>{n}</span>
               <span>
                 <span className="t" style={{ display: 'block' }}>
@@ -51,10 +53,10 @@ export function SpostaSheet({ trip, current, open, title = 'Sposta in un altro g
               ) : (
                 <span />
               )}
-            </button>
+            </Radio>
           )
         })}
-      </div>
+      </RadioGroup>
       {error ? (
         <span className="fa-help bad" role="alert">
           <Sv name="err" size={16} />

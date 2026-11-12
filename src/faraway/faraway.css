@@ -136,6 +136,11 @@ html{scroll-padding-top:var(--head-h,0px)}
 .fa-list{background:var(--surface-card);border:1px solid var(--hairline);border-radius:12px;overflow:hidden}
 .fa-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:16px;align-items:center;min-height:64px;padding:8px 16px;width:100%;text-align:left;background:none;border:0;cursor:pointer;color:inherit}
 .fa-row+.fa-row,.fa-list>.fa-xr+.fa-xr{border-top:1px solid var(--hairline)}
+/* luoghi salvati sotto «Luogo o attività» (Autocomplete): righe senza separatore come prima; la voce scelta con le frecce si vede */
+.fa-sugg{outline:none}
+.fa-sugg>.fa-row+.fa-row{border-top:0}
+.fa-sugg>.fa-row{cursor:pointer;outline:none}
+.fa-sugg>.fa-row[data-focus-visible]{outline:3px solid var(--focus);outline-offset:-3px}
 .fa-row .t{font:600 16px/24px var(--font-sans);letter-spacing:.16px}
 .fa-row .s{font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
 .fa-row .end{display:flex;align-items:center;gap:8px;color:var(--ink-muted)}
@@ -833,8 +838,6 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-Luoghi .fld .fv.pk{color:var(--ink-muted);font-weight:500}
 .k-Luoghi .fld .sc{color:var(--ink);display:grid;place-items:center}
 .k-Luoghi .acts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-sm);margin-top:var(--space-md)}
-.k-Luoghi .menu{background:var(--surface-card);border:1px solid var(--hairline);box-shadow:var(--shadow-card);border-radius:var(--radius-xl);padding:var(--space-md) var(--space-sm) var(--space-sm);margin-top:var(--space-xs)}
-[data-theme="dark"] .k-Luoghi .menu{box-shadow:none}
 .k-Luoghi .mh{font:600 13px/18px var(--font-sans);color:var(--ink-muted);padding:0 var(--space-md) var(--space-xs)}
 .k-Luoghi .op{display:flex;align-items:center;gap:var(--space-md);min-height:56px;padding:var(--space-xs) var(--space-md);border-radius:var(--radius-lg)}
 .k-Luoghi .op.on{background:var(--surface-soft)}
@@ -897,16 +900,6 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-LuoghiAperti .fld .fv.pk{color:var(--ink-muted);font-weight:500}
 .k-LuoghiAperti .fld .sc{color:var(--ink);display:grid;place-items:center}
 .k-LuoghiAperti .acts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-sm);margin-top:var(--space-md)}
-.k-LuoghiAperti .menu{background:var(--surface-card);border:1px solid var(--hairline);box-shadow:var(--shadow-card);border-radius:var(--radius-xl);padding:var(--space-md) var(--space-sm) var(--space-sm);margin-top:var(--space-xs)}
-[data-theme="dark"] .k-LuoghiAperti .menu{box-shadow:none}
-.k-LuoghiAperti .mh{font:600 13px/18px var(--font-sans);color:var(--ink-muted);padding:0 var(--space-md) var(--space-xs)}
-.k-LuoghiAperti .op{display:flex;align-items:center;gap:var(--space-md);min-height:56px;padding:var(--space-xs) var(--space-md);border-radius:var(--radius-lg)}
-.k-LuoghiAperti .op.on{background:var(--surface-soft)}
-.k-LuoghiAperti .op .dn{width:36px;height:36px;border-radius:50%;background:var(--azzurro-soft);color:var(--azzurro-ink);display:grid;place-items:center;font:700 14px/1 var(--font-sans);flex:none}
-.k-LuoghiAperti .op .ox{flex:1;display:grid;min-width:0}
-.k-LuoghiAperti .op b{font:600 15px/20px var(--font-sans)}
-.k-LuoghiAperti .op span{font:400 13px/18px var(--font-sans);color:var(--ink-muted)}
-.k-LuoghiAperti .op .ck{color:var(--azzurro-ink)}
 /* ---- Meteo ---- */
 .k-Meteo h3{margin:var(--space-xl) 0 var(--space-sm);font:600 14px/20px var(--font-sans);color:var(--ink)}
 .k-Meteo h3 small{display:block;font:400 13px/18px var(--font-sans);color:var(--ink-muted);margin-top:2.0px}
@@ -1518,10 +1511,7 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-Tappa .stbtn .sn{font:700 15px/20px var(--font-sans)}
 .k-Tappa .stbtn .sc{display:grid;place-items:center;color:var(--ink)}
 .k-Tappa .stbtn .sc .ic{width:20px;height:20px}
-.k-Tappa .menu{margin:var(--space-sm) var(--space-lg) 0;background:var(--surface-card);border:1px solid var(--hairline);box-shadow:var(--shadow-card);border-radius:var(--radius-xl);padding:var(--space-md) var(--space-sm) var(--space-sm)}
-[data-theme="dark"] .k-Tappa .menu{box-shadow:none}
 .k-Tappa .mh{font:600 13px/18px var(--font-sans);color:var(--ink-muted);padding:0 var(--space-md) var(--space-xs)}
-.k-Tappa .menu ul{list-style:none;margin:0;padding:0;max-height:420px;overflow-y:auto}
 .k-Tappa .op{display:flex;align-items:center;gap:var(--space-md);min-height:52px;padding:var(--space-xs) var(--space-md);border-radius:var(--radius-lg)}
 .k-Tappa .op.on{background:var(--surface-soft)}
 .k-Tappa .op .cn{width:32px;height:32px;flex:none;background:var(--s-bg);color:var(--s-fg);border:2px solid var(--s-bd)}
@@ -1531,6 +1521,13 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-Tappa .ox span{font:400 13px/18px var(--font-sans);color:var(--ink-muted)}
 .k-Tappa .op .ck{width:22px;height:22px;color:var(--azzurro-ink)}
 .k-Tappa .mf{font:400 12px/16px var(--font-sans);color:var(--ink-muted);padding:var(--space-sm) var(--space-md) 0}
+/* elenco aperto da un pulsante (MenuScelta: stato della tappa, giorno del luogo): sta sopra il contenuto, largo come il
+   pulsante; le righe usano le regole del componente (.k-Tappa .op, .k-Luoghi .op) grazie alla classe dell'ambito */
+.fa-selpop{z-index:50;display:flex;flex-direction:column;box-sizing:border-box;width:var(--trigger-width);background:var(--surface-card);color:var(--ink);font-family:var(--font-sans);border:1px solid var(--hairline);box-shadow:var(--shadow-card);border-radius:var(--radius-xl);padding:var(--space-md) var(--space-sm) var(--space-sm);outline:none}
+[data-theme="dark"] .fa-selpop{box-shadow:none;border-color:var(--border-strong)}
+.fa-sell{flex:0 1 auto;min-height:0;margin:0;padding:0;overflow-y:auto;overscroll-behavior:contain;outline:none}
+.fa-selpop .op{cursor:pointer;outline:none}
+.fa-selpop .op[data-focus-visible]{outline:3px solid var(--focus);outline-offset:-3px}
 .k-Tappa .steps .top{cursor:pointer}
 .k-Tappa .time .chv{display:inline-block;width:16px;height:16px;vertical-align:-3px;margin-left:8px;color:var(--ink-muted)}
 .k-Tappa .stp.sel .time .chv{transform:rotate(180deg)}
