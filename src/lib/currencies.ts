@@ -1,5 +1,4 @@
-import { currencyName, currencySymbol } from './money'
-import type { SelectOption } from '../ui/Select'
+import { currencyName } from './money'
 
 // Tutte le valute per i selettori: quelle che conosce il motore del telefono, altrimenti un elenco ISO 4217 di riserva.
 
@@ -23,23 +22,6 @@ export function allCurrencies(): string[] {
   }
   const base = found.length > 0 ? found : FALLBACK
   return Array.from(new Set([...base, ...FALLBACK]))
-}
-
-/** Opzioni per il selettore: le più comuni, poi tutte le altre in ordine alfabetico; `extra` (es. il valore attuale) non va perso. */
-export function currencyOptions(...extra: string[]): SelectOption[] {
-  const codes = new Set<string>()
-  const add = (c: string) => {
-    const code = c.trim().toUpperCase()
-    if (/^[A-Z]{3}$/.test(code)) codes.add(code)
-  }
-  extra.forEach(add)
-  COMMON_CURRENCIES.forEach(add)
-  allCurrencies().sort().forEach(add)
-  return Array.from(codes).map((code) => {
-    const name = currencyName(code)
-    const symbol = currencySymbol(code)
-    return { value: code, label: code, hint: [name, symbol !== code ? symbol : ''].filter(Boolean).join(' · ') || undefined }
-  })
 }
 
 export interface GruppoValute {

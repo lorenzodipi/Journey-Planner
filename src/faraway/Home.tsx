@@ -572,7 +572,7 @@ export function Riepilogo({ dove, speso, currency, limit, onSetBudget, onOpenBud
   )
 }
 
-export function AvatarStack({ people, tint = 'var(--tinta-acqua)', max = 4 }: { people: { name: string; n: number }[]; tint?: string; max?: number }) {
+function AvatarStack({ people, tint = 'var(--tinta-acqua)', max = 4 }: { people: { name: string; n: number }[]; tint?: string; max?: number }) {
   const shown = people.length > max ? people.slice(0, max - 1) : people
   const more = people.length - shown.length
   const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']

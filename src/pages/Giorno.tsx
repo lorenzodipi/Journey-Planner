@@ -21,8 +21,9 @@ import { useDaySegments } from '../state/daySegments'
 import { useHere } from '../state/here'
 import { showToast } from '../state/toast'
 import { useTrip, useTrips } from '../state/trip'
-import type { DayItem, Expense, ItemStatus, Stay } from '../types'
-import { DaySheet, type DaySheetState } from '../ui/DaySheet'
+import type { Booking, DayItem, Expense, ItemStatus, Stay } from '../types'
+import { GiornoSheet } from './giorno/GiornoSheet'
+import { PrenotazioneSheet } from './prenotazioni/PrenotazioneSheet'
 import { DayMapPanel } from '../ui/DayMapPanel'
 import { PulsanteIcona, Pulsante, Sezione } from '../faraway/base'
 import { useConferma } from '../faraway/Foglio'
@@ -66,7 +67,8 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
   const [, navigate] = useLocation()
   const search = useSearch()
   const [sheet, setSheet] = useState<Sheet>(null)
-  const [legacy, setLegacy] = useState<DaySheetState>(null)
+  const [modificaGiorno, setModificaGiorno] = useState(false)
+  const [prenotazione, setPrenotazione] = useState<Booking | null>(null)
   const [spesa, setSpesa] = useState<Expense | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
   const [highlight, setHighlight] = useState<string | null>(null)
@@ -207,7 +209,7 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
       tabs={!incastrato}
       incastrata={incastrato}
       rete={!incastrato}
-      bar={<BarraIndietro title={incastrato ? fmt(day.date).replace(/^./, (c) => c.toUpperCase()) : 'Giorni'} back="/giorni" senzaIndietro={incastrato} right={<PulsanteIcona icon="dots" label="Modifica il giorno" onPress={() => setLegacy({ kind: 'day', day })} />} />}
+      bar={<BarraIndietro title={incastrato ? fmt(day.date).replace(/^./, (c) => c.toUpperCase()) : 'Giorni'} back="/giorni" senzaIndietro={incastrato} right={<PulsanteIcona icon="dots" label="Modifica il giorno" onPress={() => setModificaGiorno(true)} />} />}
     >
       <Affianca>
         {/* pieghevole aperto: mappa, meteo, alloggio, spese e prenotazioni a sinistra; le tappe a destra */}
@@ -343,7 +345,7 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
               <Sezione title="Prenotazioni del giorno" right={<Link href="/altro/prenotazioni" className="fa-lnk">Tutte</Link>} />
               <div className="fa-list">
                 {bookings.map(({ booking: b, tappa }) => (
-                  <Riga key={b.id} icon="i-sez-ticket" title={b.title} sub={[tappa ? `Tappa: ${tappa.title}` : trip.bookingLinks ? 'Non collegata a una tappa' : '', b.code ? `Codice ${b.code}` : ''].filter(Boolean).join(' · ') || 'Prenotazione'} onPress={() => setLegacy({ kind: 'edit-booking', booking: b })} />
+                  <Riga key={b.id} icon="i-sez-ticket" title={b.title} sub={[tappa ? `Tappa: ${tappa.title}` : trip.bookingLinks ? 'Non collegata a una tappa' : '', b.code ? `Codice ${b.code}` : ''].filter(Boolean).join(' · ') || 'Prenotazione'} onPress={() => setPrenotazione(b)} />
                 ))}
               </div>
             </section>
@@ -399,10 +401,9 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
       })()}
       {stayEdit ? <AlloggioSheet key={stayEdit.id} trip={trip} stay={stayEdit} open onClose={() => setStayEdit(null)} /> : null}
       {confirmNode}
-      <div className="legacy">
-        <DaySheet trip={trip} state={legacy} onChange={setLegacy} />
-        {spesa ? <SpesaSheet key={spesa.id} trip={trip} expense={spesa} open onClose={() => setSpesa(null)} /> : null}
-      </div>
+      {modificaGiorno ? <GiornoSheet key={day.id} day={day} open onClose={() => setModificaGiorno(false)} /> : null}
+      {prenotazione ? <PrenotazioneSheet key={prenotazione.id} trip={trip} booking={prenotazione} open onClose={() => setPrenotazione(null)} /> : null}
+      {spesa ? <SpesaSheet key={spesa.id} trip={trip} expense={spesa} open onClose={() => setSpesa(null)} /> : null}
     </Schermata>
   )
 }

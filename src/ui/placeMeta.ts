@@ -1,13 +1,6 @@
 import type { Category, Place, PlaceStatus, Trip } from '../types'
 import { categoryIcon, type PinIcon } from '../lib/categoryIcon'
 
-export const STATUS_LABEL: Record<PlaceStatus, string> = {
-  idea: 'Idea',
-  planned: 'Pianificato',
-  done: 'Fatto',
-  skipped: 'Saltato',
-}
-
 export const STATUS_STYLE: Record<PlaceStatus, string> = {
   idea: 'border-pale text-pale',
   planned: 'border-warn text-warn',
@@ -15,12 +8,8 @@ export const STATUS_STYLE: Record<PlaceStatus, string> = {
   skipped: 'border-line text-muted',
 }
 
-export const STATUSES: PlaceStatus[] = ['idea', 'planned', 'done', 'skipped']
-
 export const SUGGESTED_CATEGORIES = ['Tempio', 'Cibo', 'Natura', 'Shopping', 'Quartiere', 'Museo', 'Panorama', 'Cultura', 'Supermercato', 'Benzinaio', 'Treno']
 
-/** Tavolozza Eki Notte: blu, arancio, verde e poi i colori di contorno. */
-export const PALETTE = ['#3d86ff', '#ffa23a', '#2cc48a', '#7fb0ff', '#ff6b6b', '#b58cff', '#f7b733', '#4fd1c5']
 export const NO_CATEGORY_COLOR = '#9fb0c8'
 /** Un colore preferito per ogni tipo di categoria, tutti diversi e leggibili sul blu notte. */
 const ICON_COLOR: Record<PinIcon, string> = {
@@ -86,6 +75,3 @@ export function colorForCategory(trip: Trip, categoryId?: string): string {
 export const categoryColor = (trip: Trip, place: Place): string =>
   place.categoryId ? colorForCategory(trip, place.categoryId) : themeColor(place.category)
 
-export function uniqueCities(places: Place[]): string[] {
-  return Array.from(new Set(places.map((p) => p.city).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'it'))
-}

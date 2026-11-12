@@ -140,12 +140,6 @@ function safeStorage(): Storage | undefined {
   }
 }
 
-/** La foto già trovata e ancora valida, senza fare richieste (per il credito in «Dettagli»). */
-export function cachedPhoto(place: Pick<Place, 'id' | 'name' | 'nameLocal' | 'lat' | 'lng'>, now = Date.now()): PlacePhoto | null {
-  const entry = readCache(place.id)
-  return entry && cacheFresh(entry, photoKey(place), now) ? entry.photo : null
-}
-
 // ---------- rete ----------
 
 interface WikiPage {

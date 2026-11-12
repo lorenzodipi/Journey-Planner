@@ -13,7 +13,7 @@ import {
 } from '../lib/dayRoute'
 import { impostazioniViaggio, scegliMezzo, sceltoPer } from '../lib/spostamenti'
 import type { DayMapEnd, DayMapLine } from '../ui/MapView'
-import { MODE_LABEL } from '../ui/TransportForm'
+import { MODE_LABEL } from '../lib/mezzi'
 import type { Day, Trip } from '../types'
 
 export const STOP_COLOR = '#3d86ff'

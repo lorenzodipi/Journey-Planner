@@ -1,11 +1,5 @@
 import type { ChecklistItem, ChecklistKind } from '../types'
 
-export const KIND_LABEL: Record<ChecklistKind, string> = {
-  todo: 'Da fare',
-  packing: 'Valigia',
-  docs: 'Documenti',
-}
-
 export const KINDS: ChecklistKind[] = ['todo', 'packing', 'docs']
 
 /** Modello di partenza, valido per qualunque viaggio: si modifica e si completa a piacere. */

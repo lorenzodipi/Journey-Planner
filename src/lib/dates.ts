@@ -30,10 +30,8 @@ export function daysBetween(aYmd: string, bYmd: string): number {
   return Math.round((b.getTime() - a.getTime()) / 86_400_000)
 }
 
-const dayFmt = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
 const longFmt = new Intl.DateTimeFormat('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })
 const shortFmt = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short' })
 
-export const formatDay = (ymd: string) => dayFmt.format(parseYmd(ymd))
 export const formatDayLong = (ymd: string) => longFmt.format(parseYmd(ymd))
 export const formatShort = (ymd: string) => shortFmt.format(parseYmd(ymd))

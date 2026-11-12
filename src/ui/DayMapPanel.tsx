@@ -3,7 +3,7 @@ import { Loader } from '../faraway/Loader'
 import type { DayRoute } from '../state/dayRoute'
 import { TRANSPORT_COLOR } from '../state/dayRoute'
 import type { Trip } from '../types'
-import { MODE_LABEL } from './TransportForm'
+import { MODE_LABEL } from '../lib/mezzi'
 
 type DayMapComponent = typeof import('./MapView').DayMapView
 

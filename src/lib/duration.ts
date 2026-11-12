@@ -4,9 +4,6 @@ import type { DayItem, Place } from '../types'
 
 export const MAX_DURATION_MIN = 24 * 60
 
-/** Scorciatoie per scegliere la durata con un tocco. */
-export const DURATION_CHIPS = [30, 60, 90, 120, 180]
-
 /** «45 min», «1 h», «1 h 30». */
 export function formatDuration(min: number): string {
   const m = Math.round(min)

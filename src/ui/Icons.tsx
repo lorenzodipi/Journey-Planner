@@ -1,51 +1,15 @@
 import {
-  faArrowDown,
-  faArrowUp,
-  faBagShopping,
-  faBed,
   faBus,
-  faCalendarDays,
   faCar,
-  faCheck,
-  faChevronDown,
-  faChevronRight,
-  faClock,
-  faCloud,
-  faCopy,
-  faDownload,
-  faCompass,
-  faGrip,
-  faFile,
-  faGear,
-  faGripVertical,
-  faLandmark,
-  faListCheck,
-  faLocationDot,
-  faMagnifyingGlass,
-  faMap,
-  faMapLocationDot,
-  faMinus,
-  faPencil,
   faPersonWalking,
   faPlane,
-  faPlus,
   faRightFromBracket,
-  faRightLeft,
   faRightToBracket,
   faRoute,
-  faShieldHalved,
   faShip,
-  faSimCard,
-  faSliders,
-  faSun,
   faTaxi,
-  faTicket,
   faTrain,
   faTrainSubway,
-  faTrashCan,
-  faUtensils,
-  faWallet,
-  faXmark,
   type IconDefinition,
 } from '@fortawesome/free-solid-svg-icons'
 
@@ -70,15 +34,6 @@ const wrap =
     )
   }
 
-export const SunIcon = wrap(faSun)
-export const CalendarIcon = wrap(faCalendarDays)
-export const ClockIcon = wrap(faClock)
-export const MapIcon = wrap(faMap)
-export const PinIcon = wrap(faLocationDot)
-/** Scheda «Oggi» del menu: una bussola, che non si confonde con l'ingranaggio delle impostazioni. */
-export const TodayIcon = wrap(faCompass)
-/** Scheda «Altro» del menu: una griglia di sezioni. */
-export const SectionsIcon = wrap(faGrip)
 export const PlaneIcon = wrap(faPlane)
 export const TrainIcon = wrap(faTrain)
 export const MetroIcon = wrap(faTrainSubway)
@@ -90,49 +45,3 @@ export const FerryIcon = wrap(faShip)
 export const RouteIcon = wrap(faRoute)
 export const CheckInIcon = wrap(faRightToBracket)
 export const CheckOutIcon = wrap(faRightFromBracket)
-export const TrashIcon = wrap(faTrashCan)
-export const ChevronDownIcon = wrap(faChevronDown)
-export const CheckIcon = wrap(faCheck)
-export const SearchIcon = wrap(faMagnifyingGlass)
-export const FoodIcon = wrap(faUtensils)
-export const VisitIcon = wrap(faLandmark)
-export const BedIcon = wrap(faBed)
-export const BudgetIcon = wrap(faWallet)
-export const TicketIcon = wrap(faTicket)
-export const ChecklistIcon = wrap(faListCheck)
-export const TickIcon = wrap(faCheck)
-export const MinusIcon = wrap(faMinus)
-export const PlusIcon = wrap(faPlus)
-export const SwapIcon = wrap(faRightLeft)
-export const ChevronRightIcon = wrap(faChevronRight)
-export const CopyIcon = wrap(faCopy)
-export const DownloadIcon = wrap(faDownload)
-export const ShieldIcon = wrap(faShieldHalved)
-export const SimIcon = wrap(faSimCard)
-export const FileIcon = wrap(faFile)
-export const SettingsIcon = wrap(faGear)
-export const CloudIcon = wrap(faCloud)
-export const LogoutIcon = wrap(faRightFromBracket)
-export const BagIcon = wrap(faBagShopping)
-export const TrainCarIcon = wrap(faTrain)
-export const PinOutIcon = wrap(faMapLocationDot)
-export const PencilIcon = wrap(faPencil)
-export const CloseIcon = wrap(faXmark)
-export const ArrowUpIcon = wrap(faArrowUp)
-export const ArrowDownIcon = wrap(faArrowDown)
-export const GripIcon = wrap(faGripVertical)
-export const SunriseIcon = wrap(faArrowUp)
-export const SunsetIcon = wrap(faArrowDown)
-export const FilterIcon = wrap(faSliders)
-
-/** Pallino sbarrato: il luogo non ha una posizione e non compare sulla mappa. */
-export function NoPinIcon({ size = 24, className: cls }: IconProps) {
-  const [w, h, , , path] = faLocationDot.icon
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${w} ${h}`} fill="currentColor" className={cls} aria-hidden="true">
-      <path d={path as string} />
-      <path d="M40 40 L344 472" stroke="var(--color-bg, #0b1b33)" strokeWidth="88" strokeLinecap="round" fill="none" />
-      <path d="M40 40 L344 472" stroke="currentColor" strokeWidth="40" strokeLinecap="round" fill="none" />
-    </svg>
-  )
-}
