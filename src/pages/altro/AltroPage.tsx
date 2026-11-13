@@ -44,7 +44,6 @@ export function AltroPage() {
     { icon: 'i-tra-train', title: 'Trasporti', sub: riepilogoTrasportiAltro(trip), to: '/altro/trasporti' },
     { icon: 'i-sez-ticket', title: 'Prenotazioni', sub: riepilogoPrenotazioni(trip), to: '/altro/prenotazioni' },
     { icon: <DiscoSprite name="i-sez-file" colore="#FF7C80" />, title: 'Documenti', sub: riepilogoDocumenti(trip), to: '/altro/documenti' },
-    { icon: <DiscoSprite name="i-nav-clock" colore="#79A1FC" />, title: 'Registro modifiche', sub: 'Chi ha cambiato cosa', to: '/altro/registro' },
     { icon: 'i-sez-checklist', title: 'Checklist', sub: riepilogoChecklist(trip), to: '/altro/checklist' },
     { icon: 'i-con-spese', title: 'Budget', sub: riepilogoBudget(r.speso, r.limit, trip.baseCurrency), to: '/spese/budget' },
     { icon: <DiscoSprite name="i-azi-swap" colore="#FFD23F" />, title: 'Cambio valuta', sub: riepilogoCambio(trip), onPress: () => setFx(true) },

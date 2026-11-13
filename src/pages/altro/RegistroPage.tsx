@@ -11,7 +11,7 @@ export function RegistroPage() {
   const me = useMe(trip)
   const righe = useMemo(() => [...(trip.activity ?? [])].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 200), [trip.activity])
   return (
-    <Schermata bar={<BarraIndietro title="Registro modifiche" back="/altro" />} gap={12}>
+    <Schermata bar={<BarraIndietro title="Registro modifiche" back="/altro/impostazioni" />} gap={12}>
       {!trip.activity ? (
         <p className="fa-m" style={{ margin: 0 }}>Il registro si attiva con la migrazione 0037 del database.</p>
       ) : righe.length === 0 ? (
