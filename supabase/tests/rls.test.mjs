@@ -98,6 +98,8 @@ await runMigration('0038_luoghi_account.sql') // si può rilanciare
 await runMigration('0042_rimborso_spesa.sql')
 await runMigration('0047_pagamenti_senza_conferma.sql')
 await runMigration('0047_pagamenti_senza_conferma.sql') // si può rilanciare
+await runMigration('0048_pagamenti_spese_cancellate.sql')
+await runMigration('0048_pagamenti_spese_cancellate.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -609,6 +611,28 @@ await asUser(null, 'postgres')
   await throws('0047 il destinatario non ritira un pagamento di altri', () => db.query(`select cancel_settlement(id) from settlements where group_id=$1`, [g4]))
   await asUser(C)
   await throws('0047 un non membro non registra niente', () => db.query(`select declare_settlements($1, $2::jsonb)`, [tr, JSON.stringify([row(tb, ta, 1)])]))
+  // 0048: i pagamenti di una spesa cancellata non contano più; in una bilancia saltano tutte le compensazioni del gruppo
+  await asUser(A)
+  const spesa = async (label) => (await db.query(`insert into expenses (trip_id,label,amount,currency,paid_by) values ($1,$2,58,'EUR',$3) returning id`, [tr, label, ta])).rows[0].id
+  const e1 = await spesa('Prova'), e2 = await spesa('Altra'), e3 = await spesa('Terza')
+  await asUser(B)
+  const g5 = (await dichiara([row(tb, ta, 29, { expense_id: e1 })])).rows[0].g
+  const p5 = (await db.query(`select id from settlements where group_id=$1`, [g5])).rows[0].id
+  const g6 = (await dichiara([row(tb, ta, 20, { expense_id: e2, compensation: true }), row(ta, tb, 20, { expense_id: e3, compensation: true }), row(tb, ta, 9, { expense_id: e2 })])).rows[0].g
+  const r6 = (await db.query(`select id, compensation from settlements where group_id=$1`, [g6])).rows
+  const tutti6 = r6.map((x) => x.id), vero6 = r6.filter((x) => !x.compensation).map((x) => x.id)
+  const conta = async (ids) => (await db.query(`select count(*)::int n from my_confirmed_settlements() where id = any($1)`, [ids])).rows[0].n
+  await asUser(D) // un terzo: vede solo i confermati
+  check('0048 prima di cancellare il pagamento conta', (await conta([p5])) === 1 && (await conta(tutti6)) === 3)
+  await asUser(A)
+  await db.query(`update expenses set deleted_at=now() where id = any($1)`, [[e1, e3]])
+  await asUser(D)
+  check('0048 il pagamento di una spesa cancellata non conta', (await conta([p5])) === 0)
+  check('0048 una compensazione cancellata toglie tutte quelle del gruppo, resta il pagamento vero', (await conta(tutti6)) === 1 && (await conta(vero6)) === 1)
+  await asUser(A)
+  await db.query(`update expenses set deleted_at=null where id = any($1)`, [[e1, e3]])
+  await asUser(D)
+  check('0048 se la spesa torna, torna anche il pagamento', (await conta([p5])) === 1 && (await conta(tutti6)) === 3)
   await asUser(A)
 }
 

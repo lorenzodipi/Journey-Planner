@@ -1,6 +1,7 @@
 // Scheda Spese (mock Fa-23…Fa-26, #34): «Speso in …» con il budget, saldo e persone (o in pari, o da solo),
 // la ricevuta in linea con categorie (previsto modificabile), totali, saldi e «Per pareggiare», FAB «+ Spesa».
 import { useMemo, useState } from 'react'
+import { rimborsiValidi } from '../../lib/rimborsi'
 import { useLocation } from 'wouter'
 import { daysBetween } from '../../lib/dates'
 import { debitiPerSpesa, pianoBilancia, totaliDelViaggio, type PianoBilancia } from '../../lib/debitiSpese'
@@ -37,7 +38,8 @@ export function SpesePage() {
   const piani = useMemo(() => {
     const m = new Map<string, PianoBilancia>()
     if (!me?.id || trip.settlements === undefined) return m
-    const righe = debitiPerSpesa(r.spese, trip.travelers, r.fx, me.id, trip.settled, trip.settlements)
+    const v = rimborsiValidi(trip)
+    const righe = debitiPerSpesa(r.spese, trip.travelers, r.fx, me.id, v.settled, v.settlements)
     for (const id of new Set(righe.map((d) => d.otherId))) {
       const p = pianoBilancia(righe, me.id, id)
       if (p) m.set(id, p)

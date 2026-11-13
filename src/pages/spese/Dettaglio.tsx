@@ -80,9 +80,11 @@ export function Dettaglio() {
 
   async function elimina(e: SpesaVista) {
     const tappa = e.source?.kind === 'day_item'
+    // i pagamenti registrati su questa spesa smettono di contare (rimborsiValidi): meglio dirlo prima
+    const pagati = round2((trip.settlements ?? []).filter((r) => r.expenseId === e.id && r.status === 'confermato').reduce((n, r) => n + (r.compensation ? 0 : r.amount), 0))
     const ok = await ask({
       title: 'Eliminare la spesa?',
-      message: `${e.label} sparisce dalle spese${tappa ? ' e dal costo della tappa' : ''}. Puoi annullare subito dopo.`,
+      message: `${e.label} sparisce dalle spese${tappa ? ' e dal costo della tappa' : ''}.${pagati > 0 ? ` Anche i pagamenti già registrati su questa spesa (${formatMoney(pagati, trip.baseCurrency)}) non contano più.` : ''} Puoi annullare subito dopo.`,
       confirm: 'Elimina la spesa',
       cancel: 'Tieni la spesa',
       destructive: true,

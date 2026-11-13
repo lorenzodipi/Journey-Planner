@@ -3,6 +3,7 @@
 // Le spese registrate a mano (o nate da una tappa con costo) restano quelle del database; le voci pagate
 // senza una spesa collegata diventano spese «derivate» (una sola per voce, nessun doppione).
 import { expenseBase, expenseOwed, fxOf, summarizeExpenses, type ExpenseSummary, type FxContext } from './budget'
+import { rimborsiValidi } from './rimborsi'
 import { BOOKING_BUDGET_CATEGORY } from './bookingMeta'
 import { daysBetween } from './dates'
 import { dateInZone } from './flights'
@@ -112,7 +113,7 @@ export interface Riassunto {
 export function riassunto(trip: Trip, me: string | undefined): Riassunto {
   const fx = fxOf(trip)
   const spese = tutteLeSpese(trip)
-  const summary = summarizeExpenses(spese, trip.travelers, fx, trip.settled)
+  const summary = summarizeExpenses(spese, trip.travelers, fx, rimborsiValidi(trip).settled)
   const mine = me ? summary.balances.find((b) => b.travelerId === me) : undefined
   return {
     fx,

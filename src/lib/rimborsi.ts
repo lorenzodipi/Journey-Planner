@@ -1,6 +1,6 @@
 // Rimborsi con doppia conferma (#51): dichiarazione del debitore, conferma o rifiuto del destinatario.
 // I saldi cambiano solo alla conferma, una volta (BR-23). I rimborsi non sono spese.
-import type { Rimborso, StatoRimborso, Traveler } from '../types'
+import type { Rimborso, StatoRimborso, Traveler, Trip } from '../types'
 import type { Transfer } from './budget'
 import { formatMoney, round2 } from './money'
 
@@ -10,6 +10,33 @@ export const STATO_RIMBORSO: Record<StatoRimborso, string> = {
   rifiutato: 'Rifiutato',
   annullato: 'Annullato',
   contestato: 'Contestato',
+}
+
+type ConRimborsi = Pick<Trip, 'expenses' | 'settled' | 'settlements'>
+const cacheValidi = new WeakMap<object, { expenses: Trip['expenses']; settled: Trip['settled']; out: Pick<Trip, 'settled' | 'settlements'> }>()
+const SENZA = {}
+
+/**
+ * I pagamenti che contano ancora. Un pagamento legato a una spesa cancellata non vale più (la spesa «non c'è più»:
+ * altrimenti chi aveva pagato risulterebbe in credito). In una «Bilancia» le compensazioni vanno a coppie: se una
+ * spesa compensata è cancellata, non vale nessuna compensazione di quel gruppo e le altre spese tornano aperte.
+ * Se la spesa torna (ripristino), tornano anche i suoi pagamenti: non si cancella niente.
+ * I confermati di tutti (`settled`) li filtra anche il server (0048); qui si tolgono quelli che conosco.
+ */
+export function rimborsiValidi(trip: ConRimborsi): Pick<Trip, 'settled' | 'settlements'> {
+  const chiave = trip.settlements ?? trip.settled ?? SENZA
+  const c = cacheValidi.get(chiave)
+  if (c && c.expenses === trip.expenses && c.settled === trip.settled) return c.out
+  const vive = new Set(trip.expenses.map((e) => e.id))
+  const morto = (r: Rimborso) => !!r.expenseId && !vive.has(r.expenseId)
+  const rotti = new Set((trip.settlements ?? []).filter((r) => r.compensation && r.groupId && morto(r)).map((r) => r.groupId as string))
+  const fuori = new Set((trip.settlements ?? []).filter((r) => morto(r) || (r.compensation && r.groupId && rotti.has(r.groupId))).map((r) => r.id))
+  const out: Pick<Trip, 'settled' | 'settlements'> =
+    fuori.size === 0
+      ? { settled: trip.settled, settlements: trip.settlements }
+      : { settled: trip.settled?.filter((r) => !fuori.has(r.id)), settlements: trip.settlements?.filter((r) => !fuori.has(r.id)) }
+  cacheValidi.set(chiave, { expenses: trip.expenses, settled: trip.settled, out })
+  return out
 }
 
 /** Quanto può ancora dichiarare `from` a `to`: il trasferimento del piano tra i due (zero se non devono niente). */

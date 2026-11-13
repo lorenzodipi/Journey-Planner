@@ -15,7 +15,7 @@ import type { Rimborso } from '../../types'
 import { debitiPerSpesa, type DebitoSpesa } from '../../lib/debitiSpese'
 import { formatMoney, round2 } from '../../lib/money'
 import { iconaSpesa } from '../../lib/ricevuta'
-import { dataNumerica } from '../../lib/rimborsi'
+import { dataNumerica, rimborsiValidi } from '../../lib/rimborsi'
 import type { SpesaVista } from '../../lib/spese'
 import { Ic } from '../../ui/Sprite'
 import { useConferma } from '../../faraway/Foglio'
@@ -97,7 +97,8 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
     else if (!vista?.derived && puoModificareSpesa(d.expense, io?.userId, io?.id)) out.push({ id: 'modifica', label: 'Modifica', onPress: () => setModifica(d.expense) })
     return out
   }
-  const tutte = useMemo(() => debitiPerSpesa(spese, trip.travelers, fx, me, trip.settled, trip.settlements), [spese, trip.travelers, fx, me, trip.settled, trip.settlements])
+  const validi = rimborsiValidi(trip)
+  const tutte = useMemo(() => debitiPerSpesa(spese, trip.travelers, fx, me, validi.settled, validi.settlements), [spese, trip.travelers, fx, me, validi.settled, validi.settlements])
   const righe = useMemo(() => ordinaBilancio(filtraBilancio(tutte, filtri), ordine, nome), [tutte, filtri, ordine, nome])
   const filtrate = righe.length !== tutte.length
   const sezioni: { verso: DebitoSpesa['verso']; titolo: string }[] = [

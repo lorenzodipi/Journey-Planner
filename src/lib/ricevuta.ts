@@ -4,6 +4,7 @@
 // più quelle create nel viaggio. Il previsto è la cifra scritta per la categoria (0019) oppure, se manca,
 // quanto è già pagato più le voci ancora da pagare (o le vecchie voci previste, se sono di più).
 import type { BudgetItem, Category, Trip } from '../types'
+import { rimborsiValidi } from './rimborsi'
 import { budgetLines, expenseBase, settle, summarizeExpenses, summarizeLines, toBase, type FxContext, type Transfer } from './budget'
 import { BOOKING_BUDGET_CATEGORY } from './bookingMeta'
 import { categoryIcon } from './categoryIcon'
@@ -131,7 +132,7 @@ function sottotitolo(c: Omit<RigaCategoria, 'sub' | 'previstoTesto'>): string {
 }
 
 export function ricevuta(
-  trip: Pick<Trip, 'stays' | 'flights' | 'transports' | 'bookings' | 'travelers' | 'budget' | 'baseCurrency' | 'settled'> & { expenseCategories: Category[] },
+  trip: Pick<Trip, 'stays' | 'flights' | 'transports' | 'bookings' | 'travelers' | 'budget' | 'baseCurrency' | 'expenses' | 'settled' | 'settlements'> & { expenseCategories: Category[] },
   spese: SpesaVista[],
   fx: FxContext,
 ): Ricevuta {
@@ -191,7 +192,7 @@ export function ricevuta(
     .sort((a, b) => order(a) - order(b) || a.label.localeCompare(b.label, 'it'))
     .map((c) => ({ ...c, sub: sottotitolo(c), previstoTesto: c.planned > 0 ? `Previsto ${formatMoney(c.planned, trip.baseCurrency)}` : '' }))
 
-  const summary = summarizeExpenses(spese, trip.travelers, fx, trip.settled)
+  const summary = summarizeExpenses(spese, trip.travelers, fx, rimborsiValidi(trip).settled)
   summary.unconverted.forEach((u) => unconverted.add(u))
   const persone = trip.travelers.map((t) => {
     const bal = summary.balances.find((b) => b.travelerId === t.id)

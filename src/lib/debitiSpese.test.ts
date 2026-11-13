@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { debitiPerSpesa, pianoBilancia, totaliAperti } from './debitiSpese'
+import { debitiPerSpesa, pianoBilancia, totaliAperti, totaliDelViaggio } from './debitiSpese'
+import { rimborsiValidi } from './rimborsi'
+import { summarizeExpenses } from './budget'
 import type { Expense, Rimborso } from '../types'
 
 const fx = { base: 'EUR' }
@@ -126,5 +128,37 @@ describe('«Bilancia tutte le spese»', () => {
     const righe = debitiPerSpesa([a, b], T, fx, 'lorenzo', [], [contestato])
     expect(totaliAperti(righe)).toEqual({ daDare: 0, daRicevere: 40 })
     expect(righe.find((d) => d.expenseId === 'a')).toMatchObject({ stato: 'contestato', contestato: 30 })
+  })
+})
+
+describe('spesa cancellata dopo un pagamento (caso reale: «Test» da 58 €, Gaia aveva dato 29 €)', () => {
+  const test = spesa('test', 58, '13')
+  const pag = { ...richiesta(29, 'confermato'), id: 'p', expenseId: 'test' } as Rimborso
+  const trip = (expenses: Expense[], settlements: Rimborso[]) => ({ travelers: T.map((x) => ({ ...x, name: x.id, color: '#000' })), expenses, settled: settlements.filter((r) => r.status === 'confermato').map((r) => ({ id: r.id, fromId: r.fromId, toId: r.toId, amount: r.amount })), settlements })
+  it('con la spesa: tutto pagato', () => {
+    expect(totaliDelViaggio(trip([test], [pag]), [test], fx, 'lorenzo')).toEqual({ daDare: 0, daRicevere: 0 })
+  })
+  it('cancellata la spesa, il pagamento non conta più: nessuno deve niente', () => {
+    const t = trip([], [pag])
+    expect(totaliDelViaggio(t, [], fx, 'lorenzo')).toEqual({ daDare: 0, daRicevere: 0 })
+    expect(rimborsiValidi(t).settled).toEqual([])
+    expect(summarizeExpenses([], T.map((x) => ({ ...x, name: x.id })), fx, rimborsiValidi(t).settled).transfers).toEqual([])
+  })
+  it('i rimborsi senza spesa (quelli di prima) restano', () => {
+    const vecchio = { ...richiesta(77.12, 'confermato'), id: 'v' } as Rimborso
+    expect(rimborsiValidi(trip([], [vecchio, pag])).settlements?.map((r) => r.id)).toEqual(['v'])
+  })
+  it('in una «Bilancia» se una spesa compensata sparisce saltano tutte le compensazioni, resta il pagamento vero', () => {
+    const a = spesa('a', 60, '01')
+    const c = spesa('c', 100, '03', 'gaia')
+    const righe = [
+      { ...richiesta(30, 'confermato'), id: 'c1', expenseId: 'a', compensation: true, groupId: 'g' },
+      { ...richiesta(30, 'confermato'), id: 'c2', fromId: 'lorenzo', toId: 'gaia', expenseId: 'c', compensation: true, groupId: 'g' },
+      { ...richiesta(20, 'confermato'), id: 'p2', fromId: 'lorenzo', toId: 'gaia', expenseId: 'c', groupId: 'g' },
+    ] as Rimborso[]
+    const t = trip([c], righe)
+    expect(rimborsiValidi(t).settlements?.map((r) => r.id)).toEqual(['p2'])
+    expect(totaliDelViaggio(t, [c], fx, 'lorenzo')).toEqual({ daDare: 30, daRicevere: 0 })
+    expect(totaliDelViaggio(trip([a, c], righe), [a, c], fx, 'lorenzo')).toEqual({ daDare: 0, daRicevere: 0 })
   })
 })

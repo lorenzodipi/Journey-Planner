@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'wouter'
 import { Banner, Campo, Pillola, Pulsante } from '../../faraway/base'
 import { Foglio } from '../../faraway/Foglio'
-import { chiRichiesta, controllaRimborso, daDecidere, dataNumerica, inAttesaMie, pagamentiNuovi, STATO_RIMBORSO } from '../../lib/rimborsi'
+import { chiRichiesta, controllaRimborso, daDecidere, dataNumerica, inAttesaMie, pagamentiNuovi, rimborsiValidi, STATO_RIMBORSO } from '../../lib/rimborsi'
 import { pagamentiImmediati } from '../../lib/moneyApi'
 import type { PianoBilancia } from '../../lib/debitiSpese'
 import { leggiVisti, segnaVisti } from '../../lib/rimborsiVisti'
@@ -22,7 +22,7 @@ const first = (trip: Trip, id: string) => trip.travelers.find((p) => p.id === id
 /** Quante richieste aspettano la mia conferma (per il badge sulla scheda Spese e la card in Oggi). */
 export function useRichiesteDaDecidere(trip: Trip | null | undefined): Rimborso[] {
   const me = useMe(trip)
-  return daDecidere(trip?.settlements, me?.id)
+  return daDecidere(trip ? rimborsiValidi(trip).settlements : undefined, me?.id)
 }
 
 /** Pagamenti di altri che non ho ancora visto (avviso in Oggi, in Spese e pallino sulla scheda). */
@@ -33,7 +33,7 @@ export function useNovitaRimborsi(trip: Trip | null | undefined) {
   useEffect(() => {
     if (tripId) setVisti(leggiVisti(tripId))
   }, [tripId])
-  const nuovi = useMemo(() => (trip ? pagamentiNuovi(trip.settlements, trip.travelers, me?.id, me?.userId, visti, new Date()) : []), [trip, me?.id, me?.userId, visti])
+  const nuovi = useMemo(() => (trip ? pagamentiNuovi(rimborsiValidi(trip).settlements, trip.travelers, me?.id, me?.userId, visti, new Date()) : []), [trip, me?.id, me?.userId, visti])
   return { nuovi, visto: (keys: readonly string[]) => tripId && setVisti(segnaVisti(tripId, keys)) }
 }
 
@@ -176,8 +176,9 @@ export function RimborsiCard({ trip, conMie = true }: { trip: Trip; /** Le mie r
   const [aperta, setAperta] = useState<Rimborso | null>(null)
   const [occ, faiOcc] = useInCorso()
   const { nuovi } = useNovitaRimborsi(trip)
-  const dec = daDecidere(trip.settlements, me?.id)
-  const mie = conMie ? inAttesaMie(trip.settlements, me?.id) : []
+  const validi = rimborsiValidi(trip).settlements
+  const dec = daDecidere(validi, me?.id)
+  const mie = conMie ? inAttesaMie(validi, me?.id) : []
   if (dec.length === 0 && mie.length === 0 && nuovi.length === 0) return null
   async function annulla(r: Rimborso) {
     const m = await faiOcc(r.id, () => t.cancelSettlement(r.id))

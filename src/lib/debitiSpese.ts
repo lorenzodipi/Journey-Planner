@@ -5,6 +5,7 @@
 import { expenseOwed, expensePaid, expenseBase, settle, type FxContext } from './budget'
 import { round2 } from './money'
 import { expenseBalance } from './ripartizione'
+import { rimborsiValidi } from './rimborsi'
 import type { Expense, Rimborso, RimborsoConfermato, Traveler, Trip } from '../types'
 
 export type StatoDebito = 'da_pagare' | 'in_attesa' | 'pagato' | 'contestato'
@@ -168,13 +169,14 @@ export function totaliAperti(righe: readonly DebitoSpesa[]): TotaliAperti {
 
 /** I totali di chi usa l'app. `null` se non so chi è. */
 export function totaliDelViaggio(
-  trip: Pick<Trip, 'travelers' | 'settled' | 'settlements'>,
+  trip: Pick<Trip, 'travelers' | 'expenses' | 'settled' | 'settlements'>,
   spese: readonly Expense[],
   fx: FxContext,
   me: string | undefined,
 ): TotaliAperti | null {
   if (!me) return null
-  return totaliAperti(debitiPerSpesa(spese, trip.travelers, fx, me, trip.settled, trip.settlements))
+  const v = rimborsiValidi(trip)
+  return totaliAperti(debitiPerSpesa(spese, trip.travelers, fx, me, v.settled, v.settlements))
 }
 
 /** Un pagamento tra due persone; `compensation` = debito che si annulla con un credito, senza soldi che passano di mano. */
