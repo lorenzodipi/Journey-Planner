@@ -19,6 +19,8 @@ interface Props {
   onPlanned: (c: RigaCategoria, planned: number | null) => Promise<string | null>
   onRename: (c: RigaCategoria, label: string) => Promise<string | null>
   onDelete: (c: RigaCategoria) => Promise<void>
+  /** «Bilancia tutte le spese» accanto alle righe di «Per pareggiare» che mi riguardano: `con` = le persone per cui c'è qualcosa da chiudere */
+  bilancia?: { me: string; con: ReadonlySet<string>; onPress: (otherId: string) => void }
 }
 
 function RigaCat({ c, cur, open, onToggle, onPlanned, onRename, onDelete }: { c: RigaCategoria; cur: string; open: boolean; onToggle: () => void } & Pick<Props, 'onPlanned' | 'onRename' | 'onDelete'>) {
@@ -86,7 +88,7 @@ function RigaCat({ c, cur, open, onToggle, onPlanned, onRename, onDelete }: { c:
   )
 }
 
-export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete }: Props) {
+export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilancia }: Props) {
   const cur = trip.baseCurrency
   const [open, setOpen] = useState<string | null>(null)
   const gruppo = trip.travelers.length > 1
@@ -150,11 +152,21 @@ export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete }: Pro
           {gruppo && dati.transfers.length > 0 ? (
             <div className="pr">
               <div className="sc">Per pareggiare</div>
-              {dati.transfers.map((x, i) => (
-                <div key={i} className="t">
-                  {nome(x.from)} deve {formatMoney(x.amount, cur)} a <b>{nome(x.to)}</b>
-                </div>
-              ))}
+              {dati.transfers.map((x, i) => {
+                const altro = bilancia ? (x.from === bilancia.me ? x.to : x.to === bilancia.me ? x.from : null) : null
+                return (
+                  <div key={i} className="t">
+                    <span>
+                      {nome(x.from)} deve {formatMoney(x.amount, cur)} a <b>{nome(x.to)}</b>
+                    </span>
+                    {bilancia && altro && bilancia.con.has(altro) ? (
+                      <button type="button" className="bil" aria-label={`Bilancia tutte le spese con ${nome(altro)}`} onClick={() => bilancia.onPress(altro)}>
+                        Bilancia tutte le spese
+                      </button>
+                    ) : null}
+                  </div>
+                )
+              })}
             </div>
           ) : null}
           {dati.unconverted.length > 0 ? <div className="ft">Senza cambio, non contate nei totali: {dati.unconverted.join(', ')}</div> : null}

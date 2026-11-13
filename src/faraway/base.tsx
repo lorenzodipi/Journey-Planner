@@ -332,11 +332,12 @@ export function Segmenti<T extends string>({ value, options, onChange, label }: 
 }
 
 /** Banner informativo: `cor` per avvisi, `az` per informazioni, `ac` per conferme. */
-export function Banner({ tone, icon: ic, title, children, action }: { tone: 'cor' | 'az' | 'ac'; icon: SvName; title?: ReactNode; children?: ReactNode; action?: ReactNode }) {
+/** `azioniSotto`: se testo e pulsanti non stanno sulla stessa riga i pulsanti vanno a capo, invece di schiacciare il testo. */
+export function Banner({ tone, icon: ic, title, children, action, azioniSotto }: { tone: 'cor' | 'az' | 'ac'; icon: SvName; title?: ReactNode; children?: ReactNode; action?: ReactNode; azioniSotto?: boolean }) {
   return (
-    <div className={cx('fa-banner', tone)} role="status">
+    <div className={cx('fa-banner', tone, azioniSotto && 'sotto')} role="status">
       <Sv name={ic} size={20} />
-      <span style={{ flex: 1, minWidth: 0 }}>
+      <span className="fa-banner-t" style={{ flex: 1, minWidth: 0 }}>
         {title ? <b>{title}</b> : null} {children}
       </span>
       {action}

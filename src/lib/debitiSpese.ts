@@ -7,7 +7,7 @@ import { round2 } from './money'
 import { expenseBalance } from './ripartizione'
 import type { Expense, Rimborso, RimborsoConfermato, Traveler, Trip } from '../types'
 
-export type StatoDebito = 'da_pagare' | 'in_attesa' | 'pagato'
+export type StatoDebito = 'da_pagare' | 'in_attesa' | 'pagato' | 'contestato'
 
 /** Un rimborso che copre (in tutto o in parte) una card. */
 export interface Copertura {
@@ -37,6 +37,9 @@ export interface DebitoSpesa {
   eccedenza: number
   /** richieste in attesa che coprono la card (per «Rispondi» o «Annulla») */
   richieste: Copertura[]
+  /** pagamenti contestati che coprivano la card: non contano, ma la card lo dice */
+  contestato: number
+  contestati: Copertura[]
 }
 
 const MIN = 0.005
@@ -60,7 +63,7 @@ export function debitiPerSpesa(
   richieste: readonly Rimborso[] | undefined,
 ): DebitoSpesa[] {
   if (!me) return []
-  const grezzi: Omit<DebitoSpesa, 'pagato' | 'inAttesa' | 'residuo' | 'stato' | 'confermati' | 'richieste' | 'eccedenza'>[] = []
+  const grezzi: Omit<DebitoSpesa, 'pagato' | 'inAttesa' | 'residuo' | 'stato' | 'confermati' | 'richieste' | 'eccedenza' | 'contestato' | 'contestati'>[] = []
   for (const e of [...spese].sort((a, b) => a.spentAt.localeCompare(b.spentAt))) {
     if (expenseBase(e, fx) === null) continue
     const owed = expenseOwed(e, travelers, fx)
@@ -93,14 +96,15 @@ export function debitiPerSpesa(
     conf.push({ id: c.id, fromId: c.fromId, toId: c.toId, amount: c.amount, ordine: '' })
   }
   const att: Voce[] = tutte.filter((r) => r.status === 'in_attesa' && !r.corrects).map(voce)
+  const contestate: Voce[] = tutte.filter((r) => r.status === 'contestato' && !r.corrects).map(voce)
 
-  const out: DebitoSpesa[] = grezzi.map((g) => ({ ...g, pagato: 0, inAttesa: 0, residuo: g.importo, stato: 'da_pagare' as StatoDebito, confermati: [], richieste: [], eccedenza: 0 }))
+  const out: DebitoSpesa[] = grezzi.map((g) => ({ ...g, pagato: 0, inAttesa: 0, residuo: g.importo, stato: 'da_pagare' as StatoDebito, confermati: [], richieste: [], eccedenza: 0, contestato: 0, contestati: [] }))
   const dir = (g: DebitoSpesa) => (g.verso === 'devo' ? { fromId: me, toId: g.otherId } : { fromId: g.otherId, toId: me })
 
   /** Distribuisce i rimborsi sulle card: prima quelle della sua spesa, poi dalla più vecchia. `campo` = dove si somma. */
-  function distribuisci(voci: readonly Voce[], campo: 'pagato' | 'inAttesa') {
+  function distribuisci(voci: readonly Voce[], campo: 'pagato' | 'inAttesa' | 'contestato') {
     const resto = new Map(voci.map((v) => [v.id, v.amount]))
-    const libero = (g: DebitoSpesa) => round2(g.residuo - (campo === 'inAttesa' ? g.inAttesa : 0))
+    const libero = (g: DebitoSpesa) => round2(g.residuo - (campo === 'inAttesa' ? g.inAttesa : campo === 'contestato' ? g.contestato : 0))
     const applica = (g: DebitoSpesa, v: Voce) => {
       const quanto = round2(Math.min(libero(g), resto.get(v.id) ?? 0))
       if (quanto < MIN) return
@@ -109,9 +113,12 @@ export function debitiPerSpesa(
         g.pagato = round2(g.pagato + quanto)
         g.residuo = round2(g.residuo - quanto)
         g.confermati.push({ id: v.id, amount: quanto })
-      } else {
+      } else if (campo === 'inAttesa') {
         g.inAttesa = round2(g.inAttesa + quanto)
         g.richieste.push({ id: v.id, amount: quanto })
+      } else {
+        g.contestato = round2(g.contestato + quanto)
+        g.contestati.push({ id: v.id, amount: quanto })
       }
     }
     const stessa = (g: DebitoSpesa, v: Voce) => {
@@ -140,9 +147,10 @@ export function debitiPerSpesa(
   }
   distribuisci(conf, 'pagato')
   distribuisci(att, 'inAttesa')
-  for (const g of out) g.stato = g.residuo < MIN ? 'pagato' : g.inAttesa >= g.residuo - MIN ? 'in_attesa' : 'da_pagare'
+  distribuisci(contestate, 'contestato')
+  for (const g of out) g.stato = g.residuo < MIN ? 'pagato' : g.inAttesa >= g.residuo - MIN ? 'in_attesa' : g.contestato > MIN ? 'contestato' : 'da_pagare'
 
-  const rank = (s: StatoDebito) => (s === 'da_pagare' ? 0 : s === 'in_attesa' ? 1 : 2)
+  const rank = (s: StatoDebito) => (s === 'da_pagare' || s === 'contestato' ? 0 : s === 'in_attesa' ? 1 : 2)
   return out.sort((a, b) => rank(a.stato) - rank(b.stato) || b.expense.spentAt.localeCompare(a.expense.spentAt))
 }
 
@@ -167,4 +175,70 @@ export function totaliDelViaggio(
 ): TotaliAperti | null {
   if (!me) return null
   return totaliAperti(debitiPerSpesa(spese, trip.travelers, fx, me, trip.settled, trip.settlements))
+}
+
+/** Un pagamento tra due persone; `compensation` = debito che si annulla con un credito, senza soldi che passano di mano. */
+export interface RigaPagamento {
+  fromId: string
+  toId: string
+  amount: number
+  expenseId?: string
+  compensation?: boolean
+}
+
+/** Cosa fa «Bilancia tutte le spese» con una persona. */
+export interface PianoBilancia {
+  otherId: string
+  righe: RigaPagamento[]
+  /** quanto si annulla tra crediti e debiti (conta una volta sola) */
+  compensato: number
+  /** soldi che passano di mano: il netto, da chi lo deve */
+  daPagare: number
+  /** chi versa il netto; `null` se non resta niente da versare */
+  chiPaga: 'io' | 'altro' | null
+  /** quante card si chiudono */
+  voci: number
+}
+
+/**
+ * «Bilancia tutte le spese» con una persona: chiude tutte le card aperte tra voi due. La parte di debiti e crediti che si
+ * annulla diventa compensazione; ciò che resta dalla parte più grande è un pagamento vero (il netto). Le parti già dichiarate
+ * e in attesa di conferma restano fuori. `null` se non c'è niente da chiudere.
+ */
+export function pianoBilancia(righe: readonly DebitoSpesa[], me: string, otherId: string): PianoBilancia | null {
+  const libero = (d: DebitoSpesa) => round2(d.residuo - d.inAttesa)
+  const aperte = (verso: DebitoSpesa['verso']) =>
+    righe
+      .filter((d) => d.otherId === otherId && d.verso === verso && libero(d) > MIN)
+      .sort((a, b) => a.expense.spentAt.localeCompare(b.expense.spentAt))
+  const devo = aperte('devo')
+  const devono = aperte('devono')
+  const somma = (l: DebitoSpesa[]) => round2(l.reduce((n, d) => n + libero(d), 0))
+  const totDevo = somma(devo)
+  const totDevono = somma(devono)
+  if (totDevo + totDevono < MIN) return null
+  const comp = round2(Math.min(totDevo, totDevono))
+  const out: RigaPagamento[] = []
+  const lato = (l: DebitoSpesa[]) => {
+    let resto = comp
+    for (const d of l) {
+      const dir = d.verso === 'devo' ? { fromId: me, toId: otherId } : { fromId: otherId, toId: me }
+      const c = round2(Math.min(libero(d), resto))
+      resto = round2(resto - c)
+      if (c > MIN) out.push({ ...dir, amount: c, expenseId: d.expenseId, compensation: true })
+      const p = round2(libero(d) - c)
+      if (p > MIN) out.push({ ...dir, amount: p, expenseId: d.expenseId })
+    }
+  }
+  lato(devo)
+  lato(devono)
+  const daPagare = round2(Math.abs(totDevo - totDevono))
+  return {
+    otherId,
+    righe: out,
+    compensato: comp,
+    daPagare,
+    chiPaga: daPagare < MIN ? null : totDevo > totDevono ? 'io' : 'altro',
+    voci: devo.length + devono.length,
+  }
 }

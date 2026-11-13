@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Expense } from '../types'
 import { summarizeExpenses } from './budget'
-import { bozzaRettifica, controllaRimborso, cronologia, daDecidere, inAttesaMie, residuo, testoCronologia, testoRichiesta } from './rimborsi'
+import { controllaRimborso, cronologia, daDecidere, inAttesaMie, pagamentiNuovi, residuo, testoCronologia, testoRichiesta } from './rimborsi'
 
 const people = [{ id: 'a', name: 'Anna' }, { id: 'g', name: 'Giorgio' }]
 const fx = { base: 'EUR', local: 'JPY', rate: 0.005 }
@@ -56,8 +56,31 @@ describe('testi e liste', () => {
     expect(inAttesaMie(list, 'a').map((x) => x.id)).toEqual(['3'])
     expect(daDecidere(undefined, 'a')).toEqual([])
   })
-  it('cronologia dal più recente e rettifica contraria', () => {
+  it('cronologia dal più recente', () => {
     expect(cronologia([r({ id: '1', createdAt: '2026-01-01' }), r({ id: '2', createdAt: '2026-02-01' })]).map((x) => x.id)).toEqual(['2', '1'])
-    expect(bozzaRettifica(r({ id: 'o' }))).toEqual({ fromId: 'a', toId: 'g', amount: 50, currency: 'EUR', corrects: 'o' })
+  })
+})
+
+describe('avviso dei pagamenti di altri', () => {
+  const adesso = new Date('2026-11-13T12:00:00Z')
+  const pag = (o: object) => r({ status: 'confermato', createdBy: 'u-g', createdAt: '2026-11-12T10:00:00Z', ...o })
+  const nuovi = (list: object[], visti: string[] = []) => pagamentiNuovi(list as never, people, 'a', 'u-a', new Set(visti), adesso)
+  it('un pagamento di Giorgio verso di me', () => {
+    expect(nuovi([pag({ id: 'p1' })])).toEqual([{ key: 'p1', testo: 'Giorgio ti ha dato 50,00\u00a0€' }])
+  })
+  it('non avvisa dei miei, di quelli già visti, di quelli vecchi né di quelli non validi', () => {
+    expect(nuovi([pag({ id: 'p1', createdBy: 'u-a' })])).toEqual([])
+    expect(nuovi([pag({ id: 'p1' })], ['p1'])).toEqual([])
+    expect(nuovi([pag({ id: 'p1', createdAt: '2026-10-01T10:00:00Z' })])).toEqual([])
+    expect(nuovi([pag({ id: 'p1', status: 'contestato' }), pag({ id: 'p2', status: 'in_attesa' })])).toEqual([])
+  })
+  it('una «Bilancia» è un avviso solo, con compensati e netto', () => {
+    const g = 'grp'
+    const righe = [
+      pag({ id: 'c1', groupId: g, compensation: true, fromId: 'g', toId: 'a', amount: 30 }),
+      pag({ id: 'c2', groupId: g, compensation: true, fromId: 'a', toId: 'g', amount: 30 }),
+      pag({ id: 'p', groupId: g, fromId: 'g', toId: 'a', amount: 10 }),
+    ]
+    expect(nuovi(righe)).toEqual([{ key: g, testo: 'Giorgio ha bilanciato le spese con te', dettaglio: 'Compensati 30,00\u00a0€ · Giorgio ti ha dato 10,00\u00a0€' }])
   })
 })

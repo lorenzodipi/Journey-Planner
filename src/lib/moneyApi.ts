@@ -3,6 +3,7 @@ import type { BudgetItem, Category } from '../types'
 import { client } from './db'
 import { budgetColumns, type BudgetInput } from './moneyData'
 import { cleanRates } from './money'
+import type { RigaPagamento } from './debitiSpese'
 
 // Scritture e letture per budget, spese e tasso di cambio.
 
@@ -45,23 +46,42 @@ async function syncBudgetShares(tripId: string, itemId: string, input: BudgetInp
 const MIGRATION_0029 = "Manca la migrazione 0029 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0029_rimborsi.sql)."
 const needs0029 = (e: { message: string }) => (/settlements|decide_settlement|cancel_settlement|balance_version|schema cache|does not exist/i.test(e.message) ? new Error(MIGRATION_0029) : e)
 
-/** Il debitore dichiara «Ho pagato»: resta in attesa di conferma, i saldi non cambiano. */
-export async function declareSettlement(input: { id?: string; tripId: string; fromId: string; toId: string; amount: number; currency: string; paidOn: string; corrects?: string; expenseId?: string }): Promise<void> {
+const MIGRATION_0047 = "Manca la migrazione 0047 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0047_pagamenti_senza_conferma.sql)."
+const senza0047 = (e: { message: string }) => /declare_settlements|dispute_settlement|schema cache|does not exist|Could not find/i.test(e.message)
+
+/** Dopo la migrazione 0047 i pagamenti valgono subito; prima restano «in attesa di conferma». `undefined` = non l'ho ancora scoperto. */
+let immediati: boolean | undefined
+export const pagamentiImmediati = () => immediati
+
+/**
+ * Registra uno o più pagamenti tra due persone (una sola «Ho pagato» o tutta una «Bilancia»). Valgono subito, il destinatario
+ * può contestarli. Senza la migrazione 0047 un solo «Ho pagato» si salva come prima (da confermare); una «Bilancia» no.
+ */
+export async function declareSettlements(tripId: string, righe: readonly RigaPagamento[], currency: string, paidOn: string): Promise<void> {
   const db = client()
-  const row: Record<string, unknown> = {
-    ...(input.id ? { id: input.id } : {}),
-    trip_id: input.tripId,
-    from_traveler: input.fromId,
-    to_traveler: input.toId,
-    amount: input.amount,
-    currency: input.currency,
-    paid_on: input.paidOn,
-    ...(input.corrects ? { corrects: input.corrects } : {}),
+  const { error } = await db.rpc('declare_settlements', {
+    _trip: tripId,
+    _rows: righe.map((r) => ({ from: r.fromId, to: r.toId, amount: r.amount, currency, paid_on: paidOn, expense_id: r.expenseId ?? null, compensation: r.compensation ?? false })),
+  })
+  if (!error) {
+    immediati = true
+    return
   }
-  let { error } = await db.from('settlements').insert(input.expenseId ? { ...row, expense_id: input.expenseId } : row)
-  // senza la migrazione 0042 la colonna non c'è: il rimborso si salva lo stesso, senza il legame con la spesa
-  if (error && input.expenseId && /expense_id|schema cache|column/i.test(error.message)) ({ error } = await db.from('settlements').insert(row))
-  if (error) throw needs0029(error)
+  if (!senza0047(error)) throw needs0029(error)
+  immediati = false
+  if (righe.length !== 1 || righe[0].compensation) throw new Error(MIGRATION_0047)
+  const [r] = righe
+  const row: Record<string, unknown> = { trip_id: tripId, from_traveler: r.fromId, to_traveler: r.toId, amount: r.amount, currency, paid_on: paidOn }
+  let res = await db.from('settlements').insert(r.expenseId ? { ...row, expense_id: r.expenseId } : row)
+  // senza la migrazione 0042 la colonna non c'è: il pagamento si salva lo stesso, senza il legame con la spesa
+  if (res.error && r.expenseId && /expense_id|schema cache|column/i.test(res.error.message)) res = await db.from('settlements').insert(row)
+  if (res.error) throw needs0029(res.error)
+}
+
+/** Il destinatario contesta un pagamento: smette di contare e la voce torna aperta. */
+export async function disputeSettlement(id: string): Promise<void> {
+  const { error } = await client().rpc('dispute_settlement', { _id: id })
+  if (error) throw senza0047(error) ? new Error(MIGRATION_0047) : needs0029(error)
 }
 
 export async function cancelSettlement(id: string): Promise<void> {

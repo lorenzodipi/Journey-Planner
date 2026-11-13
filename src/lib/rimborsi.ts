@@ -9,6 +9,7 @@ export const STATO_RIMBORSO: Record<StatoRimborso, string> = {
   confermato: 'Confermato',
   rifiutato: 'Rifiutato',
   annullato: 'Annullato',
+  contestato: 'Contestato',
 }
 
 /** Quanto può ancora dichiarare `from` a `to`: il trasferimento del piano tra i due (zero se non devono niente). */
@@ -64,10 +65,54 @@ export const inAttesaMie = (list: readonly Rimborso[] | undefined, me: string | 
 /** Più recenti in alto. */
 export const cronologia = (list: readonly Rimborso[] | undefined): Rimborso[] => [...(list ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
+/** Un pagamento che qualcun altro ha registrato e che riguarda me: da far vedere finché non lo segno come visto. */
+export interface PagamentoNuovo {
+  /** `groupId` della «Bilancia» o id del singolo pagamento: è ciò che si segna come visto */
+  key: string
+  testo: string
+  dettaglio?: string
+}
+
 /**
- * Una rettifica corregge un rimborso confermato con un movimento contrario (da chi aveva ricevuto a chi aveva dato),
- * che a sua volta va confermato. Non supera l'importo originale.
+ * Pagamenti registrati da altri negli ultimi `giorni` giorni, ancora da vedere. Sono già validi: l'avviso serve a saperlo e,
+ * se non torna, a contestarli dal menu della voce in «Il mio bilancio».
  */
-export function bozzaRettifica(orig: Pick<Rimborso, 'id' | 'fromId' | 'toId' | 'amount' | 'currency'>) {
-  return { fromId: orig.toId, toId: orig.fromId, amount: orig.amount, currency: orig.currency, corrects: orig.id }
+export function pagamentiNuovi(
+  list: readonly Rimborso[] | undefined,
+  travelers: readonly Pick<Traveler, 'id' | 'name'>[],
+  me: string | undefined,
+  meUser: string | undefined,
+  visti: ReadonlySet<string>,
+  adesso: Date,
+  giorni = 7,
+): PagamentoNuovo[] {
+  if (!me) return []
+  const da = adesso.getTime() - giorni * 86_400_000
+  const gruppi = new Map<string, Rimborso[]>()
+  for (const r of list ?? []) {
+    if (r.status !== 'confermato' || r.corrects || (r.fromId !== me && r.toId !== me)) continue
+    if (!r.createdBy || r.createdBy === meUser || new Date(r.createdAt).getTime() < da) continue
+    const k = r.groupId ?? r.id
+    if (visti.has(k)) continue
+    gruppi.set(k, [...(gruppi.get(k) ?? []), r])
+  }
+  const out: (PagamentoNuovo & { quando: string })[] = []
+  for (const [key, righe] of gruppi) {
+    const altro = righe[0].fromId === me ? righe[0].toId : righe[0].fromId
+    const chi = nome(travelers, altro)
+    const cur = righe[0].currency
+    const compensato = round2(righe.filter((r) => r.compensation).reduce((n, r) => n + r.amount, 0) / 2)
+    const netto = round2(righe.filter((r) => !r.compensation).reduce((n, r) => n + (r.toId === me ? r.amount : -r.amount), 0))
+    const quando = righe.map((r) => r.createdAt).sort().at(-1) as string
+    if (compensato === 0 && righe.length === 1) {
+      out.push({ key, quando, testo: netto > 0 ? `${chi} ti ha dato ${formatMoney(netto, cur)}` : `${chi} ha segnato che le hai dato ${formatMoney(-netto, cur)}` })
+      continue
+    }
+    const parti = [
+      compensato > 0 ? `Compensati ${formatMoney(compensato, cur)}` : '',
+      netto > 0 ? `${chi} ti ha dato ${formatMoney(netto, cur)}` : netto < 0 ? `le hai dato ${formatMoney(-netto, cur)}` : '',
+    ].filter(Boolean)
+    out.push({ key, quando, testo: `${chi} ha bilanciato le spese con te`, ...(parti.length ? { dettaglio: parti.join(' · ') } : {}) })
+  }
+  return out.sort((a, b) => b.quando.localeCompare(a.quando)).map(({ quando: _q, ...x }) => x)
 }

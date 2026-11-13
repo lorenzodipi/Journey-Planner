@@ -1,10 +1,14 @@
-// Rimborsi con doppia conferma (#51): «Ho pagato», richieste da confermare o rifiutare, richieste in attesa, cronologia.
-// I saldi cambiano solo quando il destinatario conferma; i rimborsi non sono spese.
-import { useEffect, useState } from 'react'
+// Rimborsi (#51): «Ho pagato» vale subito e il destinatario, se non torna, lo contesta dal menu della voce (0047); «Bilancia
+// tutte le spese» chiude in un colpo i pagamenti e le compensazioni con una persona. Le richieste dichiarate prima della
+// 0047 restano «in attesa» e si decidono come sempre. I rimborsi non sono spese.
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'wouter'
 import { Banner, Campo, Pillola, Pulsante } from '../../faraway/base'
 import { Foglio } from '../../faraway/Foglio'
-import { chiRichiesta, controllaRimborso, daDecidere, dataNumerica, inAttesaMie, STATO_RIMBORSO } from '../../lib/rimborsi'
+import { chiRichiesta, controllaRimborso, daDecidere, dataNumerica, inAttesaMie, pagamentiNuovi, STATO_RIMBORSO } from '../../lib/rimborsi'
+import { pagamentiImmediati } from '../../lib/moneyApi'
+import type { PianoBilancia } from '../../lib/debitiSpese'
+import { leggiVisti, segnaVisti } from '../../lib/rimborsiVisti'
 import { formatMoney, parseAmount } from '../../lib/money'
 import { tripToday } from '../../lib/today'
 import { useMe } from '../../state/me'
@@ -21,8 +25,20 @@ export function useRichiesteDaDecidere(trip: Trip | null | undefined): Rimborso[
   return daDecidere(trip?.settlements, me?.id)
 }
 
+/** Pagamenti di altri che non ho ancora visto (avviso in Oggi, in Spese e pallino sulla scheda). */
+export function useNovitaRimborsi(trip: Trip | null | undefined) {
+  const me = useMe(trip)
+  const [visti, setVisti] = useState<Set<string>>(() => (trip ? leggiVisti(trip.id) : new Set()))
+  const tripId = trip?.id
+  useEffect(() => {
+    if (tripId) setVisti(leggiVisti(tripId))
+  }, [tripId])
+  const nuovi = useMemo(() => (trip ? pagamentiNuovi(trip.settlements, trip.travelers, me?.id, me?.userId, visti, new Date()) : []), [trip, me?.id, me?.userId, visti])
+  return { nuovi, visto: (keys: readonly string[]) => tripId && setVisti(segnaVisti(tripId, keys)) }
+}
+
 /** «Ho pagato»: importo (anche parziale, non oltre il dovuto) e data; la richiesta va «In attesa di conferma». */
-export function DichiaraSheet({ trip, toId, dovuto, onClose, corrects, expenseId }: { trip: Trip; toId: string; dovuto: number; onClose: () => void; corrects?: string; /** spesa da cui si dichiara: il rimborso copre quella (0042) */ expenseId?: string }) {
+export function DichiaraSheet({ trip, toId, dovuto, onClose, expenseId }: { trip: Trip; toId: string; dovuto: number; onClose: () => void; /** spesa da cui si dichiara: il pagamento copre quella (0042) */ expenseId?: string }) {
   const t = useTrips()
   const me = useMe(trip)
   const cur = trip.baseCurrency
@@ -38,16 +54,16 @@ export function DichiaraSheet({ trip, toId, dovuto, onClose, corrects, expenseId
     if (err) return setError(err)
     if (!data) return setError('Scegli la data.')
     setBusy(true)
-    const m = await t.declareSettlement({ tripId: trip.id, fromId: me.id, toId, amount: n as number, currency: cur, paidOn: data, ...(corrects ? { corrects } : {}), ...(expenseId ? { expenseId } : {}) })
+    const m = await t.declareSettlements(trip.id, [{ fromId: me.id, toId, amount: n as number, ...(expenseId ? { expenseId } : {}) }], cur, data)
     setBusy(false)
     if (m) return setError(m)
-    showToast(`Fatto: aspetto la conferma di ${first(trip, toId)}.`)
+    showToast(pagamentiImmediati() === false ? `Fatto: aspetto la conferma di ${first(trip, toId)}.` : 'Pagamento registrato.')
     onClose()
   }
   return (
     <Foglio
       open
-      title={corrects ? 'Correggi un rimborso' : 'Ho pagato'}
+      title="Ho pagato"
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="rimborso-form" isLoading={busy}>
@@ -57,7 +73,7 @@ export function DichiaraSheet({ trip, toId, dovuto, onClose, corrects, expenseId
     >
       <form id="rimborso-form" className="frm" onSubmit={submit} noValidate>
         <p className="fa-m" style={{ margin: 0 }}>
-          {corrects ? `${first(trip, toId)} deve confermare la rettifica.` : `Devi ${formatMoney(dovuto, cur)} a ${first(trip, toId)}. I saldi cambiano quando ${first(trip, toId)} conferma.`}
+          {`Devi ${formatMoney(dovuto, cur)} a ${first(trip, toId)}. Lo registro subito: ${first(trip, toId)} lo vede e, se non torna, può contestarlo.`}
         </p>
         <Campo label="Importo" inputMode="decimal" value={text} onChange={(v) => (setText(v), setError(''))} trailing={<span>{cur}</span>} error={error || undefined} />
         <Campo label="Data" type="date" value={data} onChange={setData} max={tripToday(trip)} />
@@ -121,21 +137,55 @@ export function DecidiSheet({ trip, r, onClose }: { trip: Trip; r: Rimborso; onC
   )
 }
 
-/** Richieste da decidere e richieste mie in attesa, in cima alla pagina Spese. */
-export function RimborsiCard({ trip, conMie = true }: { trip: Trip; /** Le mie richieste in attesa: in «Il mio bilancio» ci sono già nella cronologia. */ conMie?: boolean }) {
+/** Avvisi sui pagamenti che altri hanno registrato per me: «Controlla» porta alle voci (dove si può contestare), «Ho visto» li toglie. */
+function AvvisiNovita({ trip, solo }: { trip: Trip; /** quanti mostrarne al massimo */ solo?: number }) {
+  const { nuovi, visto } = useNovitaRimborsi(trip)
+  if (nuovi.length === 0) return null
+  return (
+    <>
+      {nuovi.slice(0, solo ?? nuovi.length).map((n) => (
+        <Banner
+          key={n.key}
+          tone="az"
+          icon="info"
+          azioniSotto
+          action={
+            <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <Link href="/spese/bilancio" className="fa-btn sm" onClick={() => visto([n.key])}>Controlla</Link>
+              <Pulsante size="sm" color="secondary" onPress={() => visto([n.key])}>Ho visto</Pulsante>
+            </span>
+          }
+        >
+          {n.testo}
+          {n.dettaglio ? (
+            <>
+              <br />
+              {n.dettaglio}
+            </>
+          ) : null}
+        </Banner>
+      ))}
+    </>
+  )
+}
+
+/** Richieste da decidere (quelle di prima della 0047), mie in attesa e pagamenti nuovi di altri, in cima alla pagina Spese. */
+export function RimborsiCard({ trip, conMie = true }: { trip: Trip; /** Le mie richieste in attesa: in «Il mio bilancio» ci sono già. */ conMie?: boolean }) {
   const t = useTrips()
   const me = useMe(trip)
   const [aperta, setAperta] = useState<Rimborso | null>(null)
   const [occ, faiOcc] = useInCorso()
+  const { nuovi } = useNovitaRimborsi(trip)
   const dec = daDecidere(trip.settlements, me?.id)
   const mie = conMie ? inAttesaMie(trip.settlements, me?.id) : []
-  if (dec.length === 0 && mie.length === 0) return null
+  if (dec.length === 0 && mie.length === 0 && nuovi.length === 0) return null
   async function annulla(r: Rimborso) {
     const m = await faiOcc(r.id, () => t.cancelSettlement(r.id))
     showToast(m ?? 'Richiesta annullata')
   }
   return (
     <div style={{ display: 'grid', gap: 8 }}>
+      <AvvisiNovita trip={trip} />
       {dec.map((r) => (
         <Banner key={r.id} tone="az" icon="info" action={<Pulsante size="sm" onPress={() => setAperta(r)}>Rispondi</Pulsante>}>
           {chiRichiesta(r, trip.travelers)}
@@ -155,23 +205,73 @@ export function RimborsiCard({ trip, conMie = true }: { trip: Trip; /** Le mie r
   )
 }
 
-/** Card in Oggi: qualcuno dice di averti dato dei soldi. */
+/** Card in Oggi: una richiesta in attesa da decidere, oppure un pagamento nuovo di un altro. */
 export function RimborsiOggi({ trip }: { trip: Trip }) {
   const dec = useRichiesteDaDecidere(trip)
-  if (dec.length === 0) return null
+  const { nuovi } = useNovitaRimborsi(trip)
+  if (dec.length === 0 && nuovi.length === 0) return null
   return (
-    <Banner tone="az" icon="info" action={<Link href="/spese" className="fa-btn sm">Rispondi</Link>}>
-      {chiRichiesta(dec[0], trip.travelers)}
-      {dec.length > 1 ? ` (+${dec.length - 1})` : ''}
-      <br />
-      {dataNumerica(dec[0].paidOn)}
-    </Banner>
+    <>
+      {dec.length > 0 ? (
+        <Banner tone="az" icon="info" action={<Link href="/spese" className="fa-btn sm">Rispondi</Link>}>
+          {chiRichiesta(dec[0], trip.travelers)}
+          {dec.length > 1 ? ` (+${dec.length - 1})` : ''}
+          <br />
+          {dataNumerica(dec[0].paidOn)}
+        </Banner>
+      ) : null}
+      <AvvisiNovita trip={trip} solo={1} />
+    </>
+  )
+}
+
+/** «Bilancia tutte le spese» con una persona: dice cosa succede e registra tutto in un colpo. */
+export function BilanciaSheet({ trip, piano, onClose }: { trip: Trip; piano: PianoBilancia; onClose: () => void }) {
+  const t = useTrips()
+  const cur = trip.baseCurrency
+  const chi = first(trip, piano.otherId)
+  const [busy, setBusy] = useState(false)
+  const [errore, setErrore] = useState('')
+  async function conferma() {
+    setBusy(true)
+    const m = await t.declareSettlements(trip.id, piano.righe, cur, tripToday(trip))
+    setBusy(false)
+    if (m) return setErrore(m)
+    showToast(`Spese con ${chi} bilanciate.`)
+    onClose()
+  }
+  return (
+    <Foglio
+      open
+      title={`Bilancia con ${chi}`}
+      onClose={onClose}
+      footer={
+        <Pulsante isLoading={busy} onPress={() => void conferma()}>
+          Bilancia tutte le spese
+        </Pulsante>
+      }
+    >
+      <p style={{ margin: 0, textAlign: 'center' }}>
+        {piano.voci === 1 ? 'Si chiude 1 voce' : `Si chiudono ${piano.voci} voci`} tra te e {chi}.
+      </p>
+      <p className="fa-m" style={{ margin: 0, textAlign: 'center' }}>
+        {piano.compensato > 0 ? `${formatMoney(piano.compensato, cur)} si annullano tra debiti e crediti. ` : ''}
+        {piano.chiPaga === 'io' ? `Tu dai ${formatMoney(piano.daPagare, cur)} a ${chi}.` : piano.chiPaga === 'altro' ? `${chi} ti dà ${formatMoney(piano.daPagare, cur)}.` : 'Nessuno deve dare niente.'}
+        <br />
+        {`${chi} lo vede subito e, se non torna, può contestarlo.`}
+      </p>
+      {errore ? (
+        <Banner tone="cor" icon="warn">
+          {errore}
+        </Banner>
+      ) : null}
+    </Foglio>
   )
 }
 
 export function StatoPillola({ stato }: { stato: Rimborso['status'] }) {
   return (
-    <Pillola tone={stato === 'confermato' ? 'acq' : stato === 'in_attesa' ? 'soft' : 'mut'} icon={stato === 'confermato' ? 'check' : stato === 'in_attesa' ? 'clock' : undefined}>
+    <Pillola tone={stato === 'confermato' ? 'acq' : stato === 'in_attesa' ? 'soft' : stato === 'contestato' ? 'cor' : 'mut'} icon={stato === 'confermato' ? 'check' : stato === 'in_attesa' ? 'clock' : undefined}>
       {STATO_RIMBORSO[stato]}
     </Pillola>
   )

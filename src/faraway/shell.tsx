@@ -9,7 +9,7 @@ import { useVaiAllErrore } from './useVaiAllErrore'
 import { Sv, TAB_PATHS } from './icons'
 import { PulsanteIcona } from './base'
 import { PillolaOffline, StatoRete } from './Rete'
-import { useRichiesteDaDecidere } from '../pages/spese/Rimborsi'
+import { useNovitaRimborsi, useRichiesteDaDecidere } from '../pages/spese/Rimborsi'
 import { useTrips } from '../state/trip'
 
 const TABS = [
@@ -35,7 +35,8 @@ export function tabFor(location: string): TabName {
 export function BarraSchede() {
   const [location] = useLocation()
   const active = tabFor(location)
-  const richieste = useRichiesteDaDecidere(useTrips().active).length
+  const attivo = useTrips().active
+  const richieste = useRichiesteDaDecidere(attivo).length + useNovitaRimborsi(attivo).nuovi.length
   return (
     <nav className="fa-tabs" aria-label="Sezioni">
       {TABS.map((t) => {

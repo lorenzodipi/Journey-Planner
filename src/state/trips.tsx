@@ -17,6 +17,7 @@ import { canSwap, changedPositions, orderItems, positionForNew, renumber } from 
 import * as api from '../lib/tripApi'
 import * as logistics from '../lib/logisticsApi'
 import * as money from '../lib/moneyApi'
+import type { RigaPagamento } from '../lib/debitiSpese'
 import * as planning from '../lib/planningApi'
 import * as restore from '../lib/restoreApi'
 import { syncOfflineFiles } from '../lib/bookingFiles'
@@ -142,7 +143,8 @@ interface TripsValue {
   setExpenseCategoryArchived: (id: string, archived: boolean) => Result
   removeExpenseFile: (id: string, path: string) => Result
   /** Rimborsi (#51): servono la rete e la migrazione 0029. */
-  declareSettlement: (input: { tripId: string; fromId: string; toId: string; amount: number; currency: string; paidOn: string; corrects?: string; expenseId?: string }) => Result
+  declareSettlements: (tripId: string, righe: readonly RigaPagamento[], currency: string, paidOn: string) => Result
+  disputeSettlement: (id: string) => Result
   cancelSettlement: (id: string) => Result
   /** Documenti (#52): servono la rete e la migrazione 0030. */
   createDocument: (tripId: string, input: planning.DocumentoInput) => Result
@@ -694,7 +696,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
     deleteExpenseCategoryMovingBudget: (tripId, id) => run(() => money.deleteExpenseCategoryMovingBudget(tripId, id, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['money', 'expenseCategories']),
     setExpenseCategoryArchived: (id, archived) => run(() => money.setExpenseCategoryArchived(id, archived), ['money', 'expenseCategories']),
     removeExpenseFile: (id, path) => run(() => money.deleteExpenseFile(id, path), ['money']),
-    declareSettlement: (input) => run(() => money.declareSettlement(input), ['money']),
+    declareSettlements: (tripId, righe, currency, paidOn) => run(() => money.declareSettlements(tripId, righe, currency, paidOn), ['money']),
+    disputeSettlement: (id) => run(() => money.disputeSettlement(id), ['money']),
     cancelSettlement: (id) => run(() => money.cancelSettlement(id), ['money']),
     createDocument: (tripId, input) => run(() => planning.createDocument(tripId, input), ['planning']),
     updateDocumentVisibility: (id, visibility, access) => run(() => planning.updateDocumentVisibility(id, visibility, access, auth.session?.user.id), ['planning']),

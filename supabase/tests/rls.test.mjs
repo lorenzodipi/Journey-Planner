@@ -95,6 +95,9 @@ await runMigration('0037_registro_modifiche.sql')
 await runMigration('0037_registro_modifiche.sql') // si può rilanciare
 await runMigration('0038_luoghi_account.sql')
 await runMigration('0038_luoghi_account.sql') // si può rilanciare
+await runMigration('0042_rimborso_spesa.sql')
+await runMigration('0047_pagamenti_senza_conferma.sql')
+await runMigration('0047_pagamenti_senza_conferma.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -560,6 +563,52 @@ await asUser(null, 'postgres')
   check('0029 il destinatario rifiuta', (await db.query(`select status from settlements where id=$1`, [s3])).rows[0].status === 'rifiutato')
   await asUser(C)
   check('0029 un non membro non vede nulla', (await db.query(`select 1 from settlements where trip_id=$1`, [tr])).rows.length === 0 && (await db.query(`select balance_version($1) v`, [tr])).rows[0].v === null)
+  await asUser(A)
+}
+
+// pagamenti senza doppia conferma (0047): valgono subito, il destinatario contesta, «Bilancia» è di gruppo
+await asUser(null, 'postgres')
+{
+  const D = '44444444-4444-4444-4444-444444444444'
+  const tr = (await db.query(`insert into trips (title, owner_id) values ('Pagamenti', $1) returning id`, [A])).rows[0].id
+  for (const u of [B, D]) await db.query(`insert into trip_members (trip_id,user_id,role) values ($1,$2,'editor') on conflict do nothing`, [tr, u])
+  const ta = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'A',$2) returning id`, [tr, A])).rows[0].id
+  const tb = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'B',$2) returning id`, [tr, B])).rows[0].id
+  const td = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'D',$2) returning id`, [tr, D])).rows[0].id
+  const row = (f, t, amount, extra = {}) => ({ from: f, to: t, amount, currency: 'EUR', paid_on: '2026-11-28', ...extra })
+  const dichiara = (rows) => db.query(`select declare_settlements($1, $2::jsonb) g`, [tr, JSON.stringify(rows)])
+  await asUser(B)
+  await throws('0047 non si registra per conto di altri', () => dichiara([row(ta, td, 10)]))
+  await throws('0047 importo zero rifiutato', () => dichiara([row(tb, ta, 0)]))
+  await throws('0047 le righe riguardano le stesse due persone', () => dichiara([row(tb, ta, 10), row(tb, td, 5)]))
+  const g1 = (await dichiara([row(tb, ta, 40)])).rows[0].g
+  const single = (await db.query(`select id, status, group_id, compensation from settlements where group_id=$1`, [g1])).rows[0]
+  check('0047 il pagamento vale subito', single.status === 'confermato' && single.compensation === false)
+  await asUser(D)
+  check('0047 i saldi di tutti vedono il pagamento', (await db.query(`select 1 from my_confirmed_settlements() where id=$1`, [single.id])).rows.length === 1)
+  await throws('0047 un terzo non lo contesta', () => db.query(`select dispute_settlement($1)`, [single.id]))
+  await asUser(A)
+  await db.query(`select dispute_settlement($1)`, [single.id])
+  await db.query(`select dispute_settlement($1)`, [single.id])
+  check('0047 il destinatario contesta', (await db.query(`select status from settlements where id=$1`, [single.id])).rows[0].status === 'contestato')
+  check('0047 il contestato non conta più nei saldi', (await db.query(`select 1 from my_confirmed_settlements() where id=$1`, [single.id])).rows.length === 0)
+  await asUser(B)
+  await throws('0047 un contestato non si ritira', () => db.query(`select cancel_settlement($1)`, [single.id]))
+  // bilancia: compensazioni e pagamento in un gruppo, annullabile da chi l'ha registrato, contestabile da entrambe le persone
+  const g2 = (await dichiara([row(ta, tb, 30, { compensation: true }), row(tb, ta, 30, { compensation: true }), row(tb, ta, 10)])).rows[0].g
+  check('0047 la bilancia registra tutte le righe insieme', (await db.query(`select count(*)::int n from settlements where group_id=$1 and status='confermato'`, [g2])).rows[0].n === 3)
+  await asUser(A)
+  await db.query(`select dispute_settlement(id) from settlements where group_id=$1 and compensation limit 1`, [g2])
+  check('0047 contestare una bilancia le contesta tutte', (await db.query(`select count(*)::int n from settlements where group_id=$1 and status='contestato'`, [g2])).rows[0].n === 3)
+  await asUser(B)
+  const g3 = (await dichiara([row(tb, ta, 5)])).rows[0].g
+  await db.query(`select cancel_settlement(id) from settlements where group_id=$1`, [g3])
+  check('0047 chi lo ha registrato lo ritira', (await db.query(`select status from settlements where group_id=$1`, [g3])).rows[0].status === 'annullato')
+  const g4 = (await dichiara([row(tb, ta, 7)])).rows[0].g
+  await asUser(A)
+  await throws('0047 il destinatario non ritira un pagamento di altri', () => db.query(`select cancel_settlement(id) from settlements where group_id=$1`, [g4]))
+  await asUser(C)
+  await throws('0047 un non membro non registra niente', () => db.query(`select declare_settlements($1, $2::jsonb)`, [tr, JSON.stringify([row(tb, ta, 1)])]))
   await asUser(A)
 }
 

@@ -170,6 +170,9 @@ html{scroll-padding-top:var(--head-h,0px)}
 .fa-banner{display:flex;gap:16px;align-items:center;padding:16px 16px;border-radius:12px;font:400 14px/20px var(--font-sans);min-height:48px}
 .fa-banner svg{width:20px;height:20px;flex:none}
 .fa-banner b{font-weight:600}
+.fa-banner.sotto{flex-wrap:wrap}
+.fa-banner.sotto>.fa-banner-t{flex:1 1 160px!important}
+.fa-banner.sotto>:last-child:not(.fa-banner-t){margin-left:auto}
 .fa-banner.cor{background:var(--corallo-soft);border:2px solid var(--corallo);color:var(--ink)}
 .fa-banner.cor svg{color:var(--corallo-ink)}
 .fa-banner.az{background:var(--azzurro-soft);color:var(--ink)}
@@ -1244,6 +1247,10 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-Ricevuta .pr{display:grid;gap:var(--space-sm);padding-top:var(--space-lg);border-top:2px dashed var(--border-strong)}
 .k-Ricevuta .pr .t{font:500 14px/20px var(--font-sans)}
 .k-Ricevuta .pr .t b{font-weight:700}
+.k-Ricevuta .pr .t:has(.bil){display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;column-gap:var(--space-md)}
+.k-Ricevuta .pr .bil{flex:none;min-height:44px;margin:-12px 0;padding:0 var(--space-sm);background:none;border:0;border-radius:var(--radius-sm);font:600 13px/20px var(--font-sans);color:var(--azzurro-ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.k-Ricevuta .pr .bil:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.fa-sheet .frm .fa-due{display:grid;grid-template-columns:repeat(auto-fit,minmax(136px,1fr));gap:var(--gap-campi)}
 .k-Ricevuta .ft{text-align:center;font:400 12px/16px var(--font-sans);color:var(--ink-muted);letter-spacing:.02em}
 .k-Ricevuta .acts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-sm);margin-top:var(--space-lg)}
 /* ---- RicevutaCasi ---- */

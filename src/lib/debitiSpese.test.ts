@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { debitiPerSpesa, totaliAperti } from './debitiSpese'
+import { debitiPerSpesa, pianoBilancia, totaliAperti } from './debitiSpese'
 import type { Expense, Rimborso } from '../types'
 
 const fx = { base: 'EUR' }
@@ -84,5 +84,47 @@ describe('totali da dare e da ricevere', () => {
   })
   it('senza spese condivise sono tutti e due a zero', () => {
     expect(totaliAperti([])).toEqual({ daDare: 0, daRicevere: 0 })
+  })
+})
+
+describe('«Bilancia tutte le spese»', () => {
+  const a = spesa('a', 60, '01') // Gaia mi deve 30
+  const b = spesa('b', 20, '02') // Gaia mi deve 10
+  const c = (tot: number) => spesa('c', tot, '03', 'gaia') // io devo la metà a Gaia
+  const piano = (spese: Expense[], richieste: Rimborso[] = []) => pianoBilancia(debitiPerSpesa(spese, T, fx, 'lorenzo', [], richieste), 'lorenzo', 'gaia')
+  it('30 + 10 contro 40: tutto compensato, niente da versare', () => {
+    const p = piano([a, b, c(80)])
+    expect(p).toMatchObject({ compensato: 40, daPagare: 0, chiPaga: null, voci: 3 })
+    expect(p?.righe.every((x) => x.compensation)).toBe(true)
+    expect(p?.righe.reduce((n, x) => n + (x.fromId === 'gaia' ? x.amount : -x.amount), 0)).toBe(0)
+  })
+  it('30 + 10 contro 50: compenso 40 e pago 10 sulla spesa che resta', () => {
+    const p = piano([a, b, c(100)])
+    expect(p).toMatchObject({ compensato: 40, daPagare: 10, chiPaga: 'io' })
+    expect(p?.righe).toContainEqual({ fromId: 'lorenzo', toId: 'gaia', amount: 10, expenseId: 'c' })
+    expect(p?.righe).toContainEqual({ fromId: 'lorenzo', toId: 'gaia', amount: 40, expenseId: 'c', compensation: true })
+  })
+  it('senza spese nell\'altro verso è un pagamento solo', () => {
+    const p = piano([a, b])
+    expect(p).toMatchObject({ compensato: 0, daPagare: 40, chiPaga: 'altro', voci: 2 })
+    expect(p?.righe.map((x) => x.compensation)).toEqual([undefined, undefined])
+  })
+  it('lascia fuori quello già dichiarato in attesa e non propone nulla se non c\'è niente', () => {
+    const attesa = { ...richiesta(30, 'in_attesa'), expenseId: 'a' } as Rimborso
+    expect(piano([a, b], [attesa])?.daPagare).toBe(10)
+    expect(piano([a], [{ ...richiesta(30, 'in_attesa'), expenseId: 'a' } as Rimborso])).toBeNull()
+  })
+  it('dopo la bilancia (righe confermate) tutto è pagato e totali a zero', () => {
+    const p = piano([a, b, c(100)]) as NonNullable<ReturnType<typeof piano>>
+    const fatte = p.righe.map((x, i) => ({ id: `x${i}`, fromId: x.fromId, toId: x.toId, amount: x.amount, currency: 'EUR', paidOn: '2026-11-13', status: 'confermato', createdAt: `2026-11-13T10:00:0${i}Z`, ...(x.expenseId ? { expenseId: x.expenseId } : {}) })) as Rimborso[]
+    const dopo = debitiPerSpesa([a, b, c(100)], T, fx, 'lorenzo', [], fatte)
+    expect(totaliAperti(dopo)).toEqual({ daDare: 0, daRicevere: 0 })
+    expect(dopo.every((d) => d.stato === 'pagato')).toBe(true)
+  })
+  it('un pagamento contestato non conta e la card lo dice', () => {
+    const contestato = { ...richiesta(30, 'contestato'), expenseId: 'a' } as Rimborso
+    const righe = debitiPerSpesa([a, b], T, fx, 'lorenzo', [], [contestato])
+    expect(totaliAperti(righe)).toEqual({ daDare: 0, daRicevere: 40 })
+    expect(righe.find((d) => d.expenseId === 'a')).toMatchObject({ stato: 'contestato', contestato: 30 })
   })
 })

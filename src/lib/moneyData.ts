@@ -83,6 +83,9 @@ export interface SettlementRow {
   corrects: string | null
   /** dalla migrazione 0042 */
   expense_id?: string | null
+  /** dalla migrazione 0047 */
+  compensation?: boolean | null
+  group_id?: string | null
 }
 
 export interface ConfirmedSettlementRow {
@@ -110,6 +113,8 @@ export function mapSettlements(rows: SettlementRow[], tripId: string): Rimborso[
       ...(r.decided_at ? { decidedAt: r.decided_at } : {}),
       ...(r.corrects ? { corrects: r.corrects } : {}),
       ...(r.expense_id ? { expenseId: r.expense_id } : {}),
+      ...(r.compensation ? { compensation: true } : {}),
+      ...(r.group_id ? { groupId: r.group_id } : {}),
     }))
 }
 

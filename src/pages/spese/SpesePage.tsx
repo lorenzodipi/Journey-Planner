@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useLocation } from 'wouter'
 import { daysBetween } from '../../lib/dates'
-import { totaliDelViaggio } from '../../lib/debitiSpese'
+import { debitiPerSpesa, pianoBilancia, totaliDelViaggio, type PianoBilancia } from '../../lib/debitiSpese'
 import { formatMoney, round2 } from '../../lib/money'
 import { ricevuta, type RigaCategoria } from '../../lib/ricevuta'
 import { alGiorno, riassunto } from '../../lib/spese'
@@ -17,7 +17,7 @@ import { DareRicevere, DueValori, Riepilogo } from '../../faraway/Home'
 import { Ricevuta } from '../../faraway/Ricevuta'
 import { Affianca, BarraGrande, Colonna, Schermata } from '../../faraway/shell'
 import { SpesaSheet } from './SpesaSheet'
-import { RimborsiCard } from './Rimborsi'
+import { BilanciaSheet, RimborsiCard } from './Rimborsi'
 import { finoAl, inQuanti, intervallo } from './testi'
 
 export function SpesePage() {
@@ -33,6 +33,18 @@ export function SpesePage() {
   const cur = trip.baseCurrency
   const n = trip.travelers.length
   const bilancio = useMemo(() => totaliDelViaggio(trip, r.spese, r.fx, me?.id), [trip, r.spese, r.fx, me?.id])
+  /** «Bilancia tutte le spese»: per ogni persona con cui c'è qualcosa da chiudere, cosa succederebbe (serve la migrazione 0029: senza, niente rimborsi) */
+  const piani = useMemo(() => {
+    const m = new Map<string, PianoBilancia>()
+    if (!me?.id || trip.settlements === undefined) return m
+    const righe = debitiPerSpesa(r.spese, trip.travelers, r.fx, me.id, trip.settled, trip.settlements)
+    for (const id of new Set(righe.map((d) => d.otherId))) {
+      const p = pianoBilancia(righe, me.id, id)
+      if (p) m.set(id, p)
+    }
+    return m
+  }, [trip, r.spese, r.fx, me?.id])
+  const [bilancia, setBilancia] = useState<string | null>(null)
 
   const giorno = alGiorno(r.speso, trip, today)
   const left = daysBetween(today < trip.startDate ? trip.startDate : today, trip.endDate) + 1
@@ -110,6 +122,7 @@ export function SpesePage() {
       overlay={
         <>
           {nuova ? <SpesaSheet trip={trip} open onClose={() => setNuova(false)} /> : null}
+          {bilancia && piani.get(bilancia) ? <BilanciaSheet trip={trip} piano={piani.get(bilancia) as PianoBilancia} onClose={() => setBilancia(null)} /> : null}
           {confirmNode}
         </>
       }
@@ -128,6 +141,7 @@ export function SpesePage() {
             onPlanned={onPlanned}
             onRename={onRename}
             onDelete={onDelete}
+            bilancia={me?.id ? { me: me.id, con: new Set(piani.keys()), onPress: setBilancia } : undefined}
           />
         </Colonna>
         <Colonna lato="sinistra">

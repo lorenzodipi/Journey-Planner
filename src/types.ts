@@ -334,7 +334,7 @@ export interface Expense {
 }
 
 /** Stato di un rimborso (#51). */
-export type StatoRimborso = 'in_attesa' | 'confermato' | 'rifiutato' | 'annullato'
+export type StatoRimborso = 'in_attesa' | 'confermato' | 'rifiutato' | 'annullato' | 'contestato'
 
 /** Rimborso tra due persone: lo vedono solo le due controparti. Importi nella valuta base del viaggio. */
 export interface Rimborso {
@@ -353,6 +353,10 @@ export interface Rimborso {
   corrects?: string
   /** Spesa per cui è stato dichiarato (0042): copre quella prima delle altre. */
   expenseId?: string
+  /** Compensazione (0047): un debito che si annulla con un credito, senza soldi che passano di mano. */
+  compensation?: boolean
+  /** Le righe registrate insieme da «Bilancia» hanno lo stesso gruppo (0047). */
+  groupId?: string
 }
 
 /** Rimborso confermato, visibile a tutti i partecipanti solo come importo (serve a calcolare i saldi). */
