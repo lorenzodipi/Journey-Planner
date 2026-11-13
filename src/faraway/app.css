@@ -558,8 +558,6 @@ sup{margin-left:0}
 [data-theme="dark"] :is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tv .pl3b.td,[data-theme="dark"] .fa-stay .ok.td,[data-theme="dark"] .k-TicketOrizzontale .tv .ti .pl3b.td{background:rgba(0,0,0,.3);color:#FF6B6B;border-color:rgba(250,82,82,.7)}
 [data-theme="dark"] :is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tv{--btnbg:rgba(255,255,255,.1)}
 /* Il tuo saldo (Spese): la pillola si fonde con la tinta della card, rossa solo quando c'è da pagare */
-[data-theme="dark"] .k-Riepilogo .badge{background:rgba(255,255,255,.12);color:var(--on-tinta)}
-[data-theme="dark"] .k-Riepilogo .badge.pay{background:rgba(0,0,0,.3);color:#FF6B6B}
 /* Foglio di conferma: «Elimina» e «Tieni» hanno la stessa costruzione (fondo scuro al 30%, bordo 1,5px), cambia solo il colore */
 [data-theme="dark"] .fa-sheet .msg+.bt .fa-btn.soft{background:rgba(0,0,0,.3);border:1.5px solid var(--border-strong);color:var(--ink);box-shadow:none}
 /* Meno colori nei moduli: chip non scelte un gradino sopra la superficie (anche dentro i fogli), conferme senza tinta */

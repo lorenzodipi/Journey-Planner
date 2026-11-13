@@ -1314,21 +1314,12 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-Riepilogo .a{background:var(--tinta-rosa)}
 .k-Riepilogo .b{background:var(--tinta-acqua)}
 .k-Riepilogo .v{font:500 28px/34px var(--font-display);letter-spacing:-0.01em;font-variant-numeric:tabular-nums}
-.k-Riepilogo .badge{justify-self:start;padding:2.0px 16px;border-radius:var(--radius-full);background:var(--azzurro-solid);color:var(--on-azzurro-solid);font:600 13px/18px var(--font-sans)}
-.k-Riepilogo .av{display:flex;margin-top:var(--space-xs)}
-.k-Riepilogo .av span{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font:600 11px/1 var(--font-sans);color:var(--on-bright);border:2px solid var(--tinta-acqua);margin-left:-8px;box-sizing:border-box}
-.k-Riepilogo .av span:first-child{margin-left:0}
 .k-Riepilogo h3{margin:var(--space-xl) var(--space-lg) 0;font:600 14px/20px var(--font-sans);color:var(--ink)}
 .k-Riepilogo h3+small,.k-Riepilogo .sub{display:block;margin:2.0px var(--space-lg) 0;font:400 13px/18px var(--font-sans);color:var(--ink-muted)}
 .k-Riepilogo .vr{display:grid;gap:var(--space-lg)}
-.k-Riepilogo .c2{font:400 13px/18px var(--font-sans);color:var(--on-tinta-muted)}
-.k-Riepilogo .badge.pay{background:var(--corallo-solid);color:var(--on-corallo-solid)}
-.k-Riepilogo .av span.more{font-size:11px;background:var(--on-tinta);color:var(--tinta-acqua)}
-.k-Riepilogo .card.wide{display:flex;align-items:center;gap:var(--space-md);padding:var(--space-lg) var(--space-xl)}
-.k-Riepilogo .card.wide .tx{flex:1;display:grid;min-width:0}
-.k-Riepilogo .v2{font:500 20px/26px var(--font-display)}
-.k-Riepilogo .ok{width:36px;height:36px;border-radius:50%;background:var(--acqua);color:var(--on-corallo);display:grid;place-items:center;flex:none}
-.k-Riepilogo .card.wide .av{margin:0}
+.k-Riepilogo .c2{font:400 13px/18px var(--font-sans);color:var(--on-tinta-muted);overflow-wrap:anywhere}
+.k-Riepilogo .two .card{container-type:inline-size}
+.k-Riepilogo .v.lungo{font-size:min(28px,18.5cqw);line-height:1.25;white-space:nowrap}
 .k-Riepilogo .lk{position:relative;justify-self:start;margin-top:var(--space-sm);font:600 14px/20px var(--font-sans);color:var(--on-tinta-accent);text-decoration:underline;text-underline-offset:3px;min-height:44px;display:inline-flex;align-items:center}
 /* ---- SelettoreGiorni ---- */
 .k-SelettoreGiorni h3{margin:var(--space-xl) 0 0;font:600 14px/20px var(--font-sans)}

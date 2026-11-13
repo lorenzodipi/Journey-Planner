@@ -4,6 +4,7 @@ import { gradi } from '../lib/formati'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { Link } from 'wouter'
+import type { BilancioPersone } from '../lib/debitiSpese'
 import { formatMoney } from '../lib/money'
 import { decimalsOf } from '../lib/fx'
 import { initials } from '../state/me'
@@ -572,58 +573,24 @@ export function Riepilogo({ dove, speso, currency, limit, onSetBudget, onOpenBud
   )
 }
 
-function AvatarStack({ people, tint = 'var(--tinta-acqua)', max = 4 }: { people: { name: string; n: number }[]; tint?: string; max?: number }) {
-  const shown = people.length > max ? people.slice(0, max - 1) : people
-  const more = people.length - shown.length
-  const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']
-  return (
-    <div aria-hidden="true" className="av">
-      {shown.map((p, i) => (
-        <span key={i} style={{ background: `var(--disco-${COL[(p.n - 1) % 5]})`, borderColor: tint }}>
-          {initials(p.name)}
-        </span>
-      ))}
-      {more > 0 ? (
-        <span className="more" style={{ borderColor: tint }}>
-          +{more}
-        </span>
-      ) : null}
-    </div>
-  )
-}
-
-/** Seconda riga del Riepilogo in gruppo: saldo + persone, oppure «Siete in pari». */
-export function SaldoPersone({ saldo, currency, people, inPari }: { saldo: number | null; currency: string; people: { name: string; n: number }[]; inPari?: boolean }) {
-  if (inPari ?? (saldo === null || Math.abs(saldo) < 0.005))
-    return (
-      <div className="card b wide">
-        <span className="ok">
-          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 12.5l4.5 4.5L19 7.5" />
-          </svg>
-        </span>
-        <div className="tx">
-          <span className="v2">{saldo === null ? 'Saldo non disponibile' : 'Siete in pari'}</span>
-          <span className="c2">{saldo === null ? 'Collega il tuo account a un viaggiatore' : 'Nessuno deve niente a nessuno'}</span>
-        </div>
-        <AvatarStack people={people} />
-      </div>
-    )
-  const s = saldo ?? 0
-  const pay = s < -0.004
+/** Seconda riga del Riepilogo in gruppo: quanto devo dare e quanto devo ricevere, sempre tutti e due (anche a zero). */
+export function DareRicevere({ bilancio, currency }: { bilancio: BilancioPersone | null; currency: string }) {
+  const sconosciuto = bilancio === null
+  const dare = sconosciuto ? '—' : formatMoney(bilancio.daDare, currency)
+  const ricevere = sconosciuto ? '—' : formatMoney(bilancio.daRicevere, currency)
+  // un importo lungo (da 9 caratteri) si restringe alla larghezza della card, non della finestra
+  const lungo = (t: string) => cx('v', t.length > 8 && 'lungo')
   return (
     <div className="two">
       <div className="card a">
-        <span className={cx('badge', pay && 'pay')}>{pay ? 'Da pagare' : Math.abs(s) < 0.005 ? 'In pari' : 'Da incassare'}</span>
-        <span className="l" style={{ marginTop: 'var(--space-sm)' }}>
-          Il tuo saldo
-        </span>
-        <span className="v">{`${pay ? '−' : Math.abs(s) < 0.005 ? '' : '+'}${formatMoney(Math.abs(s), currency)}`}</span>
+        <span className="l">Da dare</span>
+        <span className={lungo(dare)}>{dare}</span>
+        {sconosciuto ? <span className="c2">Account non collegato</span> : null}
       </div>
       <div className="card b">
-        <span className="l">Persone</span>
-        <span className="v">{people.length}</span>
-        <AvatarStack people={people} />
+        <span className="l">Da ricevere</span>
+        <span className={lungo(ricevere)}>{ricevere}</span>
+        {sconosciuto ? <span className="c2">Account non collegato</span> : null}
       </div>
     </div>
   )

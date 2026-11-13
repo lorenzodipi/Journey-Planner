@@ -10,7 +10,7 @@ import { useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { Rimborso } from '../../types'
-import { debitiPerSpesa, type DebitoSpesa } from '../../lib/debitiSpese'
+import { bilancioPersone, carteCompensate, debitiPerSpesa, type DebitoSpesa } from '../../lib/debitiSpese'
 import { formatMoney, round2 } from '../../lib/money'
 import { iconaSpesa } from '../../lib/ricevuta'
 import { dataNumerica } from '../../lib/rimborsi'
@@ -24,7 +24,8 @@ import { sorgente, testoVerso } from './testi'
 import { Affianca } from '../../faraway/shell'
 
 
-function Stato({ d }: { d: DebitoSpesa }) {
+function Stato({ d, compensata }: { d: DebitoSpesa; compensata: boolean }) {
+  if (compensata) return <Pillola tone="soft" icon="check">Compensata</Pillola>
   if (d.stato === 'pagato') return <Pillola tone="acq" icon="check">Pagato</Pillola>
   if (d.stato === 'in_attesa') return <Pillola tone="soft" icon="clock">{d.verso === 'devo' ? 'In attesa' : 'Da confermare'}</Pillola>
   return <Pillola tone={d.verso === 'devo' ? 'cor' : 'mut'}>{d.verso === 'devo' ? 'Da pagare' : 'Da ricevere'}</Pillola>
@@ -50,7 +51,10 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
     const piu = (n: number, base: string, amount: number) => (n > 1 ? `${base} di ${formatMoney(amount, cur)}` : base)
     const daDichiarare = round2(d.residuo - d.inAttesa)
     if (d.verso === 'devo') {
-      if (abilitaPagamento && daDichiarare > 0.004) out.push({ id: 'paga', label: 'Ho pagato', onPress: () => setPaga({ ...d, residuo: daDichiarare }) })
+      // con una persona a cui ho anche dei crediti si paga il netto, non la card intera; una card compensata non si paga
+      const netto = round2(-(bilancio.persone.find((p) => p.otherId === d.otherId)?.netto ?? -daDichiarare))
+      const dovuto = round2(Math.min(daDichiarare, netto))
+      if (abilitaPagamento && dovuto > 0.004 && !eCompensata(d)) out.push({ id: 'paga', label: 'Ho pagato', onPress: () => setPaga({ ...d, residuo: dovuto }) })
       for (const c of d.richieste) out.push({ id: `annulla:${c.id}`, label: piu(d.richieste.length, 'Annulla la richiesta', c.amount), onPress: () => void annulla(c.id) })
     } else {
       for (const c of d.richieste) {
@@ -69,7 +73,15 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
     else if (!vista?.derived && puoModificareSpesa(d.expense, io?.userId, io?.id)) out.push({ id: 'modifica', label: 'Modifica', onPress: () => setModifica(d.expense) })
     return out
   }
-  const righe = useMemo(() => debitiPerSpesa(spese, trip.travelers, fx, me, trip.settled, trip.settlements), [spese, trip.travelers, fx, me, trip.settled, trip.settlements])
+  const tutte = useMemo(() => debitiPerSpesa(spese, trip.travelers, fx, me, trip.settled, trip.settlements), [spese, trip.travelers, fx, me, trip.settled, trip.settlements])
+  const bilancio = useMemo(() => bilancioPersone(tutte), [tutte])
+  /** Le card che si annullano con quelle nell'altro verso con la stessa persona: sotto quelle da pagare davvero. */
+  const compensate = useMemo(() => carteCompensate(tutte), [tutte])
+  const eCompensata = (d: DebitoSpesa) => compensate.has(`${d.expenseId}:${d.otherId}`)
+  const righe = useMemo(() => {
+    const peso = (d: DebitoSpesa) => (d.stato === 'pagato' ? 3 : compensate.has(`${d.expenseId}:${d.otherId}`) ? 2 : d.stato === 'in_attesa' ? 1 : 0)
+    return [...tutte].sort((a, b) => peso(a) - peso(b))
+  }, [tutte, compensate])
   const nome = (id: string) => trip.travelers.find((t) => t.id === id)?.name.split(/\s+/)[0] ?? '—'
   const sezioni: { verso: DebitoSpesa['verso']; titolo: string }[] = [
     { verso: 'devo', titolo: 'Da dare' },
@@ -81,13 +93,21 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
       {sezioni.map(({ verso, titolo }) => {
         const list = righe.filter((d) => d.verso === verso)
         if (list.length === 0) return null
-        const totale = round2(list.reduce((n, d) => n + d.residuo, 0))
+        // il totale è il netto con ogni persona, lo stesso del riquadro in alto
+        const totale = verso === 'devo' ? bilancio.daDare : bilancio.daRicevere
+        const lordo = round2(list.reduce((n, d) => n + d.residuo, 0))
+        const compensato = round2(Math.max(0, lordo - totale))
         return (
           <section key={verso} aria-label={titolo} style={{ display: 'grid', gap: 8 }}>
             <div className="fa-sech">
               <h2 className="fa-h3">{titolo}</h2>
               {totale > 0 ? <span className="fa-c">{formatMoney(totale, cur)}</span> : null}
             </div>
+            {totale > 0.004 && compensato > 0.004 ? (
+              <p className="fa-m" style={{ margin: 0 }}>
+                {`Al netto di ${formatMoney(compensato, cur)} compensati con ${verso === 'devo' ? 'quello che ti devono' : 'quello che devi'}.`}
+              </p>
+            ) : null}
             <div className="fa-list">
               {list.map((d) => (
                 <div key={`${d.expenseId}:${d.otherId}`} className="fa-dbt">
@@ -107,7 +127,7 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
                           return a.length > 0 ? <MenuAzioni label={`Azioni su ${d.expense.label}`} azioni={a} /> : <span className="fa-dots-vuoto" aria-hidden="true" />
                         })()}
                       </span>
-                      <Stato d={d} />
+                      <Stato d={d} compensata={eCompensata(d)} />
                     </span>
                   </div>
                   {d.eccedenza > 0 ? (

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { debitiPerSpesa } from './debitiSpese'
+import { summarizeExpenses } from './budget'
+import { bilancioPersone, carteCompensate, debitiPerSpesa } from './debitiSpese'
 import type { Expense, Rimborso } from '../types'
 
 const fx = { base: 'EUR' }
@@ -69,5 +70,37 @@ describe('debiti per spesa', () => {
     const solo = { ...spesa('mia', 30, '03'), shares: [{ travelerId: 'lorenzo', weight: 1 }] }
     expect(debitiPerSpesa([solo], T, fx, 'gaia', [], [])).toEqual([])
     expect(debitiPerSpesa([solo], T, fx, 'lorenzo', [], [])).toEqual([])
+  })
+})
+
+describe('bilancio per persona e «Compensata»', () => {
+  const a = spesa('a', 60, '01') // Gaia mi deve 30
+  const b = spesa('b', 20, '02') // Gaia mi deve 10
+  const c = (tot: number) => spesa('c', tot, '03', 'gaia') // io devo la metà a Gaia
+  it('30 + 10 contro 40: in pari, e le tre card sono compensate', () => {
+    const righe = debitiPerSpesa([a, b, c(80)], T, fx, 'lorenzo', [], [])
+    const bil = bilancioPersone(righe)
+    expect(bil).toMatchObject({ daDare: 0, daRicevere: 0 })
+    expect([...carteCompensate(righe)].sort()).toEqual(['a:gaia', 'b:gaia', 'c:gaia'])
+  })
+  it('se devo 50: dò 10 netti, le card che mi spettano sono compensate, quella che devo no', () => {
+    const righe = debitiPerSpesa([a, b, c(100)], T, fx, 'lorenzo', [], [])
+    expect(bilancioPersone(righe)).toMatchObject({ daDare: 10, daRicevere: 0 })
+    expect([...carteCompensate(righe)].sort()).toEqual(['a:gaia', 'b:gaia'])
+  })
+  it('senza spese nel verso opposto non compensa niente', () => {
+    const righe = debitiPerSpesa([a, b], T, fx, 'lorenzo', [], [])
+    expect(bilancioPersone(righe)).toMatchObject({ daDare: 0, daRicevere: 40 })
+    expect(carteCompensate(righe).size).toBe(0)
+  })
+  it('il netto per persona torna con il saldo complessivo, anche con rimborsi e tre persone', () => {
+    const T3 = [{ id: 'lorenzo' }, { id: 'gaia' }, { id: 'marco' }]
+    const tre = (id: string, amount: number, day: string, paidBy: string): Expense => ({ ...spesa(id, amount, day, paidBy), shares: T3.map((t) => ({ travelerId: t.id, weight: 1 })) })
+    const spese = [tre('x', 90, '01', 'lorenzo'), tre('y', 60, '02', 'gaia'), spesa('z', 50, '03', 'marco')]
+    const settled = [{ id: 's', fromId: 'gaia', toId: 'lorenzo', amount: 10 }]
+    const righe = debitiPerSpesa(spese, T3, fx, 'lorenzo', settled, [])
+    const bil = bilancioPersone(righe)
+    const mio = summarizeExpenses(spese, T3, fx, settled).balances.find((x) => x.travelerId === 'lorenzo')?.net as number
+    expect(Math.round((bil.daRicevere - bil.daDare) * 100) / 100).toBe(Math.round(mio * 100) / 100)
   })
 })

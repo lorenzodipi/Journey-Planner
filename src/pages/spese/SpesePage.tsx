@@ -3,16 +3,17 @@
 import { useMemo, useState } from 'react'
 import { useLocation } from 'wouter'
 import { daysBetween } from '../../lib/dates'
+import { bilancioDelViaggio } from '../../lib/debitiSpese'
 import { formatMoney, round2 } from '../../lib/money'
 import { ricevuta, type RigaCategoria } from '../../lib/ricevuta'
 import { alGiorno, riassunto } from '../../lib/spese'
 import { tripToday } from '../../lib/today'
-import { discOf, useMe } from '../../state/me'
+import { useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrip, useTrips } from '../../state/trip'
 import { Pulsante } from '../../faraway/base'
 import { useConferma } from '../../faraway/Foglio'
-import { DueValori, Riepilogo, SaldoPersone } from '../../faraway/Home'
+import { DareRicevere, DueValori, Riepilogo } from '../../faraway/Home'
 import { Ricevuta } from '../../faraway/Ricevuta'
 import { Affianca, BarraGrande, Colonna, Schermata } from '../../faraway/shell'
 import { SpesaSheet } from './SpesaSheet'
@@ -31,7 +32,7 @@ export function SpesePage() {
   const dati = useMemo(() => ricevuta(trip, r.spese, r.fx), [trip, r.spese, r.fx])
   const cur = trip.baseCurrency
   const n = trip.travelers.length
-  const people = trip.travelers.map((p) => ({ name: p.name, n: discOf(trip, p.id) }))
+  const bilancio = useMemo(() => bilancioDelViaggio(trip, r.spese, r.fx, me?.id), [trip, r.spese, r.fx, me?.id])
 
   const giorno = alGiorno(r.speso, trip, today)
   const left = daysBetween(today < trip.startDate ? trip.startDate : today, trip.endDate) + 1
@@ -45,7 +46,7 @@ export function SpesePage() {
       }
     />
   ) : (
-    <SaldoPersone saldo={r.mioSaldo} currency={cur} people={people} inPari={dati.transfers.length === 0} />
+    <DareRicevere bilancio={bilancio} currency={cur} />
   )
 
   async function onPlanned(c: RigaCategoria, planned: number | null) {
