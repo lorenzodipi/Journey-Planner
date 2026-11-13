@@ -209,6 +209,12 @@ html{scroll-padding-top:var(--head-h,0px)}
 .fa-seg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);background:var(--surface-high);border-radius:9999px;padding:8px;height:48px;gap:8px}
 .fa-seg span{display:flex;align-items:center;justify-content:center;border-radius:9999px;font:600 14px/20px var(--font-sans);color:var(--ink-muted)}
 .fa-seg span.on{background:var(--azzurro-solid);color:var(--on-azzurro-solid)}
+/* scelta dell'icona dell'app (Impostazioni, solo app nativa): tre riquadri con l'anteprima */
+.fa-iconeapp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.fa-iconaapp{display:grid;justify-items:center;align-content:center;gap:8px;min-height:44px;padding:16px 8px;border:2px solid var(--hairline);border-radius:16px;background:var(--surface-card);font:600 14px/20px var(--font-sans);color:var(--ink);cursor:pointer;outline:none}
+.fa-iconaapp img{display:block;width:56px;height:56px;border-radius:13px}
+.fa-iconaapp.on{border-color:var(--azzurro-solid);background:var(--azzurro-soft)}
+.fa-iconaapp[data-focus-visible]{outline:3px solid var(--focus);outline-offset:2px}
 .fa-maptop{padding:0 16px 16px;display:grid;gap:8px;flex:none}
 .fa-map{position:relative;flex:1;min-height:520px;overflow:hidden;border-top:1px solid var(--hairline)}
 .fa-mapctl{position:absolute;right:16px;top:16px;z-index:4;display:grid;gap:8px}

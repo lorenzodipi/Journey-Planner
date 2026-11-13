@@ -12,6 +12,7 @@ import { attivaNotifica, statoPermesso } from '../../lib/notificheDevice'
 import { useConferma } from '../../faraway/Foglio'
 import { showToast } from '../../state/toast'
 import { SezioniDati } from './DatiTelefono'
+import { SezioneIconaApp, useIconaApp } from './IconaApp'
 import { useLocation } from 'wouter'
 
 const TEMI: { value: ThemePref; label: string }[] = [
@@ -34,6 +35,7 @@ export function ImpostazioniPage() {
   const build = typeof __BUILD_TIME__ === 'string' ? __BUILD_TIME__ : ''
   const lingua = LINGUE[0]
   const [, navigate] = useLocation()
+  const icona = useIconaApp()
   const [ask, confirmNode] = useConferma()
 
   async function cambia(tipo: (typeof NOTIFICHE_TESTI)[number]['tipo'], on: boolean) {
@@ -50,7 +52,7 @@ export function ImpostazioniPage() {
 
   return (
     <Schermata bar={<BarraIndietro title="Impostazioni" back="/altro" />} overlay={confirmNode}>
-      <Affianca pesi={[14, 12, 6, 14]}>
+      <Affianca pesi={[14, 12, icona.disponibile ? 14 : 6, 14]}>
         <>
       <h2 className="fa-h3" style={{ margin: 0 }}>Aspetto</h2>
       <Segmenti label="Aspetto dell'app" value={tema} options={TEMI} onChange={setTema} />
@@ -81,6 +83,8 @@ export function ImpostazioniPage() {
       <p className="fa-m" style={{ margin: 0 }}>Gli avvisi restano su questo telefono: non servono server né email.</p>
         </>
         <>
+      {icona.disponibile ? <SezioneIconaApp corrente={icona.corrente} scegli={(id) => void icona.scegli(id)} /> : null}
+
       <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Lingua</h2>
       <div className="fa-list">
         <Riga icon={<Sv name="globe" size={22} />} title={lingua.nome} sub={LINGUE.length > 1 ? 'Cambia lingua' : 'Altre lingue arriveranno'} chevron={LINGUE.length > 1} />

@@ -19,6 +19,7 @@ let package = Package(
         .package(name: "CapacitorKeyboard", path: "../../../node_modules/@capacitor/keyboard"),
         .package(name: "CapacitorLocalNotifications", path: "../../../node_modules/@capacitor/local-notifications"),
         .package(name: "CapacitorShare", path: "../../../node_modules/@capacitor/share"),
+        .package(name: "CapawesomeCapacitorAppIcon", path: "../../../node_modules/@capawesome/capacitor-app-icon"),
         .package(name: "ErkamyamanCapacitorFoldable", path: "../../../node_modules/@erkamyaman/capacitor-foldable")
     ],
     targets: [
@@ -34,6 +35,7 @@ let package = Package(
                 .product(name: "CapacitorKeyboard", package: "CapacitorKeyboard"),
                 .product(name: "CapacitorLocalNotifications", package: "CapacitorLocalNotifications"),
                 .product(name: "CapacitorShare", package: "CapacitorShare"),
+                .product(name: "CapawesomeCapacitorAppIcon", package: "CapawesomeCapacitorAppIcon"),
                 .product(name: "ErkamyamanCapacitorFoldable", package: "ErkamyamanCapacitorFoldable")
             ]
         )
