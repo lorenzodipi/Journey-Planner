@@ -29,8 +29,8 @@ def svg(theme, shape='rounded', scale=1.0, title=True):
 for th in ['light','dark','blu']:
     open(R+f'src/assets/art/faraway-app-icon-anello-mongolfiera-{th}.svg','w').write(svg(th))
 open(R+'public/favicon.svg','w').write(svg('light'))
+# AppIcon NON ha la variante scura: «Chiara» deve restare chiara anche con l'iPhone in tema scuro (per la scura c'è «Scura»)
 jobs=[('ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png','light','square',1,1024),
-      ('ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-dark.png','dark','square',1,1024),
       ('public/icon-512.png','light','rounded',1,512),('public/icon-192.png','light','rounded',1,192),('public/favicon-64.png','light','rounded',1,64),
       ('public/apple-touch-icon.png','light','square',1,180),('public/icon-512-maskable.png','light','square',0.72,512)]
 for d,n in [('mdpi',48),('hdpi',72),('xhdpi',96),('xxhdpi',144),('xxxhdpi',192)]:
