@@ -42,7 +42,7 @@ Rumore noto del confronto: i pin della mappa nella pagina di un giorno e una rig
 - Riusa i componenti di `src/faraway/` e `react-aria-components` prima di scrivere elementi nuovi. `src/ui/` contiene solo i pezzi del primo disegno ancora da portare (ripristino da file, importa KMZ, trova posizioni, collega account, mappa del giorno, icone dei mezzi, avvisi): non va usata per cose nuove. Il codice che l'app non raggiunge più si toglie, insieme ai suoi test e al CSS che usava solo lui. Una scelta da un elenco è un `<select>` vero (`Select`, `CampoPaese`), non un testo con suggerimenti.
 - Chiaro e scuro sempre; nel tema scuro cambia solo la palette. Spaziature a multipli di 8 px. WCAG 2.2 AA: aree di tocco da 44 px, etichette uniche (un foglio e il suo campo non hanno lo stesso nome), `aria-label` sui pulsanti con sola icona.
 - **Ogni campo ha un segnaposto**, generico: mai nomi di posti, città o persone vere («es. Nome del posto», non «es. Fushimi Inari»). `segnaposto()` in `src/faraway/base.tsx` fa da riserva.
-- «Indietro» sale alla pagina madre (`src/lib/indietro.ts`). Le pagine aperte da due schede tornano a quella di partenza (`DA_PIU_SCHEDE`, oggi Budget).
+- «Indietro» sale alla pagina madre (`src/lib/indietro.ts`). Tornando indietro la pagina madre ritrova la posizione di scorrimento (`src/lib/posizioni.ts`); una pagina aperta da una voce riparte dall'alto. Le pagine aperte da due schede tornano a quella di partenza (`DA_PIU_SCHEDE`, oggi Budget).
 
 ## Supabase
 - Migrazioni in `supabase/migrations/NNNN_nome.sql`, additive e rilanciabili. Si salvano su Git e le esegue Claude su Supabase; se mancano i permessi, si chiede a Lorenzo. L'app deve funzionare anche prima della migrazione.

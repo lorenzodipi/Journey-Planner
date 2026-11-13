@@ -3,6 +3,7 @@ import { Redirect, Route, Router, Switch, useLocation } from 'wouter'
 import type { ReactNode } from 'react'
 import { navigate as hashNavigate, useHashLocation } from 'wouter/use-hash-location'
 import { navigateClean } from './lib/indietro'
+import { alCambioDiPagina, seguiPosizioni } from './lib/posizioni'
 import { SCEGLI_DOPO_ACCESSO, useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
 import { AlloggiPage } from './pages/alloggi/AlloggiPage'
@@ -41,7 +42,7 @@ const useHashLoc = (options?: Parameters<typeof useHashLocation>[0]): [string, t
 useHashLoc.hrefs = (href: string) => `#${href}`
 
 
-/** Ogni cambio di pagina riparte dall'alto (altrimenti resta la posizione della pagina precedente). */
+/** Pagina nuova: riparte dall'alto. «Indietro»: la pagina madre ritrova la posizione di scorrimento che aveva (`lib/posizioni.ts`). */
 function ScrollToTop() {
   const [location] = useLocation()
   useEffect(() => {
@@ -50,10 +51,9 @@ function ScrollToTop() {
     } catch {
       // ignorato
     }
+    return seguiPosizioni()
   }, [])
-  useLayoutEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-  }, [location])
+  useLayoutEffect(() => alCambioDiPagina(), [location])
   return null
 }
 

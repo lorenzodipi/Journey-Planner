@@ -3,6 +3,7 @@
 // Per non riempire la cronologia, ogni cambio di pagina ricorda da dove si è arrivati (history.state.from):
 // se si arriva proprio dalla madre si torna indietro nella cronologia, altrimenti la si sostituisce.
 import { navigate as hashNavigate } from 'wouter/use-hash-location'
+import { segnaRitorno } from './posizioni'
 
 /** Percorso attuale senza query («/giorni/d1»). */
 export const percorsoAttuale = () => '/' + location.hash.replace(/^#?\/?/, '').split('?')[0]
@@ -42,6 +43,7 @@ export function tornaSu(madre: string): void {
   // la madre scritta nella pagina è quella di sempre; se si è arrivati da un'altra scheda valida, si torna lì
   const dove = genitore(percorsoAttuale(), da) ?? madre
   const meta = DA_PIU_SCHEDE[percorsoAttuale()] ? dove : madre
+  segnaRitorno() // la pagina madre ritrova la posizione di scorrimento che aveva
   if (da === meta) history.back()
   else navigateClean(meta, { replace: true })
 }
