@@ -4,7 +4,7 @@ import { gradi } from '../lib/formati'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { Link } from 'wouter'
-import type { BilancioPersone } from '../lib/debitiSpese'
+import type { TotaliAperti } from '../lib/debitiSpese'
 import { formatMoney } from '../lib/money'
 import { decimalsOf } from '../lib/fx'
 import { initials } from '../state/me'
@@ -574,7 +574,7 @@ export function Riepilogo({ dove, speso, currency, limit, onSetBudget, onOpenBud
 }
 
 /** Seconda riga del Riepilogo in gruppo: quanto devo dare e quanto devo ricevere, sempre tutti e due (anche a zero). */
-export function DareRicevere({ bilancio, currency }: { bilancio: BilancioPersone | null; currency: string }) {
+export function DareRicevere({ bilancio, currency }: { bilancio: TotaliAperti | null; currency: string }) {
   const sconosciuto = bilancio === null
   const dare = sconosciuto ? '—' : formatMoney(bilancio.daDare, currency)
   const ricevere = sconosciuto ? '—' : formatMoney(bilancio.daRicevere, currency)

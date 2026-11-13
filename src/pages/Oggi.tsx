@@ -13,7 +13,7 @@ import { countryByCode } from '../lib/countries'
 import { currencyName } from '../lib/money'
 import { dateAddDays, daysBetween, parseYmd } from '../lib/dates'
 import { groupDays, rangeText, type DayGroup } from '../lib/dayGroups'
-import { bilancioDelViaggio } from '../lib/debitiSpese'
+import { totaliDelViaggio } from '../lib/debitiSpese'
 import { riassunto } from '../lib/spese'
 import { StepperViaggio, type TappaViaggio } from '../faraway/StepperViaggio'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
@@ -416,7 +416,7 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
   const secondaRiga = r.solo ? (
     <DueValori a={stats[0]} b={stats[1]} />
   ) : me ? (
-    <DareRicevere bilancio={bilancioDelViaggio(trip, r.spese, r.fx, me.id)} currency={trip.baseCurrency} />
+    <DareRicevere bilancio={totaliDelViaggio(trip, r.spese, r.fx, me.id)} currency={trip.baseCurrency} />
   ) : (
     <DueValori a={stats[0]} b={{ l: 'Persone', v: String(people.length), c: people.map((p) => firstName(p.name)).join(', ') }} />
   )

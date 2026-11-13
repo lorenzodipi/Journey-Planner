@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useLocation } from 'wouter'
 import { daysBetween } from '../../lib/dates'
-import { bilancioDelViaggio } from '../../lib/debitiSpese'
+import { totaliDelViaggio } from '../../lib/debitiSpese'
 import { formatMoney, round2 } from '../../lib/money'
 import { ricevuta, type RigaCategoria } from '../../lib/ricevuta'
 import { alGiorno, riassunto } from '../../lib/spese'
@@ -32,7 +32,7 @@ export function SpesePage() {
   const dati = useMemo(() => ricevuta(trip, r.spese, r.fx), [trip, r.spese, r.fx])
   const cur = trip.baseCurrency
   const n = trip.travelers.length
-  const bilancio = useMemo(() => bilancioDelViaggio(trip, r.spese, r.fx, me?.id), [trip, r.spese, r.fx, me?.id])
+  const bilancio = useMemo(() => totaliDelViaggio(trip, r.spese, r.fx, me?.id), [trip, r.spese, r.fx, me?.id])
 
   const giorno = alGiorno(r.speso, trip, today)
   const left = daysBetween(today < trip.startDate ? trip.startDate : today, trip.endDate) + 1

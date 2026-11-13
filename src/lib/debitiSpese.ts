@@ -146,76 +146,25 @@ export function debitiPerSpesa(
   return out.sort((a, b) => rank(a.stato) - rank(b.stato) || b.expense.spentAt.localeCompare(a.expense.spentAt))
 }
 
-/** Il netto con un'altra persona: quello che le devo e quello che mi deve, su tutte le spese ancora aperte. */
-export interface SaldoPersona {
-  otherId: string
-  /** quanto devo dare a questa persona, in tutto */
-  devo: number
-  /** quanto mi deve questa persona, in tutto */
-  devono: number
-  /** devono − devo: > 0 mi deve lei, < 0 le devo io */
-  netto: number
-}
-
-export interface BilancioPersone {
-  persone: SaldoPersona[]
-  /** somma di quello che devo alle persone con cui sono in debito (dopo il netto) */
+/** Quanto devo dare e quanto devo ricevere in tutto, sommando le card ancora aperte: senza compensare niente. */
+export interface TotaliAperti {
   daDare: number
-  /** somma di quello che mi devono le persone con cui sono in credito (dopo il netto) */
   daRicevere: number
 }
 
-/**
- * Il bilancio con ogni persona, compensando le spese in un verso con quelle nell'altro: se Gaia mi deve 30 + 10 e io devo
- * 40 a lei, siamo in pari. Conta quello che è ancora aperto (anche se dichiarato e in attesa) più quanto è stato dato in
- * più del dovuto; i rimborsi confermati sono già tolti.
- */
-export function bilancioPersone(righe: readonly DebitoSpesa[]): BilancioPersone {
-  const per = new Map<string, SaldoPersona>()
-  for (const d of righe) {
-    const p = per.get(d.otherId) ?? { otherId: d.otherId, devo: 0, devono: 0, netto: 0 }
-    if (d.verso === 'devo') {
-      p.devo += d.residuo
-      p.devono += d.eccedenza
-    } else {
-      p.devono += d.residuo
-      p.devo += d.eccedenza
-    }
-    per.set(d.otherId, p)
-  }
-  const persone = [...per.values()].map((p) => ({ ...p, devo: round2(p.devo), devono: round2(p.devono), netto: round2(p.devono - p.devo) }))
-  const dare = persone.filter((p) => p.netto < -MIN).sort((a, b) => a.netto - b.netto)
-  const ricevere = persone.filter((p) => p.netto > MIN).sort((a, b) => b.netto - a.netto)
-  return {
-    persone,
-    daDare: round2(dare.reduce((n, p) => n - p.netto, 0)),
-    daRicevere: round2(ricevere.reduce((n, p) => n + p.netto, 0)),
-  }
+/** Il totale delle card «Da dare» e «Da ricevere» (anche quelle in attesa di conferma). Le voci non si compensano da sole. */
+export function totaliAperti(righe: readonly DebitoSpesa[]): TotaliAperti {
+  const somma = (verso: DebitoSpesa['verso']) => round2(righe.filter((d) => d.verso === verso).reduce((n, d) => n + d.residuo, 0))
+  return { daDare: somma('devo'), daRicevere: somma('devono') }
 }
 
-/**
- * Le card ancora da pagare che si annullano con quelle nel verso opposto della stessa persona («Compensata»): il verso
- * più piccolo è coperto tutto, quello più grande resta (al netto). Chiave: `expenseId:otherId`.
- */
-export function carteCompensate(righe: readonly DebitoSpesa[]): Set<string> {
-  const out = new Set<string>()
-  for (const p of bilancioPersone(righe).persone) {
-    if (p.devo < MIN || p.devono < MIN) continue
-    const versoPiccolo: DebitoSpesa['verso'] = p.devo <= p.devono + MIN ? 'devo' : 'devono'
-    const pareggio = Math.abs(p.devo - p.devono) < MIN
-    for (const d of righe)
-      if (d.otherId === p.otherId && d.stato === 'da_pagare' && (pareggio || d.verso === versoPiccolo)) out.add(`${d.expenseId}:${d.otherId}`)
-  }
-  return out
-}
-
-/** Il bilancio di chi usa l'app con tutte le altre persone del viaggio. `null` se non so chi è. */
-export function bilancioDelViaggio(
+/** I totali di chi usa l'app. `null` se non so chi è. */
+export function totaliDelViaggio(
   trip: Pick<Trip, 'travelers' | 'settled' | 'settlements'>,
   spese: readonly Expense[],
   fx: FxContext,
   me: string | undefined,
-): BilancioPersone | null {
+): TotaliAperti | null {
   if (!me) return null
-  return bilancioPersone(debitiPerSpesa(spese, trip.travelers, fx, me, trip.settled, trip.settlements))
+  return totaliAperti(debitiPerSpesa(spese, trip.travelers, fx, me, trip.settled, trip.settlements))
 }
