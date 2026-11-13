@@ -8,7 +8,6 @@ import type { Trip } from '../types'
 import { Ic } from '../ui/Sprite'
 import { Campo, Pulsante } from './base'
 import { cx } from './cx'
-import { Sv } from './icons'
 
 const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']
 const segno = (n: number, cur: string) => `${n > 0.004 ? '+' : n < -0.004 ? '−' : ''}${formatMoney(Math.abs(n), cur)}`
@@ -146,12 +145,6 @@ export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete }: Pro
                   </div>
                 )
               })}
-              {dati.transfers.length === 0 ? (
-                <div className="ok">
-                  <Sv name="check" size={18} />
-                  Tutto in pari: nessuno deve niente
-                </div>
-              ) : null}
             </div>
           ) : null}
           {gruppo && dati.transfers.length > 0 ? (

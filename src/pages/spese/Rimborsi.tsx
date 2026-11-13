@@ -107,12 +107,8 @@ export function DecidiSheet({ trip, r, onClose }: { trip: Trip; r: Rimborso; onC
         </div>
       }
     >
-      <p style={{ margin: 0 }}>
-        {chiRichiesta(r, trip.travelers)}
-        <br />
-        <span style={{ color: 'var(--ink-muted)' }}>{dataNumerica(r.paidOn)}</span>
-      </p>
-      <p className="fa-m">Confermando, il debito e il credito si riducono di {formatMoney(r.amount, r.currency)}.
+      <p style={{ margin: 0, textAlign: 'center' }}>{chiRichiesta(r, trip.travelers)}</p>
+      <p className="fa-m" style={{ margin: 0, textAlign: 'center' }}>Confermando, il debito e il credito si riducono di {formatMoney(r.amount, r.currency)}.
         <br />
         Se non l'hai ricevuto, rifiuta: non cambia niente.
       </p>

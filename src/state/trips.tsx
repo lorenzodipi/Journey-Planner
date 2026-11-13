@@ -202,6 +202,8 @@ const WATCHED_TABLES = [
   'budget_item_shares',
   'expenses',
   'expense_shares',
+  'expense_payers',
+  'settlements',
   'checklist_items',
   'bookings',
 ] as const
