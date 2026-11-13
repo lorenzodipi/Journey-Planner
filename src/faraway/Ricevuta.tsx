@@ -21,7 +21,7 @@ interface Props {
   onDelete: (c: RigaCategoria) => Promise<void>
   /** «Bilancia tutte le spese» accanto alle righe di «Per pareggiare» che mi riguardano: `con` = le persone per cui c'è qualcosa da chiudere */
   bilancia?: { me: string; con: ReadonlySet<string>; onPress: (otherId: string) => void }
-  /** chi usa l'app: sotto «Già pagato» compare «Il tuo saldo» (> 0 da ricevere) */
+  /** chi usa l'app: sotto «Già pagato» compare «La tua quota» (la sua parte delle spese, a prescindere da chi ha pagato) */
   io?: string
 }
 
@@ -123,10 +123,10 @@ export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilan
               <span className="v">{formatMoney(dati.pagato, cur)}</span>
             </div>
             {mio ? (
-              <div className={cx('ln m sal', mio.net > 0.004 ? 'pos' : mio.net < -0.004 ? 'neg' : 'zero')}>
-                <span className="l">Il tuo saldo</span>
+              <div className="ln m">
+                <span className="l">La tua quota</span>
                 <span className="d" />
-                <span className="v">{segno(mio.net, cur)}</span>
+                <span className="v">{formatMoney(mio.quota, cur)}</span>
               </div>
             ) : null}
             <div className="ln b">
