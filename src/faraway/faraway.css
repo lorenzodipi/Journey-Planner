@@ -2637,6 +2637,9 @@ html,body{margin:0;background:var(--canvas)}
   /* viaggi: le azioni restano in fondo alla card */
   .fa-duo.fa-uguali>.fa-card{display:flex;flex-direction:column}
   .fa-duo.fa-uguali>.fa-card>button{flex:1 1 auto}
+  /* una card aperta fa crescere la riga, non la vicina: la vicina chiusa resta alta quanto da chiusa, con vuoto sotto */
+  .fa-duo.fa-uguali>:nth-child(odd):has([aria-expanded="true"])+:nth-child(even),
+  .fa-duo.fa-uguali>:nth-child(odd):has(+:nth-child(even) [aria-expanded="true"]){align-self:start}
   /* con la piega verticale (plugin capacitor-foldable) le colonne si dividono esattamente sulla piega: la sua banda
      (--fold-width, 0 se senza giunzione) è lo spazio tra le colonne, mai meno di 24 px. Le coordinate sono del viewport:
      si tolgono barra laterale e margine finché la colonna non è centrata (schermo non più largo di colonna + barra). */
