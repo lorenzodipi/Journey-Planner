@@ -144,6 +144,7 @@ export function SpesePage() {
             onRename={onRename}
             onDelete={onDelete}
             bilancia={me?.id ? { me: me.id, con: new Set(piani.keys()), onPress: setBilancia } : undefined}
+            io={me?.id}
           />
         </Colonna>
         <Colonna lato="sinistra">

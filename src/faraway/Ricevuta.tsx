@@ -21,6 +21,8 @@ interface Props {
   onDelete: (c: RigaCategoria) => Promise<void>
   /** «Bilancia tutte le spese» accanto alle righe di «Per pareggiare» che mi riguardano: `con` = le persone per cui c'è qualcosa da chiudere */
   bilancia?: { me: string; con: ReadonlySet<string>; onPress: (otherId: string) => void }
+  /** chi usa l'app: sotto «Già pagato» compare «Il tuo saldo» (> 0 da ricevere) */
+  io?: string
 }
 
 function RigaCat({ c, cur, open, onToggle, onPlanned, onRename, onDelete }: { c: RigaCategoria; cur: string; open: boolean; onToggle: () => void } & Pick<Props, 'onPlanned' | 'onRename' | 'onDelete'>) {
@@ -88,10 +90,11 @@ function RigaCat({ c, cur, open, onToggle, onPlanned, onRename, onDelete }: { c:
   )
 }
 
-export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilancia }: Props) {
+export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilancia, io }: Props) {
   const cur = trip.baseCurrency
   const [open, setOpen] = useState<string | null>(null)
   const gruppo = trip.travelers.length > 1
+  const mio = gruppo && io ? dati.persone.find((p) => p.travelerId === io) : undefined
   const nome = (id: string) => trip.travelers.find((t) => t.id === id)?.name.split(/\s+/)[0] ?? '—'
   return (
     <div className="k-Ricevuta">
@@ -119,6 +122,13 @@ export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilan
               <span className="d" />
               <span className="v">{formatMoney(dati.pagato, cur)}</span>
             </div>
+            {mio ? (
+              <div className={cx('ln m sal', mio.net > 0.004 ? 'pos' : mio.net < -0.004 ? 'neg' : 'zero')}>
+                <span className="l">Il tuo saldo</span>
+                <span className="d" />
+                <span className="v">{segno(mio.net, cur)}</span>
+              </div>
+            ) : null}
             <div className="ln b">
               <span className="l">Da pagare</span>
               <span className="d" />
@@ -136,11 +146,7 @@ export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilan
                     <span aria-hidden="true" className="av" style={{ background: `var(--disco-${COL[(discOf(trip, p.travelerId) - 1) % 5]})` }}>
                       {initials(t?.name ?? '?')}
                     </span>
-                    <div>
-                      <b>{t?.name.split(/\s+/)[0]}</b>
-                      <span className="sub">ha pagato {formatMoney(p.paid, cur)}</span>
-                      <span className="sub">quota {formatMoney(p.quota, cur)}</span>
-                    </div>
+                    <b>{t?.name.split(/\s+/)[0]}</b>
                     <div className="sd">
                       <span className="v">{segno(p.net, cur)}</span>
                     </div>

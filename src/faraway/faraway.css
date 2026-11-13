@@ -1244,6 +1244,8 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-Ricevuta .zero{--s-bg:var(--surface-high);--s-fg:var(--ink)}
 .k-Ricevuta .pp.neg .v{color:var(--corallo-ink)}
 .k-Ricevuta .pp.pos .v{color:var(--acqua-ink)}
+.k-Ricevuta .ln.sal.neg .v{color:var(--corallo-ink)}
+.k-Ricevuta .ln.sal.pos .v{color:var(--acqua-ink)}
 .k-Ricevuta .pr{display:grid;gap:var(--space-sm);padding-top:var(--space-lg);border-top:2px dashed var(--border-strong)}
 .k-Ricevuta .pr .t{font:500 14px/20px var(--font-sans)}
 .k-Ricevuta .pr .t b{font-weight:700}
