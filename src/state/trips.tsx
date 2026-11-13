@@ -82,7 +82,10 @@ interface TripsValue {
   addTraveler: (tripId: string, input: InvitedInput) => Result
   linkTraveler: (id: string, email: string) => Result
   /** Invito per email (#44): solo chi ha creato il viaggio. */
-  inviteByEmail: (tripId: string, email: string) => Result
+  inviteByEmail: (tripId: string, email: string, role?: 'editor' | 'viewer') => Result
+  /** 0049: un visualizzatore diventa partecipante */
+  promoteViewer: (tripId: string, userId: string) => Result
+  removeViewer: (tripId: string, userId: string) => Result
   cancelInvite: (id: string) => Result
   removeMember: (tripId: string, userId: string | undefined, travelerId: string) => Result
   /** Inviti ricevuti da accettare o rifiutare. */
@@ -538,7 +541,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
     updateDay: (id, patch) => run(() => api.updateDay(id, patch), ['trips']),
     addTraveler: (tripId, input) => run(() => api.addTraveler(tripId, input)),
     linkTraveler: (id, email) => run(() => api.linkTraveler(id, email)),
-    inviteByEmail: (tripId, email) => run(() => api.inviteByEmail(tripId, email), ['trips']),
+    inviteByEmail: (tripId, email, role) => run(() => api.inviteByEmail(tripId, email, role), ['trips']),
+    // chi ha accesso cambia: si ricarica tutto (anche l'elenco delle persone)
+    promoteViewer: (tripId, userId) => run(() => api.promoteViewer(tripId, userId)),
+    removeViewer: (tripId, userId) => run(() => api.removeViewer(tripId, userId)),
     cancelInvite: (id) => run(() => api.cancelInvite(id), ['trips']),
     removeMember: (tripId, userId, travelerId) => run(() => api.removeMember(tripId, userId, travelerId), ['trips']),
     receivedInvites,

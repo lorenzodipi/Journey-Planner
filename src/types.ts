@@ -34,6 +34,8 @@ export interface TripInvite {
   createdAt: string
   expiresAt: string
   respondedAt?: string
+  /** 0049: assente = partecipante */
+  role?: 'viewer'
 }
 
 /** Invito che ho ricevuto e non ho ancora accettato (non vedo nulla del viaggio finché non accetto). */
@@ -46,6 +48,8 @@ export interface ReceivedInvite {
   endDate?: string
   invitedBy: string
   expiresAt: string
+  /** 0049: assente = partecipante */
+  role?: 'viewer'
 }
 
 export type MemberRole = 'owner' | 'editor' | 'viewer'
@@ -515,6 +519,8 @@ export interface Trip {
   travelers: Traveler[]
   /** Ruolo di chi sta usando l'app in questo viaggio (se noto). */
   myRole?: MemberRole
+  /** Chi vede il viaggio in sola lettura e non ne fa parte (0049): niente viaggiatore, niente spese. */
+  viewers?: { userId: string; email?: string }[]
   /** Inviti per email, visibili a tutti i partecipanti (migrazione 0027). */
   invites?: TripInvite[]
   days: Day[]

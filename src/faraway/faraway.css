@@ -52,6 +52,7 @@ html{scroll-padding-top:var(--head-h,0px)}
 
 /* barra delle schede */
 .fa-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding:8px 8px 0;height:64px;align-items:start;border-top:1px solid var(--hairline);background:var(--canvas);flex:none}
+.fa-tabs.tre{grid-template-columns:repeat(3,minmax(0,1fr))}
 .fa-tab{display:grid;justify-items:center;gap:2.0px;min-width:0}
 .fa-tab .pill{color:var(--azzurro-ink);background:var(--azzurro-soft);height:32px;width:56px;border-radius:9999px;display:grid;place-items:center}
 .fa-tab.on .pill{background:var(--azzurro-solid);color:var(--on-azzurro-solid)}

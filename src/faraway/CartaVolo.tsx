@@ -22,6 +22,8 @@ interface Props {
   /** «Codice» (#38): compare solo se il volo ha un codice salvato. */
   onCode?: () => void
   onDelete: () => void
+  /** visualizzatore (0049): niente Modifica ed Elimina */
+  lettura?: boolean
 }
 
 /** Posto di una tratta: «14A» o, con più passeggeri, «LD 14A · MA 14B». */
@@ -33,7 +35,7 @@ function postoDi(leg: FlightLeg, trip: Trip, people: string[]): string {
   return leg.seats?.trim() || '—'
 }
 
-export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCode }: Props) {
+export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCode, lettura }: Props) {
   const r = riepilogoVolo(flight)
   const scalo = fasciaScali(r.scali)
   const people = flight.forTravelers?.length ? flight.forTravelers : trip.travelers.map((p) => p.id)
@@ -166,12 +168,16 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
                   Codice
                 </Pulsante>
               ) : null}
-              <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
-                Modifica
-              </Pulsante>
-              <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
-                Elimina
-              </Pulsante>
+              {lettura ? null : (
+                <>
+                  <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
+                    Modifica
+                  </Pulsante>
+                  <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
+                    Elimina
+                  </Pulsante>
+                </>
+              )}
             </div>
           </div>
         ) : null}

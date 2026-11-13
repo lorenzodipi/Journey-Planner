@@ -100,6 +100,9 @@ await runMigration('0047_pagamenti_senza_conferma.sql')
 await runMigration('0047_pagamenti_senza_conferma.sql') // si può rilanciare
 await runMigration('0048_pagamenti_spese_cancellate.sql')
 await runMigration('0048_pagamenti_spese_cancellate.sql') // si può rilanciare
+for (const f of ['0039_voli_trasporti_piu_paganti.sql', '0040_spesa_da_documento.sql', '0041_icona_categorie.sql', '0043_categoria_messaggio.sql', '0044_checklist_per_chi.sql', '0045_spostamenti.sql']) await runMigration(f)
+await runMigration('0049_visualizzatori_costi_privati.sql')
+await runMigration('0049_visualizzatori_costi_privati.sql') // si può rilanciare
 console.log('MIGRAZIONE OK')
 
 const asUser = async (uid, role = 'authenticated') => {
@@ -827,6 +830,89 @@ await asUser(A)
   check('0038 le categorie degli altri non si vedono', (await db.query(`select 1 from user_place_categories`)).rows.length === 0)
   check('0038 la preferenza è privata', (await db.query(`select 1 from place_prefs`)).rows.length === 0)
   await throws('0038 non scrivo la preferenza per un altro', () => db.query(`insert into place_prefs (place_id,user_id,pref) values ($1,$2,'if_time')`, [pl, A]))
+  await asUser(A)
+}
+
+// visualizzatori e costi privati (0049): il visualizzatore vede il viaggio ma niente soldi, documenti, checklist, prenotazioni
+await asUser(null, 'postgres')
+{
+  const E = '55555555-5555-5555-5555-555555555555', F = '66666666-6666-6666-6666-666666666666'
+  await db.exec(`insert into auth.users values ('${E}','e@test.it'),('${F}','f@test.it') on conflict do nothing`)
+  const tr = (await db.query(`insert into trips (title, owner_id) values ('Visualizzatori', $1) returning id`, [A])).rows[0].id
+  await db.query(`insert into trip_members (trip_id,user_id,role) values ($1,$2,'editor'),($1,$3,'viewer') on conflict do nothing`, [tr, B, E])
+  const ta = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'A',$2) returning id`, [tr, A])).rows[0].id
+  await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'B',$2)`, [tr, B])
+  await asUser(A)
+  const st = (await db.query(`insert into stays (trip_id,name,check_in,check_out,total_cost,paid,paid_by) values ($1,'Hotel','2026-11-22','2026-11-24',500,true,$2) returning id`, [tr, ta])).rows[0].id
+  const fl = (await db.query(`insert into flights (trip_id,title,cost,paid) values ($1,'Andata',300,true) returning id`, [tr])).rows[0].id
+  const tp = (await db.query(`insert into transports (trip_id,from_label,to_label,mode,cost,bought) values ($1,'Tokyo','Kyoto','train',20,true) returning id`, [tr])).rows[0].id
+  const day = (await db.query(`insert into days (trip_id,date) values ($1,'2026-11-22') returning id`, [tr])).rows[0].id
+  const p1 = (await db.query(`insert into places (trip_id,name,est_cost) values ($1,'Tempio',10) returning id`, [tr])).rows[0].id
+  await db.query(`insert into places (trip_id,name) values ($1,'Solo in lista')`, [tr])
+  await db.query(`insert into day_items (trip_id,day_id,place_id,title,cost) values ($1,$2,$3,'Visita',15)`, [tr, day, p1])
+  await db.query(`update trips set budget_limit = 2000 where id = $1`, [tr])
+  await db.query(`insert into expenses (trip_id,label,amount,currency,paid_by) values ($1,'Cena',40,'EUR',$2)`, [tr, ta])
+  await db.query(`insert into checklist_items (trip_id,text) values ($1,'Passaporto')`, [tr])
+  await db.query(`insert into bookings (trip_id,title) values ($1,'Museo')`, [tr])
+  await db.query(`insert into budget_items (trip_id,label,amount,currency) values ($1,'Cene',100,'EUR')`, [tr])
+  await db.query(`insert into documents (trip_id,file_path,name,visibility) values ($1,$2,'tutti.pdf','all')`, [tr, `${tr}/doc/tutti.pdf`])
+  await db.query(`insert into ticket_codes (trip_id,kind,ref_id,file_path) values ($1,'flight',$2,$3)`, [tr, fl, `${tr}/codici/qr.png`])
+  const costo = async (kind, id) => (await db.query(`select data from trip_costs where kind=$1 and ref_id=$2`, [kind, id])).rows[0]?.data
+  check('0049 i costi esistenti e nuovi finiscono nei costi privati', (await costo('stay', st))?.total_cost === 500 && (await costo('flight', fl))?.cost === 300 && (await costo('transport', tp))?.bought === true && (await costo('place', p1))?.est_cost === 10 && (await costo('trip', tr))?.budget_limit === 2000)
+  await db.query(`update stays set paid=false where id=$1`, [st])
+  check('0049 una modifica aggiorna solo la sua colonna', (await costo('stay', st))?.paid === false && (await costo('stay', st))?.total_cost === 500)
+  await db.query(`update stays set total_cost=null where id=$1`, [st])
+  check('0049 un costo si può anche svuotare', (await costo('stay', st))?.total_cost === null)
+  await db.query(`update stays set total_cost=500 where id=$1`, [st])
+  check('0049 fase 1: le colonne vecchie restano piene', (await db.query(`select total_cost from stays where id=$1`, [st])).rows[0].total_cost === '500.00')
+
+  await asUser(E)
+  const n = async (q, args = [tr]) => (await db.query(q, args)).rows.length
+  check('0049 il visualizzatore vede il viaggio, i giorni, le tappe, alloggi, voli e trasporti', (await n(`select 1 from trips where id=$1`)) === 1 && (await n(`select 1 from days where trip_id=$1`)) === 1 && (await n(`select 1 from day_items where trip_id=$1`)) === 1 && (await n(`select 1 from stays where trip_id=$1`)) === 1 && (await n(`select 1 from flights where trip_id=$1`)) === 1 && (await n(`select 1 from transports where trip_id=$1`)) === 1)
+  check('0049 dei luoghi vede solo quelli delle tappe', (await n(`select 1 from places where trip_id=$1`)) === 1)
+  check('0049 non vede i costi privati', (await n(`select 1 from trip_costs where trip_id=$1`)) === 0)
+  check('0049 non vede spese, budget, saldi', (await n(`select 1 from expenses where trip_id=$1`)) === 0 && (await n(`select 1 from budget_items where trip_id=$1`)) === 0 && (await n(`select 1 from my_confirmed_settlements() where trip_id=$1`)) === 0 && (await db.query(`select balance_version($1) v`, [tr])).rows[0].v === null)
+  check('0049 non vede checklist, prenotazioni, documenti, registro, inviti', (await n(`select 1 from checklist_items where trip_id=$1`)) === 0 && (await n(`select 1 from bookings where trip_id=$1`)) === 0 && (await n(`select 1 from documents where trip_id=$1`)) === 0 && (await n(`select 1 from activity_log where trip_id=$1`)) === 0 && (await n(`select 1 from trip_invites where trip_id=$1`)) === 0)
+  const pe = (await db.query(`select user_id, email, role from trip_people($1)`, [tr])).rows
+  check('0049 vede chi c’è, ma non le email degli altri', pe.length === 3 && pe.filter((x) => x.email).length === 1 && pe.find((x) => x.user_id === E)?.role === 'viewer')
+  check('0049 vede il codice del biglietto (anche l\u2019immagine), non gli altri file', (await n(`select 1 from ticket_codes where trip_id=$1`)) === 1 && (await db.query(`select can_read_file($1) a, can_read_file($2) b`, [`${tr}/codici/qr.png`, `${tr}/spese/ricevuta.pdf`])).rows[0].a === true && (await db.query(`select can_read_file($1) b`, [`${tr}/spese/ricevuta.pdf`])).rows[0].b === false)
+  await throws('0049 il visualizzatore non scrive', () => db.query(`insert into days (trip_id,date) values ($1,'2026-11-23')`, [tr]))
+  await throws('0049 non modifica le tappe', async () => { const r = await db.query(`update day_items set title='x' where trip_id=$1 returning 1`, [tr]); if (!r.rows.length) throw new Error('nessuna riga') })
+  await throws('0049 non crea voci private nella checklist', () => db.query(`insert into checklist_items (trip_id,text,owner_id) values ($1,'Mia',$2)`, [tr, E]))
+  await throws('0049 non invita nessuno', () => db.query(`insert into trip_invites (trip_id,email,role) values ($1,'x@test.it','editor')`, [tr]))
+
+  await asUser(B)
+  await throws('0049 fase 1: gli inviti come visualizzatore sono spenti', () => db.query(`insert into trip_invites (trip_id,email,role) values ($1,'f@test.it','viewer')`, [tr]))
+  await throws('0049 un partecipante non invita partecipanti', () => db.query(`insert into trip_invites (trip_id,email,role) values ($1,'f@test.it','editor')`, [tr]))
+  check('0049 un partecipante vede i costi', (await n(`select 1 from trip_costs where trip_id=$1`)) >= 5)
+
+  // fase 2 (0050): le colonne vecchie si svuotano, gli inviti come visualizzatore si accendono
+  await asUser(null, 'postgres')
+  await db.exec(`create or replace function public.costi_separati() returns boolean language sql stable set search_path = '' as $f$ select true $f$`)
+  await asUser(A)
+  await db.query(`update stays set total_cost=700 where id=$1`, [st])
+  const fl2 = (await db.query(`insert into flights (trip_id,title,cost,paid) values ($1,'Ritorno',99,true) returning id`, [tr])).rows[0].id
+  const vecchie = (await db.query(`select (select total_cost from stays where id=$1) s, (select cost from flights where id=$2) c, (select paid from flights where id=$2) p`, [st, fl2])).rows[0]
+  check('0049 fase 2: i costi restano solo nei costi privati', vecchie.s === null && vecchie.c === null && vecchie.p === false && (await costo('stay', st))?.total_cost === 700 && (await costo('flight', fl2))?.paid === true)
+  await asUser(B)
+  await db.query(`insert into trip_invites (trip_id,email,role) values ($1,'f@test.it','viewer')`, [tr])
+  await asUser(F)
+  const inv = (await db.query(`select id, role from my_invites()`)).rows[0]
+  check('0049 l’invitato vede il ruolo', inv?.role === 'viewer')
+  await db.query(`select respond_invite($1, true)`, [inv.id])
+  check('0049 entra come visualizzatore, senza viaggiatore', (await n(`select 1 from trip_travelers where trip_id=$1 and user_id=$2`, [tr, F])) === 0 && (await n(`select 1 from expenses where trip_id=$1`)) === 0)
+  await asUser(B)
+  await db.query(`select promote_viewer($1, $2)`, [tr, F])
+  await asUser(F)
+  check('0049 diventato partecipante ha il suo viaggiatore e vede le spese', (await n(`select 1 from trip_travelers where trip_id=$1 and user_id=$2`, [tr, F])) === 1 && (await n(`select 1 from expenses where trip_id=$1`)) === 1)
+  await asUser(B)
+  await throws('0049 promuovere chi non è visualizzatore non va', () => db.query(`select promote_viewer($1, $2)`, [tr, F]))
+  await db.query(`delete from trip_members where trip_id=$1 and user_id=$2`, [tr, E])
+  check('0049 un partecipante toglie un visualizzatore', (await db.query(`select 1 from trip_members where trip_id=$1 and user_id=$2`, [tr, E])).rows.length === 0)
+  await db.query(`delete from trip_members where trip_id=$1 and user_id=$2`, [tr, F])
+  await asUser(null, 'postgres')
+  check('0049 ma non un partecipante', (await db.query(`select 1 from trip_members where trip_id=$1 and user_id=$2`, [tr, F])).rows.length === 1)
+  await db.exec(`create or replace function public.costi_separati() returns boolean language sql stable set search_path = '' as $f$ select false $f$`)
   await asUser(A)
 }
 

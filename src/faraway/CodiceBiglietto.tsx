@@ -10,6 +10,7 @@ import { showToast } from '../state/toast'
 import { useTrips } from '../state/trip'
 import type { TicketKind, Trip } from '../types'
 import { Pulsante } from './base'
+import { soloLettura } from '../lib/ruolo'
 import { cx } from './cx'
 import { Foglio } from './Foglio'
 import { Sv } from './icons'
@@ -89,6 +90,7 @@ export function CodiceBiglietto({ trip, kind, refId, title, when, detail, travel
 
   const pickFile = () => input.current?.click()
   const multi = people.length > 1
+  const lettura = soloLettura(trip)
 
   return (
     <Foglio
@@ -97,7 +99,9 @@ export function CodiceBiglietto({ trip, kind, refId, title, when, detail, travel
       title="Codice del biglietto"
       onClose={onClose}
       footer={
-        code ? (
+        lettura ? (
+          <Pulsante onPress={onClose}>Chiudi</Pulsante>
+        ) : code ? (
           <div style={{ display: 'grid', gap: 8 }}>
             <Pulsante color="secondary" iconLeading="refresh" isLoading={busy} onPress={pickFile}>
               Cambia codice
@@ -145,7 +149,7 @@ export function CodiceBiglietto({ trip, kind, refId, title, when, detail, travel
           <div style={{ display: 'grid', gap: 8, justifyItems: 'center', padding: '24px 0' }}>
             <Sv name="qr" size={40} />
             <h3 className="fa-h3" style={{ margin: 0 }}>{multi && person ? `Nessun codice per ${person.name.split(/\s+/)[0]}` : 'Nessun codice associato'}</h3>
-            <p className="fa-m" style={{ margin: 0, maxWidth: 300 }}>Aggiungi il QR o il codice a barre del biglietto per averlo sempre a portata di mano, anche senza rete.</p>
+            {lettura ? null : <p className="fa-m" style={{ margin: 0, maxWidth: 300 }}>Aggiungi il QR o il codice a barre del biglietto per averlo sempre a portata di mano, anche senza rete.</p>}
           </div>
         )}
       </div>

@@ -26,11 +26,13 @@ interface Props {
   onToggle: () => void
   onEdit: (focus?: 'prezzo') => void
   onDelete: () => void
+  /** visualizzatore (0049): niente prezzo, «Pagato», Modifica ed Elimina */
+  lettura?: boolean
   /** «Mostra il codice» (#38): senza codice salvato porta a «Nessun codice associato». */
   onCode: () => void
 }
 
-export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onDelete, onCode }: Props) {
+export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onDelete, onCode, lettura }: Props) {
   const w = transportWhen(t, trip.timezone, trip.days)
   const dur = durataTrasporto(t)
   const prezzo = prezzoDi(t, trip.travelers.length)
@@ -46,14 +48,14 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
     ['Terminal', t.terminal ?? ''],
     ['Binario', t.platform ?? ''],
     ['Passeggeri', people.map((p) => p.name.split(/\s+/)[0]).join(', ')],
-    ['Prezzo', manca ? 'Non ancora inserito' : prezzo.persone > 1 && prezzo.aTesta !== null ? `${prezzo.persone} × ${formatMoney(prezzo.aTesta, cur)}` : formatMoney(prezzo.totale as number, cur)],
+    ...(lettura ? [] : [['Prezzo', manca ? 'Non ancora inserito' : prezzo.persone > 1 && prezzo.aTesta !== null ? `${prezzo.persone} × ${formatMoney(prezzo.aTesta, cur)}` : formatMoney(prezzo.totale as number, cur)] as [string, string]]),
     ['Bagaglio', t.baggage ?? ''],
     ['Cambio e rimborso', t.policy ?? ''],
     ['Nota', t.notes ?? ''],
   ]
   return (
     <div className="k-TicketOrizzontale">
-      <div className={cx('tk tv th', !t.bought && 'todo', open && 'open')}>
+      <div className={cx('tk tv th', !t.bought && !lettura && 'todo', open && 'open')}>
         <div className="a v-top">
           <button type="button" className="hdl" aria-expanded={open} onClick={onToggle}>
             <span className="kd" aria-hidden="true">
@@ -63,10 +65,12 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
               {t.title?.trim() ? <b>{t.title.trim()}</b> : null}
               <span>{sub}</span>
             </span>
-            <span className={cx('pl3b', t.bought ? 'ok' : 'td')}>
-              <Sv name={t.bought ? 'check' : 'clock'} size={16} />
-              {t.bought ? 'Pagato' : 'Non pagato'}
-            </span>
+            {lettura ? null : (
+              <span className={cx('pl3b', t.bought ? 'ok' : 'td')}>
+                <Sv name={t.bought ? 'check' : 'clock'} size={16} />
+                {t.bought ? 'Pagato' : 'Non pagato'}
+              </span>
+            )}
             <span className="chv" aria-hidden="true">
               <Sv name="chev" size={20} />
             </span>
@@ -98,9 +102,11 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
           <div className="b">
             <div className="pr">
               <div>
-                <div className="pv" style={manca ? { color: 'var(--ink-muted)' } : undefined}>
-                  {manca ? 'Prezzo non inserito' : formatMoney(prezzo.totale as number, cur)}
-                </div>
+                {lettura ? null : (
+                  <div className="pv" style={manca ? { color: 'var(--ink-muted)' } : undefined}>
+                    {manca ? 'Prezzo non inserito' : formatMoney(prezzo.totale as number, cur)}
+                  </div>
+                )}
                 <div className="pn">
                   <span aria-hidden="true" className="avs">
                     {people.slice(0, 4).map((p) => (
@@ -111,11 +117,11 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
                   </span>
                   <span>
                     {people.length === 1 ? '1 persona' : `${people.length} persone`}
-                    {!manca && prezzo.persone > 1 && prezzo.aTesta !== null ? ` · ${formatMoney(prezzo.aTesta, cur)} a testa` : ''}
+                    {!lettura && !manca && prezzo.persone > 1 && prezzo.aTesta !== null ? ` · ${formatMoney(prezzo.aTesta, cur)} a testa` : ''}
                   </span>
                 </div>
               </div>
-              {manca ? (
+              {manca && !lettura ? (
                 <Pulsante size="sm" iconLeading="plus" onPress={() => onEdit('prezzo')}>
                   Aggiungi prezzo
                 </Pulsante>
@@ -123,7 +129,7 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
             </div>
             <dl className="dl">
               {rows
-                .filter(([k, v]) => v || k === 'Prezzo')
+                .filter(([k, v]) => v || (k === 'Prezzo' && !lettura))
                 .map(([k, v]) => (
                   <div key={k}>
                     <dt>{k}</dt>
@@ -138,12 +144,16 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
               <Pulsante size="sm" color="secondary" iconLeading="qr" onPress={onCode}>
                 Codice
               </Pulsante>
-              <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => onEdit()}>
-                Modifica
-              </Pulsante>
-              <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
-                Elimina
-              </Pulsante>
+              {lettura ? null : (
+                <>
+                  <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => onEdit()}>
+                    Modifica
+                  </Pulsante>
+                  <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
+                    Elimina
+                  </Pulsante>
+                </>
+              )}
             </div>
           </div>
         ) : null}

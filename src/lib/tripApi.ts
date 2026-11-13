@@ -12,6 +12,7 @@ import { mapBudget, mapConfirmed, mapExpenses, mapSettlements } from './moneyDat
 import type { BudgetItemRow, BudgetShareRow, ConfirmedSettlementRow, SettlementRow, ExpenseFileRow, ExpensePayerRow, ExpenseRow, ExpenseShareRow } from './moneyData'
 import { mapFlights, mapStays, mapTransports } from './logistics'
 import type { FlightLegRow, FlightRow, StayRow, TransportRow } from './logistics'
+import { conCosti, indiceCosti, type CostoRow } from './costiPrivati'
 import { cleanRates } from './money'
 import type { Op } from './outbox'
 import { DEFAULT_CENTER } from './tripForm'
@@ -47,11 +48,14 @@ interface InviteRow {
   created_at: string
   expires_at: string
   responded_at: string | null
+  /** 0049: senza la migrazione non c'è (= partecipante) */
+  role?: MemberRole
 }
 
 interface PersonRow {
   user_id: string
-  email: string
+  /** dalla 0049 un visualizzatore non vede le email degli altri */
+  email: string | null
   role: MemberRole
 }
 
@@ -202,6 +206,8 @@ interface Extras {
   activity?: ActivityRow[] | null
   placePrefs?: { place_id: string; pref: PlacePref }[] | null
   checks?: CheckRow[] | null
+  /** costi privati (0049); vuoto senza la migrazione o per un visualizzatore */
+  costi?: CostoRow[]
 }
 
 interface TripRow {
@@ -239,7 +245,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     .sort((a, b) => a.position - b.position)
     .map((t) => {
       const who = t.user_id ? people.find((p) => p.user_id === t.user_id) : undefined
-      return { id: t.id, name: t.name, color: t.color, position: t.position, userId: t.user_id ?? undefined, email: who?.email, ...(who?.role ? { role: who.role } : {}) }
+      return { id: t.id, name: t.name, color: t.color, position: t.position, userId: t.user_id ?? undefined, email: who?.email ?? undefined, ...(who?.role ? { role: who.role } : {}) }
     })
 
   const categories: Category[] = extras.categories
@@ -361,7 +367,8 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     },
     travelers,
     myRole: myId ? people.find((p) => p.user_id === myId)?.role : undefined,
-    ...(row.trip_invites ? { invites: row.trip_invites.map((i) => ({ id: i.id, email: i.email, status: i.status, createdAt: i.created_at, expiresAt: i.expires_at, ...(i.responded_at ? { respondedAt: i.responded_at } : {}) })) } : {}),
+    ...(people.some((p) => p.role === 'viewer') ? { viewers: people.filter((p) => p.role === 'viewer').map((p) => ({ userId: p.user_id, ...(p.email ? { email: p.email } : {}) })) } : {}),
+    ...(row.trip_invites ? { invites: row.trip_invites.map((i) => ({ id: i.id, email: i.email, status: i.status, createdAt: i.created_at, expiresAt: i.expires_at, ...(i.responded_at ? { respondedAt: i.responded_at } : {}), ...(i.role === 'viewer' ? { role: 'viewer' as const } : {}) })) } : {}),
     days,
     places,
     categories,
@@ -470,7 +477,8 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
   const want = (s: Scope) => !prev || !!only?.includes(s)
   const keep = <T,>(fresh: { data: unknown } | null | undefined, old: T): T => (fresh ? (fresh.data as T) : old)
   // Richieste separate e in parallelo: più semplici e robuste degli "embed" annidati.
-  const [trips, places, categories, expenseCategories, items, logisticsR, moneyR, planningR] = await Promise.all([
+  const conCostiPrivati = want('trips') || want('places') || want('items') || want('logistics')
+  const [trips, places, categories, expenseCategories, items, logisticsR, moneyR, planningR, costiR] = await Promise.all([
     want('trips')
       ? db
           .from('trips')
@@ -488,8 +496,10 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
     want('logistics') ? queryLogistics(db) : null,
     want('money') ? queryMoney(db) : null,
     want('planning') ? queryPlanning(db) : null,
+    // costi privati (0049): senza la tabella si usano le colonne di sempre
+    conCostiPrivati ? db.from('trip_costs').select('kind, ref_id, data').then((r) => (r.error && /trip_costs|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: [], error: null } : r)) : null,
   ])
-  const results = [trips, places, categories, expenseCategories, items, ...(logisticsR ?? []), ...(moneyR ?? []), ...(planningR ?? [])]
+  const results = [trips, places, categories, expenseCategories, items, ...(logisticsR ?? []), ...(moneyR ?? []), ...(planningR ?? []), costiR]
   for (const r of results) if (r?.error) throw r.error
   const [stays, transports, flights, legs] = logisticsR ?? []
   const [budgetItems, budgetShares, expenses, expenseShares, expensePayers, expenseFiles, settlements, confirmedSettlements] = moneyR ?? []
@@ -522,6 +532,7 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
     activity: keep(activity, old?.activity as ActivityRow[] | null),
     bookingItems: keep(bookingItems, old?.bookingItems as BookingItemRow[] | null),
     checks: keep(checks, old?.checks as CheckRow[] | null),
+    costi: keep(costiR, old?.costi as CostoRow[] | undefined),
   }
   const rows = keep(trips, prev?.trips as TripRow[])
   // paesi dei viaggi (0020): senza la tabella l'app usa il modello di prima
@@ -548,7 +559,16 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
     }),
   )
   raw = { trips: rows, extras, people }
-  return rows.map((row) => mapTrip(row, extras, people.get(row.id) ?? [], myId))
+  const costi = indiceCosti(extras.costi)
+  const vista: Extras = {
+    ...extras,
+    places: conCosti(extras.places, 'place', costi),
+    items: conCosti(extras.items, 'day_item', costi),
+    stays: conCosti(extras.stays, 'stay', costi),
+    transports: conCosti(extras.transports, 'transport', costi),
+    flights: conCosti(extras.flights, 'flight', costi),
+  }
+  return conCosti(rows, 'trip', costi).map((row) => mapTrip(row, vista, people.get(row.id) ?? [], myId))
 }
 
 /** Chi ha accesso al viaggio, con email e ruolo. Se la funzione non c'è ancora (migrazione 0006) l'app funziona lo stesso. */
@@ -749,10 +769,33 @@ export async function updateTraveler(id: string, input: TravelerInput): Promise<
   if (error) throw error
 }
 
-/** Invita una persona per email (solo chi ha creato il viaggio). Chi è invitato accetta dentro l'app. */
-export async function inviteByEmail(tripId: string, email: string): Promise<void> {
-  const { error } = await client().from('trip_invites').insert({ trip_id: tripId, email: email.trim().toLowerCase() })
+/** Invita una persona per email: partecipante (solo chi ha creato il viaggio) o visualizzatore (0049, anche i partecipanti). */
+export async function inviteByEmail(tripId: string, email: string, role: 'editor' | 'viewer' = 'editor'): Promise<void> {
+  const { error } = await client().from('trip_invites').insert({ trip_id: tripId, email: email.trim().toLowerCase(), ...(role === 'viewer' ? { role } : {}) })
   if (error) throw error
+}
+
+/** Vero quando si possono invitare visualizzatori (dopo la 0050: i costi non stanno più nelle righe che leggono). */
+export async function visualizzatoriAttivi(): Promise<boolean> {
+  try {
+    const { data, error } = await client().rpc('costi_separati')
+    return !error && data === true
+  } catch {
+    return false
+  }
+}
+
+/** Un visualizzatore diventa partecipante, con il suo viaggiatore (0049). */
+export async function promoteViewer(tripId: string, userId: string): Promise<void> {
+  const { error } = await client().rpc('promote_viewer', { _trip: tripId, _user: userId })
+  if (error) throw error
+}
+
+/** Toglie un visualizzatore: perde l'accesso al viaggio (non ha un viaggiatore). */
+export async function removeViewer(tripId: string, userId: string): Promise<void> {
+  const del = await client().from('trip_members').delete().eq('trip_id', tripId).eq('user_id', userId).select('user_id')
+  if (del.error) throw del.error
+  if ((del.data ?? []).length === 0) throw new Error('Non posso togliere questa persona dal viaggio')
 }
 
 /** Annulla un invito non ancora accettato. */
@@ -776,7 +819,7 @@ export async function fetchReceivedInvites(): Promise<ReceivedInvite[]> {
   try {
     const { data, error } = await client().rpc('my_invites')
     if (error) return []
-    return ((data ?? []) as Array<{ id: string; trip_id: string; title: string; destination: string | null; start_date: string | null; end_date: string | null; invited_by_name: string | null; expires_at: string }>).map((r) => ({
+    return ((data ?? []) as Array<{ id: string; trip_id: string; title: string; destination: string | null; start_date: string | null; end_date: string | null; invited_by_name: string | null; expires_at: string; role?: MemberRole }>).map((r) => ({
       id: r.id,
       tripId: r.trip_id,
       title: r.title,
@@ -785,6 +828,7 @@ export async function fetchReceivedInvites(): Promise<ReceivedInvite[]> {
       endDate: r.end_date ?? undefined,
       invitedBy: r.invited_by_name ?? '',
       expiresAt: r.expires_at,
+      ...(r.role === 'viewer' ? { role: 'viewer' as const } : {}),
     }))
   } catch {
     return []

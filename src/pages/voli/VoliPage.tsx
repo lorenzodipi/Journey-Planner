@@ -13,6 +13,7 @@ import type { Flight } from '../../types'
 import { codiciDi } from '../../lib/codici'
 import { CodiceBiglietto } from '../../faraway/CodiceBiglietto'
 import { VoloSheet } from './VoloSheet'
+import { soloLettura } from '../../lib/ruolo'
 
 export function VoliPage() {
   const trip = useTrip()
@@ -22,6 +23,7 @@ export function VoliPage() {
   const [sheet, setSheet] = useState<{ flight?: Flight } | null>(null)
   const [codice, setCodice] = useState<Flight | null>(null)
   const gruppi = useMemo(() => raggruppaVoli(trip.flights, trip), [trip])
+  const lettura = soloLettura(trip)
 
   async function elimina(f: Flight) {
     const ok = await ask({ title: 'Eliminare il volo?', message: conDipendenze(`${f.title} sparisce dai voli e dalle spese. Puoi annullare subito dopo.`, dipendenze(trip, 'volo', f.id)), confirm: 'Elimina il volo', cancel: 'Tieni il volo', destructive: true })
@@ -33,7 +35,7 @@ export function VoliPage() {
   return (
     <Schermata
       bar={<BarraIndietro title="Voli" back="/altro" />}
-      fab={gruppi.length === 0 ? null : { label: 'Volo', aria: 'Aggiungi un volo', onPress: () => setSheet({}) }}
+      fab={gruppi.length === 0 || lettura ? null : { label: 'Volo', aria: 'Aggiungi un volo', onPress: () => setSheet({}) }}
       overlay={
         <>
           {sheet ? <VoloSheet key={sheet.flight?.id ?? 'new'} trip={trip} flight={sheet.flight} open onClose={() => setSheet(null)} /> : null}
@@ -43,7 +45,11 @@ export function VoliPage() {
       }
     >
       {gruppi.length === 0 ? (
-        <Vuoto title="Nessun volo" text="Aggiungi i voli del viaggio: li trovi qui come carte d'imbarco, con gli scali." action="Aggiungi un volo" onAction={() => setSheet({})} />
+        lettura ? (
+          <Vuoto title="Nessun volo" text="I voli del viaggio compariranno qui, con gli scali." />
+        ) : (
+          <Vuoto title="Nessun volo" text="Aggiungi i voli del viaggio: li trovi qui come carte d'imbarco, con gli scali." action="Aggiungi un volo" onAction={() => setSheet({})} />
+        )
       ) : null}
       <Affianca uguali>
         {/* pieghevole aperto: i gruppi di voli in due colonne */}
@@ -53,7 +59,7 @@ export function VoliPage() {
               <h2 className="fa-h3">{g.title}</h2>
             </div>
             {g.flights.map((f) => (
-              <CartaVolo key={f.id} trip={trip} flight={f} open={open.isOpen(f.id)} onToggle={() => open.toggle(f.id)} onEdit={() => setSheet({ flight: f })} onCode={codiciDi(trip, 'flight', f.id).length > 0 ? () => setCodice(f) : undefined} onDelete={() => void elimina(f)} />
+              <CartaVolo key={f.id} trip={trip} flight={f} open={open.isOpen(f.id)} onToggle={() => open.toggle(f.id)} lettura={lettura} onEdit={() => setSheet({ flight: f })} onCode={codiciDi(trip, 'flight', f.id).length > 0 ? () => setCodice(f) : undefined} onDelete={() => void elimina(f)} />
             ))}
           </section>
         ))}

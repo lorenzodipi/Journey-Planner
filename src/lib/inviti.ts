@@ -9,10 +9,11 @@ export function statoInvito(i: Pick<TripInvite, 'status' | 'expiresAt'>, now: Da
 }
 
 /** Controlla l'email di un invito: formato, già partecipante, già invitata e in attesa. `null` se va bene. */
-export function erroreInvito(emailRaw: string, trip: Pick<Trip, 'travelers' | 'invites'>, now: Date = new Date()): string | null {
+export function erroreInvito(emailRaw: string, trip: Pick<Trip, 'travelers' | 'invites' | 'viewers'>, now: Date = new Date()): string | null {
   const email = emailRaw.trim().toLowerCase()
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Scrivi un indirizzo email valido.'
   if (trip.travelers.some((p) => p.email?.toLowerCase() === email)) return 'Questa persona è già nel viaggio.'
+  if ((trip.viewers ?? []).some((v) => v.email?.toLowerCase() === email)) return 'Questa persona vede già il viaggio.'
   if ((trip.invites ?? []).some((i) => i.email === email && statoInvito(i, now) === 'inviato')) return 'Hai già invitato questo indirizzo: aspetta che risponda o annulla l’invito.'
   return null
 }
@@ -21,10 +22,11 @@ export function erroreInvito(emailRaw: string, trip: Pick<Trip, 'travelers' | 'i
 export const ruoloTesto = (p: Pick<Traveler, 'role'>): string => (p.role === 'owner' ? 'Creatore' : p.role ? 'Partecipante' : '')
 
 /** Numero complessivo: «3 persone» (+ «1 invito in attesa»). */
-export function riepilogoPartecipanti(trip: Pick<Trip, 'travelers' | 'invites'>, now: Date = new Date()): string {
+export function riepilogoPartecipanti(trip: Pick<Trip, 'travelers' | 'invites' | 'viewers'>, now: Date = new Date()): string {
   const n = trip.travelers.length
+  const v = trip.viewers?.length ?? 0
   const att = (trip.invites ?? []).filter((i) => statoInvito(i, now) === 'inviato').length
-  return `${n} ${n === 1 ? 'persona' : 'persone'}${att ? ` · ${att} ${att === 1 ? 'invito in attesa' : 'inviti in attesa'}` : ''}`
+  return `${n} ${n === 1 ? 'persona' : 'persone'}${v ? ` · ${v} ${v === 1 ? 'visualizzatore' : 'visualizzatori'}` : ''}${att ? ` · ${att} ${att === 1 ? 'invito in attesa' : 'inviti in attesa'}` : ''}`
 }
 
 /** Inviti da mostrare: prima quelli in attesa, poi gli altri dal più recente; gli accettati sono già tra le persone. */

@@ -49,6 +49,7 @@ Rumore noto del confronto: i pin della mappa nella pagina di un giorno e una rig
 - **Scritture sui dati veri solo con il consenso esplicito di Lorenzo**, anche per correggere dati sbagliati (per esempio luoghi con città «Chiyoda» invece di «Tokyo»).
 - Nome del profilo: `user_metadata.display_name`, cioè il «Display name» in Authentication → Users, con una copia sul telefono in demo. Nessuna tabella. È il nome proposto in ogni nuovo viaggio; nel viaggio vale quello del viaggiatore.
 - Dati sul telefono: ogni dato dell'account usa una chiave `jp.…` e al logout (o al cambio account) si cancella tutto con `cancellaDatiLocali()` (`src/lib/datiLocali.ts`); restano solo tema, ora e unità, stile mappa. Per cambiare cosa resta si modifica `CHIAVI_DA_TENERE`. Controllo da rifare se tocchi auth o salvi qualcosa in locale.
+- **Visualizzatore** (`viewer`, 0049): legge solo ciò che serve a seguire il viaggio. Una tabella nuova con soldi o dati privati legge con `is_trip_participant`, una colonna di costo nuova va nei trigger di `trip_costs`, ogni azione nuova si nasconde con `soloLettura(trip)` (`src/lib/ruolo.ts`). Regole in `02-regole-generali`.
 - Geocodifica: Nominatim, con Photon come riserva quando è bloccato o per CORS. I quartieri di Tokyo diventano «Tokyo».
 
 ## Provare in locale

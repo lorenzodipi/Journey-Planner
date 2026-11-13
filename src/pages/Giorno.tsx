@@ -46,6 +46,7 @@ import { TappaSheet } from './giorno/TappaSheet'
 import { SpostamentoSheet } from './giorno/SpostamentoSheet'
 import { alloggiDelGiorno } from '../lib/fattibilita'
 import { useInCorso } from '../faraway/Attesa'
+import { soloLettura } from '../lib/ruolo'
 
 const wdm = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
 const fmt = (ymd: string) => wdm.format(parseYmd(ymd)).replace(/\./g, '')
@@ -77,6 +78,7 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
   const [stayEdit, setStayEdit] = useState<Stay | null>(null)
   const here = useHere()
 
+  const lettura = soloLettura(trip)
   const index = trip.days.findIndex((d) => d.id === id)
   const day = trip.days[index]
   const { route, stopById, segments, imp } = useDaySegments(trip, day)
@@ -84,7 +86,7 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
   // da Giorni, su un giorno libero: «Aggiungi tappa» già aperto
   useEffect(() => {
     if (day && new URLSearchParams(search).get('aggiungi') === '1') {
-      setSheet({ kind: 'add' })
+      if (!lettura) setSheet({ kind: 'add' })
       navigate(`/giorni/${day.id}`, { replace: true })
     }
   }, [day?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -209,7 +211,7 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
       tabs={!incastrato}
       incastrata={incastrato}
       rete={!incastrato}
-      bar={<BarraIndietro title={incastrato ? fmt(day.date).replace(/^./, (c) => c.toUpperCase()) : 'Giorni'} back="/giorni" senzaIndietro={incastrato} right={<PulsanteIcona icon="dots" label="Modifica il giorno" onPress={() => setModificaGiorno(true)} />} />}
+      bar={<BarraIndietro title={incastrato ? fmt(day.date).replace(/^./, (c) => c.toUpperCase()) : 'Giorni'} back="/giorni" senzaIndietro={incastrato} right={lettura ? undefined : <PulsanteIcona icon="dots" label="Modifica il giorno" onPress={() => setModificaGiorno(true)} />} />}
     >
       <Affianca>
         {/* pieghevole aperto: mappa, meteo, alloggio, spese e prenotazioni a sinistra; le tappe a destra */}
@@ -261,19 +263,22 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
               onEdit={(item) => setSheet({ kind: 'edit', item })}
               onMove={(item) => setSheet({ kind: 'move', item, postpone: false })}
               onDelete={(item) => void onDelete(item)}
-              onReorder={(item, to) => void t.moveItemTo(day.id, item.id, to).then((m) => m && showToast(m))}
+              onReorder={lettura ? undefined : (item, to) => void t.moveItemTo(day.id, item.id, to).then((m) => m && showToast(m))}
+              readOnly={lettura}
               fromHere={fromHere}
               onSeg={(item) => setSheet({ kind: 'seg', item })}
               meteoDi={(item) => meteoDellaTappa(previsioniCitta.get(cittaTappa(trip, day, item)), day.date, item.time)}
               highlight={highlight}
             />
-            {day.items.length === 0 ? <p className="fa-m">Giornata ancora libera: aggiungi la prima tappa.</p> : null}
+            {day.items.length === 0 ? <p className="fa-m">{lettura ? 'Giornata ancora libera.' : 'Giornata ancora libera: aggiungi la prima tappa.'}</p> : null}
           </div>
 
-          <Pulsante iconLeading="plus" onPress={() => setSheet({ kind: 'add' })}>
-            Aggiungi tappa
-          </Pulsante>
-          {plan && day.items.filter((i) => !i.time).length > 1 ? (
+          {lettura ? null : (
+            <Pulsante iconLeading="plus" onPress={() => setSheet({ kind: 'add' })}>
+              Aggiungi tappa
+            </Pulsante>
+          )}
+          {!lettura && plan && day.items.filter((i) => !i.time).length > 1 ? (
             <Pulsante color="secondary" iconLeading="move" isLoading={occ === 'ottimizza'} onPress={() => void optimize()}>
               Ottimizza percorso
             </Pulsante>
@@ -309,6 +314,7 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
                   date={day.date}
                   open={stayOpen.isOpen(s.id)}
                   onToggle={() => stayOpen.toggle(s.id)}
+                  lettura={lettura}
                   onEdit={() => setStayEdit(s)}
                   onDelete={async () => {
                     const ok = await ask({ title: 'Eliminare l’alloggio?', message: conDipendenze(`${s.name} sparisce dagli alloggi e dalle spese. Puoi annullare subito dopo.`, dipendenze(trip, 'alloggio', s.id)), confirm: 'Elimina l’alloggio', cancel: 'Tieni l’alloggio', destructive: true })
@@ -322,7 +328,7 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
             </section>
           ) : null}
 
-          {expenses.length > 0 ? (
+          {expenses.length > 0 && !lettura ? (
             <section style={{ display: 'grid', gap: 16 }} aria-label="Spese del giorno">
               <Sezione title="Spese del giorno" right={<span className="fa-c">{formatMoney(total, trip.baseCurrency)}</span>} />
               <div className="fa-list">
@@ -340,7 +346,7 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
             </section>
           ) : null}
 
-          {bookings.length > 0 ? (
+          {bookings.length > 0 && !lettura ? (
             <section style={{ display: 'grid', gap: 16 }} aria-label="Prenotazioni del giorno">
               <Sezione title="Prenotazioni del giorno" right={<Link href="/altro/prenotazioni" className="fa-lnk">Tutte</Link>} />
               <div className="fa-list">

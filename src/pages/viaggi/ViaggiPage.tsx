@@ -8,6 +8,7 @@ import { formatShort } from '../../lib/dates'
 import { showToast } from '../../state/toast'
 import { Sv } from '../../faraway/icons'
 import { riassunto } from '../../lib/spese'
+import { soloLettura } from '../../lib/ruolo'
 import { ordinaViaggi, rigaFinale, scenaDelViaggio, statoViaggio, STATO_TESTO } from '../../lib/viaggi'
 import { copertinaDelViaggio } from '../../lib/copertine'
 import { useAuth } from '../../lib/auth'
@@ -117,7 +118,7 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
             {people.length ? <Avatars people={people} /> : null}
           </span>
           <span style={{ font: '600 14px/20px var(--font-sans)', color: 'var(--ink)' }}>
-            {rigaFinale(trip, stato === 'concluso' ? riassunto(trip, undefined).speso : 0)}
+            {soloLettura(trip) ? rigaFinale({ ...trip, budgetLimit: undefined }, 0).replace(/^Spesi .*/, 'Concluso') : rigaFinale(trip, stato === 'concluso' ? riassunto(trip, undefined).speso : 0)}
           </span>
         </span>
       </button>
@@ -178,6 +179,7 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
               </span>
               <span className="fa-m">
                 {i.invitedBy ? `${i.invitedBy} ti ha invitato` : 'Sei stato invitato'}
+                {i.role === 'viewer' ? ' a vederlo' : ''}
                 {i.startDate && i.endDate ? ` · ${formatShort(i.startDate)} – ${formatShort(i.endDate)}` : ''}
               </span>
               <span style={{ display: 'flex', gap: 8 }}>

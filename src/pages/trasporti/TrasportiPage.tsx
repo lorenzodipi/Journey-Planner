@@ -12,6 +12,7 @@ import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
 import { CodiceBiglietto } from '../../faraway/CodiceBiglietto'
 import { TrasportoSheet } from './TrasportoSheet'
+import { soloLettura } from '../../lib/ruolo'
 
 export function TrasportiPage() {
   const trip = useTrip()
@@ -21,6 +22,7 @@ export function TrasportiPage() {
   const [sheet, setSheet] = useState<{ transport?: Transport; focus?: 'prezzo' } | null>(null)
   const [codice, setCodice] = useState<Transport | null>(null)
   const gruppi = useMemo(() => perData(trip), [trip])
+  const lettura = soloLettura(trip)
 
   async function elimina(x: Transport) {
     const ok = await ask({ title: 'Eliminare il trasporto?', message: conDipendenze(`${x.from} → ${x.to} sparisce dai trasporti e dalle spese. Puoi annullare subito dopo.`, dipendenze(trip, 'trasporto', x.id)), confirm: 'Elimina il trasporto', cancel: 'Tieni il trasporto', destructive: true })
@@ -32,7 +34,7 @@ export function TrasportiPage() {
   return (
     <Schermata
       bar={<BarraIndietro title="Trasporti" back="/altro" />}
-      fab={gruppi.length === 0 ? null : { label: 'Trasporto', aria: 'Aggiungi un trasporto', onPress: () => setSheet({}) }}
+      fab={gruppi.length === 0 || lettura ? null : { label: 'Trasporto', aria: 'Aggiungi un trasporto', onPress: () => setSheet({}) }}
       overlay={
         <>
           {sheet ? <TrasportoSheet key={sheet.transport?.id ?? 'new'} trip={trip} transport={sheet.transport} focus={sheet.focus} open onClose={() => setSheet(null)} /> : null}
@@ -42,7 +44,11 @@ export function TrasportiPage() {
       }
     >
       {gruppi.length === 0 ? (
-        <Vuoto title="Nessun trasporto" text="Treni, autobus, metro e taxi: orari, prezzo e se è già pagato." action="Aggiungi un trasporto" onAction={() => setSheet({})} />
+        lettura ? (
+          <Vuoto title="Nessun trasporto" text="Treni, autobus, metro e taxi del viaggio compariranno qui." />
+        ) : (
+          <Vuoto title="Nessun trasporto" text="Treni, autobus, metro e taxi: orari, prezzo e se è già pagato." action="Aggiungi un trasporto" onAction={() => setSheet({})} />
+        )
       ) : null}
       <Affianca uguali>
         {/* pieghevole aperto: a righe, 1 a sinistra, 2 a destra, 3 sotto l’1… */}
@@ -52,7 +58,7 @@ export function TrasportiPage() {
               <h2 className="fa-h3">{g.title}</h2>
             </div>
             {g.items.map((x) => (
-              <CartaTrasporto key={x.id} trip={trip} transport={x} open={open.isOpen(x.id)} onToggle={() => open.toggle(x.id)} onEdit={(focus) => setSheet({ transport: x, focus })} onDelete={() => void elimina(x)} onCode={() => setCodice(x)} />
+              <CartaTrasporto key={x.id} trip={trip} transport={x} open={open.isOpen(x.id)} onToggle={() => open.toggle(x.id)} lettura={lettura} onEdit={(focus) => setSheet({ transport: x, focus })} onDelete={() => void elimina(x)} onCode={() => setCodice(x)} />
             ))}
           </section>
         ))}

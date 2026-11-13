@@ -36,10 +36,11 @@ export function riepilogoVoli(trip: Pick<Trip, 'flights'>): string {
   return `${plural(n, 'volo', 'voli')} · ${plural(trip.flights.reduce((s, f) => s + f.legs.length, 0), 'tratta', 'tratte')}`
 }
 
-export function riepilogoTrasportiAltro(trip: Pick<Trip, 'transports'>): string {
+export function riepilogoTrasportiAltro(trip: Pick<Trip, 'transports' | 'myRole'>): string {
   const n = trip.transports.length
   if (n === 0) return 'Treni, pass, bus e taxi'
-  const da = trip.transports.filter((t) => !t.bought).length
+  // il visualizzatore (0049) non sa cosa è pagato
+  const da = trip.myRole === 'viewer' ? 0 : trip.transports.filter((t) => !t.bought).length
   return `${plural(n, 'trasporto', 'trasporti')}${da > 0 ? ` · ${da} da acquistare` : ''}`
 }
 

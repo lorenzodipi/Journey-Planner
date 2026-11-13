@@ -6,6 +6,7 @@ import { useAuth } from '../../lib/auth'
 import { loadSnapshot } from '../../lib/cache'
 import { cittaDelViaggio, periodo, personeText, riepilogoAlloggi, riepilogoBudget, riepilogoCambio, riepilogoChecklist, riepilogoDocumenti, riepilogoPrenotazioni, riepilogoTrasportiAltro, riepilogoVoli, rigaBudgetValute, viaggiText } from '../../lib/altro'
 import { riassunto } from '../../lib/spese'
+import { paginaPermessa, soloLettura } from '../../lib/ruolo'
 import { discOf, initials, useMe } from '../../state/me'
 import { useTrip, useTrips } from '../../state/trip'
 import { FxForm } from '../../ui/FxForm'
@@ -35,6 +36,7 @@ export function AltroPage() {
   const email = auth.session?.user.email ?? ''
   const nome = me?.name || (email ? email.split('@')[0].replace(/^./, (c) => c.toUpperCase()) : 'Anteprima demo')
   const owner = trip.myRole === undefined || trip.myRole === 'owner'
+  const lettura = soloLettura(trip)
   const citta = cittaDelViaggio(trip)
   const people = trip.travelers.map((p) => ({ initials: initials(p.name), n: discOf(trip, p.id) }))
 
@@ -48,12 +50,12 @@ export function AltroPage() {
     { icon: 'i-con-spese', title: 'Budget', sub: riepilogoBudget(r.speso, r.limit, trip.baseCurrency), to: '/spese/budget' },
     { icon: <DiscoSprite name="i-azi-swap" colore="#FFD23F" />, title: 'Cambio valuta', sub: riepilogoCambio(trip), onPress: () => setFx(true) },
     { icon: <DiscoGlifo icona={GLIFI.persona} colore="#D28AE8" />, title: 'Viaggiatori', sub: personeText(trip.travelers.length), to: '/altro/viaggiatori' },
-  ]
+  ].filter((x) => (x.to ? paginaPermessa(x.to, trip) : !lettura)) // il visualizzatore: niente prenotazioni, documenti, checklist, budget, cambio
 
   return (
     <Schermata
       fisso
-      fissa={cerca ? <Campo label="Cerca nel viaggio" hideLabel icon="search" type="search" value={q} onChange={setQ} placeholder="Luoghi, tappe, prenotazioni, alloggi, trasporti" autoFocus enterKeyHint="search" /> : null}
+      fissa={cerca ? <Campo label="Cerca nel viaggio" hideLabel icon="search" type="search" value={q} onChange={setQ} placeholder={lettura ? 'Tappe, alloggi, trasporti, voli' : 'Luoghi, tappe, prenotazioni, alloggi, trasporti'} autoFocus enterKeyHint="search" /> : null}
       bar={
         <BarraGrande
           title="Altro"
@@ -88,7 +90,7 @@ export function AltroPage() {
               <h2 style={{ margin: 0, paddingRight: 56, font: '500 32px/36px var(--font-display)' }}>{trip.title}</h2>
               <p style={{ margin: 0, font: '600 15px/22px var(--font-sans)' }}>{periodo(trip)}</p>
               {citta ? <p style={{ margin: 0, font: '400 14px/20px var(--font-sans)', color: 'var(--on-tinta-muted)' }}>{citta}</p> : null}
-              <p style={{ margin: 0, font: '400 14px/20px var(--font-sans)', color: 'var(--on-tinta-muted)' }}>{rigaBudgetValute(trip)}</p>
+              {lettura ? null : <p style={{ margin: 0, font: '400 14px/20px var(--font-sans)', color: 'var(--on-tinta-muted)' }}>{rigaBudgetValute(trip)}</p>}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
                 <Avatars people={people.slice(0, 4)} />
                 <span style={{ font: '600 14px/20px var(--font-sans)' }}>{personeText(trip.travelers.length)}</span>

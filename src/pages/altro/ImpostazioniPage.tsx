@@ -14,6 +14,7 @@ import { showToast } from '../../state/toast'
 import { SezioniDati } from './DatiTelefono'
 import { SezioneIconaApp, useIconaApp } from './IconaApp'
 import { useLocation } from 'wouter'
+import { soloLettura } from '../../lib/ruolo'
 
 const TEMI: { value: ThemePref; label: string }[] = [
   { value: 'light', label: 'Chiaro' },
@@ -63,6 +64,7 @@ export function ImpostazioniPage() {
       <Segmenti label="Distanze" value={fmt.distanza} options={[{ value: 'km', label: 'Chilometri' }, { value: 'mi', label: 'Miglia' }]} onChange={(v) => setFmt({ distanza: v })} />
       <Segmenti label="Temperatura" value={fmt.temperatura} options={[{ value: 'C', label: '°C' }, { value: 'F', label: '°F' }]} onChange={(v) => setFmt({ temperatura: v })} />
       <p className="fa-m" style={{ margin: 0 }}>Valgono per tutta l’app, su questo telefono.</p>
+      {soloLettura(trip) ? null : (
       <div className="fa-fld" role="group" aria-label="Margine tra tappe">
         Margine tra tappe
         <div className="fa-chips">
@@ -72,11 +74,12 @@ export function ImpostazioniPage() {
         </div>
         <span className="fa-help">Per tutto il viaggio: si somma agli spostamenti quando l’app controlla che gli orari reggano.</span>
       </div>
+      )}
         </>
         <>
       <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Notifiche</h2>
       <div className="fa-card xl pad" style={{ display: 'grid', gap: 16 }}>
-        {NOTIFICHE_TESTI.map((n) => (
+        {NOTIFICHE_TESTI.filter((n) => !soloLettura(trip) || (n.tipo !== 'checklist' && n.tipo !== 'budget')).map((n) => (
           <Interruttore key={n.tipo} label={n.titolo} hint={n.testo} isSelected={notif[n.tipo]} onChange={(on) => void cambia(n.tipo, on)} />
         ))}
       </div>
@@ -90,10 +93,14 @@ export function ImpostazioniPage() {
         <Riga icon={<Sv name="globe" size={22} />} title={lingua.nome} sub={LINGUE.length > 1 ? 'Cambia lingua' : 'Altre lingue arriveranno'} chevron={LINGUE.length > 1} />
       </div>
 
-      <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Cronologia</h2>
-      <div className="fa-list">
-        <Riga icon={<Sv name="clock" size={22} />} title="Registro modifiche" sub="Chi ha cambiato cosa" onPress={() => navigate('/altro/registro')} />
-      </div>
+      {soloLettura(trip) ? null : (
+        <>
+          <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Cronologia</h2>
+          <div className="fa-list">
+            <Riga icon={<Sv name="clock" size={22} />} title="Registro modifiche" sub="Chi ha cambiato cosa" onPress={() => navigate('/altro/registro')} />
+          </div>
+        </>
+      )}
         </>
         <SezioniDati ask={ask} />
       </Affianca>

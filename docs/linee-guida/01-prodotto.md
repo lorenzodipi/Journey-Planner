@@ -44,6 +44,7 @@ La barra in basso ha cinque schede. Ogni pagina interna appartiene a una scheda,
 | Spesa | Importo, valuta, chi ha pagato, come si divide. Da qui nascono saldi e rimborsi |
 | Checklist | Voci comuni (per tutti o per persone scelte) e voci private |
 | Documento | Un file caricato, visibile a tutti, ad alcuni o solo a chi lo carica |
+| Persone | **Creatore** (invita chiunque, toglie le persone), **partecipante** (viaggiatore, modifica tutto, invita solo visualizzatori) e **visualizzatore** (vede il viaggio in sola lettura, non è un viaggiatore: niente conti, niente checklist; si può rendere partecipante) |
 
 ## Voce e tono
 

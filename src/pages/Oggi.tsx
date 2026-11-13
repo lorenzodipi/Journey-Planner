@@ -15,6 +15,7 @@ import { dateAddDays, daysBetween, parseYmd } from '../lib/dates'
 import { groupDays, rangeText, type DayGroup } from '../lib/dayGroups'
 import { totaliDelViaggio } from '../lib/debitiSpese'
 import { riassunto } from '../lib/spese'
+import { soloLettura } from '../lib/ruolo'
 import { StepperViaggio, type TappaViaggio } from '../faraway/StepperViaggio'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
 import { avvisoPioggia, faseViaggio, notteAlle, numeriViaggio, prossimeOre, statisticheDopo } from '../lib/oggi'
@@ -148,6 +149,7 @@ function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string 
   const legs = trip.flights.flatMap((f) => f.legs).filter((l) => Date.parse(l.departAt) > now.getTime()).sort((a, b) => a.departAt.localeCompare(b.departAt))
   const leg = legs[0]
   const next = leg ? { from: leg.from, to: (trip.flights.find((f) => f.legs.includes(leg))?.legs.slice(-1)[0] ?? leg).to, date: longIn(new Date(leg.departAt), leg.fromTz) } : undefined
+  const lettura = soloLettura(trip)
   const checklist = useLeMieCose(trip, me?.id)
   const tappeViaggio = tappeDelViaggio(groups)
   return (
@@ -158,11 +160,14 @@ function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string 
       <Affianca>
         <Colonna lato="sinistra">
           <ContoAllaRovescia days={days} meta={meta} next={next} />
-          <AvvisoNotti trip={trip} />
+          {lettura ? null : <AvvisoNotti trip={trip} />}
         </Colonna>
-        <Colonna lato="destra" alta>
-          {checklist}
-        </Colonna>
+        {/* il visualizzatore (0049) non ha la checklist */}
+        {lettura ? null : (
+          <Colonna lato="destra" alta>
+            {checklist}
+          </Colonna>
+        )}
         {tappeViaggio.length > 1 ? (
           <Colonna lato="sinistra" mobile>
             <StepperViaggio tappe={tappeViaggio} />
@@ -233,7 +238,8 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
     .sort((a, b) => (a.validFrom as string).localeCompare(b.validFrom as string))[0]
 
   const rate = trip.fxRate
-  const showFx = trip.localCurrency && trip.localCurrency !== trip.baseCurrency && rate
+  const lettura = soloLettura(trip)
+  const showFx = !lettura && trip.localCurrency && trip.localCurrency !== trip.baseCurrency && rate
 
   const [ask, confirmNode] = useConferma()
   const onStatus = async (item: DayItem, status: ItemStatus) => {
@@ -333,17 +339,18 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
             onEdit={() => navigate(`/giorni/${day.id}`)}
             onMove={() => navigate(`/giorni/${day.id}`)}
             onDelete={(i) => void onDelete(i)}
-            onReorder={(i, to) => void t.moveItemTo(day.id, i.id, to).then((m) => m && showToast(m))}
+            onReorder={lettura ? undefined : (i, to) => void t.moveItemTo(day.id, i.id, to).then((m) => m && showToast(m))}
+            readOnly={lettura}
           />
         </div>
       ) : null}
       {!finished && day && items.length === 0 ? (
         <section className="fa-card pad" style={{ display: 'grid', gap: 8, justifyItems: 'start' }}>
           <h2 className="fa-h3">Giornata libera</h2>
-          <p className="fa-m">Oggi non c'è niente in programma. Aggiungi una tappa se ti va.</p>
-          <button type="button" className="fa-btn soft" style={{ width: 'auto', height: 44, padding: '0 16px', fontSize: 14 }} onClick={() => navigate(`/giorni/${day.id}?aggiungi=1`)}>
+          <p className="fa-m">{lettura ? "Oggi non c'è niente in programma." : "Oggi non c'è niente in programma. Aggiungi una tappa se ti va."}</p>
+          {lettura ? null : <button type="button" className="fa-btn soft" style={{ width: 'auto', height: 44, padding: '0 16px', fontSize: 14 }} onClick={() => navigate(`/giorni/${day.id}?aggiungi=1`)}>
             Aggiungi una tappa
-          </button>
+          </button>}
         </section>
       ) : null}
       </Colonna>
@@ -448,8 +455,17 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
       {/* pieghevole aperto: riepilogo e giorni a sinistra, il viaggio in numeri a destra */}
       <Affianca>
       <Colonna lato="sinistra">
-      <RimborsiOggi trip={trip} />
-      <Riepilogo dove={trip.destination} speso={r.speso} currency={trip.baseCurrency} limit={r.limit} simbolo={false} second={secondaRiga} />
+      {/* il visualizzatore (0049) non vede soldi: solo i numeri del viaggio */}
+      {soloLettura(trip) ? (
+        <div className="k-Riepilogo">
+          <DueValori a={stats[0]} b={stats[1]} />
+        </div>
+      ) : (
+        <>
+          <RimborsiOggi trip={trip} />
+          <Riepilogo dove={trip.destination} speso={r.speso} currency={trip.baseCurrency} limit={r.limit} simbolo={false} second={secondaRiga} />
+        </>
+      )}
       </Colonna>
 
       <Colonna lato="destra" alta>

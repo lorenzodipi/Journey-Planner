@@ -3,6 +3,7 @@ import { Redirect, Route, Router, Switch, useLocation } from 'wouter'
 import type { ReactNode } from 'react'
 import { navigate as hashNavigate, useHashLocation } from 'wouter/use-hash-location'
 import { navigateClean } from './lib/indietro'
+import { paginaPermessa } from './lib/ruolo'
 import { alCambioDiPagina, seguiPosizioni } from './lib/posizioni'
 import { SCEGLI_DOPO_ACCESSO, useAuth } from './lib/auth'
 import { useTrips } from './state/trip'
@@ -54,6 +55,16 @@ function ScrollToTop() {
     return seguiPosizioni()
   }, [])
   useLayoutEffect(() => alCambioDiPagina(), [location])
+  return null
+}
+
+/** Il visualizzatore (0049) non apre Luoghi, Spese, Checklist, Prenotazioni, Documenti, Registro: torna a Oggi. */
+function SoloPaginePermesse({ trip }: { trip: Parameters<typeof paginaPermessa>[1] }) {
+  const [location, navigate] = useLocation()
+  const ok = paginaPermessa(location, trip)
+  useEffect(() => {
+    if (!ok) navigate('/', { replace: true })
+  }, [ok, navigate])
   return null
 }
 
@@ -148,6 +159,7 @@ export function App() {
   return (
     <Router hook={useHashLoc}>
       <ScrollToTop />
+      <SoloPaginePermesse trip={trip} />
       <Sprite />
       <div>
         {auth.status === 'demo' && (

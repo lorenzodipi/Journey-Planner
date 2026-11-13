@@ -29,9 +29,11 @@ interface Props {
   onToggle: () => void
   onEdit: () => void
   onDelete: () => void
+  /** visualizzatore (0049): niente «Pagato», costo, «Pagato da», Modifica ed Elimina */
+  lettura?: boolean
 }
 
-export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete }: Props) {
+export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete, lettura }: Props) {
   const n = nightsOf(s)
   const href = mappaAlloggio(s)
   const rate = s.totalCost != null && trip.baseCurrency !== s.currency ? rateFor(trip, s.currency) : undefined
@@ -50,10 +52,12 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete 
                 <Ic name="i-sez-bed-gl" size={24} />
                 Alloggio · {notti(n)}
               </span>
-              <span className={cx('ok', !s.paid && 'td')}>
-                <Sv name={s.paid ? 'check' : 'clock'} size={16} />
-                {s.paid ? 'Pagato' : 'Non pagato'}
-              </span>
+              {lettura ? null : (
+                <span className={cx('ok', !s.paid && 'td')}>
+                  <Sv name={s.paid ? 'check' : 'clock'} size={16} />
+                  {s.paid ? 'Pagato' : 'Non pagato'}
+                </span>
+              )}
             </span>
             <span className="nm">{s.name}</span>
             {indirizzo ? <span className="ad">{indirizzo}</span> : null}
@@ -91,11 +95,13 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete 
           {open ? (
             <div className="dt">
               <dl className="dl">
-                <div>
-                  <dt>Costo</dt>
-                  <dd>{s.totalCost == null ? 'Non ancora inserito' : approx != null ? `${formatMoney(s.totalCost, s.currency)} ≈ ${formatMoney(approx, trip.baseCurrency)}` : formatMoney(s.totalCost, s.currency)}</dd>
-                </div>
-                {paidBy ? (
+                {lettura ? null : (
+                  <div>
+                    <dt>Costo</dt>
+                    <dd>{s.totalCost == null ? 'Non ancora inserito' : approx != null ? `${formatMoney(s.totalCost, s.currency)} ≈ ${formatMoney(approx, trip.baseCurrency)}` : formatMoney(s.totalCost, s.currency)}</dd>
+                  </div>
+                )}
+                {paidBy && !lettura ? (
                   <div>
                     <dt>Pagato da</dt>
                     <dd>{paidBy.name.split(/\s+/)[0]}</dd>
@@ -153,14 +159,16 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete 
                   </div>
                 ) : null}
               </dl>
-              <div className="acts2">
-                <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
-                  Modifica
-                </Pulsante>
-                <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
-                  Elimina
-                </Pulsante>
-              </div>
+              {lettura ? null : (
+                <div className="acts2">
+                  <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
+                    Modifica
+                  </Pulsante>
+                  <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
+                    Elimina
+                  </Pulsante>
+                </div>
+              )}
             </div>
           ) : null}
         </div>
@@ -171,7 +179,7 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete 
 
 
 /** Versione compatta per la pagina del giorno: una riga («Check-in», «Check-out» o «Si dorme qui») che si apre sui dettagli essenziali. */
-export function RigaAlloggio({ stay: s, date, open, onToggle, onEdit, onDelete }: Omit<Props, 'stay'> & { stay: Stay; date: string }) {
+export function RigaAlloggio({ stay: s, date, open, onToggle, onEdit, onDelete, lettura }: Omit<Props, 'stay'> & { stay: Stay; date: string }) {
   const href = mappaAlloggio(s)
   const ruolo = s.checkOut === date ? 'Check-out' : s.checkIn === date ? 'Check-in' : 'Si dorme qui'
   const orario = s.checkOut === date ? orarioCheck(s.checkOutInfo, 'out') : s.checkIn === date ? orarioCheck(s.checkInInfo, 'in') : ''
@@ -207,12 +215,16 @@ export function RigaAlloggio({ stay: s, date, open, onToggle, onEdit, onDelete }
             Maps
           </Pulsante>
         ) : null}
-        <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
-                  Modifica
-                </Pulsante>
-        <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
-          Elimina
-        </Pulsante>
+        {lettura ? null : (
+          <>
+            <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
+              Modifica
+            </Pulsante>
+            <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
+              Elimina
+            </Pulsante>
+          </>
+        )}
       </div>
     </RigaApribile>
   )

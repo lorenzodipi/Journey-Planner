@@ -11,6 +11,7 @@ import { useTrip } from '../state/trip'
 import { nowWeather, tripCities, useCityForecastsStato } from '../state/cityForecast'
 import { Ic } from '../ui/Sprite'
 import { PulsanteIcona, useFocoIniziale } from '../faraway/base'
+import { soloLettura } from '../lib/ruolo'
 import { cx } from '../faraway/cx'
 import { BarraGrande, Schermata } from '../faraway/shell'
 import { useSottoIlBanner, useVistaAccanto } from '../faraway/mappaAccanto'
@@ -180,7 +181,7 @@ function ElencoGiorni({ scelto }: { scelto?: string }) {
         </div>
       ) : null}
 
-      {trip.days.length > 0 ? <AvvisoNotti trip={trip} /> : null}
+      {trip.days.length > 0 && !soloLettura(trip) ? <AvvisoNotti trip={trip} /> : null}
       {trip.days.length === 0 ? <Vuoto art="calendario" title="Nessun giorno" text="Imposta le date del viaggio da Altro → Modifica viaggio: i giorni si creano da soli." /> : null}
       {trip.days.length > 0 && shown.length === 0 ? <Vuoto art="calendario" title="Nessun giorno trovato" text="Prova con un'altra città o tappa." /> : null}
 

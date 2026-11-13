@@ -14,6 +14,7 @@ import { useUnaAperta } from '../../faraway/Righe'
 import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
 import { AlloggioSheet } from './AlloggioSheet'
+import { soloLettura } from '../../lib/ruolo'
 
 export function AlloggiPage() {
   const trip = useTrip()
@@ -24,6 +25,7 @@ export function AlloggiPage() {
   const gruppi = useMemo(() => perCitta(trip.stays), [trip.stays])
   const fuori = stayFuoriViaggio(trip)
   const overlaps = overlappingStays(trip.stays)
+  const lettura = soloLettura(trip)
 
   async function elimina(s: Stay) {
     const ok = await ask({ title: 'Eliminare l’alloggio?', message: conDipendenze(`${s.name} sparisce dagli alloggi e dalle spese. Puoi annullare subito dopo.`, dipendenze(trip, 'alloggio', s.id)), confirm: 'Elimina l’alloggio', cancel: 'Tieni l’alloggio', destructive: true })
@@ -35,7 +37,7 @@ export function AlloggiPage() {
   return (
     <Schermata
       bar={<BarraIndietro title="Alloggi" back="/altro" />}
-      fab={gruppi.length === 0 ? null : { label: 'Alloggio', aria: 'Aggiungi un alloggio', onPress: () => setSheet({}) }}
+      fab={gruppi.length === 0 || lettura ? null : { label: 'Alloggio', aria: 'Aggiungi un alloggio', onPress: () => setSheet({}) }}
       overlay={
         <>
           {sheet ? <AlloggioSheet key={sheet.stay?.id ?? 'new'} trip={trip} stay={sheet.stay} open onClose={() => setSheet(null)} /> : null}
@@ -43,19 +45,23 @@ export function AlloggiPage() {
         </>
       }
     >
-      {gruppi.length > 0 ? <AvvisoNotti trip={trip} /> : null}
-      {fuori.length > 0 ? (
+      {gruppi.length > 0 && !lettura ? <AvvisoNotti trip={trip} /> : null}
+      {fuori.length > 0 && !lettura ? (
         <Banner tone="ac" icon="warn" title="Date fuori dal viaggio">
           {fuori.map((x) => x.name).join(', ')}.
         </Banner>
       ) : null}
-      {overlaps.length > 0 ? (
+      {overlaps.length > 0 && !lettura ? (
         <Banner tone="cor" icon="warn" title="Alloggi che si sovrappongono">
           {overlaps.map(([a, b]) => `${trip.stays[a].name} e ${trip.stays[b].name}`).join('; ')}.
         </Banner>
       ) : null}
       {gruppi.length === 0 ? (
-        <Vuoto title="Nessun alloggio" text="Hotel e case con date, orari di check-in, camera e codice di prenotazione." action="Aggiungi un alloggio" onAction={() => setSheet({})} />
+        lettura ? (
+          <Vuoto title="Nessun alloggio" text="Gli alloggi del viaggio compariranno qui." />
+        ) : (
+          <Vuoto title="Nessun alloggio" text="Hotel e case con date, orari di check-in, camera e codice di prenotazione." action="Aggiungi un alloggio" onAction={() => setSheet({})} />
+        )
       ) : null}
       <Affianca uguali>
         {/* pieghevole aperto: le città in due colonne */}
@@ -67,7 +73,7 @@ export function AlloggiPage() {
               </h2>
             </div>
             {g.stays.map((s) => (
-              <CartaAlloggio key={s.id} trip={trip} stay={s} open={open.isOpen(s.id)} onToggle={() => open.toggle(s.id)} onEdit={() => setSheet({ stay: s })} onDelete={() => void elimina(s)} />
+              <CartaAlloggio key={s.id} trip={trip} stay={s} open={open.isOpen(s.id)} onToggle={() => open.toggle(s.id)} lettura={lettura} onEdit={() => setSheet({ stay: s })} onDelete={() => void elimina(s)} />
             ))}
           </section>
         ))}
