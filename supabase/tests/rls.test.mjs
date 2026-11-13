@@ -888,7 +888,17 @@ await asUser(null, 'postgres')
 
   // fase 2 (0050): le colonne vecchie si svuotano, gli inviti come visualizzatore si accendono
   await asUser(null, 'postgres')
-  await db.exec(`create or replace function public.costi_separati() returns boolean language sql stable set search_path = '' as $f$ select true $f$`)
+  const registro = async () => (await db.query(`select count(*)::int n from activity_log where trip_id=$1`, [tr])).rows[0].n
+  const prima = await registro()
+  await runMigration('0050_costi_solo_privati.sql')
+  await runMigration('0050_costi_solo_privati.sql') // si può rilanciare
+  const vuote = (await db.query(`select (select total_cost from stays where id=$1) s, (select paid from stays where id=$1) sp, (select cost from flights where id=$2) f, (select bought from transports where id=$3) b, (select est_cost from places where id=$4) p, (select budget_limit from trips where id=$5) l`, [st, fl, tp, p1, tr])).rows[0]
+  check('0050 svuota le colonne vecchie e tiene i costi privati', vuote.s === null && vuote.sp === false && vuote.f === null && vuote.b === false && vuote.p === null && vuote.l === null && (await costo('stay', st))?.total_cost === 500 && (await costo('transport', tp))?.bought === true && (await costo('trip', tr))?.budget_limit === 2000)
+  check('0050 svuotare non scrive nel registro', (await registro()) === prima)
+  await db.exec(`alter table stays disable trigger user; update stays set total_cost = 1 where id = '${st}'; alter table stays enable trigger user`)
+  await throws('0050 si ferma se un costo non è copiato uguale', () => runMigration('0050_costi_solo_privati.sql'))
+  check('0050 fermandosi non cambia niente', (await db.query(`select total_cost from stays where id=$1`, [st])).rows[0].total_cost === '1.00')
+  await db.exec(`alter table stays disable trigger user; update stays set total_cost = null where id = '${st}'; alter table stays enable trigger user`)
   await asUser(A)
   await db.query(`update stays set total_cost=700 where id=$1`, [st])
   const fl2 = (await db.query(`insert into flights (trip_id,title,cost,paid) values ($1,'Ritorno',99,true) returning id`, [tr])).rows[0].id
@@ -912,7 +922,6 @@ await asUser(null, 'postgres')
   await db.query(`delete from trip_members where trip_id=$1 and user_id=$2`, [tr, F])
   await asUser(null, 'postgres')
   check('0049 ma non un partecipante', (await db.query(`select 1 from trip_members where trip_id=$1 and user_id=$2`, [tr, F])).rows.length === 1)
-  await db.exec(`create or replace function public.costi_separati() returns boolean language sql stable set search_path = '' as $f$ select false $f$`)
   await asUser(A)
 }
 
