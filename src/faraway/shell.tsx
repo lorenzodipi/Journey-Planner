@@ -57,12 +57,14 @@ export function BarraSchede() {
 }
 
 /**
- * Due colonne affiancate sui pieghevoli aperti e sugli schermi larghi; sul telefono non esiste (display: contents), quindi
+ * Due colonne affiancate dagli 840 px (pieghevoli aperti in orizzontale, tablet, computer: dove c'è la barra laterale); sul telefono non esiste (display: contents), quindi
  * ordine, spazi e aspetto restano quelli di sempre. Con la piega verticale le colonne si dividono esattamente sulla piega.
- * Figli diretti senza `Colonna`: si alternano sinistra/destra. Con `Colonna` si sceglie il lato; `alta` occupa due righe.
+ * Figli diretti senza `Colonna`: a righe, 1 a sinistra, 2 a destra, 3 sotto l'1 e così via (con `uguali` le card della stessa
+ * riga hanno la stessa altezza). Con `Colonna` si sceglie il lato; `alta` occupa due righe.
  */
-export function Affianca({ children, className, pesi }: { children: ReactNode; className?: string; pesi?: number[] }) {
-  if (!pesi) return <DueColonne className={className}>{children}</DueColonne>
+export function Affianca({ children, className, pesi, uguali }: { children: ReactNode; className?: string; pesi?: number[]; uguali?: boolean }) {
+  // `uguali`: le card della stessa riga hanno la stessa altezza (la più bassa si allunga fino alla più alta)
+  if (!pesi) return <DueColonne className={cx(uguali && 'fa-uguali', className)}>{children}</DueColonne>
   // Elenco di gruppi: due colonne indipendenti (nessuna riga in comune, quindi nessun vuoto) divise dove i pesi si
   // bilanciano. L'ordine resta quello del codice (prima tutta la sinistra), così sul telefono e per lo screen reader non cambia nulla.
   const figli = Children.toArray(children)
@@ -90,7 +92,7 @@ function DueColonne({ children, className }: { children: ReactNode; className?: 
     const el = box.current
     if (!el || typeof ResizeObserver === 'undefined') return
     const misura = () => {
-      // le colonne esistono solo come griglia (da 600 px, non a libro mezzo aperto né nel pannello di Giorni)
+      // le colonne esistono solo come griglia (da 840 px, non a libro mezzo aperto né nel pannello di Giorni)
       if (getComputedStyle(el).display !== 'grid') return setDestra(false)
       const l = el.querySelector<HTMLElement>(':scope>.fa-duo-c.l:not(.mob)')
       const a = el.querySelector<HTMLElement>(':scope>.fa-duo-c.alta')

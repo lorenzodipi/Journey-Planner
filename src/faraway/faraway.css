@@ -2475,8 +2475,10 @@ html,body{margin:0;background:var(--canvas)}
 /* ==== Schermi grandi e pieghevoli (docs/linee-guida/05-css-e-stile.md · «Pieghevoli») ====
    Classi di larghezza Android/Material: compatta < 600 px (telefoni, schermo esterno dei pieghevoli: nulla cambia),
    media 600–839 (pieghevole aperto in verticale), espansa ≥ 840 (pieghevole aperto in orizzontale, tablet).
-   Media: barra delle schede in basso a tutta larghezza (lo schermo resta simmetrico rispetto alla piega) e contenuti
-   in due colonne. Espansa: barra laterale (navigation rail), colonna fino a 840 px, due colonne. Fogli fino a 640 px. */
+   Media: la vista stretta del telefono (colonna unica) con margini da 24 px e la barra delle schede in basso a tutta
+   larghezza (lo schermo resta simmetrico rispetto alla piega). Espansa: barra laterale (navigation rail), colonna fino a
+   840 px e contenuti in più colonne. Regola: dove il menu è in basso la vista è stretta, dove è laterale è larga; le
+   colonne e le griglie nascono tutte da 840 px. Fogli fino a 640 px. */
 @media (min-width:600px){
   :root{--rail:0px;--colonna:840px;--margine:24px}
   .fa-phone{max-width:none}
@@ -2489,6 +2491,11 @@ html,body{margin:0;background:var(--canvas)}
   .fa-phone .fa-fab{right:var(--margine)}
   .fa-toasts{max-width:calc(var(--colonna) - 2 * var(--margine))}
   .fa-selbar{max-width:var(--colonna);padding-inline:var(--margine)}
+  /* fogli dal basso: al massimo 640 px (Material), centrati */
+  .fa-sheet,dialog.fa-dlg>.fa-sheet{max-width:640px}
+}
+@media (min-width:840px){
+  :root{--rail:80px;--margine:32px}
   /* liste che con più spazio diventano griglie: i calendarietti dei giorni e le card dei luoghi */
   .k-SelettoreGiorni .grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
   /* card dei luoghi sulla stessa riga alte uguali, con il contenuto al centro; una card aperta non allunga quella accanto
@@ -2497,11 +2504,6 @@ html,body{margin:0;background:var(--canvas)}
   .k-Luoghi .list>.pl{display:flex;flex-direction:column}
   .k-Luoghi .list>.pl:not(.open)>.ph{flex:1 0 auto}
   .k-Luoghi .list>.pl.open:nth-child(odd)+.pl,.k-Luoghi .list>.pl:has(+.pl.open:nth-child(even)){align-self:start}
-  /* fogli dal basso: al massimo 640 px (Material), centrati */
-  .fa-sheet,dialog.fa-dlg>.fa-sheet{max-width:640px}
-}
-@media (min-width:840px){
-  :root{--rail:80px;--margine:32px}
   .fa-phone.has-tabs{padding-left:calc(var(--rail) + env(safe-area-inset-left,0px))}
   /* barra laterale: le stesse cinque schede, in colonna e centrate in altezza */
   .fa-phone .fa-tabs{top:0;bottom:0;left:0;right:auto;width:calc(var(--rail) + env(safe-area-inset-left,0px));max-width:none;margin:0;height:auto;min-height:0;grid-template-columns:none;grid-auto-rows:min-content;align-content:center;gap:12px;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);border-top:0;border-right:1px solid var(--hairline)}
@@ -2585,7 +2587,7 @@ html,body{margin:0;background:var(--canvas)}
    intestazione su due righe fisse (nome, poi giorni e date) e calendarietti che si allungano fino al più alto. ---- */
 .fa-flusso{display:contents}
 .fa-gsez{display:grid;gap:16px}
-@media (min-width:600px){
+@media (min-width:840px){
   html:not(.horizontal-viewport-segments-2) .fa-phone:not(.fa-gaccanto) .fa-flusso{--cl-w:128px;display:flex;flex-wrap:wrap;align-items:stretch;gap:32px 24px;min-width:0}
   html:not(.horizontal-viewport-segments-2) .fa-phone:not(.fa-gaccanto) .fa-flusso>.fa-gsez{flex:0 0 auto;display:flex;flex-direction:column;gap:12px;box-sizing:border-box;width:calc(var(--n) * var(--cl-w) + (var(--n) - 1) * var(--space-sm));min-width:176px;max-width:100%}
   html:not(.horizontal-viewport-segments-2) .fa-phone:not(.fa-gaccanto) .fa-flusso .fa-sech{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:0;min-height:0}
@@ -2596,11 +2598,12 @@ html,body{margin:0;background:var(--canvas)}
 /* a libro mezzo aperto l'app sta in un segmento ed è un telefono: le città tornano a tutta larghezza */
 @media (horizontal-viewport-segments:2){.fa-flusso{display:contents}.fa-flusso>.fa-gsez{display:grid;width:auto;min-width:0}}
 
-/* ---- Due colonne a «bento» (Affianca/Colonna in shell.tsx): da 600 px; sul telefono i contenitori non esistono ---- */
+.fa-gruppo{display:grid;gap:16px}
+/* ---- Due colonne a «bento» (Affianca/Colonna in shell.tsx): da 840 px, dove compare la barra laterale; sotto i contenitori non esistono ---- */
 .fa-duo,.fa-duo-c{display:contents}
 /* dentro i contenitori trasparenti valgono le stesse regole dei figli diretti di .fa-main */
 .fa-duo>*,.fa-duo-c>*{min-width:0}
-@media (min-width:600px){
+@media (min-width:840px){
   .fa-duo{--duo-gap:24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-flow:row dense;gap:16px var(--duo-gap);align-items:start;min-width:0}
   .fa-duo>*{min-width:0}
   .fa-duo-c{display:grid;gap:16px;align-content:start;min-width:0}
@@ -2617,6 +2620,23 @@ html,body{margin:0;background:var(--canvas)}
   .fa-duo[data-mobile-a-destra]>.fa-duo-c.mob{grid-column:2;grid-row:2}
   .fa-duo-c.tutta{grid-column:1/-1}
   .fa-duo-c:empty{display:none}
+  /* Elenchi di card a righe (Affianca uguali): le card sulla stessa riga hanno la stessa altezza, la più bassa si allunga
+     fino alla più alta. Ogni gruppo è titolo + card (.fa-gruppo): la card riempie lo spazio che resta e il suo corpo
+     arriva fino in fondo, con l'eventuale vuoto in coda. Nei biglietti degli alloggi cresce la parte alta, così il
+     codice e «Maps» restano in basso. */
+  .fa-duo.fa-uguali{align-items:stretch}
+  .fa-duo.fa-uguali>.fa-gruppo{display:flex;flex-direction:column}
+  .fa-duo.fa-uguali>.fa-gruppo>:last-child{flex:1 1 auto}
+  .fa-duo.fa-uguali>.fa-gruppo>:last-child,.fa-duo.fa-uguali>:is(.k-Ticket,.k-TicketOrizzontale,.k-Biglietto){display:flex;flex-direction:column}
+  :is(.fa-duo.fa-uguali>.fa-gruppo>:last-child,.fa-duo.fa-uguali>:is(.k-Ticket,.k-TicketOrizzontale,.k-Biglietto))>.tk{flex:1 1 auto;display:flex;flex-direction:column}
+  :is(.fa-duo.fa-uguali>.fa-gruppo>:last-child,.fa-duo.fa-uguali>:is(.k-Ticket,.k-TicketOrizzontale,.k-Biglietto))>.tk>:last-child{flex:1 1 auto}
+  :is(.fa-duo.fa-uguali>.fa-gruppo>:last-child,.fa-duo.fa-uguali>:is(.k-Ticket,.k-TicketOrizzontale,.k-Biglietto))>.tk>.a:last-child{display:flex;flex-direction:column}
+  :is(.fa-duo.fa-uguali>.fa-gruppo>:last-child,.fa-duo.fa-uguali>:is(.k-Ticket,.k-TicketOrizzontale,.k-Biglietto))>.tk>.a:last-child>:last-child{flex:1 1 auto}
+  .fa-duo.fa-uguali>.fa-gruppo>.k-Biglietto>.tk>.top{flex:1 1 auto}
+  .fa-duo.fa-uguali>.fa-gruppo>.k-Biglietto>.tk>.bot{flex:0 0 auto}
+  /* viaggi: le azioni restano in fondo alla card */
+  .fa-duo.fa-uguali>.fa-card{display:flex;flex-direction:column}
+  .fa-duo.fa-uguali>.fa-card>button{flex:1 1 auto}
   /* con la piega verticale (plugin capacitor-foldable) le colonne si dividono esattamente sulla piega: la sua banda
      (--fold-width, 0 se senza giunzione) è lo spazio tra le colonne, mai meno di 24 px. Le coordinate sono del viewport:
      si tolgono barra laterale e margine finché la colonna non è centrata (schermo non più largo di colonna + barra). */

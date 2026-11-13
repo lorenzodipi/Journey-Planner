@@ -65,7 +65,7 @@ export function DocumentiPage() {
       ) : lista.length === 0 ? (
         <p className="fa-m" style={{ margin: 0 }}>Qui metti ciò che non ha un luogo: eSIM, assicurazione, passaporti, visti. Per ogni file scegli chi lo vede.</p>
       ) : (
-        <Affianca>
+        <Affianca uguali>
         {lista.map((d) => {
           const isOpen = open.isOpen(d.id)
           const mio = puoCambiare(d, uid)

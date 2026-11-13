@@ -425,10 +425,10 @@ sup{margin-left:0}
 .acts2 .fa-btn,.fa-acts .fa-btn{min-width:fit-content}
 /* Codici IATA dei biglietti: su schermi stretti si riducono, così non toccano la rotta (320px) */
 .k-Ticket .code,.k-TicketOrizzontale .code,.k-TicketTrasporti .code{font-size:clamp(32px,11vw,44px);line-height:1.1}
-/* Nel volo, in una colonna del pieghevole (da 600 px) la finestra è larga ma la carta no: i codici seguono la larghezza
-   del corpo della carta, lasciando alla rotta (punto, aereo, cerchio) lo spazio che le serve. Sotto i 600 px non cambia nulla. */
+/* Nel volo, in una colonna del pieghevole (da 840 px) la finestra è larga ma la carta no: i codici seguono la larghezza
+   del corpo della carta, lasciando alla rotta (punto, aereo, cerchio) lo spazio che le serve. Sotto gli 840 px non cambia nulla. */
 .k-Ticket .body{container-type:inline-size}
-@media (min-width:600px){
+@media (min-width:840px){
   .k-Ticket .code{font-size:clamp(24px,calc((100cqi - 120px) / 4.1),44px)}
 }
 /* Il menu del popover non mostra l'anello di focus globale (bordo azzurro): resta solo la voce */
@@ -503,8 +503,10 @@ sup{margin-left:0}
 .k-TicketOrizzontale .tv:not(.open) .hz3{padding-bottom:var(--space-xl)}
 .k-TicketOrizzontale .hz3 .hs b{min-height:0;overflow-wrap:anywhere}
 .k-TicketOrizzontale .hz3 .hs .tm{overflow-wrap:anywhere}
-/* in una colonna stretta del pieghevole data e codice vanno a capo invece di toccarsi (sotto i 600 px resta com'era) */
-@media (min-width:600px){.k-TicketOrizzontale .hz3 .hs .tm{white-space:normal}}
+/* in una colonna stretta del pieghevole data e codice vanno a capo invece di toccarsi (sotto gli 840 px resta com'era) */
+@media (min-width:840px){.k-TicketOrizzontale .hz3 .hs .tm{white-space:normal}}
+/* il codice di prenotazione, se è lungo, va a capo invece di uscire dalla carta (anche sui telefoni) */
+.k-TicketOrizzontale .hz3 .hs .tm.cdc{white-space:normal}
 .k-TicketOrizzontale .hz3 .hs .tm.cod{font:700 20px/32px var(--font-sans);letter-spacing:.02em}
 .k-TicketOrizzontale .tv .ti{min-width:0;flex:1 1 0}
 /* i documenti non hanno uno stato pagato/da pagare: biglietto azzurro neutro; i testi d'aiuto usano il colore del biglietto */

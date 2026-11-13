@@ -213,13 +213,13 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
         />
       ) : (
         <>
-          <Affianca>{lista.map(conAzioni)}</Affianca>
+          <Affianca uguali>{lista.map(conAzioni)}</Affianca>
           {archiviati.length ? (
             <section aria-label="Viaggi archiviati" style={{ display: 'grid', gap: 16 }}>
               <button type="button" className="fa-lnk" style={{ justifySelf: 'center' }} aria-expanded={mostraArch} onClick={() => setMostraArch(!mostraArch)}>
                 {mostraArch ? 'Nascondi' : 'Mostra'} i viaggi archiviati ({archiviati.length})
               </button>
-              {mostraArch ? <Affianca>{archiviati.map(conAzioni)}</Affianca> : null}
+              {mostraArch ? <Affianca uguali>{archiviati.map(conAzioni)}</Affianca> : null}
             </section>
           ) : null}
           <Pulsante color="tertiary" onPress={() => setInvito(true)}>

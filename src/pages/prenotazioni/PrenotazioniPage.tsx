@@ -134,10 +134,10 @@ export function PrenotazioniPage() {
       ) : shown.length === 0 ? (
         <VuotoFiltro title="Nessuna prenotazione trovata" text="Prova con un altro tipo o togli i filtri." action="Mostra tutte" onAction={() => (setFiltro('all'), setArch(FILTRI_VUOTI))} />
       ) : null}
-      <Affianca>
+      <Affianca uguali>
         {/* pieghevole aperto: a righe, 1 a sinistra, 2 a destra, 3 sotto l’1… */}
           {gruppi.map((g) => (
-          <section key={g.ymd || 'senza'} aria-label={g.ymd ? giornoSpese(g.ymd, today) : 'Da pianificare'} style={{ display: 'grid', gap: 16 }}>
+          <section key={g.ymd || 'senza'} aria-label={g.ymd ? giornoSpese(g.ymd, today) : 'Da pianificare'} className="fa-gruppo">
             <div className="fa-sech">
               <h2 className="fa-h3">{g.ymd ? giornoSpese(g.ymd, today) : 'Da pianificare'}</h2>
             </div>
@@ -191,7 +191,7 @@ export function PrenotazioniPage() {
                           ) : null}
                           {b.code ? (
                             <div className={cx('hs', ora || giornoB ? 'r' : 'l')}>
-                              <span className="tm cod">{b.code}</span>
+                              <span className="tm cod cdc">{b.code}</span>
                               <b>Codice</b>
                             </div>
                           ) : null}

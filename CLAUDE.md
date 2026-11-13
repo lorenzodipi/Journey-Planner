@@ -29,12 +29,12 @@ Rumore noto del confronto: i pin della mappa nella pagina di un giorno e una rig
 
 ## Finestre e pieghevoli (dettagli in 05-css-e-stile)
 - **< 600**: telefono.
-- **600–839**: due colonne «a bento» con `Affianca` e `Colonna` di `src/faraway/shell.tsx`. Mai vuoti tra i blocchi. `Colonna mobile` passa sotto la colonna alta solo se ci sta (`spostaADestra`); non va usata dove l'ordine conta (in Spese i pulsanti restano sotto «Siete in pari»). Gli elenchi di card (Trasporti, Alloggi, Voli, Prenotazioni, Documenti, Viaggi) vanno **a righe**: 1 a sinistra, 2 a destra, 3 sotto l'1 (`Affianca` senza `pesi`); `pesi` solo per sezioni lunghe e disuguali (Dettaglio spese, Checklist, Impostazioni).
-- **≥ 840** (e non a libro mezzo aperto): barra laterale e viste affiancate.
+- **600–839**: vista stretta, come il telefono (una colonna, barra delle schede in basso). Regola: dove il menu è in basso la vista è stretta, dove è laterale è larga; colonne e griglie nascono da 840 px, mai da 600.
+- **≥ 840** (e non a libro mezzo aperto): barra laterale e viste affiancate. Due colonne «a bento» con `Affianca` e `Colonna` di `src/faraway/shell.tsx`. Mai vuoti tra i blocchi. `Colonna mobile` passa sotto la colonna alta solo se ci sta (`spostaADestra`); non va usata dove l'ordine conta (in Spese i pulsanti restano sotto «Siete in pari»). Gli elenchi di card (Trasporti, Alloggi, Voli, Prenotazioni, Documenti, Viaggi) vanno **a righe**: 1 a sinistra, 2 a destra, 3 sotto l'1 (`Affianca uguali`: due card sulla stessa riga sono **sempre di pari altezza**); anche Dettaglio spese e Checklist vanno a righe (`Affianca` senza `pesi`); `pesi` solo per Impostazioni.
   - **Luoghi**: elenco + mappa (`.fa-lmappa`). Card a tre colonne: freccia sopra, «Maps» sotto, stesso bordo destro.
   - **Giorni**: elenco + giorno scelto (`.fa-gaccanto`, `.fa-gpanel`). All'apertura il primo giorno, o oggi durante il viaggio; toccando un giorno l'indirizzo si sostituisce.
   - Regola in `src/faraway/mappaAccanto.ts`.
-- **Ogni pagina a colonna unica si controlla anche da 600 px in su** (690, 882, 1280): se resta a tutta larghezza si divide con `Affianca`/`Colonna` (elenco delle pagine già fatte in `05-css-e-stile`).
+- **Ogni pagina a colonna unica si controlla anche da 840 px in su** (882, 1280): se resta a tutta larghezza si divide con `Affianca`/`Colonna` (elenco delle pagine già fatte in `05-css-e-stile`).
 - **A libro mezzo aperto** l'app sta in un segmento ed è un telefono. Le classi del plugin `capacitor-foldable` sono `.fold-vertical`, `--fold-left` e `.horizontal-viewport-segments-2`.
 - Stessa riga, stessa altezza: calendarietti, card dei luoghi, riquadri affiancati. Le card strette si adattano con le container query, non con la larghezza della finestra.
 

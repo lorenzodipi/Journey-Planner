@@ -57,10 +57,10 @@ export function AlloggiPage() {
       {gruppi.length === 0 ? (
         <Vuoto title="Nessun alloggio" text="Hotel e case con date, orari di check-in, camera e codice di prenotazione." action="Aggiungi un alloggio" onAction={() => setSheet({})} />
       ) : null}
-      <Affianca>
+      <Affianca uguali>
         {/* pieghevole aperto: le città in due colonne */}
           {gruppi.map((g) => (
-          <section key={g.city} aria-label={g.city} style={{ display: 'grid', gap: 16 }}>
+          <section key={g.city} aria-label={g.city} className="fa-gruppo">
             <div className="fa-sech">
               <h2 className="fa-h3">
                 {g.city} · {notti(g.nights)}
