@@ -144,7 +144,7 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
 
   // il profilo sta in alto a destra: da qui non c'è «indietro» né barra delle schede, si esce scegliendo un viaggio
   const email = auth.session?.user.email ?? ''
-  const nome = me?.name || (email ? email.split('@')[0].replace(/^./, (c) => c.toUpperCase()) : 'Anteprima demo')
+  const nome = me?.name || auth.profileName || (email ? email.split('@')[0].replace(/^./, (c) => c.toUpperCase()) : 'Anteprima demo')
   const profilo = (
     <AriaButton className="fa-avbtn" aria-label={`Profilo di ${nome}`} onPress={() => navigate('/altro/account')}>
       <Avatar initials={initials(nome)} n={t.active && me ? discOf(t.active, me.id) : 1} large />

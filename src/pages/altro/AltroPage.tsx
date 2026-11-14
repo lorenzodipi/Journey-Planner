@@ -34,7 +34,8 @@ export function AltroPage() {
   const saved = loadSnapshot()?.savedAt
   const savedTime = saved ? new Date(saved).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : null
   const email = auth.session?.user.email ?? ''
-  const nome = me?.name || (email ? email.split('@')[0].replace(/^./, (c) => c.toUpperCase()) : 'Anteprima demo')
+  // il viaggiatore legato all'account; senza (visualizzatore) il nome del profilo; solo in mancanza, l'email
+  const nome = me?.name || auth.profileName || (email ? email.split('@')[0].replace(/^./, (c) => c.toUpperCase()) : 'Anteprima demo')
   const owner = trip.myRole === undefined || trip.myRole === 'owner'
   const lettura = soloLettura(trip)
   const citta = cittaDelViaggio(trip)
