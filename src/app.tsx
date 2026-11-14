@@ -88,14 +88,15 @@ export function App() {
     }
   }, [auth.status])
   useEffect(() => {
-    // senza viaggi non c'è nulla da scegliere: il primo viaggio creato si apre direttamente
-    if (status !== 'ready' || trip || !daScegliere) return
+    // senza viaggi si resta in «Tutti i viaggi»: un viaggio che arriva (invito accettato) non si apre da solo,
+    // lo apre chi usa l'app; il primo viaggio creato o duplicato si apre da sé (onChosen)
+    if (status !== 'ready' || trip || daScegliere) return
     try {
-      localStorage.removeItem(SCEGLI_DOPO_ACCESSO)
+      localStorage.setItem(SCEGLI_DOPO_ACCESSO, '1')
     } catch {
       // ignorato
     }
-    setDaScegliere(false)
+    setDaScegliere(true)
   }, [status, trip, daScegliere])
 
   // uscendo dall'account (o con la sessione scaduta) l'indirizzo torna a «/»: chi entra dopo non deve ritrovarsi nell'ultima pagina vista

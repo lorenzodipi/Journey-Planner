@@ -75,8 +75,8 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
     if (r.error) return showToast(r.error)
     setInvito(false)
     if (!accetta) return showToast('Invito rifiutato')
+    // il viaggio compare nell'elenco: lo apre chi usa l'app, quando vuole
     showToast(`Sei dentro: «${titolo}»`)
-    if (r.tripId) apri(r.tripId)
   }
 
   /** Un viaggio scelto si apre sempre dalla sua home («Oggi»), qualunque fosse l'ultima pagina vista. */

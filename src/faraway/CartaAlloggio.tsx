@@ -108,7 +108,7 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
                   </div>
                 ) : null}
                 {ids.length > 0 && trip.travelers.length > 1 ? (
-                  <div className="sopra">
+                  <div>
                     <dt>Per chi</dt>
                     <dd>
                       <span aria-hidden="true" className="avs">
