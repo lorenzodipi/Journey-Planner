@@ -8,6 +8,7 @@ import { Pulsante } from './base'
 import { cx } from './cx'
 import { Sv } from './icons'
 import { useVaiAllErrore } from './useVaiAllErrore'
+import { useBloccaSotto } from './bloccaSotto'
 
 interface FoglioProps {
   open: boolean
@@ -38,6 +39,7 @@ export function Foglio({ open, title, onClose, children, footer, full, plain, he
   const sheet = useRef<HTMLDivElement>(null)
   const corpo = useRef<HTMLDivElement>(null)
   useVaiAllErrore(corpo, open)
+  useBloccaSotto(ref, open)
   const drag = useRef<{ startY: number; startAt: number; dy: number } | null>(null)
 
   useEffect(() => {

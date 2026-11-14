@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { stampOpen } from '../ui/dialogStack'
 import { Pulsante } from './base'
 import { cx } from './cx'
+import { useBloccaSotto } from './bloccaSotto'
 import { Sv } from './icons'
 import type { SvName } from './icons'
 
@@ -26,6 +27,7 @@ export function Modale({ open, title, children, actions, onClose, icon, alert }:
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const bodyId = useId()
+  useBloccaSotto(ref, open)
   useEffect(() => {
     const d = ref.current
     if (!d) return

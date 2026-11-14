@@ -181,16 +181,17 @@ export function PrenotazioniPage() {
                           <Sv name="chev" size={20} />
                         </span>
                       </button>
-                      {ora || giornoB || b.code ? (
+                      {/* senza ora il giorno non si ripete: c'è già nel titolo del gruppo sopra la card */}
+                      {ora || b.code ? (
                         <div className="hz3">
-                          {ora || giornoB ? (
+                          {ora ? (
                             <div className="hs l">
-                              <span className={cx('tm', !ora && 'cod')}>{ora || giornoB}</span>
-                              <b>{ora ? giornoB || 'Ora' : 'Data'}</b>
+                              <span className="tm">{ora}</span>
+                              <b>{giornoB || 'Ora'}</b>
                             </div>
                           ) : null}
                           {b.code ? (
-                            <div className={cx('hs', ora || giornoB ? 'r' : 'l')}>
+                            <div className={cx('hs', ora ? 'r' : 'l')}>
                               <span className="tm cod cdc">{b.code}</span>
                               <b>Codice</b>
                             </div>
@@ -200,9 +201,9 @@ export function PrenotazioniPage() {
                     </div>
                     {isOpen ? (
                       <div className="b">
-                        <div className="pr">
+                        <div className="pr" style={b.cost == null ? { alignItems: 'center' } : undefined}>
                           <div>
-                            <div className="pv" style={b.cost == null ? { color: 'var(--ink-muted)' } : undefined}>
+                            <div className={cx('pv', b.cost == null && 'no pic')}>
                               {b.cost == null ? 'Costo non inserito' : `${formatMoney(b.cost, b.currency ?? trip.baseCurrency)}${b.scope === 'per_person' ? ' a persona' : ''}`}
                             </div>
                             {b.cost != null ? <div className="pn">{payer ? `Pagato da ${payer.name.split(/\s+/)[0]}` : 'Costo'}</div> : null}

@@ -16,6 +16,7 @@ import { valutaDelGiorno } from '../../lib/paesi'
 import { tripToday } from '../../lib/today'
 import { useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
+import { cx } from '../../faraway/cx'
 import { useTrips } from '../../state/trip'
 import type { Expense, ExpenseFile, SplitMode, Trip } from '../../types'
 import { Campo, Chip, Pulsante } from '../../faraway/base'
@@ -48,30 +49,31 @@ function glifoSpesa(label: string): string {
 /** Importo con il convertitore (ValutaPiccola): il campo attivo è quello in cui si scrive. */
 function Importo({ base, other, rate, side, text, onSide, onText, label, cambioSotto }: { base: string; other: string | null; rate: number | undefined; side: string; text: string; onSide: (cur: string, text: string) => void; onText: (t: string) => void; label: string; /** sotto c'è già la riga del cambio con la fonte: qui non si ripete */ cambioSotto?: boolean }) {
   const n = leggi(text)
+  // i due lati sono sempre campi veri: un tocco sul lato spento lo accende e apre subito la tastiera (prima era un
+  // pulsante che diventava campo, e su iOS serviva un secondo tocco). Stessa struttura: React tiene lo stesso <input>.
   const field = (cur: string) => {
-    if (side === cur)
-      return (
-        <div className="fd act">
-          <label className="fl2" htmlFor={`imp-${cur}`}>
-            {nome(cur)} · {cur}
-          </label>
-          <div className="fv2">
-            <input id={`imp-${cur}`} className="n" inputMode="decimal" value={text} placeholder="0" onChange={(e) => onText(e.currentTarget.value)} aria-label={`${label} in ${nome(cur)}`} />
-            <span className="u">{sym(cur)}</span>
-          </div>
-        </div>
-      )
-    const conv = n !== null && rate ? (cur === base ? n * rate : n / rate) : null
+    const attivo = side === cur
+    const conv = !attivo && n !== null && rate ? (cur === base ? n * rate : n / rate) : null
+    const convTesto = conv !== null ? scrivi(conv, cur) : ''
     return (
-      <button type="button" className="fd" onClick={() => onSide(cur, conv !== null ? scrivi(conv, cur) : '')} aria-label={`Scrivi in ${nome(cur)}`}>
-        <span className="fl2">
+      <div className={cx('fd', attivo && 'act')} onClick={(e) => (e.currentTarget.querySelector('input') as HTMLInputElement | null)?.focus()}>
+        <label className="fl2" htmlFor={`imp-${cur}`}>
           {nome(cur)} · {cur}
-        </span>
-        <span className="fv2">
-          <span className="n">{conv !== null ? scrivi(conv, cur) : '—'}</span>
+        </label>
+        <div className="fv2">
+          <input
+            id={`imp-${cur}`}
+            className="n"
+            inputMode="decimal"
+            value={attivo ? text : convTesto}
+            placeholder={attivo ? '0' : '—'}
+            onFocus={attivo ? undefined : () => onSide(cur, convTesto)}
+            onChange={(e) => onText(e.currentTarget.value)}
+            aria-label={attivo ? `${label} in ${nome(cur)}` : `Scrivi in ${nome(cur)}`}
+          />
           <span className="u">{sym(cur)}</span>
-        </span>
-      </button>
+        </div>
+      </div>
     )
   }
   if (!other) return <div className="k-ValutaPiccola"><div className="vc sm"><div className="io">{field(base)}</div></div></div>

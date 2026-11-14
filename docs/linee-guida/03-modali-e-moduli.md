@@ -15,7 +15,7 @@ Tutti usano `<dialog>` nativo aperto con `showModal()`: focus intrappolato, sfon
 ## Struttura del foglio
 
 - **Testata**: «Chiudi» a sinistra, titolo al centro («Nuovo trasporto», «Modifica alloggio»).
-- **Corpo**: scorre da solo, il resto del foglio no.
+- **Corpo**: scorre da solo, il resto del foglio no. Con un foglio o un modale aperto **la pagina sotto non scorre mai**, nemmeno se il foglio è corto (`useBloccaSotto` in `src/faraway/bloccaSotto.ts` e `html:has(dialog[open])`): un componente con un suo `<dialog>` lo usa anche lui.
 - **Piede**: un solo pulsante primario, fisso in basso e sempre visibile («Salva il trasporto»). Le azioni secondarie (Elimina) stanno nel corpo, in fondo.
 - Il foglio segue il contenuto fino al 90% dello schermo, poi scorre. Con la tastiera aperta sale sopra di essa.
 - Si chiude trascinandolo in basso dalla maniglia o dalla testata: queste due superfici hanno `touch-action: none`, altrimenti il browser prende il gesto come scroll, annulla il trascinamento e il foglio torna su.
@@ -65,6 +65,10 @@ Lo stesso blocco ha **lo stesso nome e lo stesso ordine** in tutti i fogli.
 | Note | In fondo all'ultimo gruppo prima di «Altri dettagli» | «Note» |
 
 ## Campi
+
+- Un testo lungo dentro un pulsante (es. il nome del file scelto) sta su una riga con i puntini: `<span className="ell">`.
+- Il completamento automatico del browser non colora l'interno del campo (niente riquadro azzurro con i margini ai lati): il campo resta del suo colore.
+- Un importo con il convertitore ha due campi veri: un tocco sul lato spento lo accende e apre subito la tastiera.
 
 - Ogni campo ha un'**etichetta visibile** (`Campo label=…`). Il segnaposto non la sostituisce mai.
 - **Ogni campo ha un segnaposto**, nessuno escluso: `Campo` e i campi vecchi (`TextField`, `TextArea`) ne mettono uno di riserva con `segnaposto()` quando chi li usa non lo dà, e `placeholder=""` non si usa.

@@ -48,6 +48,15 @@ export function FiltriBilancio({ righe, nome, cur, filtri, onFiltri, ordine, onO
   const persone = useMemo(() => [...new Set(righe.map((d) => d.otherId))].sort((a, b) => nome(a).localeCompare(nome(b), 'it')), [righe, nome])
   const categorie = useMemo(() => [...new Map(righe.map((d) => [categoriaDi(d.expense).toLowerCase(), categoriaDi(d.expense)])).values()].sort((a, b) => a.localeCompare(b, 'it')), [righe])
   const n = filtriAttivi(filtri)
+  const rapidi = useMemo(() => {
+    const c = (f: (d: DebitoSpesa) => boolean) => righe.some(f)
+    return [
+      { value: 'tutti' as const, label: 'Tutte' },
+      ...(c((d) => d.stato === 'da_pagare' || d.stato === 'contestato') ? [{ value: 'aperti' as const, label: 'Da saldare' }] : []),
+      ...(c((d) => d.stato === 'in_attesa') ? [{ value: 'attesa' as const, label: 'In attesa' }] : []),
+      ...(c((d) => d.stato === 'pagato') ? [{ value: 'pagati' as const, label: 'Saldate' }] : []),
+    ]
+  }, [righe])
   const attivo = n > 0 || ordine.per !== 'predefinito'
   const set = <K extends keyof FiltriBilancio>(k: K, v: FiltriBilancio[K]) => onFiltri({ ...filtri, [k]: v })
   const azzera = () => (onFiltri(FILTRI_VUOTI), onOrdine(ORDINE_BASE))
@@ -56,8 +65,21 @@ export function FiltriBilancio({ righe, nome, cur, filtri, onFiltri, ordine, onO
     <>
       <div className="fa-chips scroll" role="group" aria-label="Filtri e ordine">
         <Chip on={attivo} icon={<Sv name="filter" size={18} />} onPress={() => setAperto(true)} label={attivo ? `Filtri e ordine: ${n} filtri attivi. Cambia` : 'Filtri e ordine'}>
-          {n > 0 ? `Filtri · ${n}` : 'Filtri e ordine'}
+          {n > 0 ? `Filtri · ${n}` : 'Filtri'}
         </Chip>
+        {/* scelte rapide accanto a «Filtri», come in Dettaglio spese: lo stato e, con più persone, la persona */}
+        {rapidi.map((x) => (
+          <Chip key={x.value} on={filtri.stato === x.value} onPress={() => set('stato', x.value)}>
+            {x.label}
+          </Chip>
+        ))}
+        {persone.length > 1
+          ? persone.map((id) => (
+              <Chip key={id} on={filtri.persona === id} onPress={() => set('persona', filtri.persona === id ? '' : id)} label={filtri.persona === id ? `Solo ${nome(id)}: tocca per vederle tutte` : `Solo ${nome(id)}`}>
+                {nome(id)}
+              </Chip>
+            ))
+          : null}
         {ordine.per !== 'predefinito' ? (
           <Chip on onPress={() => setAperto(true)} label={`Ordine: ${riassuntoOrdine(ordine)}. Cambia`}>
             {riassuntoOrdine(ordine)}

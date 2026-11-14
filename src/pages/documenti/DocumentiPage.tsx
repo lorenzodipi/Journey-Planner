@@ -1,6 +1,6 @@
 // Documenti (#52): file senza un luogo (eSIM, assicurazione, passaporti, visti…) con la loro visibilità.
 // I file di alloggi, voli e trasporti stanno nelle loro pagine; quelli delle prenotazioni nelle tappe: niente doppioni.
-// Ogni documento è un biglietto come quelli dei trasporti: chiuso nome, formato e chi lo vede; aperto i dati e le azioni.
+// Ogni documento è un biglietto come quelli dei trasporti: chiuso nome, formato con la dimensione e chi lo vede; aperto i dati e le azioni.
 import { useState } from 'react'
 import { Pulsante } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
@@ -98,16 +98,6 @@ export function DocumentiPage() {
                       <Sv name="chev" size={20} />
                     </span>
                   </button>
-                  <div className="hz3">
-                    <div className="hs l">
-                      <span className="tm">{formato(d)}</span>
-                      <b>Formato</b>
-                    </div>
-                    <div className="hs r">
-                      <span className="tm cod">{caricato(d)}</span>
-                      <b>Caricato</b>
-                    </div>
-                  </div>
                 </div>
                 {isOpen ? (
                   <div className="b">

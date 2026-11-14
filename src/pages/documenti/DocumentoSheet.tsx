@@ -236,7 +236,7 @@ export function NuovoDocumentoSheet({ trip, link, passeggeri, onClose }: { trip:
         <div className="fa-fld">
           File
           <Pulsante color="secondary" iconLeading="file" onPress={() => input.current?.click()}>
-            {file ? file.name : 'Scegli foto o PDF'}
+            {file ? <span className="ell">{file.name}</span> : 'Scegli foto o PDF'}
           </Pulsante>
         </div>
         <Campo label="Nome" value={nome} onChange={setNome} placeholder="es. Assicurazione di viaggio" maxLength={120} />

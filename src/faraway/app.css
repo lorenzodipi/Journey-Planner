@@ -25,6 +25,19 @@
 .fa-btn[data-pressed]:not(.txt):not(.del){transform:scale(.97)}
 .fa-btn.pri[data-pressed]{background:var(--azzurro-deep)}
 .fa-btn{transition:transform 100ms cubic-bezier(.23,1,.32,1),background-color 100ms}
+/* completamento automatico (login, email): niente riquadro azzurro dentro il campo con i margini ai lati; il campo resta
+   del suo colore, come gli altri. Il colore del browser «arriva» dopo una transizione lunghissima: in pratica mai. */
+input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus{-webkit-text-fill-color:var(--ink);caret-color:var(--ink);transition:background-color 600000s 0s,color 600000s 0s}
+input:autofill{background:transparent}
+/* testo lungo dentro un pulsante (es. nome del file scelto): una riga con i puntini, non esce dal bordo */
+.fa-btn{min-width:0;max-width:100%}
+.fa-btn .ell{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* biglietti aperti: la parte sotto sale di 1 px sotto quella sopra, così su iOS non resta una riga fra le due */
+.k-TicketOrizzontale .tv.open>.a{z-index:1}
+/* «Costo non inserito» delle prenotazioni: testo piccolo su una riga, «Aggiungi costo» accanto e allineato al centro */
+.k-TicketOrizzontale .tv .pv.no.pic{font:600 16px/22px var(--font-sans)}
+.k-TicketOrizzontale .tv .pr>.fa-btn{flex:none;width:auto;white-space:nowrap}
+.k-TicketOrizzontale .tv.open>.b{margin-top:-1px;padding-top:calc(var(--space-lg) + 1px)}
 .fa-btn[data-disabled]{cursor:not-allowed}
 .fa-row:focus-visible,.fa-ib:focus-visible,.fa-btn:focus-visible,.fa-chip:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 /* opzioni dei segmenti e righe a scelta (RadioGroup): il focus da tastiera si vede come sui pulsanti */
@@ -85,6 +98,8 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .k-ValutaPiccola .fv2{min-width:0}
 .k-ValutaPiccola .fv2 input.n{border:0;background:none;outline:none;padding:0;margin:0;width:0;flex:1;min-width:0;font:inherit;color:inherit;letter-spacing:inherit}
 .k-ValutaPiccola .fd.act:focus-within{outline:3px solid var(--focus);outline-offset:2px}
+.k-ValutaPiccola .fd:not(.act) input.n{cursor:pointer}
+.k-ValutaPiccola .fd:not(.act) input.n::placeholder{color:inherit;opacity:1}
 
 /* Luoghi (#33): selezione multipla, mappa a tutto schermo, pin e gruppi, orari */
 .fa-cbx{width:24px;height:24px;border-radius:6px;border:1.5px solid var(--border-strong);background:var(--surface-card);display:grid;place-items:center;flex:none;box-sizing:border-box;color:var(--on-azzurro-solid)}
@@ -242,6 +257,8 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-phone.has-fab .fa-main{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px) + 96px + var(--kb,0px))}
 dialog.fa-dlg{height:calc(100% - var(--kb,0px))}
 html{overscroll-behavior:none}
+/* con un foglio o un modale aperto la pagina sotto non scorre (vedi bloccaSotto.ts) */
+html:has(dialog[open]){overflow:hidden}
 
 /* tratteggio delle tappe: trattini uniformi (non pallini che si sovrappongono) */
 .k-Tappa .stp.next .rail::before,.k-Tappa .seg.after .rail::before{background:repeating-linear-gradient(to bottom,var(--border-strong) 0 6px,transparent 6px 12px);border-left:0;width:3px}
