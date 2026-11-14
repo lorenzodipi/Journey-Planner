@@ -17,7 +17,7 @@ import { impattoDate } from '../../lib/gestioneViaggio'
 import type { MezzoViaggio, Trip, TripCountry } from '../../types'
 
 /** Soglie per andare a piedi, in minuti (0 = mai). */
-const SOGLIE: [number, string][] = [[5, 'Fino a 5 min'], [10, 'Fino a 10 min'], [15, 'Fino a 15 min'], [20, 'Fino a 20 min'], [30, 'Fino a 30 min'], [0, 'Mai']]
+const SOGLIE: [number, string][] = [[5, '5 min'], [10, '10 min'], [15, '15 min'], [20, '20 min'], [30, '30 min'], [0, 'Mai']]
 import { Avatars, Banner, Campo, Chip, Pulsante } from '../../faraway/base'
 import { CampoPaese } from '../../faraway/CampoPaese'
 import { CampoValuta } from '../../faraway/CampoValuta'
@@ -431,8 +431,8 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
             </span>
           </Riquadri>
           {mezzoScelto !== 'walk' ? (
-            <div className="fa-fld" role="group" aria-label="Tragitti brevi a piedi">
-              Tragitti brevi a piedi
+            <div className="fa-fld" role="group" aria-label="Tragitti brevi a piedi fino a">
+              Tragitti brevi a piedi fino a
               <div className="fa-chips wrap">
                 {SOGLIE.map(([v, l]) => (
                   <Chip key={v} on={soglia === v} onPress={() => setSoglia(v)}>
