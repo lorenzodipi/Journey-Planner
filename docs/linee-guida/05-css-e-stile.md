@@ -116,3 +116,7 @@ Prima di scrivere un elemento nuovo: cercarlo in `src/faraway/`, poi in `react-a
 - `height` fissa su contenitori di testo; `100vh` (si usa `100dvh`).
 - Estetica «da AI»: card tutte uguali, gradienti decorativi, barre colorate a sinistra, maiuscoletto ovunque, emoji nei testi.
 - `transition: all`, `will-change` messo per abitudine.
+
+## Testo grande su una riga
+
+Un testo molto grande che deve stare su una riga (es. «MXP ✈ HND» in Oggi) usa `useTestoCheCi` (`src/faraway/adattaTesto.ts`): se non ci sta, il carattere si rimpicciolisce quanto basta. Serve sui telefoni stretti e con il testo di sistema ingrandito (Android lo applica anche alle misure in px). Se ci sta, non cambia niente.

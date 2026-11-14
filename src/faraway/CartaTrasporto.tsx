@@ -65,14 +65,17 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
               {t.title?.trim() ? <b>{t.title.trim()}</b> : null}
               <span>{sub}</span>
             </span>
-            {lettura ? null : (
-              <span className={cx('pl3b', t.bought ? 'ok' : 'td')}>
-                <Sv name={t.bought ? 'check' : 'clock'} size={16} />
-                {t.bought ? 'Pagato' : 'Non pagato'}
+            {/* «Pagato» e la freccia in colonna, a destra (come negli alloggi) */}
+            <span className="dx">
+              {lettura ? null : (
+                <span className={cx('pl3b', t.bought ? 'ok' : 'td')}>
+                  <Sv name={t.bought ? 'check' : 'clock'} size={16} />
+                  {t.bought ? 'Pagato' : 'Non pagato'}
+                </span>
+              )}
+              <span className="chv" aria-hidden="true">
+                <Sv name="chev" size={20} />
               </span>
-            )}
-            <span className="chv" aria-hidden="true">
-              <Sv name="chev" size={20} />
             </span>
           </button>
           <div className="hz2">
@@ -100,7 +103,7 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
         </div>
         {open ? (
           <div className="b">
-            {/* visualizzatore: niente prezzo, e le persone sono già in «Passeggeri» qui sotto */}
+            {/* solo il totale: persone e prezzo a testa sono in «Passeggeri» e «Prezzo» qui sotto; il visualizzatore non vede prezzi */}
             {lettura ? null : (
             <div className="pr">
                 <div>
@@ -109,13 +112,6 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
                       {manca ? 'Prezzo non inserito' : formatMoney(prezzo.totale as number, cur)}
                     </div>
                   )}
-                  {/* le persone (con i pallini) sono in «Passeggeri» qui sotto: qui solo quante e quanto a testa */}
-                  <div className="pn">
-                    <span>
-                      {people.length === 1 ? '1 persona' : `${people.length} persone`}
-                      {!lettura && !manca && prezzo.persone > 1 && prezzo.aTesta !== null ? ` · ${formatMoney(prezzo.aTesta, cur)} a testa` : ''}
-                    </span>
-                  </div>
                 </div>
                 {manca && !lettura ? (
                   <Pulsante size="sm" iconLeading="plus" onPress={() => onEdit('prezzo')}>

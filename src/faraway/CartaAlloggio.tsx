@@ -37,7 +37,8 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
   const rate = s.totalCost != null && trip.baseCurrency !== s.currency ? rateFor(trip, s.currency) : undefined
   const approx = s.totalCost != null && rate ? convert(s.totalCost, rate) : null
   const ids = s.forTravelers?.length ? s.forTravelers : trip.travelers.map((p) => p.id)
-  const perChi = ids.length > 0 && trip.travelers.length > 1
+  // «Diviso tra» è un dato sul costo: il visualizzatore non lo vede e vede sempre «Dormono qui»
+  const perChi = !lettura && ids.length > 0 && trip.travelers.length > 1
   const paidBy = trip.travelers.find((p) => p.id === s.paidBy)
   const pasti = inclusi(s)
   const indirizzo = [s.address, s.city && s.city !== s.name ? s.city : ''].filter(Boolean).join(' · ')

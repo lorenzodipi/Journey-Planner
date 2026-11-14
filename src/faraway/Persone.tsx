@@ -11,7 +11,8 @@ export function stessePersone(a: readonly string[], b: readonly string[]): boole
 }
 
 export function PersoneRiga({ trip, ids }: { trip: Pick<Trip, 'travelers'>; ids: readonly string[] }) {
-  const people = ids.map((id) => trip.travelers.find((p) => p.id === id)).filter((p): p is NonNullable<typeof p> => Boolean(p))
+  // nell'ordine dei viaggiatori, così i pallini sono uguali in ogni riga
+  const people = trip.travelers.filter((p) => ids.includes(p.id))
   const tutti = trip.travelers.length > 1 && stessePersone(trip.travelers.map((p) => p.id), people.map((p) => p.id))
   return (
     <>

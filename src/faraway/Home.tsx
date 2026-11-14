@@ -2,13 +2,14 @@
 // ChecklistHome, Orologio, Meteo, Biglietto, ValutaPiccola, Riepilogo.
 import { gradi } from '../lib/formati'
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'wouter'
 import type { TotaliAperti } from '../lib/debitiSpese'
 import { formatMoney } from '../lib/money'
 import { decimalsOf } from '../lib/fx'
 import { initials } from '../state/me'
 import { Ic } from '../ui/Sprite'
+import { useTestoCheCi } from './adattaTesto'
 import { cx } from './cx'
 import { PulsanteIcona } from './base'
 import { G } from './Tappe'
@@ -74,6 +75,8 @@ const PLANE = 'M482.3 192c34.2 0 93.7 29 93.7 64c0 36-59.5 64-93.7 64l-116.6 0L2
 
 /** Biglietto del conto alla rovescia (Ticket cd2): giorni grandi, meta e, se c'è, il prossimo volo. */
 export function ContoAllaRovescia({ days, meta, next }: { days: number; meta: string; next?: { from: string; to: string; date: string } }) {
+  const rotta = useRef<HTMLDivElement>(null)
+  useTestoCheCi(rotta, next ? `${next.from}-${next.to}` : null)
   const label = days <= 0 ? `Si parte oggi${meta ? ` per ${meta}` : ''}` : `${days} ${days === 1 ? 'giorno' : 'giorni'} alla partenza${meta ? ` per ${meta}` : ''}`
   return (
     <div className="k-Ticket">
@@ -110,7 +113,7 @@ export function ContoAllaRovescia({ days, meta, next }: { days: number; meta: st
         {next ? (
           <div className="b cd2-bot">
             <div className="k1">Prossima partenza</div>
-            <div className="rr3" aria-label={`Da ${next.from} a ${next.to}`}>
+            <div ref={rotta} className="rr3" aria-label={`Da ${next.from} a ${next.to}`}>
               <span>{next.from}</span>
               <span className="pl3">
                 <svg aria-hidden="true" width="34" height="34" viewBox="0 0 576 512">

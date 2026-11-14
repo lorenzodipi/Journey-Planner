@@ -322,6 +322,8 @@ html:has(dialog[open]){overflow:hidden}
 .fa-stay .avs,.tv .avs{display:inline-flex;gap:4px;margin-right:8px;vertical-align:middle}
 .fa-stay .avs span,.tv .avs span{margin:0!important}
 .k-TicketOrizzontale .tv .dl .avs{display:inline-flex}
+/* trasporti: «Pagato» sopra e la freccia sotto, allineati a destra */
+.k-TicketOrizzontale .tv .hdl .dx{display:grid;justify-items:end;gap:8px;flex:none}
 .k-Checklist .it .tx{display:grid;gap:8px;min-width:0}
 .fa-ib.dng{background:color-mix(in srgb,var(--danger) 10%,var(--surface-card));border:1.5px solid var(--danger);color:var(--danger);box-sizing:border-box}
 
