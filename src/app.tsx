@@ -29,7 +29,6 @@ import { Login } from './pages/Login'
 import { Luoghi } from './pages/Luoghi'
 import { Oggi } from './pages/Oggi'
 import { TrasportiPage } from './pages/trasporti/TrasportiPage'
-import { PrimoViaggio } from './pages/PrimoViaggio'
 import { PullToRefresh } from './ui/PullToRefresh'
 import { ToastHost } from './ui/ToastHost'
 import { BarraAttesa } from './faraway/Attesa'
@@ -70,7 +69,7 @@ function SoloPaginePermesse({ trip }: { trip: Parameters<typeof paginaPermessa>[
 
 export function App() {
   const auth = useAuth()
-  const { active: trip, status, refresh, receivedInvites } = useTrips()
+  const { active: trip, status, refresh } = useTrips()
   // appena fatto l'accesso si sceglie il viaggio; riaprendo l'app senza uscire dall'account si torna dov'eri
   const [daScegliere, setDaScegliere] = useState(() => {
     try {
@@ -132,19 +131,9 @@ export function App() {
   if (status === 'loading') return screen(<SchermataCaricamento title={title} />)
   if (status === 'error') return screen(<SchermataErrore title={title} onRetry={() => void refresh()} />)
 
-  if (!trip) {
-    return receivedInvites.length > 0 ? (
-      screen(sceltaViaggio(() => undefined))
-    ) : (
-      <>
-        <PrimoViaggio />
-        <AvvisoHost />
-      </>
-    )
-  }
-
-  // subito dopo l'accesso si sceglie quale viaggio aprire (#43), anche se ce n'è uno solo
-  if (auth.status === 'signed-in' && daScegliere) {
+  // subito dopo l'accesso si sceglie quale viaggio aprire (#43), anche se ce n'è uno solo. Senza viaggi si vede lo stesso
+  // «Tutti i viaggi» con lo stato vuoto: è chi entra a creare il primo (nessun foglio aperto da solo)
+  if (!trip || (auth.status === 'signed-in' && daScegliere)) {
     const fatto = () => {
       try {
         localStorage.removeItem(SCEGLI_DOPO_ACCESSO)

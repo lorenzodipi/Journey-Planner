@@ -427,7 +427,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
           >
             <span className="fa-help">
               {!mezzo && suggerito ? `Suggerito: ${suggerito.perche.charAt(0).toLowerCase()}${suggerito.perche.slice(1)} ` : ''}
-              Ogni spostamento si può cambiare dalla sua riga nel giorno.
+              Ogni spostamento si può cambiare nella tappa di un giorno.
             </span>
           </Riquadri>
           {mezzoScelto !== 'walk' ? (

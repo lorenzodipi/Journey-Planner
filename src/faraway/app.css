@@ -547,8 +547,6 @@ sup{margin-left:0}
 [data-theme="dark"] .k-TicketOrizzontale .rt2 .pl{background:var(--surface-card)}
 /* Rosso «pericolo» nello scuro (#F87171): fondo al 5% invece del 10% */
 [data-theme="dark"] .fa-ib.dng,[data-theme="dark"] .fa-btn.del,[data-theme="dark"] .fa-selbar .fa-btn{background:rgba(0,0,0,.3);color:#ff6b6bf5;border-color:#fa525266}
-/* «Esci dall’account» del primo viaggio (stile legacy, solo testo): stesso rosso morbido, niente altro cambia */
-[data-theme="dark"] .btn.danger{color:#ff6b6bf5}
 /* Segmentato: il binario non scelto è un po' più chiaro della pagina, senza bordo */
 [data-theme="dark"] .fa-seg{background:#262F40}
 /* Biglietti colorati: bottoni e pillole si fondono con la tinta (vetro chiaro, niente bordo acceso) */

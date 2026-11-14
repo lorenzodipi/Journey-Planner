@@ -5,7 +5,6 @@ import cibo from '../assets/art/cibo.svg'
 import citta from '../assets/art/citta.svg'
 import lockup from '../assets/art/faraway-lockup.svg'
 import lockupReverse from '../assets/art/faraway-lockup-reverse.svg'
-import symbol from '../assets/art/faraway-symbol.svg'
 import mare from '../assets/art/mare.svg'
 import natura from '../assets/art/natura.svg'
 import notte from '../assets/art/notte.svg'
@@ -16,7 +15,7 @@ import tempio from '../assets/art/tempio.svg'
 import vuotoLuoghi from '../assets/art/vuoto-luoghi.svg'
 import vuotoViaggi from '../assets/art/vuoto-viaggi.svg'
 
-export const ART = { calendario, castello, cibo, citta, lockup, lockupReverse, symbol, mare, natura, notte, panorama, partenza, profilo, tempio, vuotoLuoghi, vuotoViaggi }
+export const ART = { calendario, castello, cibo, citta, lockup, lockupReverse, mare, natura, notte, panorama, partenza, profilo, tempio, vuotoLuoghi, vuotoViaggi }
 
 /** Scena per categoria di luogo (come nei mock: tempio, castello, cibo, quartiere, natura...). */
 export function sceneFor(category: string | undefined): string {
