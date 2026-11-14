@@ -1,6 +1,6 @@
 // Documenti (#52): file senza un luogo (eSIM, assicurazione, passaporti, visti…) con la loro visibilità.
 // I file di alloggi, voli e trasporti stanno nelle loro pagine; quelli delle prenotazioni nelle tappe: niente doppioni.
-// Ogni documento è un biglietto come quelli dei trasporti: chiuso nome, formato con la dimensione e chi lo vede; aperto i dati e le azioni.
+// Ogni documento è un biglietto come quelli dei trasporti: chiuso nome, formato e dimensione; aperto i dati e le azioni.
 import { useState } from 'react'
 import { Pulsante } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
@@ -11,7 +11,7 @@ import { useUnaAperta } from '../../faraway/Righe'
 import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { useAuth } from '../../lib/auth'
 import { openBookingFile } from '../../lib/bookingFiles'
-import { chiVede, dimensione, puoCambiare, senzaCollegamenti, VIS_LABEL } from '../../lib/documenti'
+import { chiVede, dimensione, puoCambiare, senzaCollegamenti } from '../../lib/documenti'
 import { isDocOffline } from '../../lib/documentiOffline'
 import { formatMoney } from '../../lib/money'
 import { showToast } from '../../state/toast'
@@ -89,10 +89,6 @@ export function DocumentiPage() {
                     <span className="ti">
                       <b>{d.name}</b>
                       <span>{[formato(d), dimensione(d.size)].filter(Boolean).join(' · ')}</span>
-                      <span className="pl3b ok">
-                        {d.visibility === 'all' ? null : <Sv name="lock" size={16} />}
-                        {d.visibility === 'selected' ? 'Alcuni' : VIS_LABEL[d.visibility]}
-                      </span>
                     </span>
                     <span className="chv" aria-hidden="true">
                       <Sv name="chev" size={20} />

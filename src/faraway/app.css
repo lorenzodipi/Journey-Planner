@@ -29,10 +29,19 @@
    del suo colore, come gli altri. Il colore del browser «arriva» dopo una transizione lunghissima: in pratica mai. */
 input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus{-webkit-text-fill-color:var(--ink);caret-color:var(--ink);transition:background-color 600000s 0s,color 600000s 0s}
 input:autofill{background:transparent}
+/* inviti e visualizzatori: l'email è il titolo, più piccola perché stia su una riga */
+.fa-xr.invito .fa-row .t{font-size:14px;line-height:20px;overflow-wrap:anywhere}
+.fa-xr.invito .inv-sub{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:4px}
 /* testo lungo dentro un pulsante (es. nome del file scelto): una riga con i puntini, non esce dal bordo */
 .fa-btn{min-width:0;max-width:100%}
 .fa-btn .ell{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* biglietti aperti: la parte sotto sale di 1 px sotto quella sopra, così su iOS non resta una riga fra le due */
+/* biglietti in due parti (con il tratteggio): la parte dopo sale di 1 px sotto quella prima, così su iOS fra le due non
+   resta uno spiraglio che l'ombra di contorno disegna come una riga sottile. Dove il tratteggio è nella parte sopra,
+   quella sta davanti; dove è nella parte sotto (.bt, .bot, .cr) sta davanti quella sotto, com'è già nell'ordine. */
+:is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tk>.v-top,:is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .rr-top{position:relative;z-index:1}
+:is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tk>.v-top+*,:is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .rr-top+.rr-bot{margin-top:-1px}
+.fa-tkt .tp+.bt,.k-Biglietto .top+.bot{margin-top:-1px}
+.k-Biglietto .cl+.cr{margin-left:-1px}
 .k-TicketOrizzontale .tv.open>.a{z-index:1}
 /* «Costo non inserito» delle prenotazioni: testo piccolo su una riga, «Aggiungi costo» accanto e allineato al centro */
 .k-TicketOrizzontale .tv .pv.no.pic{font:600 16px/22px var(--font-sans)}

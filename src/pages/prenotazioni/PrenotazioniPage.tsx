@@ -155,6 +155,8 @@ export function PrenotazioniPage() {
                 ['Fornitore', b.provider ?? ''],
                 ['Contatto', b.contact ?? ''],
                 ['Cancellazione', b.cancellationPolicy ?? ''],
+                // lo stato non è più una pillola sulla card chiusa: è una voce del dettaglio
+                ['Stato', STATO_LABEL[stato]],
                 ['Tappa', trip.bookingLinks ? (tappe.length === 0 ? 'Non collegata' : tappe.map((id) => giornoDellaTappa(trip, id)?.title ?? 'Tappa').join(', ')) : ''],
                 ['Allegato', b.filePath ? (cached ? 'Disponibile offline' : b.keepOffline ? 'Sarà disponibile offline' : 'Serve la rete per aprirlo') : ''],
                 ['Fuori periodo', quando(b, trip) === 'fuori-periodo' ? 'Fuori dalle date del viaggio' : ''],
@@ -172,10 +174,6 @@ export function PrenotazioniPage() {
                         <span className="ti">
                           <b>{b.title}</b>
                           <span>{sub}</span>
-                          <span className={cx('pl3b', stato === 'confirmed' ? 'ok' : 'td')}>
-                            <Sv name={stato === 'confirmed' ? 'check' : stato === 'cancelled' ? 'close' : 'clock'} size={16} />
-                            {STATO_LABEL[stato]}
-                          </span>
                         </span>
                         <span className="chv" aria-hidden="true">
                           <Sv name="chev" size={20} />

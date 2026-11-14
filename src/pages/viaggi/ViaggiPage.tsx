@@ -17,7 +17,7 @@ import { useTrips } from '../../state/trip'
 import type { Trip } from '../../types'
 import { ART } from '../../ui/art'
 import { Button as AriaButton } from 'react-aria-components'
-import { Avatar, Avatars, Campo, Pillola, Pulsante } from '../../faraway/base'
+import { Avatar, Avatars, Campo, Pillola, Pulsante, Segmenti } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
 import { Foglio } from '../../faraway/Foglio'
 import { Affianca, BarraGrande, Schermata } from '../../faraway/shell'
@@ -37,6 +37,8 @@ function Copertina({ trip }: { trip: Trip }) {
   return <img src={src} alt="" loading="lazy" decoding="async" onError={() => paese && setRotta(paese)} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
 }
 
+type Sezione = 'partecipo' | 'visualizzo' | 'archiviati'
+
 export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
   const t = useTrips()
   const auth = useAuth()
@@ -52,7 +54,14 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
   const archiviati = tutti.filter((x) => x.archivedAt && corrisponde(x))
   const conRicerca = tutti.length >= 3
   const [duplica, setDuplica] = useState<Trip | null>(null)
-  const [mostraArch, setMostraArch] = useState(false)
+  // sezioni (solo quelle che hanno viaggi; con una sola il selettore non si vede): partecipo, solo da vedere, archiviati
+  const sezioni: { value: Sezione; label: string }[] = []
+  if (tutti.some((x) => !x.archivedAt && x.myRole !== 'viewer')) sezioni.push({ value: 'partecipo', label: 'Partecipo' })
+  if (tutti.some((x) => !x.archivedAt && x.myRole === 'viewer')) sezioni.push({ value: 'visualizzo', label: 'Visualizzo' })
+  if (tutti.some((x) => x.archivedAt)) sezioni.push({ value: 'archiviati', label: 'Archiviati' })
+  const [sezScelta, setSezione] = useState<Sezione>('partecipo')
+  const sezione: Sezione = sezioni.some((x) => x.value === sezScelta) ? sezScelta : (sezioni[0]?.value ?? 'partecipo')
+  const mostrati = sezione === 'archiviati' ? archiviati : lista.filter((x) => (sezione === 'visualizzo') === (x.myRole === 'viewer'))
   const [rispondendo, setRispondendo] = useState<string | null>(null)
   useEffect(() => {
     void t.refreshInvites()
@@ -197,7 +206,8 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
       {conRicerca ? (
         <Campo label="Cerca un viaggio" hideLabel icon="search" type="search" value={cerca} onChange={setCerca} placeholder="Cerca un viaggio per nome o destinazione" enterKeyHint="search" />
       ) : null}
-      {lista.length === 0 && q && !archiviati.length ? (
+      {sezioni.length > 1 ? <Segmenti label="Quali viaggi" value={sezione} options={sezioni} onChange={setSezione} /> : null}
+      {mostrati.length === 0 && q ? (
         <p className="fa-m" role="status" style={{ margin: 0, textAlign: 'center' }}>Nessun viaggio corrisponde a «{cerca.trim()}».</p>
       ) : null}
       {tutti.every((x) => x.archivedAt) && !q ? (
@@ -215,15 +225,7 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
         />
       ) : (
         <>
-          <Affianca uguali>{lista.map(conAzioni)}</Affianca>
-          {archiviati.length ? (
-            <section aria-label="Viaggi archiviati" style={{ display: 'grid', gap: 16 }}>
-              <button type="button" className="fa-lnk" style={{ justifySelf: 'center' }} aria-expanded={mostraArch} onClick={() => setMostraArch(!mostraArch)}>
-                {mostraArch ? 'Nascondi' : 'Mostra'} i viaggi archiviati ({archiviati.length})
-              </button>
-              {mostraArch ? <Affianca uguali>{archiviati.map(conAzioni)}</Affianca> : null}
-            </section>
-          ) : null}
+          <Affianca uguali>{(sezioni.length > 1 ? mostrati : lista).map(conAzioni)}</Affianca>
           <Pulsante color="tertiary" onPress={() => setInvito(true)}>
             Ho un invito
           </Pulsante>

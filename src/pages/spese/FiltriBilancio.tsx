@@ -4,6 +4,7 @@ import { Campo, Chip, Pulsante, Segmenti } from '../../faraway/base'
 import { CampoScelta } from '../../faraway/CampoScelta'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
+import { cx } from '../../faraway/cx'
 import type { DebitoSpesa } from '../../lib/debitiSpese'
 import { filtriAttivi, FILTRI_VUOTI, ORDINE_BASE, type FiltriBilancio, type Ordine, type OrdinePer, type StatoFiltro } from '../../lib/filtriBilancio'
 import { categoriaDi } from '../../lib/ricevuta'
@@ -63,11 +64,14 @@ export function FiltriBilancio({ righe, nome, cur, filtri, onFiltri, ordine, onO
   if (righe.length < 2) return null
   return (
     <>
-      <div className="fa-chips scroll" role="group" aria-label="Filtri e ordine">
-        <Chip on={attivo} icon={<Sv name="filter" size={18} />} onPress={() => setAperto(true)} label={attivo ? `Filtri e ordine: ${n} filtri attivi. Cambia` : 'Filtri e ordine'}>
-          {n > 0 ? `Filtri · ${n}` : 'Filtri'}
-        </Chip>
-        {/* scelte rapide accanto a «Filtri», come in Dettaglio spese: lo stato e, con più persone, la persona */}
+      {/* «Filtri» resta fermo, le scelte rapide accanto scorrono (come in Prenotazioni) */}
+      <div className="fa-frow">
+        <button type="button" className={cx('fa-fbtn', attivo && 'on')} aria-label={attivo ? `Apri filtri e ordine, ${n} filtri attivi` : 'Apri filtri e ordine'} onClick={() => setAperto(true)}>
+          <Sv name="filter" size={18} />
+          Filtri
+          {n > 0 ? <b>{n}</b> : null}
+        </button>
+      <div className="fa-chips scroll" role="group" aria-label="Scelte rapide">
         {rapidi.map((x) => (
           <Chip key={x.value} on={filtri.stato === x.value} onPress={() => set('stato', x.value)}>
             {x.label}
@@ -86,6 +90,7 @@ export function FiltriBilancio({ righe, nome, cur, filtri, onFiltri, ordine, onO
           </Chip>
         ) : null}
         {attivo ? <Chip onPress={azzera} label="Azzera filtri e ordine">Azzera</Chip> : null}
+      </div>
       </div>
       {aperto ? (
         <Foglio

@@ -30,7 +30,7 @@ La barra in basso ha cinque schede. Ogni pagina interna appartiene a una scheda,
 - **Dettaglio spese**: i gruppi sono per **giorno d'acquisto**, non d'utilizzo. Una spesa registrata a mano ha la data scelta; le spese che nascono da alloggi, voli, trasporti e prenotazioni pagati hanno il giorno in cui la voce è stata inserita nell'app (`createdAt`, nel fuso del telefono); senza quella data (demo, dati vecchi) vale il giorno d'uso. Regola in `giornoAcquisto` (`src/lib/spese.ts`); vale anche per il filtro per data.
 - **Esporta il riepilogo** (l'immagine con statistiche e bilancio) sta in Impostazioni, nella sezione «Copie e file», non più in Altro.
 
-«Tutti i viaggi» (`/viaggi`) è fuori dalle schede: niente barra in basso, niente freccia, l'avatar del profilo in alto a destra. Chi entra senza viaggi vede questa pagina con lo stato vuoto («Nessun viaggio ancora», «Crea un viaggio», «Ho un invito»): nessun foglio si apre da solo.
+«Tutti i viaggi» (`/viaggi`) è fuori dalle schede: niente barra in basso, niente freccia, l'avatar del profilo in alto a destra. Chi entra senza viaggi vede questa pagina con lo stato vuoto («Nessun viaggio ancora», «Crea un viaggio», «Ho un invito»): nessun foglio si apre da solo. I viaggi si dividono in «Partecipo», «Visualizzo» (dove si è visualizzatori) e «Archiviati»: il selettore in alto compare solo se ci sono almeno due di queste sezioni, e ogni sezione solo se ha viaggi.
 
 ## I concetti
 

@@ -215,6 +215,7 @@ export function ViaggiatoriPage() {
               return (
                 <RigaApribile
                   key={v.userId}
+                  className="invito"
                   icon={<Sv name="eye" size={22} />}
                   title={`${v.email ?? 'Visualizzatore'}${io ? ' (tu)' : ''}`}
                   sub="Vede il viaggio, non lo modifica"
@@ -245,10 +246,16 @@ export function ViaggiatoriPage() {
             {inviti.map((i) => (
               <RigaApribile
                 key={i.id}
+                className="invito"
                 icon={<Sv name="mail" size={22} />}
                 title={i.email}
-                sub={[i.role === 'viewer' ? 'Visualizzatore' : null, i.stato === 'inviato' ? scadenzaTesto(i.expiresAt) : null].filter(Boolean).join(' · ') || undefined}
-                end={<Pillola tone={TONO[i.stato]}>{STATO_INVITO[i.stato]}</Pillola>}
+                // lo stato sta nella riga sotto, così l'email ha tutta la larghezza per stare su una riga
+                sub={
+                  <span className="inv-sub">
+                    <Pillola tone={TONO[i.stato]}>{STATO_INVITO[i.stato]}</Pillola>
+                    {[i.role === 'viewer' ? 'Visualizzatore' : null, i.stato === 'inviato' ? scadenzaTesto(i.expiresAt) : null].filter(Boolean).join(' · ')}
+                  </span>
+                }
                 open={open.isOpen(i.id)}
                 onToggle={() => open.toggle(i.id)}
               >

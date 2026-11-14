@@ -100,34 +100,37 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
         </div>
         {open ? (
           <div className="b">
+            {/* visualizzatore: niente prezzo, e le persone sono già in «Passeggeri» qui sotto */}
+            {lettura ? null : (
             <div className="pr">
-              <div>
-                {lettura ? null : (
-                  <div className="pv" style={manca ? { color: 'var(--ink-muted)' } : undefined}>
-                    {manca ? 'Prezzo non inserito' : formatMoney(prezzo.totale as number, cur)}
+                <div>
+                  {lettura ? null : (
+                    <div className="pv" style={manca ? { color: 'var(--ink-muted)' } : undefined}>
+                      {manca ? 'Prezzo non inserito' : formatMoney(prezzo.totale as number, cur)}
+                    </div>
+                  )}
+                  <div className="pn">
+                    <span aria-hidden="true" className="avs">
+                      {people.slice(0, 4).map((p) => (
+                        <span key={p.id} style={{ background: `var(--disco-${COL[(discOf(trip, p.id) - 1) % 5]})` }}>
+                          {initials(p.name)}
+                        </span>
+                      ))}
+                    </span>
+                    <span>
+                      {people.length === 1 ? '1 persona' : `${people.length} persone`}
+                      {!lettura && !manca && prezzo.persone > 1 && prezzo.aTesta !== null ? ` · ${formatMoney(prezzo.aTesta, cur)} a testa` : ''}
+                    </span>
                   </div>
-                )}
-                <div className="pn">
-                  <span aria-hidden="true" className="avs">
-                    {people.slice(0, 4).map((p) => (
-                      <span key={p.id} style={{ background: `var(--disco-${COL[(discOf(trip, p.id) - 1) % 5]})` }}>
-                        {initials(p.name)}
-                      </span>
-                    ))}
-                  </span>
-                  <span>
-                    {people.length === 1 ? '1 persona' : `${people.length} persone`}
-                    {!lettura && !manca && prezzo.persone > 1 && prezzo.aTesta !== null ? ` · ${formatMoney(prezzo.aTesta, cur)} a testa` : ''}
-                  </span>
                 </div>
+                {manca && !lettura ? (
+                  <Pulsante size="sm" iconLeading="plus" onPress={() => onEdit('prezzo')}>
+                    Aggiungi prezzo
+                  </Pulsante>
+                ) : null}
               </div>
-              {manca && !lettura ? (
-                <Pulsante size="sm" iconLeading="plus" onPress={() => onEdit('prezzo')}>
-                  Aggiungi prezzo
-                </Pulsante>
-              ) : null}
-            </div>
-            <dl className="dl">
+            )}
+            <dl className="dl" style={lettura ? { marginTop: 0, borderTop: 0, paddingTop: 0 } : undefined}>
               {rows
                 .filter(([k, v]) => v || (k === 'Prezzo' && !lettura))
                 .map(([k, v]) => (
