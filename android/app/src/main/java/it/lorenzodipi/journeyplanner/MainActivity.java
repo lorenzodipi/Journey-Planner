@@ -15,6 +15,8 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // plugin dell'app (non di npm): proposta di salvare la password dopo l'accesso
+        registerPlugin(SalvaPassword.class);
         super.onCreate(savedInstanceState);
         orientamentoPerLoSchermo(getResources().getConfiguration());
     }

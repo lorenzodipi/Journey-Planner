@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { erroreEmail } from '../lib/accesso'
 import { useAuth } from '../lib/auth'
+import { proponiSalvaPassword } from '../lib/salvaPassword'
 import { useOnline } from '../state/online'
 import { ART } from '../ui/art'
 import { Banner, Campo, PulsanteIcona, Pulsante } from '../faraway/base'
@@ -27,6 +28,8 @@ export function Login() {
     setError(null)
     const message = await auth.signIn(email, password)
     if (message) setError(message)
+    // app Android: il riquadro «Salvare la password?» non compare da solo nella WebView
+    else void proponiSalvaPassword(email.trim(), password)
     setBusy(false)
   }
 
