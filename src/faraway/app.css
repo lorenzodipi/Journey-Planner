@@ -676,3 +676,16 @@ dialog.fa-mod:focus{outline:none}
 .fa-btns{flex-wrap:wrap}
 .fa-btns>.fa-btn{min-width:min-content}
 .k-Tappa .top.fermo{cursor:default}
+/* riquadri affiancati (Al giorno · Ancora da spendere, Da dare · Da ricevere): titolo in alto, importo e nota in basso,
+   così gli importi restano alla stessa altezza anche se un titolo va su due righe */
+.k-Riepilogo .two>.card{display:flex;flex-direction:column}
+.k-Riepilogo .two>.card>.v{margin-top:auto}
+/* Luoghi, mappa a tutta pagina con la finestra espansa («Ingrandisci» sulla mappa accanto): barra e filtri larghi come la
+   pagina, la mappa fino in fondo (niente schede in basso), «+ Luogo» nell'angolo */
+.fa-phone.fa-mapgrande{--colonna:calc(100vw - var(--rail))}
+.fa-phone.fa-mapgrande:not(.has-tabs){--colonna:100vw}
+.fa-mapgrande .fa-map{margin-bottom:0}
+.fa-phone.fa-mapgrande .fa-maptop{padding-inline:var(--margine)}
+/* la card del luogo scelto resta in basso a sinistra, larga come l'elenco; «+ Luogo» resta nell'angolo in basso a destra */
+.fa-mapgrande .fa-mapcard{right:auto;width:min(440px,calc(100% - 24px))}
+.fa-phone.fa-mapgrande .fa-fab{bottom:calc(env(safe-area-inset-bottom,0px) + 24px)!important}

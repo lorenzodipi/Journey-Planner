@@ -142,7 +142,8 @@ export function Luoghi() {
   const setVista = (v: Vista) => navigate(v === 'mappa' ? '/luoghi?vista=mappa' : '/luoghi', { replace: true })
   // finestra espansa (pieghevole in orizzontale, computer): elenco a sinistra largo come un telefono e mappa a destra
   const accanto = useMappaAccanto()
-  if (accanto) return <Elenco setVista={setVista} conMappa />
+  // con la mappa accanto, «Ingrandisci» apre la mappa a tutta pagina (la vista Mappa del telefono, senza «Elenco | Mappa»)
+  if (accanto) return vista === 'mappa' ? <Mappa setVista={setVista} grande /> : <Elenco setVista={setVista} conMappa />
   return vista === 'mappa' ? <Mappa setVista={setVista} /> : <Elenco setVista={setVista} />
 }
 
@@ -305,7 +306,7 @@ function Elenco({ setVista, conMappa }: { setVista: (v: Vista) => void; conMappa
             />
           ) : null}
           {az.nodes}
-          {conMappa ? <MappaAccanto places={visible} selectedId={selecting ? null : evidenza} onSelect={daMappa} /> : null}
+          {conMappa ? <MappaAccanto places={visible} selectedId={selecting ? null : evidenza} onSelect={daMappa} onIngrandisci={() => setVista('mappa')} /> : null}
         </>
       }
     >
@@ -436,7 +437,7 @@ function CreditoFoto({ trip, place }: { trip: Trip; place: Place }) {
 
 /** La mappa a destra dell'elenco (finestra espansa): gli stessi luoghi dell'elenco, con gli stessi filtri e la ricerca.
  *  Toccare un pin non apre una card sulla mappa: lo dice all'elenco, che scorre fino al luogo. */
-function MappaAccanto({ places, selectedId, onSelect }: { places: Place[]; selectedId: string | null; onSelect: (id: string | null) => void }) {
+function MappaAccanto({ places, selectedId, onSelect, onIngrandisci }: { places: Place[]; selectedId: string | null; onSelect: (id: string | null) => void; onIngrandisci: () => void }) {
   const trip = useTrip()
   const [View, setView] = useState<MapViewComponent | null>(null)
   const [loadError, setLoadError] = useState(false)
@@ -475,6 +476,9 @@ function MappaAccanto({ places, selectedId, onSelect }: { places: Place[]; selec
           </p>
         )}
         <div className="fa-mapctl">
+          <button type="button" className="fa-ib" aria-label="Ingrandisci la mappa" onClick={onIngrandisci}>
+            <Sv name="espandi" size={22} />
+          </button>
           <button type="button" className="fa-ib" aria-label="La mia posizione" onClick={() => api.current?.locate()}>
             <Sv name="pin" size={22} />
           </button>
@@ -484,10 +488,12 @@ function MappaAccanto({ places, selectedId, onSelect }: { places: Place[]; selec
   )
 }
 
-function Mappa({ setVista }: { setVista: (v: Vista) => void }) {
+/** Vista Mappa. `grande`: la mappa a tutta pagina aperta da «Ingrandisci» con la mappa accanto (finestra espansa): niente
+ *  «Elenco | Mappa», gli stessi filtri dell'elenco e «Riduci» per tornare a elenco e mappa affiancati. */
+function Mappa({ setVista, grande }: { setVista: (v: Vista) => void; grande?: boolean }) {
   const trip = useTrip()
   const places = useMemo(() => conStato(trip), [trip])
-  const [filters, setFilters] = usePlaceFilters('mappa', trip.id)
+  const [filters, setFilters] = usePlaceFilters(grande ? 'luoghi' : 'mappa', trip.id)
   const [filtriOpen, setFiltriOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [text, setText] = useState('')
@@ -577,7 +583,7 @@ function Mappa({ setVista }: { setVista: (v: Vista) => void }) {
   return (
     <Schermata
       bare
-      className="fa-mapmode"
+      className={cx('fa-mapmode', grande && 'fa-mapgrande')}
       bar={<BarraGrande title="Luoghi" sub={sottotitolo(trip.places)} actions={<PulsanteIcona icon={searchOpen ? 'close' : 'search'} label={searchOpen ? 'Chiudi la ricerca' : 'Cerca un luogo'} expanded={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />} />}
       overlay={
         <>
@@ -620,15 +626,17 @@ function Mappa({ setVista }: { setVista: (v: Vista) => void }) {
             ) : null}
           </div>
         ) : null}
-        <Segmenti
-          label="Vista"
-          value="mappa"
-          options={[
-            { value: 'elenco', label: 'Elenco' },
-            { value: 'mappa', label: 'Mappa' },
-          ]}
-          onChange={(v) => setVista(v as Vista)}
-        />
+        {grande ? null : (
+          <Segmenti
+            label="Vista"
+            value="mappa"
+            options={[
+              { value: 'elenco', label: 'Elenco' },
+              { value: 'mappa', label: 'Mappa' },
+            ]}
+            onChange={(v) => setVista(v as Vista)}
+          />
+        )}
         {trip.places.length > 0 ? <RigaFiltri filters={filters} onChange={(f) => (setFilters(f), select(null), setNoPosDismissed(''))} onOpen={() => setFiltriOpen(true)} /> : null}
       </div>
       <div className="fa-map">
@@ -640,6 +648,11 @@ function Mappa({ setVista }: { setVista: (v: Vista) => void }) {
           </p>
         )}
         <div className="fa-mapctl">
+          {grande ? (
+            <button type="button" className="fa-ib" aria-label="Riduci la mappa" onClick={() => setVista('elenco')}>
+              <Sv name="riduci" size={22} />
+            </button>
+          ) : null}
           <button type="button" className="fa-ib" aria-label="La mia posizione" onClick={() => api.current?.locate()}>
             <Sv name="pin" size={22} />
           </button>
