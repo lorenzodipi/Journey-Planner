@@ -5,15 +5,13 @@ import { cameraDi, inclusi, notti, orarioCheck } from '../lib/alloggi'
 import { formatShort } from '../lib/dates'
 import { convert, formatMoney, rateFor } from '../lib/money'
 import { nightsOf } from '../lib/stays'
-import { discOf, initials } from '../state/me'
 import type { Stay, Trip } from '../types'
 import { Ic } from '../ui/Sprite'
 import { Pulsante } from './base'
 import { cx } from './cx'
 import { Sv } from './icons'
+import { PersoneRiga, stessePersone } from './Persone'
 import { RigaApribile } from './Righe'
-
-const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']
 
 export function mappaAlloggio(s: Stay): string | null {
   if (s.mapsUrl) return s.mapsUrl
@@ -39,6 +37,7 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
   const rate = s.totalCost != null && trip.baseCurrency !== s.currency ? rateFor(trip, s.currency) : undefined
   const approx = s.totalCost != null && rate ? convert(s.totalCost, rate) : null
   const ids = s.forTravelers?.length ? s.forTravelers : trip.travelers.map((p) => p.id)
+  const perChi = ids.length > 0 && trip.travelers.length > 1
   const paidBy = trip.travelers.find((p) => p.id === s.paidBy)
   const pasti = inclusi(s)
   const indirizzo = [s.address, s.city && s.city !== s.name ? s.city : ''].filter(Boolean).join(' · ')
@@ -107,18 +106,11 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
                     <dd>{paidBy.name.split(/\s+/)[0]}</dd>
                   </div>
                 ) : null}
-                {ids.length > 0 && trip.travelers.length > 1 ? (
+                {perChi ? (
                   <div>
-                    <dt>Per chi</dt>
+                    <dt>Diviso tra</dt>
                     <dd>
-                      <span aria-hidden="true" className="avs">
-                        {ids.slice(0, 4).map((id) => (
-                          <span key={id} style={{ background: `var(--disco-${COL[(discOf(trip, id) - 1) % 5]})` }}>
-                            {initials(trip.travelers.find((p) => p.id === id)?.name ?? '?')}
-                          </span>
-                        ))}
-                      </span>
-                      {ids.length === trip.travelers.length ? ' Tutti' : ` ${ids.length} persone`}
+                      <PersoneRiga trip={trip} ids={ids} />
                     </dd>
                   </div>
                 ) : null}
@@ -128,10 +120,13 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
                     <dd>{s.guests}</dd>
                   </div>
                 ) : null}
-                {s.participants?.length ? (
+                {/* «Dormono qui» solo se sono persone diverse da «Per chi» (altrimenti è una ripetizione) */}
+                {s.participants?.length && !(perChi && stessePersone(s.participants, ids)) ? (
                   <div>
                     <dt>Dormono qui</dt>
-                    <dd>{s.participants.map((id) => trip.travelers.find((p) => p.id === id)?.name.split(/\s+/)[0]).filter(Boolean).join(', ')}</dd>
+                    <dd>
+                      <PersoneRiga trip={trip} ids={s.participants} />
+                    </dd>
                   </div>
                 ) : null}
                 {s.phone ? (

@@ -43,7 +43,8 @@ Tutti usano `<dialog>` nativo aperto con `showModal()`: focus intrappolato, sfon
 | --- | --- | --- |
 | `Percorso` | Partenza → arrivo, check-in → check-out | Due punti su una linea, ognuno con il suo micro-titolo («Partenza», «Arrivo») e i campi «Luogo» o «Aeroporto», «Data», «Ora». In mezzo la durata («3 h 29 min», «5 notti») solo se si può calcolare. Mai etichette come «Partenza, data». |
 | `Riquadri` | Una scelta tra poche opzioni importanti: mezzo, tipo, stato, categoria | Riquadri con il glifo dello sprite (`g-tra-*`, `g-cat-*`, `g-sez-*`) o un'icona; una riga sotto può dire la conseguenza. 3 o 4 per riga; sotto i 300 px l'etichetta passa a 12 px. |
-| `PerChi` | «Per chi» di costi e spese | Una persona: non si mostra. Due: «Tutti», «Solo io», «Solo <l'altra>». Da tre: «Tutti», «Solo io», «Scegli» con l'elenco delle persone e la spunta; la scelta non resta mai vuota («Serve almeno una persona»). Senza «io» nel viaggio, «Solo io» non c'è. |
+| `PerChi` | «Diviso tra» di costi e spese (tra chi si divide il costo; chi ha pagato è «Pagato da») | Una persona: non si mostra. Due: «Tutti», «Solo io», «Solo <l'altra>». Da tre: «Tutti», «Solo io», «Scegli» con l'elenco delle persone e la spunta; la scelta non resta mai vuota («Serve almeno una persona»). Senza «io» nel viaggio, «Solo io» non c'è. |
+| `PersoneRiga` (`src/faraway/Persone.tsx`) | Persone nelle righe delle card («Diviso tra», «Dormono qui», «Passeggeri») | Sempre lo stesso formato: pallini con le iniziali, poi «Tutti» se ci sono tutti, altrimenti i nomi. «Dormono qui» non si mostra se sono le stesse persone di «Diviso tra». |
 | `IlCostoE` | «A persona» / «Totale» | Sotto ogni riquadro l'altra lettura («160,00 € in tutto», «40,00 € a testa»). Con una persona sola non si mostra. |
 | `Contatore` | Numeri piccoli: persone, ospiti | − n +, 44 px; con `vuoto` il numero si può togliere («—», non indicato). |
 | `SegmentiFacoltativi` | Scelta breve che si può lasciare vuota (fermate) | La stessa scelta toccata di nuovo si toglie. |
@@ -59,7 +60,7 @@ Lo stesso blocco ha **lo stesso nome e lo stesso ordine** in tutti i fogli.
 
 | Blocco | Ordine fisso | Nomi |
 | --- | --- | --- |
-| Persone e costo | Per chi → Costo e Valuta → Il costo è (A persona / Totale) → Pagato → Pagato da | «Per chi», «Costo», «Valuta», «Il costo è», «Pagato» |
+| Persone e costo | Diviso tra → Costo e Valuta → Il costo è (A persona / Totale) → Pagato → Pagato da | «Diviso tra», «Costo», «Valuta», «Il costo è», «Pagato» |
 | Quando | `Percorso`: partenza (o check-in) → arrivo (o check-out), con la durata | «Partenza» / «Arrivo», campi «Data» e «Ora» |
 | Codice | Un campo solo | «Codice di prenotazione» |
 | Note | In fondo all'ultimo gruppo prima di «Altri dettagli» | «Note» |

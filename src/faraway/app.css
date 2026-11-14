@@ -318,10 +318,10 @@ html:has(dialog[open]){overflow:hidden}
 .k-Biglietto .fa-btn.out,.k-Ticket .fa-btn.out,.k-TicketOrizzontale .fa-btn.out{background:#EAF4FC;color:#075A99;border:1.5px solid #0866AD;box-shadow:none}
 .k-Biglietto .fa-btn.del,.k-Ticket .fa-btn.del,.k-TicketOrizzontale .fa-btn.del{background:#FFF1F1;color:#822328;border:1.5px solid #A82C34}
 
-/* persone («Per chi»): pallini staccati tra loro e dal testo */
-.fa-stay .avs,.tv .avs{display:inline-flex;gap:8px;margin-right:8px;vertical-align:middle}
+/* persone («Diviso tra», «Dormono qui», «Passeggeri»): pallini vicini, staccati dal testo */
+.fa-stay .avs,.tv .avs{display:inline-flex;gap:4px;margin-right:8px;vertical-align:middle}
 .fa-stay .avs span,.tv .avs span{margin:0!important}
-.fa-stay .avs{gap:4px}
+.k-TicketOrizzontale .tv .dl .avs{display:inline-flex}
 .k-Checklist .it .tx{display:grid;gap:8px;min-width:0}
 .fa-ib.dng{background:color-mix(in srgb,var(--danger) 10%,var(--surface-card));border:1.5px solid var(--danger);color:var(--danger);box-sizing:border-box}
 

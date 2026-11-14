@@ -129,7 +129,7 @@ export function sharesFrom(mode: SplitMode, who: string[], vals: Record<string, 
 }
 
 /**
- * «Per chi» a riquadri (Tutti, Solo io, Solo l'altra persona o Scegli) e, se le persone sono più di una, «Come dividere»:
+ * «Diviso tra» a riquadri (Tutti, Solo io, Solo l'altra persona o Scegli) e, se le persone sono più di una, «Come dividere»:
  * parti uguali, percentuali (somma 100) o importi fissi (somma = importo), con il controllo sotto.
  */
 export function DivisioneEditor({ trip, meId, mode, onMode, who, onWho, vals, onVals, total, currency, hint }: {

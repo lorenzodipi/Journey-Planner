@@ -1,5 +1,5 @@
 // Pezzi comuni dei fogli (docs/linee-guida/03-modali-e-moduli.md): gruppi con titolo, «Altri dettagli» che si apre come
-// un gruppo, percorso partenza → arrivo con la durata, riquadri con l'immagine, «Per chi», «Il costo è» e il contatore.
+// un gruppo, percorso partenza → arrivo con la durata, riquadri con l'immagine, «Diviso tra», «Il costo è» e il contatore.
 import { useEffect, useId, useState, type ReactNode } from 'react'
 import { alterna, alternaPersona, conseguenzaCosto, modoPerChi, selezionePerModo, type ModoPerChi } from '../lib/moduli'
 import { discOf, initials } from '../state/me'
@@ -145,10 +145,10 @@ export function Riquadri<T extends string>({ label, cols, value, options, onChan
 }
 
 /**
- * «Per chi» a riquadri. Una persona: niente. Due: «Tutti», «Solo io» e «Solo <l'altra>». Da tre in su: «Tutti», «Solo io»
+ * «Diviso tra» a riquadri. Una persona: niente. Due: «Tutti», «Solo io» e «Solo <l'altra>». Da tre in su: «Tutti», «Solo io»
  * e «Scegli», che apre l'elenco delle persone con la spunta. La scelta non resta mai vuota.
  */
-export function PerChi({ trip, meId, value, onChange, label = 'Per chi', help }: { trip: Pick<Trip, 'travelers'>; meId?: string | null; value: string[]; onChange: (ids: string[]) => void; label?: string; help?: ReactNode }) {
+export function PerChi({ trip, meId, value, onChange, label = 'Diviso tra', help }: { trip: Pick<Trip, 'travelers'>; meId?: string | null; value: string[]; onChange: (ids: string[]) => void; label?: string; help?: ReactNode }) {
   const all = trip.travelers.map((p) => p.id)
   const me = meId && all.includes(meId) ? meId : null
   const [scegli, setScegli] = useState(() => all.length >= 3 && modoPerChi(value, all, me, false) === 'pick')

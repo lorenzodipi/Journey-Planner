@@ -1,5 +1,5 @@
 // Fogli «Nuova spesa» e «Modifica spesa» (mock Fa-30, #34): nome, importo con il convertitore (si scrive in una
-// valuta e si legge l'altra), «Pagata da» obbligatorio, «Per chi» a riquadri e «Come dividere», categoria a riquadri.
+// valuta e si legge l'altra), «Pagata da» obbligatorio, «Diviso tra» a riquadri e «Come dividere», categoria a riquadri.
 // Di base: pagata da me, divisa tra tutti, nella valuta del paese.
 import { SceltaIcona } from '../../faraway/SceltaIcona'
 import { glifoCategoria, iconaDalNome } from '../../lib/categoryIcon'

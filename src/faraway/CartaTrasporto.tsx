@@ -1,18 +1,18 @@
 // Biglietto orizzontale di un trasporto (componente TicketOrizzontale, mock Fa-40 e Fa-41, #37): intestazione con nome, data,
 // fermate e stato (Pagato / Non pagato); percorso con orari, durata e «Maps» su partenza e arrivo. Aperto in linea:
 // prezzo, a testa, codice, passeggeri, nota e azioni. «Mostra il codice» compare solo se c'è un codice salvato (#38).
+import type { ReactNode } from 'react'
 import { ora } from '../lib/formati'
 import { formatWhen, transportWhen } from '../lib/logistics'
 import { formatMoney } from '../lib/money'
 import { MODE_NOME, durataTrasporto, fermate, prezzoDi } from '../lib/trasporti'
-import { discOf, initials } from '../state/me'
 import type { Transport, Trip } from '../types'
 import { MovementIcon } from '../ui/MovementIcon'
 import { Pulsante } from './base'
 import { cx } from './cx'
 import { Sv } from './icons'
+import { PersoneRiga } from './Persone'
 
-const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']
 /** Un solo «Maps» per il tragitto: indicazioni da partenza ad arrivo (con le coordinate, se ci sono). */
 const direzioni = (t: Transport) => {
   const pt = (lat: number | undefined, lng: number | undefined, nome: string) => encodeURIComponent(lat != null && lng != null ? `${lat},${lng}` : nome)
@@ -42,13 +42,13 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
   const dataBreve = w.depart ? formatWhen({ date: w.depart.date, time: '' }, trip.timezone) : MODE_NOME[t.mode]
   const sub = [dataBreve, fermate(t)].filter(Boolean).join(' · ')
   const manca = prezzo.totale === null
-  const rows: [string, string][] = [
+  const rows: [string, ReactNode][] = [
     ['Codice', t.refCode ?? ''],
     ['Operatore', t.operator ?? ''],
     ['Terminal', t.terminal ?? ''],
     ['Binario', t.platform ?? ''],
-    ['Passeggeri', people.map((p) => p.name.split(/\s+/)[0]).join(', ')],
-    ...(lettura ? [] : [['Prezzo', manca ? 'Non ancora inserito' : prezzo.persone > 1 && prezzo.aTesta !== null ? `${prezzo.persone} × ${formatMoney(prezzo.aTesta, cur)}` : formatMoney(prezzo.totale as number, cur)] as [string, string]]),
+    ['Passeggeri', people.length ? <PersoneRiga trip={trip} ids={people.map((p) => p.id)} /> : ''],
+    ...(lettura ? [] : [['Prezzo', manca ? 'Non ancora inserito' : prezzo.persone > 1 && prezzo.aTesta !== null ? `${prezzo.persone} × ${formatMoney(prezzo.aTesta, cur)}` : formatMoney(prezzo.totale as number, cur)] as [string, ReactNode]]),
     ['Bagaglio', t.baggage ?? ''],
     ['Cambio e rimborso', t.policy ?? ''],
     ['Nota', t.notes ?? ''],
@@ -109,14 +109,8 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
                       {manca ? 'Prezzo non inserito' : formatMoney(prezzo.totale as number, cur)}
                     </div>
                   )}
+                  {/* le persone (con i pallini) sono in «Passeggeri» qui sotto: qui solo quante e quanto a testa */}
                   <div className="pn">
-                    <span aria-hidden="true" className="avs">
-                      {people.slice(0, 4).map((p) => (
-                        <span key={p.id} style={{ background: `var(--disco-${COL[(discOf(trip, p.id) - 1) % 5]})` }}>
-                          {initials(p.name)}
-                        </span>
-                      ))}
-                    </span>
                     <span>
                       {people.length === 1 ? '1 persona' : `${people.length} persone`}
                       {!lettura && !manca && prezzo.persone > 1 && prezzo.aTesta !== null ? ` · ${formatMoney(prezzo.aTesta, cur)} a testa` : ''}
