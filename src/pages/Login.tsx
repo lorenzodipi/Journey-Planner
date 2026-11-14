@@ -75,7 +75,7 @@ export function Login() {
                   hint="Almeno 8 caratteri"
                   value={password}
                   onChange={(v) => (setPassword(v), setError(null))}
-                  trailing={<PulsanteIcona icon="eye" label={show ? 'Nascondi la password' : 'Mostra la password'} pressed={show} onPress={() => setShow(!show)} />}
+                  trailing={<PulsanteIcona icon={show ? 'eye' : 'eyeoff'} label={show ? 'Nascondi la password' : 'Mostra la password'} pressed={show} onPress={() => setShow(!show)} />}
                 />
               </div>
 
