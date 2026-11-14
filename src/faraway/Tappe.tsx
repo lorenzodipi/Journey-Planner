@@ -227,6 +227,11 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
           const dy = spostamento(idx)
           const stile = trascinata !== null ? ({ transform: `translateY(${dy}px)`, transition: idx === trascinata ? 'none' : undefined } as const) : undefined
           const people = exp ? (exp.shares.length > 0 ? exp.shares.map((s) => s.travelerId) : trip.travelers.map((p) => p.id)) : []
+          // in sola lettura (visualizzatore) non ci sono stato e pulsanti: se aprendo si vedrebbe solo l'ora già scritta
+          // in alto, la tappa non si apre (niente freccia)
+          const orarioUtile = !!orario && (orario.sub != null || opening != null || orario.main !== (item.time ?? '').slice(0, 5))
+          const apribile = !readOnly || orarioUtile || !!place || !!item.note || !!exp
+          const aperta = open && apribile
           return (
             <Fragment key={item.id}>
               {seg && idx > 0 ? (
@@ -246,7 +251,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                   )}
                 </li>
               ) : null}
-              <li id={`tappa-${item.id}`} className={cx('stp', ndCls, open && 'sel', highlight === item.id && 'fa-flash', trascinata === idx && 'drag')} style={stile}>
+              <li id={`tappa-${item.id}`} className={cx('stp', ndCls, aperta && 'sel', highlight === item.id && 'fa-flash', trascinata === idx && 'drag')} style={stile}>
                 <span className="rail">
                   <span className={cx('nd', ndCls)}>
                     <G name={ndIcon} />
@@ -255,17 +260,21 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                 <div className="body">
                   <div className={cx('tw', (puoiTrascinare || bloccata) && 'ico')}>
                   <div
-                    className="top"
-                    role="button"
-                    tabIndex={0}
-                    aria-expanded={open}
-                    onClick={() => onToggle(item.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        onToggle(item.id)
-                      }
-                    }}
+                    className={cx('top', !apribile && 'fermo')}
+                    {...(apribile
+                      ? {
+                          role: 'button',
+                          tabIndex: 0,
+                          'aria-expanded': open,
+                          onClick: () => onToggle(item.id),
+                          onKeyDown: (e: React.KeyboardEvent) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              onToggle(item.id)
+                            }
+                          },
+                        }
+                      : {})}
                   >
                     <div className="tt">
                       <div className="t">{item.title}</div>
@@ -281,13 +290,13 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                       {item.time ? (
                         <span className="time">
                           {ora(item.time)}
-                          <G name="g-chev" cls="chv" />
+                          {apribile ? <G name="g-chev" cls="chv" /> : null}
                         </span>
-                      ) : (
+                      ) : apribile ? (
                         <span className="time">
                           <G name="g-chev" cls="chv" />
                         </span>
-                      )}
+                      ) : null}
                       <Pill item={item} f={f} ctx={ctx} />
                     </div>
                   </div>
@@ -314,7 +323,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                     </button>
                   ) : null}
                   </div>
-                  {open && f === 'now' && exp ? (
+                  {aperta && f === 'now' && exp ? (
                     <div className="foot">
                       <span className="av">
                         {people.slice(0, 4).map((id) => (
@@ -326,7 +335,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                       <span className="amt">{formatMoney(exp.amount, exp.currency)}</span>
                     </div>
                   ) : null}
-                  {open ? (
+                  {aperta ? (
                     <div className="xb">
                       {orario ? <Riga icon="g-clock" main={orario.main} sub={opening && f !== 'done' && f !== 'skip' ? <span style={opening.closed ? { color: 'var(--danger)', fontWeight: 600 } : undefined}>{opening.text}</span> : orario.sub} /> : null}
                       {place || item.note ? (

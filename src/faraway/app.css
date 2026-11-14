@@ -179,6 +179,7 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-stay .hdl:focus-visible{outline:2px solid var(--focus);outline-offset:4px;border-radius:var(--radius-md)}
 .fa-stay .hdl .chv{position:absolute;right:0;bottom:2px;transition:transform .2s}
 .fa-stay .hdl .chv.up{transform:rotate(180deg)}
+.fa-stay .hdl.fermo{cursor:default}
 .fa-stay .nm{font:500 28px/32px var(--font-display);letter-spacing:-.01em;overflow-wrap:anywhere}
 .fa-stay .ad{font:400 14px/20px var(--font-sans);color:var(--on-tinta-muted)}
 .fa-stay .ok.td{background:var(--corallo-solid);color:var(--on-corallo-solid)}
@@ -632,8 +633,11 @@ dialog.fa-mod:focus{outline:none}
 /* colonne che si rimpiccioliscono insieme (data-adatta="celle"): etichette e valori su una riga */
 .k-Biglietto .f3 .k,.k-Biglietto .f3 b,.k-Ticket .grid .f>*{white-space:nowrap}
 /* volo: tra i due aeroporti resta sempre lo spazio per l'aereo e la durata */
-.k-Ticket .rt{grid-template-columns:auto minmax(4.5em,1fr) auto}
+.k-Ticket .rt{grid-template-columns:auto minmax(min-content,1fr) auto}
+.k-Ticket .mid{min-width:4.5em}
 .k-Ticket .mid .dur{white-space:nowrap}
+/* la durata sta sotto l'aereo (24px sopra + 28px dell'aereo), non lo tocca */
+.k-Ticket .mid .dur{top:calc(24px + 28px + 4px)}
 /* titoli di sezione: se titolo e nota non ci stanno, la nota va sotto invece di schiacciare il titolo */
 .fa-sech{flex-wrap:wrap}
 /* prezzo e «Aggiungi costo»: se non ci stanno affiancati, il pulsante va sotto */
@@ -671,3 +675,4 @@ dialog.fa-mod:focus{outline:none}
 /* due pulsanti affiancati: se una parola non ci sta, il secondo va sotto */
 .fa-btns{flex-wrap:wrap}
 .fa-btns>.fa-btn{min-width:min-content}
+.k-Tappa .top.fermo{cursor:default}

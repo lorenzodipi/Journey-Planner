@@ -42,27 +42,40 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
   const paidBy = trip.travelers.find((p) => p.id === s.paidBy)
   const pasti = inclusi(s)
   const indirizzo = [s.address, s.city && s.city !== s.name ? s.city : ''].filter(Boolean).join(' · ')
+  // «Dormono qui» solo se sono persone diverse da «Diviso tra» (altrimenti è una ripetizione)
+  const dormono = Boolean(s.participants?.length) && !(perChi && stessePersone(s.participants ?? [], ids))
+  // il visualizzatore non vede costi e pulsanti: se non resta niente da mostrare, la card non si apre (niente freccia)
+  const apribile = !lettura || Boolean(s.guests || dormono || s.phone || s.email || pasti || s.notes)
+  const testa = (
+    <>
+      <span className="hd">
+        <span className="kind">
+          <Ic name="i-sez-bed-gl" size={24} />
+          Alloggio · {notti(n)}
+        </span>
+        {lettura ? null : (
+          <span className={cx('ok', !s.paid && 'td')}>
+            <Sv name={s.paid ? 'check' : 'clock'} size={16} />
+            {s.paid ? 'Pagato' : 'Non pagato'}
+          </span>
+        )}
+      </span>
+      <span className="nm">{s.name}</span>
+      {indirizzo ? <span className="ad">{indirizzo}</span> : null}
+    </>
+  )
   return (
     <div className="k-Biglietto fa-stay">
       <article className="tk t-lavanda" aria-label={s.name}>
         <div className="top">
-          <button type="button" className="hdl" aria-expanded={open} onClick={onToggle}>
-            <span className="hd">
-              <span className="kind">
-                <Ic name="i-sez-bed-gl" size={24} />
-                Alloggio · {notti(n)}
-              </span>
-              {lettura ? null : (
-                <span className={cx('ok', !s.paid && 'td')}>
-                  <Sv name={s.paid ? 'check' : 'clock'} size={16} />
-                  {s.paid ? 'Pagato' : 'Non pagato'}
-                </span>
-              )}
-            </span>
-            <span className="nm">{s.name}</span>
-            {indirizzo ? <span className="ad">{indirizzo}</span> : null}
-            <Sv name="chev" size={20} className={cx('chv', open && 'up')} />
-          </button>
+          {apribile ? (
+            <button type="button" className="hdl" aria-expanded={open} onClick={onToggle}>
+              {testa}
+              <Sv name="chev" size={20} className={cx('chv', open && 'up')} />
+            </button>
+          ) : (
+            <div className="hdl fermo">{testa}</div>
+          )}
           <div className="f3" data-adatta="celle">
             <div>
               <span className="k">Check-in</span>
@@ -92,7 +105,7 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
               </Pulsante>
             ) : null}
           </div>
-          {open ? (
+          {open && apribile ? (
             <div className="dt">
               <dl className="dl">
                 {lettura ? null : (
@@ -121,12 +134,11 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
                     <dd>{s.guests}</dd>
                   </div>
                 ) : null}
-                {/* «Dormono qui» solo se sono persone diverse da «Per chi» (altrimenti è una ripetizione) */}
-                {s.participants?.length && !(perChi && stessePersone(s.participants, ids)) ? (
+                {dormono ? (
                   <div>
                     <dt>Dormono qui</dt>
                     <dd>
-                      <PersoneRiga trip={trip} ids={s.participants} />
+                      <PersoneRiga trip={trip} ids={s.participants ?? []} />
                     </dd>
                   </div>
                 ) : null}

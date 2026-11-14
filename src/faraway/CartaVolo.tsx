@@ -26,13 +26,13 @@ interface Props {
   lettura?: boolean
 }
 
-/** Posto di una tratta: «14A» o, con più passeggeri, «LD 14A · MA 14B». */
-function postoDi(leg: FlightLeg, trip: Trip, people: string[]): string {
+/** Posti di una tratta, uno per riga: «14A» o, con più passeggeri, «LD 14A», «MA 14B». */
+function postiDi(leg: FlightLeg, trip: Trip, people: string[]): string[] {
   if (leg.seatsBy && Object.keys(leg.seatsBy).length > 0) {
     const parts = people.filter((id) => leg.seatsBy?.[id]).map((id) => `${people.length > 1 ? `${initials(trip.travelers.find((p) => p.id === id)?.name ?? '?')} ` : ''}${leg.seatsBy?.[id]}`)
-    if (parts.length > 0) return parts.join(' · ')
+    if (parts.length > 0) return parts
   }
-  return leg.seats?.trim() || '—'
+  return leg.seats?.trim() ? [leg.seats.trim()] : []
 }
 
 export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCode, lettura }: Props) {
@@ -130,16 +130,17 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
                       {[
                         ['Terminal', l.terminal],
                         ['Gate', l.gate],
-                        ['Posto', postoDi(l, trip, people) === '—' ? undefined : postoDi(l, trip, people)],
+                        ['Posto', postiDi(l, trip, people)],
                         ['Imbarco', l.boardingTime],
                         ['Classe', l.cabin],
                       ]
-                        .filter(([k, v]) => v || k !== 'Terminal')
+                        .filter(([k, v]) => (Array.isArray(v) ? v.length : v) || k !== 'Terminal')
                         .slice(0, 5)
                         .map(([k, v]) => (
-                          <div className="f" key={k}>
+                          <div className="f" key={k as string}>
                             <div className="k">{k}</div>
-                            <div className="v">{v || '—'}</div>
+                            {/* più posti: uno per riga */}
+                            <div className="v">{Array.isArray(v) ? (v.length ? v.map((x) => <div key={x}>{x}</div>) : '—') : v || '—'}</div>
                           </div>
                         ))}
                     </div>
