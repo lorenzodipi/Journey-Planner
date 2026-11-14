@@ -190,6 +190,8 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-stay .dl>div{display:grid;grid-template-columns:120px minmax(0,1fr);gap:var(--space-md);font:400 14px/20px var(--font-sans)}
 .fa-stay .dl dt{color:var(--on-tinta-muted)}
 .fa-stay .dl dd{margin:0;color:var(--on-tinta);font-weight:600}
+/* etichetta sopra e valore a capo, come «Codice di prenotazione» */
+.fa-stay .dl>div.sopra{grid-template-columns:minmax(0,1fr);gap:0}
 .fa-stay .avs{display:inline-flex}
 .fa-stay .avs span{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;font:600 10px/1 var(--font-sans);color:var(--on-bright);margin-right:-8px;border:2px solid var(--tk)}
 .fa-stay .acts2{display:flex;gap:var(--space-sm)}
