@@ -261,7 +261,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
                 }
               }}
               trailing={
-                <button type="button" className="fa-btn soft sm" style={{ height: 36, padding: '0 16px' }} disabled={searching || !query.trim()} onClick={() => void search()}>
+                <button type="button" className="fa-btn soft sm" style={{ minHeight: 36, padding: '0 16px' }} disabled={searching || !query.trim()} onClick={() => void search()}>
                   {searching ? <Loader size={16} label="Ricerca in corso" /> : 'Cerca'}
                 </button>
               }
@@ -389,7 +389,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
                 <span className="fa-help">Trascina il pin o tocca la mappa per correggere la posizione.</span>
               </div>
             ) : (
-              <button type="button" className="fa-btn out" style={{ height: 44, fontSize: 14 }} onClick={() => setShowMap(true)}>
+              <button type="button" className="fa-btn out" style={{ minHeight: 44, fontSize: 14 }} onClick={() => setShowMap(true)}>
                 <Sv name="pin" size={20} />
                 Aggiusta il pin sulla mappa
               </button>

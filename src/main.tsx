@@ -5,6 +5,7 @@ import { AuthProvider } from './lib/auth'
 import { pingSupabase } from './lib/supabase'
 import { initTheme } from './lib/theme'
 import { setupInvioSenzaInvio } from './lib/invio'
+import { avviaAdattaTesto } from './faraway/adattaTesto'
 import { TripProvider } from './state/trip'
 import './styles.css'
 
@@ -29,6 +30,9 @@ else {
     else void import('./lib/nativeBack').then((m) => m.setupNativeBack())
   })
 }
+
+// Testi su una riga che col carattere di sistema ingrandito non ci starebbero: si rimpiccioliscono (data-adatta)
+avviaAdattaTesto()
 
 // Tiene attivo il progetto Supabase (piano Free) a ogni apertura
 pingSupabase()

@@ -321,7 +321,7 @@ export function Chip({ children, on, onPress, icon: ic, label }: { children: Rea
  *  e le frecce cambiano la scelta. Le opzioni sono <label> con la classe `fa-segr`, disegnate come i pulsanti di prima. */
 export function Segmenti<T extends string>({ value, options, onChange, label }: { value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; label: string }) {
   return (
-    <AriaRadioGroup className="fa-seg" aria-label={label} orientation="horizontal" value={value} onChange={(v) => onChange(v as T)} style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
+    <AriaRadioGroup className="fa-seg" data-adatta="celle" aria-label={label} orientation="horizontal" value={value} onChange={(v) => onChange(v as T)} style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
       {options.map((o) => (
         <AriaRadio key={o.value} value={o.value} className={({ isSelected }) => cx('fa-segr', isSelected && 'on')}>
           {o.label}

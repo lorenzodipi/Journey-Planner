@@ -15,7 +15,7 @@ export function OrariEditor({ value, onChange, legacyText }: { value: OpeningSpe
       <div className="fa-fld">
         Orari di apertura
         {legacyText ? <span className="fa-help">Scritti finora: {legacyText}</span> : null}
-        <button type="button" className="fa-btn out" style={{ height: 44, fontSize: 14 }} onClick={() => onChange(structuredClone(START))}>
+        <button type="button" className="fa-btn out" style={{ minHeight: 44, fontSize: 14 }} onClick={() => onChange(structuredClone(START))}>
           <Sv name="clock" size={20} />
           Aggiungi gli orari
         </button>

@@ -119,7 +119,7 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-selall{display:flex;align-items:center;gap:16px;min-height:56px;padding:0 16px;width:100%;text-align:left;cursor:pointer;color:inherit;font:inherit}
 .fa-selall .t{flex:1;font:600 15px/20px var(--font-sans)}
 .fa-selbar{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;z-index:40;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--canvas);border-top:1px solid var(--hairline)}
-.fa-selbar .fa-btn{border:1.5px solid var(--danger);width:100%;height:48px}
+.fa-selbar .fa-btn{border:1.5px solid var(--danger);width:100%;min-height:48px}
 .fa-phone.fa-selmode .fa-main{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .k-Luoghi .tg{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 
@@ -215,7 +215,7 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-sheet{will-change:transform;backface-visibility:hidden}
 
 /* ---- v2: bottoni in una riga, elimina come bottone rosso, rotta dei trasporti, niente scorrimento laterale ---- */
-.fa-btn.del{background:color-mix(in srgb,var(--danger) 10%,var(--surface-card));border:1.5px solid var(--danger);color:var(--danger);width:auto;padding:0 16px;height:44px;box-shadow:none}
+.fa-btn.del{background:color-mix(in srgb,var(--danger) 10%,var(--surface-card));border:1.5px solid var(--danger);color:var(--danger);width:auto;padding:0 16px;min-height:44px;box-shadow:none}
 .fa-btn.ico{width:44px;min-width:44px;padding:0;flex:0 0 44px}
 .acts2,.fa-acts{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;margin-top:16px}
 .acts2 .fa-btn,.fa-acts .fa-btn{white-space:nowrap;min-width:0;flex:1 1 auto;padding:0 16px}
@@ -274,7 +274,7 @@ html:has(dialog[open]){overflow:hidden}
 .k-Tappa .stp.now .rail::after{border-left:0;width:3px;background:repeating-linear-gradient(to bottom,var(--border-strong) 0 6px,transparent 6px 12px)}
 
 /* Segmenti: il selettore riempie la pillola e il testo sta al centro in verticale */
-.fa-seg{height:56px;align-items:stretch}
+.fa-seg{min-height:56px;align-items:stretch}
 .fa-seg button,.fa-seg>.fa-segr{min-height:0;height:100%;line-height:20px;padding:0 8px}
 
 /* chip in riga: scorrono in orizzontale con il dito, senza barra */
@@ -615,3 +615,59 @@ dialog.fa-mod .ac .fa-btn{width:100%}
 dialog.fa-mod:focus{outline:none}
 /* nello scuro «Tieni …» ha la stessa costruzione di «Elimina …», come nel foglio di conferma */
 [data-theme="dark"] dialog.fa-mod .ac .fa-btn.soft{background:rgba(0,0,0,.3);border:1.5px solid var(--border-strong);color:var(--ink);box-shadow:none}
+
+/* Testo di sistema ingrandito (Android): le righe con data-adatta si rimpiccioliscono da sole (adattaTesto.ts) e per
+   misurarle devono avere una larghezza massima. Con il testo normale ci stanno già e non cambia niente. */
+.fa-tab{grid-template-columns:minmax(0,1fr)}
+.fa-tab .tl{max-width:100%}
+
+/* pallini con le iniziali: misure in em, così crescono con il testo (con il testo normale sono gli stessi px di prima) */
+.fa-av{width:calc(32em / 12);height:calc(32em / 12)}
+.fa-avs .fa-av+.fa-av{margin-left:calc(-8em / 12)}
+.fa-stay .avs span{width:2.4em;height:2.4em}
+:is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tv .avs span{width:2.6em;height:2.6em}
+/* righe «etichetta valore»: l'etichetta non si schiaccia sotto la sua parola più lunga */
+:is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tv .dl div{grid-template-columns:minmax(96px,min-content) minmax(0,1fr)}
+.fa-stay .dl>div{grid-template-columns:minmax(120px,min-content) minmax(0,1fr)}
+/* colonne che si rimpiccioliscono insieme (data-adatta="celle"): etichette e valori su una riga */
+.k-Biglietto .f3 .k,.k-Biglietto .f3 b,.k-Ticket .grid .f>*{white-space:nowrap}
+/* volo: tra i due aeroporti resta sempre lo spazio per l'aereo e la durata */
+.k-Ticket .rt{grid-template-columns:auto minmax(4.5em,1fr) auto}
+.k-Ticket .mid .dur{white-space:nowrap}
+/* titoli di sezione: se titolo e nota non ci stanno, la nota va sotto invece di schiacciare il titolo */
+.fa-sech{flex-wrap:wrap}
+/* prezzo e «Aggiungi costo»: se non ci stanno affiancati, il pulsante va sotto */
+:is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tv .pr{flex-wrap:wrap}
+:is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tv .pr>div:first-child{flex:1 1 0;min-width:min-content}
+/* tappa aperta: l'indirizzo non si schiaccia accanto a «Maps», che se serve va sotto */
+.k-Tappa .rw{flex-wrap:wrap}
+.k-Tappa .rx{min-width:6em}
+.k-Tappa .rw>.btn.mp{margin-left:auto}
+.fa-stay .ok{white-space:nowrap}
+/* le colonne di pagina e della ricevuta non si allargano oltre lo schermo per un contenuto lungo */
+.fa-gruppo,.k-Ricevuta .rb{grid-template-columns:minmax(0,1fr)}
+/* pulsanti: se il testo non ci sta va a capo dentro il pulsante (adattaTesto.ts); qui non superano la riga */
+.acts2 .fa-btn,.fa-acts .fa-btn{max-width:100%}
+/* righe a due elementi (titolo e pillola, codice e «Maps», «Prenotazione» e codice): il secondo va sotto se non ci stanno */
+.fa-stay .hd,.fa-stay .fr,.k-Ticket .bc.nobar,.k-Ticket .hd{flex-wrap:wrap}
+.fa-stay .hd .kind,.fa-stay .fr>:first-child{flex:1 1 0;min-width:min-content}
+
+/* tappa: il titolo non si stringe sotto qualche parola accanto a ora e «In ritardo?», che se serve vanno sotto */
+.k-Tappa .top{display:flex;flex-wrap:wrap;align-items:flex-start}
+.k-Tappa .top>.tt{flex:1 1 0;min-width:5em}
+.k-Tappa .top>.r{flex:none;margin-left:auto}
+/* ricevuta: il valore va sotto, a destra, se etichetta e valore non ci stanno; il nome non copre il saldo */
+.k-Ricevuta .ln{flex-wrap:wrap}
+.k-Ricevuta .ln .v{margin-left:auto}
+.k-Ricevuta .pp{grid-template-columns:minmax(36px,auto) minmax(0,1fr) auto}
+.k-Ricevuta .pp b{overflow-wrap:anywhere}
+/* nota del titolo di sezione: se va sotto, va a capo invece di uscire */
+.fa-sech .fa-c{max-width:100%}
+
+/* fogli: le colonne del modulo non si allargano oltre il foglio per un contenuto lungo */
+.fa-sheet .frm,.fa-grp{grid-template-columns:minmax(0,1fr)}
+/* griglie in linea (style="display: grid") a una colonna: la colonna non supera il contenitore */
+:is(.fa-sheet,.fa-main) [style*="display: grid"]{grid-template-columns:minmax(0,1fr)}
+/* due pulsanti affiancati: se una parola non ci sta, il secondo va sotto */
+.fa-btns{flex-wrap:wrap}
+.fa-btns>.fa-btn{min-width:min-content}

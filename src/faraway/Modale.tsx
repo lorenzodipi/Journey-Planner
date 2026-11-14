@@ -100,7 +100,7 @@ export function useConfermaCentrata(): [(o: ConfermaOpts) => Promise<boolean>, R
       onClose={() => close(false)}
       actions={
         <>
-          <button type="button" className="fa-btn del" style={{ width: '100%', height: 48 }} onClick={() => close(true)}>
+          <button type="button" className="fa-btn del" style={{ width: '100%', minHeight: 48 }} onClick={() => close(true)}>
             <Sv name="trash" size={20} />
             {state?.confirm}
           </button>

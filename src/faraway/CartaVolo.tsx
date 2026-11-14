@@ -55,7 +55,7 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
           </div>
           <div className="body">
             <button type="button" aria-expanded={open} aria-label={`${flight.title}: da ${r.fromCity} a ${r.toCity}`} onClick={onToggle} style={{ all: 'unset', display: 'block', width: '100%', cursor: 'pointer' }}>
-              <div className="rt">
+              <div className="rt" data-adatta="">
                 <div className="pt">
                   <div className="code">{r.from}</div>
                   <div className="city">{r.fromCity}</div>
@@ -126,7 +126,7 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
                         {formatInZone(l.departAt, l.fromTz)} – {formatInZone(l.arriveAt, l.toTz)} · {durataLunga(legDuration({ depart: l.departAt, arrive: l.arriveAt }))}
                       </span>
                     </div>
-                    <div className="grid">
+                    <div className="grid" data-adatta="celle">
                       {[
                         ['Terminal', l.terminal],
                         ['Gate', l.gate],

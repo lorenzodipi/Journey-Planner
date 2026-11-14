@@ -92,7 +92,7 @@ export function SpostamentoSheet({ open, onClose, da, a, leg, strada, imp }: {
           hint="Se la conosci, per esempio da Google Maps, scrivila: vale più della stima."
           error={errore}
         />
-        <a className="fa-btn out" href={maps} target="_blank" rel="noopener noreferrer" style={{ height: 44, fontSize: 14 }}>
+        <a className="fa-btn out" href={maps} target="_blank" rel="noopener noreferrer" style={{ minHeight: 44, fontSize: 14 }}>
           <Sv name="pin" size={20} />
           Controlla su Maps
         </a>

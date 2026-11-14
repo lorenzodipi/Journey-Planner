@@ -51,7 +51,7 @@ export function BarraSchede() {
               </svg>
               {t.label === 'Spese' && richieste > 0 ? <span className="fa-tbn" role="img" aria-label={`${richieste} richieste di rimborso da confermare`}>{richieste}</span> : null}
             </span>
-            <span className="tl">{t.label}</span>
+            <span className="tl" data-adatta="">{t.label}</span>
           </Link>
         )
       })}
@@ -157,7 +157,7 @@ export function BarraIndietro({ title, back, right, senzaIndietro }: { title: Re
     <div className="fa-bar">
       <div className="tp back">
         {senzaIndietro ? <span aria-hidden="true" style={{ minWidth: 44 }} /> : <PulsanteIcona icon="back" label="Indietro" onPress={goBack} />}
-        <h1 className="mid">{title}</h1>
+        <h1 className="mid" data-adatta="" data-adatta-min="0.75">{title}</h1>
         <span style={{ display: 'flex', gap: 8, minWidth: 44, justifyContent: 'flex-end' }}>{right}</span>
       </div>
     </div>

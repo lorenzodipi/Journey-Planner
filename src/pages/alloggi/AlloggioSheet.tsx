@@ -175,7 +175,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
             hint={mapsInfo || 'Incollalo e compilo da solo nome, città e indirizzo.'}
             trailing={
               puoiIncollare && !mapsUrl.trim() ? (
-                <button type="button" className="fa-btn soft sm" style={{ height: 36, padding: '0 16px' }} onClick={() => void incolla()}>
+                <button type="button" className="fa-btn soft sm" style={{ minHeight: 36, padding: '0 16px' }} onClick={() => void incolla()}>
                   Incolla
                 </button>
               ) : undefined

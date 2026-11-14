@@ -348,7 +348,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
         <section className="fa-card pad" style={{ display: 'grid', gap: 8, justifyItems: 'start' }}>
           <h2 className="fa-h3">Giornata libera</h2>
           <p className="fa-m">{lettura ? "Oggi non c'è niente in programma." : "Oggi non c'è niente in programma. Aggiungi una tappa se ti va."}</p>
-          {lettura ? null : <button type="button" className="fa-btn soft" style={{ width: 'auto', height: 44, padding: '0 16px', fontSize: 14 }} onClick={() => navigate(`/giorni/${day.id}?aggiungi=1`)}>
+          {lettura ? null : <button type="button" className="fa-btn soft" style={{ width: 'auto', minHeight: 44, padding: '0 16px', fontSize: 14 }} onClick={() => navigate(`/giorni/${day.id}?aggiungi=1`)}>
             Aggiungi una tappa
           </button>}
         </section>

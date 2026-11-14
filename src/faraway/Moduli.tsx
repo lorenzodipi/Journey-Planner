@@ -251,7 +251,7 @@ export function SegmentiFacoltativi<T extends string>({ label, value, options, o
   return (
     <div className="fa-fld" role="group" aria-label={label}>
       {label}
-      <div className="fa-seg" style={{ gridTemplateColumns: `repeat(${options.length},minmax(0,1fr))` }}>
+      <div className="fa-seg" data-adatta="celle" style={{ gridTemplateColumns: `repeat(${options.length},minmax(0,1fr))` }}>
         {options.map((o) => (
           <button key={o.value} type="button" aria-pressed={value === o.value} aria-label={o.nome} className={value === o.value ? 'on' : undefined} onClick={() => onChange(alterna(value, o.value))}>
             {o.label}

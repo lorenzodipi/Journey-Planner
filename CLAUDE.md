@@ -26,6 +26,7 @@ Rumore noto del confronto: i pin della mappa nella pagina di un giorno e una rig
 - Sotto i 600 px l'app è quella di sempre. Una modifica pensata per pieghevoli o computer **non deve cambiare un pixel sui telefoni**, salvo che sia la correzione di un bug: va verificato con il confronto pixel per pixel, non a occhio.
 - Larghezze da controllare: **320, 344, 360, 390, 412** (telefoni), **600, 690, 839** (pieghevole in verticale), **882 con la piega** e **1280** (pieghevole in orizzontale, computer). Sempre in chiaro **e** scuro.
 - Controlla anche che nulla esca dai bordi (testi sotto le icone, pulsanti sopra le frecce, scorrimento orizzontale). Nelle card in colonna (600–690 px la colonna è larga ~260–310 px) controlla anche che testi e componenti non si sovrappongano, a card chiuse e aperte, e con nomi e codici molto lunghi: la finestra è larga ma la carta no, quindi le misure vanno legate alla carta (container query), non a `vw`.
+- **Testo ingrandito** (Android): una pagina o un foglio nuovo si prova anche con il testo al 130%, 150% e 200% (regole in `05-css-e-stile`, «Testo di sistema ingrandito»): niente fuori schermo, tagliato o sovrapposto; riquadri con testo a `min-height`, righe su una riga con `data-adatta`.
 
 ## Finestre e pieghevoli (dettagli in 05-css-e-stile)
 - **< 600**: telefono.

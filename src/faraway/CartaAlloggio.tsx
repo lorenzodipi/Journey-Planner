@@ -63,7 +63,7 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
             {indirizzo ? <span className="ad">{indirizzo}</span> : null}
             <Sv name="chev" size={20} className={cx('chv', open && 'up')} />
           </button>
-          <div className="f3">
+          <div className="f3" data-adatta="celle">
             <div>
               <span className="k">Check-in</span>
               <b>{formatShort(s.checkIn)}</b>

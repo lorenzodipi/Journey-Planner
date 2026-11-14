@@ -117,6 +117,13 @@ Prima di scrivere un elemento nuovo: cercarlo in `src/faraway/`, poi in `react-a
 - Estetica «da AI»: card tutte uguali, gradienti decorativi, barre colorate a sinistra, maiuscoletto ovunque, emoji nei testi.
 - `transition: all`, `will-change` messo per abitudine.
 
-## Testo grande su una riga
+## Testo di sistema ingrandito
 
-Un testo molto grande che deve stare su una riga (es. «MXP ✈ HND» in Oggi) usa `useTestoCheCi` (`src/faraway/adattaTesto.ts`): se non ci sta, il carattere si rimpicciolisce quanto basta. Serve sui telefoni stretti e con il testo di sistema ingrandito (Android lo applica anche alle misure in px). Se ci sta, non cambia niente.
+Su Android la WebView moltiplica ogni misura del testo per la dimensione scelta nelle impostazioni del telefono (anche i px; iOS per ora no). L'app deve restare usabile almeno fino al 150% e senza nulla fuori dallo schermo al 200%. Con il testo normale non cambia niente.
+
+- **Riquadri con testo** (pulsanti, chip, pillole, segmenti): altezza minima (`min-height`), mai fissa, così crescono invece di far uscire il testo.
+- **Pallini con le iniziali e tessere dell'orologio**: misure in `em`, così crescono insieme al testo.
+- **Righe a due elementi** (titolo e pillola, codice e «Maps», prezzo e «Aggiungi costo», tappa e ora): `flex-wrap`, con il primo elemento `flex:1 1 0` e una larghezza minima, così il secondo va sotto invece di schiacciare il primo.
+- **Colonne di pagina e di card**: `grid-template-columns:minmax(0,1fr)`, così un contenuto lungo non allarga la colonna oltre lo schermo.
+- **Testo che deve restare su una riga** (barra delle schede, «MXP ✈ HND», titolo della barra in alto, ora del volo, colonne Check-in · Check-out · Camera, segmenti, orologio): attributo `data-adatta` (`src/faraway/adattaTesto.ts`). Se non ci sta, l'elemento si rimpicciolisce con `zoom` quanto basta; `data-adatta="celle"` misura ogni colonna; `data-adatta-min` mette un limite. I pulsanti `.fa-btn` col testo su una riga, se non ci sta, vanno a capo.
+- **Controllo**: con `scripts/testo-grande` (`zoom.js` moltiplica testo e interlinea al 130%, 150% e 200%, `trova.js` elenca i problemi) sulle pagine, sulle card aperte e sui fogli, a 320, 360, 390 e 412 px. Cerca testo fuori schermo, fuori dal suo riquadro, tagliato o sovrapposto.

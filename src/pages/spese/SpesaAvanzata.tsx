@@ -48,7 +48,7 @@ export function PagantiEditor({ trip, total, currency, rows, onRows, single, onS
 }) {
   const ppl = trip.travelers
   const disc = (id: string) => (
-    <span className={cx('fa-av', `r${discOf(trip, id)}`)} style={{ width: 24, height: 24, fontSize: 11 }} aria-hidden="true">
+    <span className={cx('fa-av', `r${discOf(trip, id)}`)} style={{ width: 'calc(24em / 11)', height: 'calc(24em / 11)', fontSize: 11 }} aria-hidden="true">
       {initials(ppl.find((p) => p.id === id)?.name ?? '')}
     </span>
   )

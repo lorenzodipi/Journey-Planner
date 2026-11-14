@@ -717,7 +717,7 @@ function Mappa({ setVista }: { setVista: (v: Vista) => void }) {
                   ) : null}
                 </div>
                 <p className="fa-m">Aggiungi l’indirizzo e lo vedi qui, con la strada per arrivarci.</p>
-                <button type="button" className="fa-btn out" style={{ height: 44, fontSize: 14 }} onClick={() => az.edit(np, true)}>
+                <button type="button" className="fa-btn out" style={{ minHeight: 44, fontSize: 14 }} onClick={() => az.edit(np, true)}>
                   Aggiungi la posizione
                 </button>
               </div>
