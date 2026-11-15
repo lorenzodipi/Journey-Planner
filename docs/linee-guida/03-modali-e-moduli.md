@@ -9,8 +9,9 @@ Fogli dal basso, modali al centro e i moduli che contengono. I fogli sono la par
 | Foglio dal basso | Aggiungere o modificare un elemento, scegliere, filtrare, confermare un'azione recuperabile | `Foglio` (`src/faraway/Foglio.tsx`), `useConferma()` |
 | Modale al centro | Confermare un'azione definitiva, comunicare un esito da leggere | `Modale`, `useConfermaCentrata()`, `showAvviso()` (`src/faraway/Modale.tsx`) |
 | Messaggio in basso | Esito breve di un'azione, con eventuale «Annulla» | `showToast()` |
+| Spiegazione di un titolo | «i» in fondo alla riga del titolo (`.fa-tinfo`) che apre un riquadro con il testo: cosa conta nel budget, che cos'è il margine tra tappe. Testo breve, con un esempio se serve. È un popover di react-aria, non un `<dialog>`: dentro un foglio nasce nel foglio | `Info` (`src/faraway/base.tsx`) |
 
-Tutti usano `<dialog>` nativo aperto con `showModal()`: focus intrappolato, sfondo inerte, Esc e tasto indietro di Android chiudono.
+Foglio, modale e messaggio usano `<dialog>` nativo aperto con `showModal()`: focus intrappolato, sfondo inerte, Esc e tasto indietro di Android chiudono.
 
 ## Struttura del foglio
 

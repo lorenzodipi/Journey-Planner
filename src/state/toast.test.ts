@@ -8,11 +8,11 @@ describe('avvisi in basso', () => {
     expect(codaAvvisi.visibleToasts.map((t) => t.content.message)).toEqual(['Secondo'])
     expect(codaAvvisi.visibleToasts[0].content.action?.label).toBe('Annulla')
   })
-  it('la durata passa alla coda (6 s se non detta)', () => {
-    showToast('Breve', undefined, 2500)
-    expect(codaAvvisi.visibleToasts[0].timeout).toBe(2500)
+  it('la durata passa alla coda (5 s se non detta)', () => {
+    showToast('Breve', undefined, 1500)
+    expect(codaAvvisi.visibleToasts[0].timeout).toBe(1500)
     showToast('Normale')
-    expect(codaAvvisi.visibleToasts[0].timeout).toBe(6000)
+    expect(codaAvvisi.visibleToasts[0].timeout).toBe(5000)
   })
   it('dismissToast toglie l’avviso', () => {
     showToast('Da chiudere')

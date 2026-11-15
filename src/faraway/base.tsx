@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { Button as AriaButton, Link as AriaLink, Menu as AriaMenu, MenuItem as AriaMenuItem, MenuTrigger as AriaMenuTrigger, OverlayArrow as AriaOverlayArrow, Popover as AriaPopover, Switch as AriaSwitch, Radio as AriaRadio, RadioGroup as AriaRadioGroup } from 'react-aria-components'
+import { Button as AriaButton, Dialog as AriaDialog, DialogTrigger as AriaDialogTrigger, Link as AriaLink, Menu as AriaMenu, MenuItem as AriaMenuItem, MenuTrigger as AriaMenuTrigger, OverlayArrow as AriaOverlayArrow, Popover as AriaPopover, Switch as AriaSwitch, Radio as AriaRadio, RadioGroup as AriaRadioGroup } from 'react-aria-components'
 import { cx } from './cx'
 import { apriSelettore } from '../lib/picker'
 import { Loader } from './Loader'
@@ -73,6 +73,30 @@ export function PulsanteIcona({ icon: name, label, onPress, primary, className, 
       <Sv name={name} />
       {badge ? <span className="fa-ibn">{badge}</span> : null}
     </AriaButton>
+  )
+}
+
+/**
+ * «i» in fondo alla riga di un titolo: apre un riquadro con la spiegazione (react-aria: Esc, focus, lettore di schermo).
+ * Dentro un foglio il riquadro nasce nel foglio, che è nello strato in alto: altrimenti resterebbe sotto e inerte.
+ */
+export function Info({ label, children }: { label: string; children: ReactNode }) {
+  const btn = useRef<HTMLButtonElement>(null)
+  const [dentro, setDentro] = useState<Element | undefined>(undefined)
+  return (
+    <AriaDialogTrigger onOpenChange={(o) => o && setDentro(btn.current?.closest('dialog') ?? undefined)}>
+      <AriaButton ref={btn} className="fa-info" aria-label={label}>
+        <Sv name="info" size={22} />
+      </AriaButton>
+      <AriaPopover className="fa-pop fa-infopop" placement="bottom end" offset={8} UNSTABLE_portalContainer={dentro}>
+        <AriaOverlayArrow className="fa-poparr">
+          <span className="dia" aria-hidden="true" />
+        </AriaOverlayArrow>
+        <AriaDialog className="fa-infod" aria-label={label}>
+          {children}
+        </AriaDialog>
+      </AriaPopover>
+    </AriaDialogTrigger>
   )
 }
 

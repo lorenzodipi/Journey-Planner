@@ -2,7 +2,7 @@
 import { NOTIFICHE_TESTI, LINGUE, useNotifichePrefs } from '../../lib/prefs'
 import { useFormati } from '../../lib/formati'
 import { useThemePref, type ThemePref } from '../../lib/theme'
-import { Chip, Interruttore, Segmenti } from '../../faraway/base'
+import { Chip, Info, Interruttore, Segmenti } from '../../faraway/base'
 import { MARGINI_RAPIDI } from '../../lib/fattibilita'
 import { useTrip, useTrips } from '../../state/trip'
 import { Sv } from '../../faraway/icons'
@@ -66,7 +66,14 @@ export function ImpostazioniPage() {
       <p className="fa-m" style={{ margin: 0 }}>Valgono per tutta l’app, su questo telefono.</p>
       {soloLettura(trip) ? null : (
       <div className="fa-fld" role="group" aria-label="Margine tra tappe">
-        Margine tra tappe
+        <div className="fa-tinfo">
+          <span>Margine tra tappe</span>
+          <Info label="Che cos’è il margine tra tappe">
+            <p>Sono i minuti di scorta che l’app aggiunge al tempo per spostarsi da una tappa alla successiva quando controlla che gli orari di un giorno reggano.</p>
+            <p>Per esempio, con 15 min e 20 minuti di strada, tra la fine di una tappa e l’inizio della prossima ne devono restare almeno 35; se sono meno, il giorno lo segnala.</p>
+            <p>Vale per tutti i giorni del viaggio.</p>
+          </Info>
+        </div>
         <div className="fa-chips">
           {[0, ...MARGINI_RAPIDI].map((m) => (
             <Chip key={m} on={margine === m} onPress={() => void setMargine(m)}>{m === 0 ? 'Nessuno' : `${m} min`}</Chip>

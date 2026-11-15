@@ -11,7 +11,7 @@ export interface Avviso {
 
 export const codaAvvisi = new ToastQueue<Avviso>({ maxVisibleToasts: 1 })
 
-export function showToast(message: string, action?: Avviso['action'], ms = 6000): void {
+export function showToast(message: string, action?: Avviso['action'], ms = 5000): void {
   codaAvvisi.clear()
   codaAvvisi.add({ message, action }, { timeout: ms })
 }

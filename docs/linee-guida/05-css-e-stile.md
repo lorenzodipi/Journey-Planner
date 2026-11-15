@@ -134,5 +134,5 @@ Nei due riquadri affiancati di Spese e Oggi («Al giorno» · «Ancora da spende
 
 ## Toast e Checklist
 
-- I toast sono un po' trasparenti (80%) con lo sfondo sfocato dietro; con «riduci la trasparenza» del telefono tornano pieni.
+- I toast sono trasparenti (64%) con lo sfondo sfocato dietro; con «riduci la trasparenza» del telefono tornano pieni. Durano 5 s (1,5 s i messaggi brevi del «tira per aggiornare»); il tempo si ferma con il dito, il mouse o il focus sopra.
 - Checklist: ogni categoria si apre e si chiude toccando il titolo (freccia accanto a «2 di 12»); da chiusa restano titolo e conteggio. Le categorie chiuse si ricordano per viaggio sul telefono (`jp.checklist.chiuse.<viaggio>`). Nella scheda «Solo mie» le voci non hanno la pillola «Solo io», che sarebbe una ripetizione.

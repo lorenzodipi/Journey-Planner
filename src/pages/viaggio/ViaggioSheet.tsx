@@ -18,7 +18,7 @@ import type { MezzoViaggio, Trip, TripCountry } from '../../types'
 
 /** Soglie per andare a piedi, in minuti (0 = mai). */
 const SOGLIE: [number, string][] = [[5, '5 min'], [10, '10 min'], [15, '15 min'], [20, '20 min'], [30, '30 min'], [0, 'Mai']]
-import { Avatars, Banner, Campo, Chip, Pulsante } from '../../faraway/base'
+import { Avatars, Banner, Campo, Chip, Info, Pulsante } from '../../faraway/base'
 import { CampoPaese } from '../../faraway/CampoPaese'
 import { CampoValuta } from '../../faraway/CampoValuta'
 import { Riquadri } from '../../faraway/Moduli'
@@ -398,7 +398,13 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
         </section>
 
         <section className="fa-sez">
-          <h2 className="fa-h3">Budget</h2>
+          <div className="fa-tinfo">
+            <h2 className="fa-h3">Budget</h2>
+            <Info label="Che cosa conta nel budget">
+              <p>È quanto pensate di spendere <b>per tutto il viaggio</b>, in totale per tutte le persone insieme, non a testa.</p>
+              <p>Ci rientra <b>ogni acquisto</b>: voli, alloggi, trasporti, prenotazioni e tutte le altre spese, non solo quelle fatte sul posto.</p>
+            </Info>
+          </div>
           <Campo
             label="Budget totale (facoltativo)"
             icon="bag"

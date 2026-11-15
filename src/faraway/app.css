@@ -690,7 +690,7 @@ dialog.fa-mod:focus{outline:none}
 .fa-mapgrande .fa-mapcard{right:auto;width:min(440px,calc(100% - 24px))}
 .fa-phone.fa-mapgrande .fa-fab{bottom:calc(env(safe-area-inset-bottom,0px) + 24px)!important}
 /* toast un po' trasparenti, con lo sfondo sfocato dietro così il testo resta leggibile; con «riduci la trasparenza» pieni */
-.fa-toast{background:color-mix(in srgb,var(--ink) 80%,transparent);-webkit-backdrop-filter:blur(16px) saturate(180%);backdrop-filter:blur(16px) saturate(180%)}
+.fa-toast{background:color-mix(in srgb,var(--ink) 64%,transparent);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%)}
 @media (prefers-reduced-transparency:reduce){.fa-toast{background:var(--ink);-webkit-backdrop-filter:none;backdrop-filter:none}}
 /* Checklist: il titolo di ogni categoria apre e chiude la categoria (freccia accanto al conteggio) */
 .k-Checklist button.grp{all:unset;box-sizing:border-box;width:100%;min-height:44px;padding:var(--space-md) var(--space-lg) 0;display:flex;justify-content:space-between;align-items:center;gap:var(--space-md);cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -702,3 +702,16 @@ dialog.fa-mod:focus{outline:none}
 @media (prefers-reduced-motion:reduce){.k-Checklist .grp .chv{transition:none}}
 /* card a biglietto chiusa con solo la testa (prenotazioni, documenti): stesso spazio sopra e sotto */
 :is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tk.tv>.a:last-child>.hdl:last-child{padding-bottom:var(--space-lg)}
+
+/* «i» in fondo alla riga di un titolo (Info): bersaglio da 44 px che non allunga la riga, icona allineata al bordo destro */
+.fa-tinfo{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.fa-tinfo>:first-child{margin:0;min-width:0}
+.fa-sez>.fa-tinfo{margin:0 0 calc(var(--gap-titolo,16px) - var(--gap-campi,24px))}
+.fa-info{all:unset;box-sizing:border-box;display:grid;place-items:center;width:44px;height:44px;margin:-12px -11px -12px 0;flex:none;color:var(--ink-muted);cursor:pointer;border-radius:50%}
+.fa-info[data-pressed]{color:var(--ink)}
+.fa-info[data-focus-visible]{outline:3px solid var(--focus);outline-offset:-2px}
+.fa-info:focus-visible:not([data-focus-visible]){outline:none}
+.fa-infopop{max-width:min(320px,calc(100vw - 32px));padding:16px}
+.fa-infod{outline:none;display:grid;gap:8px;font:400 15px/22px var(--font-sans);color:var(--ink)}
+.fa-infod p{margin:0}
+.fa-infod b{font-weight:600}

@@ -16,8 +16,8 @@ export function PullToRefresh() {
     () =>
       setupPullToRefresh(async () => {
         const { refresh, demo } = latest.current
-        if (demo) return showToast('Anteprima demo: niente da aggiornare', undefined, 2500)
-        if (!navigator.onLine) return showToast('Sei offline: non posso aggiornare.', undefined, 2500)
+        if (demo) return showToast('Anteprima demo: niente da aggiornare', undefined, 1500)
+        if (!navigator.onLine) return showToast('Sei offline: non posso aggiornare.', undefined, 1500)
         showToast((await refresh()) ? 'Aggiornato' : 'Non riesco ad aggiornare: riprova tra poco.', undefined, 2500)
       }),
     [],
