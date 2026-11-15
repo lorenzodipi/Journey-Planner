@@ -27,6 +27,7 @@ import { useForecast } from '../state/forecast'
 import { cityCenters, useCityForecasts } from '../state/cityForecast'
 import { useDaySegments } from '../state/daySegments'
 import { discOf, useMe } from '../state/me'
+import { useAuth } from '../lib/auth'
 import { savedAtText, useOnline } from '../state/online'
 import { useTrip, useTrips } from '../state/trip'
 import type { DayItem, ItemStatus, Trip } from '../types'
@@ -144,6 +145,8 @@ function tappeDelViaggio(groups: DayGroup[]): TappaViaggio[] {
 
 function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string }) {
   const me = useMe(trip)
+  // il visualizzatore non è tra i viaggiatori: nel saluto vale il nome del profilo
+  const auth = useAuth()
   const days = daysBetween(today, trip.startDate)
   const groups = groupDays(trip, today)
   const meta = groups.find((g) => g.kind === 'city')?.title ?? trip.destination
@@ -154,7 +157,7 @@ function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string 
   const checklist = useLeMieCose(trip, me?.id)
   const tappeViaggio = tappeDelViaggio(groups)
   return (
-    <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now)} greeting={tt('Ciao')} name={firstName(me?.name)} />}>
+    <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now)} greeting={tt('Ciao')} name={firstName(me?.name || auth.profileName)} />}>
       <h1 className="sr-only">{tt('Oggi, {destination}', { destination: trip.destination })}</h1>
       <Offline />
       {/* pieghevole aperto: il biglietto e le tappe a sinistra, «Le mie cose» a destra */}
@@ -184,6 +187,8 @@ function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string 
 function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: string }) {
   const t = useTrips()
   const me = useMe(trip)
+  // il visualizzatore non è tra i viaggiatori: nel saluto vale il nome del profilo
+  const auth = useAuth()
   const [, navigate] = useLocation()
   const [openId, setOpenId] = useState<string | null>(null)
   const autoOpened = useRef(false)
@@ -291,7 +296,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
   ) : null
 
   return (
-    <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now, trip.timezone)} greeting={tt('Ciao')} name={firstName(me?.name)} />}>
+    <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now, trip.timezone)} greeting={tt('Ciao')} name={firstName(me?.name || auth.profileName)} />}>
       <h1 className="sr-only">{tt('Oggi, {destination}', { destination: trip.destination })}</h1>
       <Offline />
       {/* pieghevole aperto: a sinistra ora, meteo, prossima prenotazione e cambio; a destra il programma di oggi */}
