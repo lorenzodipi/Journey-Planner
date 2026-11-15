@@ -22,11 +22,9 @@ interface Props {
   where?: 'all' | 'mine'
   open: boolean
   onClose: () => void
-  /** Solo modificando una voce: «Elimina la voce» (chiede conferma e si può annullare dal toast). */
-  onElimina?: () => void
 }
 
-export function VoceSheet({ trip, item, where = 'all', open, onClose, onElimina }: Props) {
+export function VoceSheet({ trip, item, where = 'all', open, onClose }: Props) {
   const tr = useTrips()
   const auth = useAuth()
   const userId = auth.session?.user.id
@@ -167,11 +165,6 @@ export function VoceSheet({ trip, item, where = 'all', open, onClose, onElimina 
             <Sv name="err" size={16} />
             {errors.form}
           </span>
-        ) : null}
-        {item && onElimina ? (
-          <Pulsante color="tertiary-destructive" iconLeading="trash" onPress={onElimina}>
-            Elimina la voce
-          </Pulsante>
         ) : null}
       </form>
     </Foglio>

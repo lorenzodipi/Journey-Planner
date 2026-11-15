@@ -258,15 +258,6 @@ export function ChecklistPage() {
               where={lista}
               open
               onClose={() => setSheet(null)}
-              onElimina={
-                sheet.item
-                  ? () => {
-                      const voce = sheet.item as ChecklistItem
-                      setSheet(null)
-                      void elimina([voce])
-                    }
-                  : undefined
-              }
             />
           ) : null}
           <Foglio open={dup} title="Duplica da un viaggio" onClose={() => setDup(false)}>
