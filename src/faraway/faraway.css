@@ -20,8 +20,10 @@
 .fa-top{height:max(env(safe-area-inset-top,0px),24px);flex:none}
 /* testa fissa delle pagine principali: la barra (e ricerca/vista/filtri) resta in cima, scorre solo il resto */
 .fa-sent{height:1px;margin-bottom:-1px;flex:none;pointer-events:none}
-.fa-head{position:sticky;top:0;z-index:30;flex:none;background:var(--canvas);transition:box-shadow 150ms ease-out}
+.fa-head{position:sticky;top:0;z-index:30;flex:none;background:var(--canvas);transition:box-shadow 150ms ease-out,transform 300ms cubic-bezier(0.32,0.72,0,1)}
 .fa-head[data-scrolled]{box-shadow:0 1px 0 var(--hairline)}
+/* scorrendo verso il basso la testa esce verso l'alto (resta la fascia sotto l'orologio), tornando un po' su rientra (shell.tsx, useTestaFissa) */
+.fa-head[data-nascosta]{transform:translateY(calc(-100% + env(safe-area-inset-top,0px)));box-shadow:none}
 .fa-fissa{padding:8px 16px;display:grid;gap:16px;min-width:0}
 .fa-fissa>*{min-width:0}
 .fa-bar+.fa-fissa{padding-top:0}

@@ -198,13 +198,16 @@ interface ScreenProps {
 }
 
 /**
- * Testa fissa della pagina. Dice quando il contenuto sta scorrendo sotto di lei (per il filo sottile in fondo) e tiene in
- * `--head-h` la sua altezza, così `scrollIntoView` e i salti ai punti della pagina non finiscono nascosti dietro.
+ * Testa della pagina (barra e `fissa`): scorrendo verso il basso si nasconde, appena si torna un po' su ricompare, come
+ * nelle app di iPhone e Android. In cima alla pagina, con il focus dentro (tastiera, ricerca aperta) o con un foglio
+ * aperto resta visibile. Dice anche quando il contenuto sta scorrendo sotto di lei (per il filo sottile in fondo) e tiene
+ * in `--head-h` la sua altezza, così `scrollIntoView` e i salti ai punti della pagina non finiscono nascosti dietro.
  */
 function useTestaFissa(attiva: boolean) {
   const testa = useRef<HTMLDivElement>(null)
   const sentinella = useRef<HTMLDivElement>(null)
   const [scorre, setScorre] = useState(false)
+  const [nascosta, setNascosta] = useState(false)
   useEffect(() => {
     if (!attiva || !sentinella.current) return
     const io = new IntersectionObserver(([e]) => setScorre(!e.isIntersecting), { threshold: 0 })
@@ -224,14 +227,54 @@ function useTestaFissa(attiva: boolean) {
       root.style.removeProperty('--head-h')
     }
   }, [attiva])
-  return { testa, sentinella, scorre }
+  useEffect(() => {
+    const el = testa.current
+    if (!attiva || !el) return
+    // dentro un pannello che scorre da solo (il giorno accanto a Giorni) si guarda il pannello, altrimenti la finestra
+    const pannello = el.closest<HTMLElement>('.fa-gpanel')
+    const pos = () => (pannello ? pannello.scrollTop : window.scrollY)
+    const massimo = () => (pannello ? pannello.scrollHeight - pannello.clientHeight : document.documentElement.scrollHeight - window.innerHeight)
+    let ultima = pos()
+    let verso = 0 // quanto si è scorso nella stessa direzione
+    let raf = 0
+    const giro = () => {
+      raf = 0
+      // l'elastico di iOS in cima e in fondo non conta come scorrimento
+      const y = Math.min(Math.max(pos(), 0), Math.max(massimo(), 0))
+      const d = y - ultima
+      ultima = y
+      if (d === 0) return
+      verso = Math.sign(d) === Math.sign(verso) ? verso + d : d
+      const alta = el.offsetHeight
+      // con un foglio aperto la pagina sotto è ferma: niente da cambiare
+      if (document.querySelector('dialog[open]')) return
+      if (y <= alta) setNascosta(false)
+      else if (el.contains(document.activeElement)) setNascosta(false)
+      else if (verso > 8) setNascosta(true)
+      else if (verso < -8) setNascosta(false)
+    }
+    const suScorri = () => {
+      if (!raf) raf = requestAnimationFrame(giro)
+    }
+    // il focus che entra nella testa (Tab, ricerca) la fa ricomparire
+    const suFocus = () => setNascosta(false)
+    const bersaglio: HTMLElement | Window = pannello ?? window
+    bersaglio.addEventListener('scroll', suScorri, { passive: true })
+    el.addEventListener('focusin', suFocus)
+    return () => {
+      bersaglio.removeEventListener('scroll', suScorri)
+      el.removeEventListener('focusin', suFocus)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [attiva])
+  return { testa, sentinella, scorre, nascosta }
 }
 
 /** Una schermata dell'app: la «cornice del telefono» del mock è la pagina intera. */
 export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, overlay, className, bare, rete = true, fisso, fissa, incastrata }: ScreenProps) {
   const main = useRef<HTMLElement>(null)
   const fissata = !!fisso && !bare
-  const { testa, sentinella, scorre } = useTestaFissa(fissata)
+  const { testa, sentinella, scorre, nascosta } = useTestaFissa(fissata)
   useVaiAllErrore(main)
   useEffect(() => {
     if (incastrata) return
@@ -244,7 +287,7 @@ export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, ove
       {fissata ? (
         <>
           <div ref={sentinella} className="fa-sent" aria-hidden="true" />
-          <div ref={testa} className="fa-head" data-scrolled={scorre || undefined}>
+          <div ref={testa} className="fa-head" data-scrolled={scorre || undefined} data-nascosta={nascosta || undefined}>
             <div className="fa-top" />
             {bar}
             {fissa ? <div className="fa-fissa">{fissa}</div> : null}
