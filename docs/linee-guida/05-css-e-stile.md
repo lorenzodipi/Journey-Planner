@@ -131,3 +131,8 @@ Su Android la WebView moltiplica ogni misura del testo per la dimensione scelta 
 ## Riquadri affiancati con un importo
 
 Nei due riquadri affiancati di Spese e Oggi («Al giorno» · «Ancora da spendere», «Da dare» · «Da ricevere») il titolo sta in alto e importo e nota in basso: se un titolo va su due righe, gli importi restano alla stessa altezza.
+
+## Toast e Checklist
+
+- I toast sono un po' trasparenti (80%) con lo sfondo sfocato dietro; con «riduci la trasparenza» del telefono tornano pieni.
+- Checklist: ogni categoria si apre e si chiude toccando il titolo (freccia accanto a «2 di 12»); da chiusa restano titolo e conteggio. Le categorie chiuse si ricordano per viaggio sul telefono (`jp.checklist.chiuse.<viaggio>`). Nella scheda «Solo mie» le voci non hanno la pillola «Solo io», che sarebbe una ripetizione.

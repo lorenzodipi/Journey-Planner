@@ -20,17 +20,20 @@
 .fa-top{height:max(env(safe-area-inset-top,0px),24px);flex:none}
 /* testa fissa delle pagine principali: la barra (e ricerca/vista/filtri) resta in cima, scorre solo il resto */
 .fa-sent{height:1px;margin-bottom:-1px;flex:none;pointer-events:none}
-.fa-head{position:sticky;top:0;z-index:30;flex:none;background:var(--canvas);transition:box-shadow 150ms ease-out,transform 300ms cubic-bezier(0.32,0.72,0,1)}
+.fa-head{position:sticky;top:0;z-index:30;flex:none;background:var(--canvas);transition:box-shadow 150ms ease-out,transform 450ms cubic-bezier(0.22,1,0.36,1)}
 .fa-head[data-scrolled]{box-shadow:0 1px 0 var(--hairline)}
-/* scorrendo verso il basso la testa esce verso l'alto (resta la fascia sotto l'orologio), tornando un po' su rientra (shell.tsx, useTestaFissa) */
-.fa-head[data-nascosta]{transform:translateY(calc(-100% + env(safe-area-inset-top,0px)));box-shadow:none}
+/* scorrendo verso il basso la testa esce tutta verso l'alto, tornando un po' su rientra piano (shell.tsx, useTestaFissa).
+   Esce più svelta di come rientra. Sotto l'orologio resta una fascia del colore della pagina (.fa-orologio), così le card
+   non passano sotto l'ora e la batteria */
+.fa-head[data-nascosta]{transform:translateY(-100%);box-shadow:none;transition:box-shadow 150ms ease-out,transform 300ms cubic-bezier(0.4,0,1,1)}
+.fa-orologio{position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);z-index:31;background:var(--canvas);pointer-events:none}
 .fa-fissa{padding:8px 16px;display:grid;gap:16px;min-width:0}
 .fa-fissa>*{min-width:0}
 .fa-bar+.fa-fissa{padding-top:0}
 html{scroll-padding-top:var(--head-h,0px)}
 /* telefoni bassi (es. 667 px): la testa fissa non deve mangiare metà schermo, quindi niente sottotitolo e meno aria tra i controlli */
 @media (max-height:700px){.fa-head .fa-bar .sub{display:none}.fa-fissa{gap:8px}}
-@media (prefers-reduced-motion:reduce){.fa-head{transition:none}}
+@media (prefers-reduced-motion:reduce){.fa-head,.fa-head[data-nascosta]{transition:none}}
 .fa-main{flex:1;padding:8px 16px 24px;display:grid;gap:16px;align-content:start;min-width:0}
 .fa-main>*{min-width:0}
 .fa-stack{display:grid;gap:16px}

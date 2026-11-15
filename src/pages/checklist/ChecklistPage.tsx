@@ -41,6 +41,28 @@ export function ChecklistPage() {
   // da soli non c'è differenza tra lista comune e privata: si vede tutto in una lista sola
   const visibili = useMemo(() => (v2 && gruppo ? trip.checklist.filter((i) => inLista(i, lista)) : trip.checklist), [trip.checklist, lista, v2, gruppo])
   const gruppi = useMemo(() => sezioni(visibili), [visibili])
+  // categorie chiuse (si apre e chiude toccando il titolo): restano chiuse anche riaprendo la pagina, per questo viaggio
+  const chiaveChiuse = `jp.checklist.chiuse.${trip.id}`
+  const [chiuse, setChiuse] = useState<Set<string>>(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(chiaveChiuse) ?? '[]') as string[])
+    } catch {
+      return new Set()
+    }
+  })
+  function apriChiudi(categoria: string) {
+    setChiuse((prima) => {
+      const dopo = new Set(prima)
+      if (dopo.has(categoria)) dopo.delete(categoria)
+      else dopo.add(categoria)
+      try {
+        localStorage.setItem(chiaveChiuse, JSON.stringify([...dopo]))
+      } catch {
+        // ignorato: resta aperta o chiusa finché si sta sulla pagina
+      }
+      return dopo
+    })
+  }
   // le voci «Scegli» che non mi riguardano non contano nel mio avanzamento
   const mio = mioAvanzamento(trip.checklist.filter((i) => !i.forTravelers || !trip.myTravelerId || i.forTravelers.includes(trip.myTravelerId)))
   const altri = t.trips.filter((x) => x.id !== trip.id && x.checklist.length > 0)
@@ -96,6 +118,8 @@ export function ChecklistPage() {
     const partial = multi && have > 0 && !i.done
     const picked = selecting && sel.has(i.id)
     const late = !i.done && !!i.dueDate && i.dueDate < today
+    // nella scheda «Solo mie» sono tutte private: la pillola «Solo io» sarebbe una ripetizione
+    const chipPrivata = i.private && !(v2 && gruppo && lista === 'mine')
     const persone = i.forTravelers ? trip.travelers.filter((p) => i.forTravelers?.includes(p.id)) : trip.travelers
     const s = i.forTravelers ? { done: persone.filter((p) => (p.id === trip.myTravelerId ? i.done : !!i.others?.find((o) => o.travelerId === p.id)?.done)).length, total: persone.length } : spunteDi(i, trip.travelers.length)
     const mostraPersone = gruppo && !i.private && v2
@@ -129,9 +153,9 @@ export function ChecklistPage() {
             </span>
           )}
           {i.description ? <span className="fa-m" style={{ display: 'block', whiteSpace: 'pre-line' }}>{i.description}</span> : null}
-          {i.private || i.dueDate ? (
+          {chipPrivata || i.dueDate ? (
             <div className="mt">
-              {i.private ? (
+              {chipPrivata ? (
                 <span className="tag">
                   <Sv name="lock" size={12} className="ic" />
                   Solo io
@@ -276,14 +300,16 @@ export function ChecklistPage() {
           <Affianca>
             {/* pieghevole aperto: le categorie a righe, 1 a sinistra, 2 a destra, 3 sotto l’1… */}
               {gruppi.map((g) => (
-              <section key={g.category} className="card" aria-label={g.category}>
-                <div className="grp">
+              <section key={g.category} className={cx('card', chiuse.has(g.category) && 'chiusa')} aria-label={g.category}>
+                {/* titolo della categoria: tocca per aprire o chiudere; da chiusa restano titolo e «2 di 12» */}
+                <button type="button" className="grp" aria-expanded={!chiuse.has(g.category)} onClick={() => apriChiudi(g.category)}>
                   <b>{g.category}</b>
                   <span>
                     {g.done} di {g.items.length}
+                    <Sv name="chev" size={16} className={cx('chv', !chiuse.has(g.category) && 'up')} />
                   </span>
-                </div>
-                <ul className="l">{g.items.map((i) => riga(i))}</ul>
+                </button>
+                {chiuse.has(g.category) ? null : <ul className="l">{g.items.map((i) => riga(i))}</ul>}
               </section>
             ))}
           </Affianca>

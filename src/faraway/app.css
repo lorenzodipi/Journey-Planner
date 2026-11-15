@@ -689,3 +689,14 @@ dialog.fa-mod:focus{outline:none}
 /* la card del luogo scelto resta in basso a sinistra, larga come l'elenco; «+ Luogo» resta nell'angolo in basso a destra */
 .fa-mapgrande .fa-mapcard{right:auto;width:min(440px,calc(100% - 24px))}
 .fa-phone.fa-mapgrande .fa-fab{bottom:calc(env(safe-area-inset-bottom,0px) + 24px)!important}
+/* toast un po' trasparenti, con lo sfondo sfocato dietro così il testo resta leggibile; con «riduci la trasparenza» pieni */
+.fa-toast{background:color-mix(in srgb,var(--ink) 80%,transparent);-webkit-backdrop-filter:blur(16px) saturate(180%);backdrop-filter:blur(16px) saturate(180%)}
+@media (prefers-reduced-transparency:reduce){.fa-toast{background:var(--ink);-webkit-backdrop-filter:none;backdrop-filter:none}}
+/* Checklist: il titolo di ogni categoria apre e chiude la categoria (freccia accanto al conteggio) */
+.k-Checklist button.grp{all:unset;box-sizing:border-box;width:100%;min-height:44px;padding:var(--space-md) var(--space-lg) 0;display:flex;justify-content:space-between;align-items:center;gap:var(--space-md);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.k-Checklist button.grp:focus-visible{outline:2px solid var(--focus,var(--accent));outline-offset:-2px;border-radius:var(--radius-xl)}
+.k-Checklist button.grp>span{display:inline-flex;align-items:center;gap:var(--space-sm)}
+.k-Checklist .grp .chv{flex:none;transition:transform 200ms ease-out}
+.k-Checklist .grp .chv.up{transform:rotate(180deg)}
+.k-Checklist .card.chiusa button.grp{padding-bottom:var(--space-md)}
+@media (prefers-reduced-motion:reduce){.k-Checklist .grp .chv{transition:none}}

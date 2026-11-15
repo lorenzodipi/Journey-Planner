@@ -198,8 +198,8 @@ interface ScreenProps {
 }
 
 /**
- * Testa della pagina (barra e `fissa`): scorrendo verso il basso si nasconde, appena si torna un po' su ricompare, come
- * nelle app di iPhone e Android. In cima alla pagina, con il focus dentro (tastiera, ricerca aperta) o con un foglio
+ * Testa della pagina (barra e `fissa`): scorrendo verso il basso si nasconde tutta, appena si torna un po' su ricompare,
+ * come nelle app di iPhone e Android (sotto l'orologio resta la fascia `.fa-orologio`). In cima alla pagina, con il focus dentro (tastiera, ricerca aperta) o con un foglio
  * aperto resta visibile. Dice anche quando il contenuto sta scorrendo sotto di lei (per il filo sottile in fondo) e tiene
  * in `--head-h` la sua altezza, così `scrollIntoView` e i salti ai punti della pagina non finiscono nascosti dietro.
  */
@@ -287,6 +287,7 @@ export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, ove
       {fissata ? (
         <>
           <div ref={sentinella} className="fa-sent" aria-hidden="true" />
+          <div className="fa-orologio" aria-hidden="true" />
           <div ref={testa} className="fa-head" data-scrolled={scorre || undefined} data-nascosta={nascosta || undefined}>
             <div className="fa-top" />
             {bar}
