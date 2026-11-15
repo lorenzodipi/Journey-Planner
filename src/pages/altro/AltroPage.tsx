@@ -3,7 +3,6 @@ import { useState, type ReactNode } from 'react'
 import { DiscoGlifo, DiscoSprite, GLIFI } from '../../faraway/DiscoSprite'
 import { useLocation } from 'wouter'
 import { useAuth } from '../../lib/auth'
-import { loadSnapshot } from '../../lib/cache'
 import { cittaDelViaggio, periodo, personeText, riepilogoAlloggi, riepilogoBudget, riepilogoCambio, riepilogoChecklist, riepilogoDocumenti, riepilogoPrenotazioni, riepilogoTrasportiAltro, riepilogoVoli, rigaBudgetValute, viaggiText } from '../../lib/altro'
 import { riassunto } from '../../lib/spese'
 import { paginaPermessa, soloLettura } from '../../lib/ruolo'
@@ -31,8 +30,6 @@ export function AltroPage() {
   const [q, setQ] = useState('')
   const mostraRisultati = cerca && q.trim().length >= 2
   const r = riassunto(trip, me?.id)
-  const saved = loadSnapshot()?.savedAt
-  const savedTime = saved ? new Date(saved).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : null
   const email = auth.session?.user.email ?? ''
   // il viaggiatore legato all'account; senza (visualizzatore) il nome del profilo; solo in mancanza, l'email
   const nome = me?.name || auth.profileName || (email ? email.split('@')[0].replace(/^./, (c) => c.toUpperCase()) : 'Anteprima demo')
@@ -60,7 +57,7 @@ export function AltroPage() {
       bar={
         <BarraGrande
           title="Altro"
-          sub={savedTime ? `Aggiornato alle ${savedTime}` : auth.status === 'demo' ? 'Anteprima con dati fittizi' : undefined}
+          sub={auth.status === 'demo' ? 'Anteprima con dati fittizi' : undefined}
           actions={<PulsanteIcona icon={cerca ? 'close' : 'search'} label={cerca ? 'Chiudi la ricerca' : 'Cerca nel viaggio'} expanded={cerca} onPress={() => (setCerca(!cerca), setQ(''))} />}
         />
       }
