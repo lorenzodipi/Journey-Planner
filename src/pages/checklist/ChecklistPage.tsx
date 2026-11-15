@@ -361,8 +361,7 @@ export function ChecklistPage() {
               {gruppi.map((g) => (
               <section key={g.category} className={cx('card', chiuse.has(g.category) && 'chiusa')} aria-label={nomeCategoria(g.category)}>
                 {/* titolo della categoria: tocca per aprire o chiudere; da chiusa restano titolo e «2 di 12» */}
-                {/* le categorie create a mano hanno il menu ⋯ (Modifica, Elimina) sopra la freccia; le cinque dell'app no */}
-                <div className={cx('grph', !isCategoriaFissa(g.category) && !selecting && 'perso')}>
+                {isCategoriaFissa(g.category) || selecting ? (
                   <button type="button" className="grp" aria-expanded={!chiuse.has(g.category)} onClick={() => apriChiudi(g.category)}>
                     <b>{nomeCategoria(g.category)}</b>
                     <span>
@@ -370,18 +369,29 @@ export function ChecklistPage() {
                       <Sv name="chev" size={16} className={cx('chv', !chiuse.has(g.category) && 'up')} />
                     </span>
                   </button>
-                  {isCategoriaFissa(g.category) || selecting ? null : (
-                    <span className="gdots">
-                      <MenuAzioni
-                        label={tt('Azioni sulla categoria {label}', { label: g.category })}
-                        azioni={[
-                          { id: 'modifica', label: tt('Modifica'), onPress: () => setCatSheet(g) },
-                          { id: 'elimina', label: tt('Elimina'), onPress: () => void eliminaCategoria(g) },
-                        ]}
-                      />
+                ) : (
+                  // categoria creata a mano: il menu ⋯ (Modifica, Elimina) sulla stessa riga, prima di «0 di 2» e della freccia.
+                  // Il ⋯ non può stare dentro il pulsante che apre e chiude: il pulsante è il titolo e la sua area (::after) copre tutta la riga.
+                  <div className="grp gp">
+                    <button type="button" className="gtog" aria-expanded={!chiuse.has(g.category)} onClick={() => apriChiudi(g.category)}>
+                      <b>{nomeCategoria(g.category)}</b>
+                      <span className="sr-only">{tt('{done} di {length}', { done: g.done, length: g.items.length })}</span>
+                    </button>
+                    <span className="gr">
+                      <span className="gdots">
+                        <MenuAzioni
+                          label={tt('Azioni sulla categoria {label}', { label: g.category })}
+                          azioni={[
+                            { id: 'modifica', label: tt('Modifica'), onPress: () => setCatSheet(g) },
+                            { id: 'elimina', label: tt('Elimina'), onPress: () => void eliminaCategoria(g) },
+                          ]}
+                        />
+                      </span>
+                      <span aria-hidden="true">{tt('{done} di {length}', { done: g.done, length: g.items.length })}</span>
+                      <Sv name="chev" size={16} className={cx('chv', !chiuse.has(g.category) && 'up')} />
                     </span>
-                  )}
-                </div>
+                  </div>
+                )}
                 {chiuse.has(g.category) ? null : <ul className="l">{g.items.map((i) => riga(i))}</ul>}
               </section>
             ))}

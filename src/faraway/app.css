@@ -705,13 +705,17 @@ dialog.fa-mod:focus{outline:none}
 .k-Checklist .grp .chv.up{transform:rotate(180deg)}
 .k-Checklist .card.chiusa button.grp{padding-bottom:var(--space-md)}
 @media (prefers-reduced-motion:reduce){.k-Checklist .grp .chv{transition:none}}
-/* categoria creata a mano: il menu ⋯ sta in una colonna con la freccia (⋯ sopra, freccia sotto, stesso asse); le cinque dell'app restano com'erano */
-.k-Checklist .grph{position:relative}
-.k-Checklist .grph.perso button.grp{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(44px,auto) auto;align-items:center;justify-content:stretch}
-.k-Checklist .grph.perso button.grp>b{padding-right:calc(44px - var(--space-lg) + 2px);overflow-wrap:anywhere}
-.k-Checklist .grph.perso button.grp>span{justify-self:end;min-height:24px}
-.k-Checklist .gdots{position:absolute;top:var(--space-md);right:calc(var(--space-lg) - 14px);width:44px;height:44px;display:grid;place-items:center}
-.k-Checklist .gdots .fa-dots{width:44px;height:44px;margin:0}
+/* categoria creata a mano: il menu ⋯ sta sulla stessa riga, prima di «0 di 2» e della freccia; misure come il titolo delle cinque dell'app.
+   Il titolo è il pulsante che apre e chiude e la sua area (::after) copre tutta la riga; il ⋯ sta sopra. */
+.k-Checklist .grp.gp{position:relative;box-sizing:border-box;min-height:44px;align-items:center;gap:var(--space-md)}
+.k-Checklist .card.chiusa .grp.gp{padding-bottom:var(--space-md)}
+.k-Checklist .gp .gtog{all:unset;flex:1;min-width:0;overflow-wrap:anywhere;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.k-Checklist .gp .gtog>b{display:block}
+.k-Checklist .gp .gtog::after{content:'';position:absolute;inset:0;border-radius:var(--radius-xl)}
+.k-Checklist .gp .gtog:focus-visible::after{outline:2px solid var(--focus,var(--accent));outline-offset:-2px}
+.k-Checklist .gp .gr{display:inline-flex;align-items:center;gap:var(--space-sm);flex:none}
+.k-Checklist .gdots{position:relative;z-index:1;display:inline-flex}
+.k-Checklist .gdots .fa-dots{width:44px;height:44px;margin:-8px -6px}
 /* card a biglietto chiusa con solo la testa (prenotazioni, documenti): stesso spazio sopra e sotto */
 :is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tk.tv>.a:last-child>.hdl:last-child{padding-bottom:var(--space-lg)}
 
