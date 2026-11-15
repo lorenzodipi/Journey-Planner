@@ -236,7 +236,25 @@ export function ChecklistPage() {
               </Pulsante>
             </div>
           ) : null}
-          {sheet ? <VoceSheet key={sheet.item?.id ?? 'new'} trip={trip} item={sheet.item} where={lista} open onClose={() => setSheet(null)} /> : null}
+          {sheet ? (
+            <VoceSheet
+              key={sheet.item?.id ?? 'new'}
+              trip={trip}
+              item={sheet.item}
+              where={lista}
+              open
+              onClose={() => setSheet(null)}
+              onElimina={
+                sheet.item
+                  ? () => {
+                      const voce = sheet.item as ChecklistItem
+                      setSheet(null)
+                      void elimina([voce])
+                    }
+                  : undefined
+              }
+            />
+          ) : null}
           <Foglio open={dup} title="Duplica da un viaggio" onClose={() => setDup(false)}>
             <div style={{ display: 'grid', gap: 8 }}>
               <p className="fa-m" style={{ margin: 0 }}>Copio le voci comuni e la tua lista privata, senza spunte.</p>
