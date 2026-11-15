@@ -8,6 +8,7 @@ import { showToast } from '../../state/toast'
 import chiara from '../../assets/art/faraway-app-icon-anello-mongolfiera-light.svg'
 import scura from '../../assets/art/faraway-app-icon-anello-mongolfiera-dark.svg'
 import blu from '../../assets/art/faraway-app-icon-anello-mongolfiera-blu.svg'
+import { t } from '../../i18n'
 
 const IMMAGINI: Record<IconaId, string> = { chiara, scura, blu }
 
@@ -35,7 +36,7 @@ export function useIconaApp() {
       await cambiaIcona(id)
     } catch {
       setCorrente(prima)
-      showToast('Non sono riuscito a cambiare l’icona.')
+      showToast(t('Non sono riuscito a cambiare l’icona.'))
     }
   }
   return { disponibile, corrente, scegli }
@@ -45,8 +46,8 @@ export function SezioneIconaApp({ corrente, scegli }: { corrente: IconaId; scegl
   const ios = Capacitor.getPlatform() === 'ios'
   return (
     <>
-      <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Icona dell’app</h2>
-      <AriaRadioGroup className="fa-iconeapp" aria-label="Icona dell’app" orientation="horizontal" value={corrente} onChange={(v) => scegli(v as IconaId)}>
+      <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>{t('Icona dell’app')}</h2>
+      <AriaRadioGroup className="fa-iconeapp" aria-label={t('Icona dell’app')} orientation="horizontal" value={corrente} onChange={(v) => scegli(v as IconaId)}>
         {ICONE.map((i) => (
           <AriaRadio key={i.id} value={i.id} className={({ isSelected }) => cx('fa-iconaapp', isSelected && 'on')}>
             <img src={IMMAGINI[i.id]} alt="" width={56} height={56} />
@@ -55,7 +56,7 @@ export function SezioneIconaApp({ corrente, scegli }: { corrente: IconaId; scegl
         ))}
       </AriaRadioGroup>
       <p className="fa-m" style={{ margin: 0 }}>
-        {ios ? 'iOS mostra un avviso di conferma quando cambi l’icona.' : 'L’app si riavvia per applicare la nuova icona. Alcuni launcher la aggiornano dopo qualche secondo.'}
+        {ios ? t('iOS mostra un avviso di conferma quando cambi l’icona.') : t('L’app si riavvia per applicare la nuova icona. Alcuni launcher la aggiornano dopo qualche secondo.')}
       </p>
     </>
   )

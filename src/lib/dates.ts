@@ -1,3 +1,4 @@
+import { LOCALE } from '../i18n'
 // Le date del viaggio sono "YYYY-MM-DD" (giorni di calendario, senza fuso).
 // Le trattiamo sempre come date locali per evitare slittamenti di un giorno.
 
@@ -30,8 +31,8 @@ export function daysBetween(aYmd: string, bYmd: string): number {
   return Math.round((b.getTime() - a.getTime()) / 86_400_000)
 }
 
-const longFmt = new Intl.DateTimeFormat('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })
-const shortFmt = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short' })
+const longFmt = new Intl.DateTimeFormat(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' })
+const shortFmt = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short' })
 
 export const formatDayLong = (ymd: string) => longFmt.format(parseYmd(ymd))
 export const formatShort = (ymd: string) => shortFmt.format(parseYmd(ymd))

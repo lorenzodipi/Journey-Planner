@@ -1,6 +1,7 @@
 // Luoghi (#61): possibili doppioni, visite e prenotazioni collegate, categorie senza nomi doppi.
 import type { Booking, Place, Trip } from '../types'
 import { tappeDi } from './prenotazioni'
+import { t as tt } from '../i18n'
 
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
 
@@ -34,7 +35,7 @@ export function possibiliDoppioni(places: Place[], c: { id?: string; name: strin
   return out.sort((a, b) => (a.metri ?? 1e9) - (b.metri ?? 1e9))
 }
 
-export const testoDoppione = (nome: string, d: Doppione) => `«${nome}» somiglia a «${d.place.name}»${d.metri !== undefined ? `, a ${d.metri} m` : ''}`
+export const testoDoppione = (nome: string, d: Doppione) => tt('«{nome}» somiglia a «{name}»{v2}', { nome, name: d.place.name, v2: d.metri !== undefined ? `, a ${d.metri} m` : '' })
 
 /** Visite: le tappe collegate al luogo, nei diversi giorni (anche più volte lo stesso giorno). */
 export function visiteDelLuogo(trip: Pick<Trip, 'days'>, placeId: string): { dayId: string; date: string; city: string; itemId: string; title: string; time?: string }[] {

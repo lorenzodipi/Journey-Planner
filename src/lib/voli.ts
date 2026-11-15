@@ -3,6 +3,7 @@ import type { Flight, FlightLeg, Trip } from '../types'
 import { airportCity } from './airports'
 import { zonesOf } from './countries'
 import { dateInZone, dayOffset, formatDateInZone, formatInZone, layover, minutesBetween, totalTravelTime } from './flights'
+import { t } from '../i18n'
 
 export interface GruppoVoli {
   key: string
@@ -25,7 +26,7 @@ export function raggruppaVoli(flights: Flight[], trip: Pick<Trip, 'originCountry
   const data = (f: Flight) => formatDateInZone(primo(f).departAt, primo(f).fromTz).replace(/\./g, '')
   return ordered.map((f) => ({
     key: f.id,
-    title: `${f === andata ? 'Andata' : f === ritorno ? 'Ritorno' : 'Volo'} · ${data(f)}`,
+    title: `${f === andata ? t('Andata') : f === ritorno ? t('Ritorno') : t('Volo')} · ${data(f)}`,
     flights: [f],
   }))
 }
@@ -83,8 +84,8 @@ export function fasciaScali(scali: Scalo[]): { titolo: string; resto: string } |
   if (scali.length === 0) return null
   const tot = scali.reduce((s, x) => s + x.minutes, 0)
   return scali.length === 1
-    ? { titolo: `1 scalo a ${scali[0].city}`, resto: `${durataLunga(tot)} di attesa` }
-    : { titolo: `${scali.length} scali`, resto: `${durataLunga(tot)} di attesa in tutto` }
+    ? { titolo: t('1 scalo a {city}', { city: scali[0].city }), resto: t('{v0} di attesa', { v0: durataLunga(tot) }) }
+    : { titolo: t('{length} scali', { length: scali.length }), resto: t('{v0} di attesa in tutto', { v0: durataLunga(tot) }) }
 }
 
 /** «sab 21 nov» → data di partenza in formato testo; usata anche dal promemoria del check-in. */

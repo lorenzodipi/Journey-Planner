@@ -2,6 +2,7 @@ import type { Booking, BudgetItem, Expense, Scope, Trip, Traveler } from '../typ
 import { BOOKING_BUDGET_CATEGORY } from './bookingMeta'
 import { formatMoney, round2 } from './money'
 import { payersOf, scaleTo, splitAmounts } from './ripartizione'
+import { LINGUA, t as tt } from '../i18n'
 
 // Calcoli di budget e spese. Tutto è derivato dai dati: nessun totale si digita a mano.
 // Le valute: la valuta base del viaggio (es. EUR), la valuta locale (es. JPY) con un tasso
@@ -153,7 +154,7 @@ export function groupByCategory<T extends { category: string }>(lines: T[]): { c
   const map = new Map<string, T[]>()
   for (const l of lines) map.set(l.category, [...(map.get(l.category) ?? []), l])
   return Array.from(map, ([category, ls]) => ({ category, lines: ls })).sort((a, b) =>
-    a.category === 'Altro' ? 1 : b.category === 'Altro' ? -1 : a.category.localeCompare(b.category, 'it'),
+    a.category === 'Altro' ? 1 : b.category === 'Altro' ? -1 : a.category.localeCompare(b.category, LINGUA),
   )
 }
 
@@ -230,7 +231,7 @@ export function categoryOverview(
   }
   return Array.from(map.values())
     .filter((c) => c.id !== undefined || c.lines.length > 0 || c.expenses.length > 0)
-    .sort((a, b) => (a.key === catKey(OTHER_CATEGORY) ? 1 : b.key === catKey(OTHER_CATEGORY) ? -1 : a.label.localeCompare(b.label, 'it')))
+    .sort((a, b) => (a.key === catKey(OTHER_CATEGORY) ? 1 : b.key === catKey(OTHER_CATEGORY) ? -1 : a.label.localeCompare(b.label, LINGUA)))
 }
 
 /** Quanto di voli, alloggi e trasporti risulta già pagato (nella valuta base): vale come speso senza registrarlo tra le spese. */
@@ -526,6 +527,6 @@ export function budgetStatus(limit: number | null | undefined, spent: number, pl
 
 /** «Speso 1.200 € di 3.000 € · restano 1.800 €» oppure, oltre il tetto, «… · +120 € sopra il budget». */
 export function budgetLine(status: BudgetStatus, spent: number, limit: number, currency: string): string {
-  const head = `Speso ${formatMoney(spent, currency)} di ${formatMoney(limit, currency)}`
-  return status.over > 0 ? `${head} · +${formatMoney(status.over, currency)} sopra il budget` : `${head} · restano ${formatMoney(status.left, currency)}`
+  const head = tt('Speso {v0} di {v1}', { v0: formatMoney(spent, currency), v1: formatMoney(limit, currency) })
+  return status.over > 0 ? tt('{head} · +{v1} sopra il budget', { head, v1: formatMoney(status.over, currency) }) : tt('{head} · restano {v1}', { head, v1: formatMoney(status.left, currency) })
 }

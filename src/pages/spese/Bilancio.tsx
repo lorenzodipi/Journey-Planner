@@ -7,6 +7,7 @@ import { useMe } from '../../state/me'
 import { useTrip } from '../../state/trip'
 import { DebitiSpesa } from './DebitiSpesa'
 import { RimborsiCard } from './Rimborsi'
+import { t } from '../../i18n'
 
 export function Bilancio() {
   const trip = useTrip()
@@ -15,10 +16,10 @@ export function Bilancio() {
   const dati = ricevuta(trip, r.spese, r.fx)
   const saldo = r.mioSaldo
   return (
-    <Schermata bar={<BarraIndietro title="Il mio bilancio" back="/spese" />} gap={16}>
+    <Schermata bar={<BarraIndietro title={t('Il mio bilancio')} back="/spese" />} gap={16}>
       <RimborsiCard trip={trip} conMie={false} />
       <DebitiSpesa trip={trip} spese={r.spese} fx={r.fx} me={me?.id} abilitaPagamento={trip.settlements !== undefined} />
-      {dati.transfers.filter((x) => x.from === me?.id || x.to === me?.id).length === 0 && saldo !== null ? <p className="fa-m" style={{ margin: 0 }}>Nessun rimborso necessario.</p> : null}
+      {dati.transfers.filter((x) => x.from === me?.id || x.to === me?.id).length === 0 && saldo !== null ? <p className="fa-m" style={{ margin: 0 }}>{t('Nessun rimborso necessario.')}</p> : null}
     </Schermata>
   )
 }

@@ -1,5 +1,6 @@
 import type { BudgetItem, Day, Expense, ExpenseFile, Rimborso, RimborsoConfermato, ExpensePayer, ExpenseShare, Scope, ExpenseSourceKind, SplitMode } from '../types'
 import { zonedToInstant } from './zoned'
+import { LINGUA } from '../i18n'
 
 // Budget e spese: righe del database <-> tipi dell'app, e colonne da salvare dai moduli.
 
@@ -154,7 +155,7 @@ export function mapBudget(items: BudgetItemRow[], shares: BudgetShareRow[], trip
         .filter((s) => s.budget_item_id === r.id)
         .map((s) => ({ id: s.id, travelerId: s.traveler_id, paid: s.paid })),
     }))
-    .sort((a, b) => (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999') || a.label.localeCompare(b.label, 'it'))
+    .sort((a, b) => (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999') || a.label.localeCompare(b.label, LINGUA))
 }
 
 export function mapExpenses(

@@ -3,10 +3,11 @@ import { daysBetween } from './dates'
 import { formatMoney } from './money'
 import { tripToday } from './today'
 import type { Trip } from '../types'
+import { t } from '../i18n'
 
 export type StatoViaggio = 'prossimo' | 'incorso' | 'concluso'
 
-export const STATO_TESTO: Record<StatoViaggio, string> = { prossimo: 'Prossimo', incorso: 'In corso', concluso: 'Concluso' }
+export const STATO_TESTO: Record<StatoViaggio, string> = { prossimo: t('Prossimo'), incorso: t('In corso'), concluso: t('Concluso') }
 
 export function statoViaggio(trip: Pick<Trip, 'startDate' | 'endDate' | 'timezone'>, now?: Date): StatoViaggio {
   const today = tripToday(trip, now)
@@ -46,12 +47,12 @@ export function rigaFinale(trip: Pick<Trip, 'startDate' | 'endDate' | 'timezone'
   const today = tripToday(trip, now)
   if (stato === 'prossimo') {
     const n = daysBetween(today, trip.startDate)
-    const quando = n === 1 ? 'Domani' : `Tra ${n} giorni`
-    return trip.budgetLimit ? `${quando} · Budget ${formatMoney(trip.budgetLimit, trip.baseCurrency)}` : quando
+    const quando = n === 1 ? t('Domani') : t('Tra {n} giorni', { n })
+    return trip.budgetLimit ? t('{quando} · Budget {v1}', { quando, v1: formatMoney(trip.budgetLimit, trip.baseCurrency) }) : quando
   }
   if (stato === 'incorso') {
     const city = trip.days.find((d) => d.date === today)?.city || trip.destination
-    return city ? `In corso · oggi a ${city}` : 'In corso'
+    return city ? t('In corso · oggi a {city}', { city }) : t('In corso')
   }
-  return `Spesi ${formatMoney(speso, trip.baseCurrency)}`
+  return t('Spesi {v0}', { v0: formatMoney(speso, trip.baseCurrency) })
 }

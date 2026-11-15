@@ -1,6 +1,6 @@
 # Journey Planner — istruzioni per agenti
 
-Prima di toccare il codice leggi le linee guida in [docs/linee-guida](docs/linee-guida/README.md): prodotto, regole generali, modali e moduli, accessibilità, CSS e stile. Qui sotto c'è il riassunto delle regole da seguire sempre e dei controlli da rifare a ogni modifica.
+Prima di toccare il codice leggi le linee guida in [docs/linee-guida](docs/linee-guida/README.md): prodotto, regole generali, modali e moduli, accessibilità, CSS e stile, lingue. Qui sotto c'è il riassunto delle regole da seguire sempre e dei controlli da rifare a ogni modifica.
 
 ## Come si lavora con Lorenzo
 - Rispondi **in italiano**, in modo sintetico. Alla fine: che cosa è cambiato, che cosa hai controllato, che cosa non hai potuto provare (per esempio un dispositivo vero).
@@ -38,6 +38,11 @@ Rumore noto del confronto: i pin della mappa nella pagina di un giorno e una rig
 - **Ogni pagina a colonna unica si controlla anche da 840 px in su** (882, 1280): se resta a tutta larghezza si divide con `Affianca`/`Colonna` (elenco delle pagine già fatte in `05-css-e-stile`).
 - **A libro mezzo aperto** l'app sta in un segmento ed è un telefono. Le classi del plugin `capacitor-foldable` sono `.fold-vertical`, `--fold-left` e `.horizontal-viewport-segments-2`.
 - Stessa riga, stessa altezza: calendarietti, card dei luoghi, riquadri affiancati. Le card strette si adattano con le container query, non con la larghezza della finestra.
+
+## Lingue (dettagli in 06-lingue)
+- L'app è in **italiano e inglese**. Ogni testo che si legge passa da `t('Frase italiana intera')` (o `tt` se nel file c'è già un `t`) e ha la sua traduzione in `src/i18n/en.json`: il test `src/i18n/catalogo.test.ts` controlla che non manchi niente. Date, numeri e ordinamenti con `LOCALE`/`LINGUA`, elenchi con `elenco()`.
+- **Non si traduce ciò che scrive chi usa l'app** (nomi, note, categorie create a mano). Le categorie proposte dall'app restano salvate in italiano e si mostrano con `nomeCategoria()`.
+- NRT con il browser in italiano (`locale: 'it-IT'`); pagine e fogli nuovi si guardano anche in inglese (`en-GB`).
 
 ## Interfaccia
 - Riusa i componenti di `src/faraway/` e `react-aria-components` prima di scrivere elementi nuovi. `src/ui/` contiene solo i pezzi del primo disegno ancora da portare (ripristino da file, importa KMZ, trova posizioni, collega account, mappa del giorno, icone dei mezzi, avvisi): non va usata per cose nuove. Il codice che l'app non raggiunge più si toglie, insieme ai suoi test e al CSS che usava solo lui. Una scelta da un elenco è un `<select>` vero (`Select`, `CampoPaese`), non un testo con suggerimenti.

@@ -3,11 +3,12 @@
 import { Label, Radio, RadioGroup } from 'react-aria-components'
 import { ICONE_CATEGORIA } from '../lib/categoryIcon'
 import { Ic } from '../ui/Sprite'
+import { t } from '../i18n'
 
 export function SceltaIcona({ value, onChange }: { value: string; onChange: (icona: string) => void }) {
   return (
     <RadioGroup className="fa-icone" value={value} onChange={onChange} orientation="horizontal">
-      <Label className="fa-icone-l">Icona</Label>
+      <Label className="fa-icone-l">{t('Icona')}</Label>
       <div className="fa-icone-g">
         {ICONE_CATEGORIA.map((x) => (
           <Radio key={x.id} value={x.id} className="fa-icona" aria-label={x.nome}>

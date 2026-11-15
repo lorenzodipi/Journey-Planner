@@ -15,6 +15,7 @@ import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
 import { AlloggioSheet } from './AlloggioSheet'
 import { soloLettura } from '../../lib/ruolo'
+import { elenco, t as tt } from '../../i18n'
 
 export function AlloggiPage() {
   const trip = useTrip()
@@ -28,16 +29,16 @@ export function AlloggiPage() {
   const lettura = soloLettura(trip)
 
   async function elimina(s: Stay) {
-    const ok = await ask({ title: 'Eliminare l’alloggio?', message: conDipendenze(`${s.name} sparisce dagli alloggi e dalle spese. Puoi annullare subito dopo.`, dipendenze(trip, 'alloggio', s.id)), confirm: 'Elimina l’alloggio', cancel: 'Tieni l’alloggio', destructive: true })
+    const ok = await ask({ title: tt('Eliminare l’alloggio?'), message: conDipendenze(tt('{name} sparisce dagli alloggi e dalle spese. Puoi annullare subito dopo.', { name: s.name }), dipendenze(trip, 'alloggio', s.id)), confirm: tt('Elimina l’alloggio'), cancel: tt('Tieni l’alloggio'), destructive: true })
     if (!ok) return
     const m = await t.setStayDeleted(s.id, true)
-    showToast(m ?? 'Alloggio eliminato', m ? undefined : { label: 'Annulla', run: () => void t.setStayDeleted(s.id, false) })
+    showToast(m ?? tt('Alloggio eliminato'), m ? undefined : { label: tt('Annulla'), run: () => void t.setStayDeleted(s.id, false) })
   }
 
   return (
     <Schermata
-      bar={<BarraIndietro title="Alloggi" back="/altro" />}
-      fab={gruppi.length === 0 || lettura ? null : { label: 'Alloggio', aria: 'Aggiungi un alloggio', onPress: () => setSheet({}) }}
+      bar={<BarraIndietro title={tt('Alloggi')} back="/altro" />}
+      fab={gruppi.length === 0 || lettura ? null : { label: tt('Alloggio'), aria: tt('Aggiungi un alloggio'), onPress: () => setSheet({}) }}
       overlay={
         <>
           {sheet ? <AlloggioSheet key={sheet.stay?.id ?? 'new'} trip={trip} stay={sheet.stay} open onClose={() => setSheet(null)} /> : null}
@@ -47,20 +48,20 @@ export function AlloggiPage() {
     >
       {gruppi.length > 0 && !lettura ? <AvvisoNotti trip={trip} /> : null}
       {fuori.length > 0 && !lettura ? (
-        <Banner tone="ac" icon="warn" title="Date fuori dal viaggio">
+        <Banner tone="ac" icon="warn" title={tt('Date fuori dal viaggio')}>
           {fuori.map((x) => x.name).join(', ')}.
         </Banner>
       ) : null}
       {overlaps.length > 0 && !lettura ? (
-        <Banner tone="cor" icon="warn" title="Alloggi che si sovrappongono">
-          {overlaps.map(([a, b]) => `${trip.stays[a].name} e ${trip.stays[b].name}`).join('; ')}.
+        <Banner tone="cor" icon="warn" title={tt('Alloggi che si sovrappongono')}>
+          {overlaps.map(([a, b]) => elenco([trip.stays[a].name, trip.stays[b].name])).join('; ')}.
         </Banner>
       ) : null}
       {gruppi.length === 0 ? (
         lettura ? (
-          <Vuoto title="Nessun alloggio" text="Gli alloggi del viaggio compariranno qui." />
+          <Vuoto title={tt('Nessun alloggio')} text={tt('Gli alloggi del viaggio compariranno qui.')} />
         ) : (
-          <Vuoto title="Nessun alloggio" text="Hotel e case con date, orari di check-in, camera e codice di prenotazione." action="Aggiungi un alloggio" onAction={() => setSheet({})} />
+          <Vuoto title={tt('Nessun alloggio')} text={tt('Hotel e case con date, orari di check-in, camera e codice di prenotazione.')} action={tt('Aggiungi un alloggio')} onAction={() => setSheet({})} />
         )
       ) : null}
       <Affianca uguali>

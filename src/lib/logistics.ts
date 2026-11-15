@@ -1,6 +1,7 @@
 import type { Day, Flight, FlightLeg, Scope, Stay, Transport, TransportMode } from '../types'
 import { formatDateInZone } from './flights'
 import { instantToZoned, isCompleteZoned, zonedToInstant } from './zoned'
+import { LINGUA } from '../i18n'
 
 // Alloggi, trasporti e voli: righe del database <-> tipi dell'app, e costruzione delle colonne
 // da salvare a partire dai moduli. Funzioni pure, provate nei test.
@@ -155,7 +156,7 @@ export function mapStays(rows: StayRow[], tripId: string): Stay[] {
       email: r.email?.trim() || undefined,
       participants: r.participants?.length ? r.participants : undefined,
     }))
-    .sort((a, b) => a.checkIn.localeCompare(b.checkIn) || a.name.localeCompare(b.name, 'it'))
+    .sort((a, b) => a.checkIn.localeCompare(b.checkIn) || a.name.localeCompare(b.name, LINGUA))
 }
 
 export function mapTransports(rows: TransportRow[], tripId: string): Transport[] {
@@ -194,7 +195,7 @@ export function mapTransports(rows: TransportRow[], tripId: string): Transport[]
       policy: r.policy ?? undefined,
       checkinAt: r.checkin_at ?? undefined,
     }))
-    .sort((a, b) => (a.departAt ?? '9999').localeCompare(b.departAt ?? '9999') || a.from.localeCompare(b.from, 'it'))
+    .sort((a, b) => (a.departAt ?? '9999').localeCompare(b.departAt ?? '9999') || a.from.localeCompare(b.from, LINGUA))
 }
 
 export function mapFlights(rows: FlightRow[], legs: FlightLegRow[], tripId: string): Flight[] {

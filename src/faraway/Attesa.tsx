@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTrips } from '../state/trip'
 import { cx } from './cx'
+import { t } from '../i18n'
 
 export function BarraAttesa() {
   const { inCorso } = useTrips()
@@ -12,7 +13,7 @@ export function BarraAttesa() {
         <i />
       </div>
       <span className="sr-only" role="status" aria-live="polite">
-        {inCorso ? 'Salvataggio in corso' : ''}
+        {inCorso ? t('Salvataggio in corso') : ''}
       </span>
     </>
   )

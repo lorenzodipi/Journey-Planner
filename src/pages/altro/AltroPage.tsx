@@ -16,6 +16,7 @@ import { Simbolo } from '../../faraway/Home'
 import { Riga } from '../../faraway/Righe'
 import { Affianca, BarraGrande, Colonna, Schermata } from '../../faraway/shell'
 import { ViaggioSheet } from '../viaggio/ViaggioSheet'
+import { t as tt, tc } from '../../i18n'
 
 export function AltroPage() {
   const trip = useTrip()
@@ -32,40 +33,40 @@ export function AltroPage() {
   const r = riassunto(trip, me?.id)
   const email = auth.session?.user.email ?? ''
   // il viaggiatore legato all'account; senza (visualizzatore) il nome del profilo; solo in mancanza, l'email
-  const nome = me?.name || auth.profileName || (email ? email.split('@')[0].replace(/^./, (c) => c.toUpperCase()) : 'Anteprima demo')
+  const nome = me?.name || auth.profileName || (email ? email.split('@')[0].replace(/^./, (c) => c.toUpperCase()) : tt('Anteprima demo'))
   const owner = trip.myRole === undefined || trip.myRole === 'owner'
   const lettura = soloLettura(trip)
   const citta = cittaDelViaggio(trip)
   const people = trip.travelers.map((p) => ({ initials: initials(p.name), n: discOf(trip, p.id) }))
 
   const righe: { icon: string | ReactNode; title: string; sub: string; to?: string; onPress?: () => void }[] = [
-    { icon: 'i-sez-bed', title: 'Alloggi', sub: riepilogoAlloggi(trip), to: '/altro/alloggi' },
-    { icon: 'i-tra-plane', title: 'Voli', sub: riepilogoVoli(trip), to: '/altro/voli' },
-    { icon: 'i-tra-train', title: 'Trasporti', sub: riepilogoTrasportiAltro(trip), to: '/altro/trasporti' },
-    { icon: 'i-sez-ticket', title: 'Prenotazioni', sub: riepilogoPrenotazioni(trip), to: '/altro/prenotazioni' },
-    { icon: <DiscoSprite name="i-sez-file" colore="#FF7C80" />, title: 'Documenti', sub: riepilogoDocumenti(trip), to: '/altro/documenti' },
-    { icon: 'i-sez-checklist', title: 'Checklist', sub: riepilogoChecklist(trip), to: '/altro/checklist' },
-    { icon: 'i-con-spese', title: 'Budget', sub: riepilogoBudget(r.speso, r.limit, trip.baseCurrency), to: '/spese/budget' },
-    { icon: <DiscoSprite name="i-azi-swap" colore="#FFD23F" />, title: 'Cambio valuta', sub: riepilogoCambio(trip), onPress: () => setFx(true) },
-    { icon: <DiscoGlifo icona={GLIFI.persona} colore="#D28AE8" />, title: 'Viaggiatori', sub: personeText(trip.travelers.length), to: '/altro/viaggiatori' },
+    { icon: 'i-sez-bed', title: tt('Alloggi'), sub: riepilogoAlloggi(trip), to: '/altro/alloggi' },
+    { icon: 'i-tra-plane', title: tt('Voli'), sub: riepilogoVoli(trip), to: '/altro/voli' },
+    { icon: 'i-tra-train', title: tt('Trasporti'), sub: riepilogoTrasportiAltro(trip), to: '/altro/trasporti' },
+    { icon: 'i-sez-ticket', title: tt('Prenotazioni'), sub: riepilogoPrenotazioni(trip), to: '/altro/prenotazioni' },
+    { icon: <DiscoSprite name="i-sez-file" colore="#FF7C80" />, title: tt('Documenti'), sub: riepilogoDocumenti(trip), to: '/altro/documenti' },
+    { icon: 'i-sez-checklist', title: tt('Checklist'), sub: riepilogoChecklist(trip), to: '/altro/checklist' },
+    { icon: 'i-con-spese', title: tt('Budget'), sub: riepilogoBudget(r.speso, r.limit, trip.baseCurrency), to: '/spese/budget' },
+    { icon: <DiscoSprite name="i-azi-swap" colore="#FFD23F" />, title: tt('Cambio valuta'), sub: riepilogoCambio(trip), onPress: () => setFx(true) },
+    { icon: <DiscoGlifo icona={GLIFI.persona} colore="#D28AE8" />, title: tt('Viaggiatori'), sub: personeText(trip.travelers.length), to: '/altro/viaggiatori' },
   ].filter((x) => (x.to ? paginaPermessa(x.to, trip) : !lettura)) // il visualizzatore: niente prenotazioni, documenti, checklist, budget, cambio
 
   return (
     <Schermata
       fisso
-      fissa={cerca ? <Campo label="Cerca nel viaggio" hideLabel icon="search" type="search" value={q} onChange={setQ} placeholder={lettura ? 'Tappe, alloggi, trasporti, voli' : 'Luoghi, tappe, prenotazioni, alloggi, trasporti'} autoFocus enterKeyHint="search" /> : null}
+      fissa={cerca ? <Campo label={tt('Cerca nel viaggio')} hideLabel icon="search" type="search" value={q} onChange={setQ} placeholder={lettura ? tt('Tappe, alloggi, trasporti, voli') : tt('Luoghi, tappe, prenotazioni, alloggi, trasporti')} autoFocus enterKeyHint="search" /> : null}
       bar={
         <BarraGrande
-          title="Altro"
-          sub={auth.status === 'demo' ? 'Anteprima con dati fittizi' : undefined}
-          actions={<PulsanteIcona icon={cerca ? 'close' : 'search'} label={cerca ? 'Chiudi la ricerca' : 'Cerca nel viaggio'} expanded={cerca} onPress={() => (setCerca(!cerca), setQ(''))} />}
+          title={tc('Altro', 'scheda')}
+          sub={auth.status === 'demo' ? tt('Anteprima con dati fittizi') : undefined}
+          actions={<PulsanteIcona icon={cerca ? 'close' : 'search'} label={cerca ? tt('Chiudi la ricerca') : tt('Cerca nel viaggio')} expanded={cerca} onPress={() => (setCerca(!cerca), setQ(''))} />}
         />
       }
       overlay={
         <>
           {edit ? <ViaggioSheet key={trip.id} trip={trip} open onClose={() => setEdit(false)} /> : null}
           {fx ? (
-            <Foglio open title="Cambio delle valute" onClose={() => setFx(false)}>
+            <Foglio open title={tt('Cambio delle valute')} onClose={() => setFx(false)}>
               <FxForm
                   trip={trip}
                   onSubmit={(rate, extra) => (Object.keys(extra).length === 0 && !trip.fxRates ? t.setFxRate(trip.id, rate) : t.setFxRates(trip.id, rate, extra))}
@@ -82,9 +83,9 @@ export function AltroPage() {
         <Affianca>
           {/* pieghevole aperto: a sinistra il viaggio attuale e Faraway, a destra account e sezioni del viaggio */}
           <Colonna lato="sinistra">
-            <section aria-label="Viaggio attuale" style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 8, padding: 24, borderRadius: 'var(--radius-xl)', background: 'var(--tinta-azzurro)', color: 'var(--on-tinta)', border: '1px solid var(--bordo-azzurro)' }}>
+            <section aria-label={tt('Viaggio attuale')} style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 8, padding: 24, borderRadius: 'var(--radius-xl)', background: 'var(--tinta-azzurro)', color: 'var(--on-tinta)', border: '1px solid var(--bordo-azzurro)' }}>
               <Simbolo style={{ position: 'absolute', right: 18, top: 16, width: 46, height: 54 }} />
-              <p className="fa-m" style={{ margin: 0, color: 'var(--on-tinta-muted)' }}>Viaggio attuale</p>
+              <p className="fa-m" style={{ margin: 0, color: 'var(--on-tinta-muted)' }}>{tt('Viaggio attuale')}</p>
               <h2 data-adatta="" style={{ margin: 0, paddingRight: 56, font: '500 32px/36px var(--font-display)' }}>{trip.title}</h2>
               <p data-adatta="" style={{ margin: 0, font: '600 15px/22px var(--font-sans)' }}>{periodo(trip)}</p>
               {citta ? <p style={{ margin: 0, font: '400 14px/20px var(--font-sans)', color: 'var(--on-tinta-muted)' }}>{citta}</p> : null}
@@ -96,18 +97,18 @@ export function AltroPage() {
               {owner ? (
                 <div style={{ marginTop: 8 }}>
                   <Pulsante color="secondary" iconLeading="pencil" onPress={() => setEdit(true)}>
-                    Modifica dati del viaggio
+                    {tt('Modifica dati del viaggio')}
                   </Pulsante>
                 </div>
               ) : null}
             </section>
           </Colonna>
           <Colonna lato="destra" alta>
-            <section className="fa-list" aria-label="Account">
-              <Riga icon={<Avatar initials={initials(nome)} n={me ? discOf(trip, me.id) : 1} large />} title={nome} sub="Account e profilo" onPress={() => navigate('/altro/account')} />
-              <Riga icon="i-sez-bag" title="Tutti i viaggi" sub={viaggiText(t.trips.length)} onPress={() => navigate('/viaggi')} />
+            <section className="fa-list" aria-label={tt('Account')}>
+              <Riga icon={<Avatar initials={initials(nome)} n={me ? discOf(trip, me.id) : 1} large />} title={nome} sub={tt('Account e profilo')} onPress={() => navigate('/altro/account')} />
+              <Riga icon="i-sez-bag" title={tt('Tutti i viaggi')} sub={viaggiText(t.trips.length)} onPress={() => navigate('/viaggi')} />
             </section>
-            <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Il viaggio</h2>
+            <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>{tt('Il viaggio')}</h2>
             <div className="fa-list">
               {righe.map((x) => (
                 <Riga key={x.title} icon={x.icon} title={x.title} sub={x.sub} onPress={() => (x.to ? navigate(x.to) : x.onPress?.())} />
@@ -115,9 +116,9 @@ export function AltroPage() {
             </div>
           </Colonna>
           <Colonna lato="sinistra">
-            <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Faraway</h2>
+            <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>{tt('Faraway')}</h2>
             <div className="fa-list">
-              <Riga icon="i-azi-settings" title="Impostazioni" sub={t.pending > 0 ? `Aspetto, notifiche e dati · ${t.pending === 1 ? '1 modifica' : `${t.pending} modifiche`} in coda` : 'Aspetto, notifiche, lingua e dati'} onPress={() => navigate('/altro/impostazioni')} />
+              <Riga icon="i-azi-settings" title={tt('Impostazioni')} sub={t.pending > 0 ? tt('Aspetto, notifiche e dati · {v0} in coda', { v0: t.pending === 1 ? '1 modifica' : tt('{pending} modifiche', { pending: t.pending }) }) : tt('Aspetto, notifiche, lingua e dati')} onPress={() => navigate('/altro/impostazioni')} />
             </div>
           </Colonna>
         </Affianca>

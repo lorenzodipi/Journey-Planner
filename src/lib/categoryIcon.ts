@@ -22,6 +22,7 @@ import {
   faArrowsUpDown,
   type IconDefinition,
 } from '@fortawesome/free-solid-svg-icons'
+import { t, tc } from '../i18n'
 
 // Icona di un luogo in base alla sua categoria. Le categorie sono etichette libere («Tempio»,
 // «Ristorante», «Punto panoramico»…): si riconoscono per parole chiave, senza badare a maiuscole e accenti.
@@ -84,27 +85,27 @@ const normalize = (s: string) =>
 
 /** Icone che si possono scegliere per una categoria nuova, con il nome per chi usa lo screen reader. */
 export const ICONE_CATEGORIA: { id: PinIcon; nome: string }[] = [
-  { id: 'food', nome: 'Cibo' },
-  { id: 'cafe', nome: 'Caffè' },
-  { id: 'shopping', nome: 'Shopping' },
-  { id: 'grocery', nome: 'Spesa' },
-  { id: 'stay', nome: 'Alloggio' },
-  { id: 'airport', nome: 'Aereo' },
-  { id: 'train', nome: 'Treno' },
-  { id: 'transit', nome: 'Bus e trasporti' },
-  { id: 'fuel', nome: 'Carburante' },
-  { id: 'temple', nome: 'Tempio' },
-  { id: 'museum', nome: 'Museo' },
-  { id: 'castle', nome: 'Castello' },
-  { id: 'viewpoint', nome: 'Panorama' },
-  { id: 'nature', nome: 'Natura' },
-  { id: 'district', nome: 'Quartiere' },
-  { id: 'spa', nome: 'Terme e relax' },
-  { id: 'night', nome: 'Sera' },
-  { id: 'fun', nome: 'Svago' },
-  { id: 'shield', nome: 'Assicurazione' },
-  { id: 'connection', nome: 'Connessione' },
-  { id: 'pin', nome: 'Generica' },
+  { id: 'food', nome: t('Cibo') },
+  { id: 'cafe', nome: t('Caffè') },
+  { id: 'shopping', nome: t('Shopping') },
+  { id: 'grocery', nome: tc('Spesa', 'alimentari') },
+  { id: 'stay', nome: t('Alloggio') },
+  { id: 'airport', nome: t('Aereo') },
+  { id: 'train', nome: t('Treno') },
+  { id: 'transit', nome: t('Bus e trasporti') },
+  { id: 'fuel', nome: t('Carburante') },
+  { id: 'temple', nome: t('Tempio') },
+  { id: 'museum', nome: t('Museo') },
+  { id: 'castle', nome: t('Castello') },
+  { id: 'viewpoint', nome: t('Panorama') },
+  { id: 'nature', nome: t('Natura') },
+  { id: 'district', nome: t('Quartiere') },
+  { id: 'spa', nome: t('Terme e relax') },
+  { id: 'night', nome: t('Sera') },
+  { id: 'fun', nome: t('Svago') },
+  { id: 'shield', nome: t('Assicurazione') },
+  { id: 'connection', nome: t('Connessione') },
+  { id: 'pin', nome: t('Generica') },
 ]
 const SCEGLIBILI = new Set<string>(ICONE_CATEGORIA.map((x) => x.id))
 

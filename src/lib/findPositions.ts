@@ -5,6 +5,7 @@
 
 import type { GeoResult } from './geocode'
 import { meters } from './kmzPlan'
+import { t as tt } from '../i18n'
 
 export interface LatLng {
   lat: number
@@ -149,7 +150,7 @@ export async function findPositions(o: FindOptions): Promise<FindResult> {
     buffer = []
     const message = await save(batch)
     if (message) {
-      result.error = `Non riesco a salvare le posizioni: ${message}`
+      result.error = tt('Non riesco a salvare le posizioni: {message}', { message })
       return false
     }
     result.found += batch.length
@@ -172,8 +173,8 @@ export async function findPositions(o: FindOptions): Promise<FindResult> {
     } catch (e) {
       const m = e instanceof Error ? e.message : ''
       // gli errori di rete del browser sono in inglese ("Failed to fetch"): si sostituiscono con un messaggio chiaro
-      result.error = !m || /fetch|network|load failed/i.test(m) ? 'Non riesco a raggiungere il servizio di ricerca: controlla la connessione.' : `${m}.`
-      result.error += ' Quanto trovato finora è salvato: puoi riprendere quando vuoi.'
+      result.error = !m || /fetch|network|load failed/i.test(m) ? tt('Non riesco a raggiungere il servizio di ricerca: controlla la connessione.') : `${m}.`
+      result.error += tt(' Quanto trovato finora è salvato: puoi riprendere quando vuoi.')
       break
     }
     done += 1

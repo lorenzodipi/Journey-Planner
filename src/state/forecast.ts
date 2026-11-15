@@ -3,6 +3,7 @@ import { daysBetween } from '../lib/dates'
 import { tripToday } from '../lib/today'
 import { FORECAST_DAYS, FORECAST_TTL_MS, fetchForecast, forecastKey, loadForecast, saveForecast, type DayWeather } from '../lib/weather'
 import type { Trip } from '../types'
+import { t } from '../i18n'
 
 export interface ForecastState {
   days: DayWeather[]
@@ -39,7 +40,7 @@ export function useForecast(trip: Pick<Trip, 'center' | 'timezone' | 'startDate'
         if (active) setState({ days, savedAt, loading: false, error: null })
       },
       (e) => {
-        if (active) setState((s) => ({ ...s, loading: false, error: e instanceof Error ? e.message : 'Previsioni non disponibili.' }))
+        if (active) setState((s) => ({ ...s, loading: false, error: e instanceof Error ? e.message : t('Previsioni non disponibili.') }))
       },
     )
     return () => {

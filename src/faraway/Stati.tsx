@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { ART } from '../ui/art'
 import { Pulsante } from './base'
 import type { SvName } from './icons'
+import { t } from '../i18n'
 
 type ArtName = keyof typeof ART
 
@@ -53,7 +54,7 @@ export function VuotoFiltro({ title, text, action, onAction }: { title: string; 
 const bar = (h: number, w: string, r = 8) => <span className="fa-sk" style={{ height: h, width: w, borderRadius: r }} />
 
 /** Caricamento a scheletro (niente rotelle infinite): card e righe grigie con una frase. */
-export function Caricamento({ text = 'Sto caricando il viaggio', rows = 4 }: { text?: string; rows?: number }) {
+export function Caricamento({ text = t('Sto caricando il viaggio'), rows = 4 }: { text?: string; rows?: number }) {
   return (
     <>
       <div role="status" aria-busy="true" aria-label={text} style={{ display: 'grid', gap: 16 }}>

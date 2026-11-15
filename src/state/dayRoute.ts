@@ -15,6 +15,7 @@ import { impostazioniViaggio, scegliMezzo, sceltoPer } from '../lib/spostamenti'
 import type { DayMapEnd, DayMapLine } from '../ui/MapView'
 import { MODE_LABEL } from '../lib/mezzi'
 import type { Day, Trip } from '../types'
+import { t as tt } from '../i18n'
 
 export const STOP_COLOR = '#3d86ff'
 export const TRANSPORT_COLOR = '#ffa23a'
@@ -82,8 +83,8 @@ export function useDayRoute(trip: Pick<Trip, 'places' | 'transports' | 'moveMode
   const ends: DayMapEnd[] = useMemo(
     () =>
       transports.flatMap((t) => [
-        { id: `${t.id}-a`, name: `${MODE_LABEL[t.mode]}: partenza ${t.fromName}`, ...t.from },
-        { id: `${t.id}-b`, name: `${MODE_LABEL[t.mode]}: arrivo ${t.toName}`, ...t.to },
+        { id: `${t.id}-a`, name: tt('{v0}: partenza {fromName}', { v0: MODE_LABEL[t.mode], fromName: t.fromName }), ...t.from },
+        { id: `${t.id}-b`, name: tt('{v0}: arrivo {toName}', { v0: MODE_LABEL[t.mode], toName: t.toName }), ...t.to },
       ]),
     [transports],
   )

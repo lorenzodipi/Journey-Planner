@@ -1,16 +1,17 @@
 import type { BookingType } from '../types'
+import { t } from '../i18n'
 
 export const BOOKING_LABEL: Record<BookingType, string> = {
-  flight: 'Volo',
-  hotel: 'Alloggio',
-  train: 'Treno',
-  ticket: 'Biglietto',
-  insurance: 'Assicurazione',
+  flight: t('Volo'),
+  hotel: t('Alloggio'),
+  train: t('Treno'),
+  ticket: t('Biglietto'),
+  insurance: t('Assicurazione'),
   esim: 'eSIM / SIM',
-  other: 'Altro',
-  restaurant: 'Ristorante',
-  rental: 'Noleggio',
-  activity: 'Attività',
+  other: t('Altro'),
+  restaurant: t('Ristorante'),
+  rental: t('Noleggio'),
+  activity: t('Attività'),
 }
 
 /** Categoria del Budget in cui finisce il costo di un documento, in base al tipo. */

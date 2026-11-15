@@ -1,5 +1,6 @@
 // Codice del biglietto (#38): quali immagini ha una voce e per quali passeggeri.
 import type { TicketCode, TicketKind, Trip } from '../types'
+import { t } from '../i18n'
 
 /** Codici salvati per una voce (trasporto, volo o prenotazione), nell'ordine dei viaggiatori; quelli «per tutti» in fondo. */
 export function codiciDi(trip: Pick<Trip, 'ticketCodes' | 'travelers'>, kind: TicketKind, refId: string): TicketCode[] {
@@ -21,10 +22,10 @@ export function senzaCodice(codes: TicketCode[], travelerIds: string[]): string[
   return travelerIds.filter((id) => !codes.some((c) => c.travelerId === id))
 }
 
-export const nBiglietti = (n: number) => (n === 1 ? '1 biglietto' : `${n} biglietti`)
+export const nBiglietti = (n: number) => (n === 1 ? '1 biglietto' : t('{n} biglietti', { n }))
 
 export function checkImmagine(file: File): string | null {
-  if (!file.type.startsWith('image/')) return 'Serve una foto o uno screenshot del codice: scegli un\'immagine.'
-  if (file.size > 10 * 1024 * 1024) return 'L\'immagine supera 10 MB: scegline una più leggera.'
+  if (!file.type.startsWith('image/')) return t('Serve una foto o uno screenshot del codice: scegli un\'immagine.')
+  if (file.size > 10 * 1024 * 1024) return t('L\'immagine supera 10 MB: scegline una più leggera.')
   return null
 }

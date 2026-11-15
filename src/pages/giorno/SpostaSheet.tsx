@@ -7,11 +7,12 @@ import type { Day, Trip } from '../../types'
 import { Pulsante } from '../../faraway/base'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
+import { LOCALE, t } from '../../i18n'
 
-const wdm = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
+const wdm = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' })
 const fmt = (ymd: string) => wdm.format(parseYmd(ymd)).replace(/\./g, '')
 
-export function SpostaSheet({ trip, current, open, title = 'Sposta in un altro giorno', action = 'Sposta qui', onClose, onMove, preferCity }: { trip: Trip; current: Day; open: boolean; title?: string; action?: string; onClose: () => void; onMove: (dayId: string) => Promise<string | null>; preferCity?: string }) {
+export function SpostaSheet({ trip, current, open, title = t('Sposta in un altro giorno'), action = t('Sposta qui'), onClose, onMove, preferCity }: { trip: Trip; current: Day; open: boolean; title?: string; action?: string; onClose: () => void; onMove: (dayId: string) => Promise<string | null>; preferCity?: string }) {
   const [sel, setSel] = useState(current.id)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,7 +32,7 @@ export function SpostaSheet({ trip, current, open, title = 'Sposta in un altro g
   return (
     <Foglio open={open} title={title} onClose={onClose} plain>
       {/* RadioGroup della libreria: una sola fermata del Tab, frecce su e giù per cambiare giorno */}
-      <RadioGroup aria-label="Giorni del viaggio" orientation="vertical" value={sel} onChange={setSel} style={{ display: 'grid', maxHeight: '50vh', overflow: 'auto' }}>
+      <RadioGroup aria-label={t('Giorni del viaggio')} orientation="vertical" value={sel} onChange={setSel} style={{ display: 'grid', maxHeight: '50vh', overflow: 'auto' }}>
         {days.map((d) => {
           const n = trip.days.indexOf(d) + 1
           const on = d.id === sel
@@ -40,10 +41,10 @@ export function SpostaSheet({ trip, current, open, title = 'Sposta in un altro g
               <span style={{ display: 'grid', placeItems: 'center', width: 44, height: 44, borderRadius: 12, background: on ? 'var(--azzurro-solid)' : 'var(--surface-high)', color: on ? 'var(--on-azzurro-solid)' : 'var(--ink)', font: '600 18px/20px var(--font-sans)' }}>{n}</span>
               <span>
                 <span className="t" style={{ display: 'block' }}>
-                  Giorno {n} · {fmt(d.date)}
+                  {t('Giorno {n} · {v1}', { n, v1: fmt(d.date) })}
                 </span>
                 <span className="m" style={{ display: 'block' }}>
-                  {[d.city, `${d.items.length} ${d.items.length === 1 ? 'tappa' : 'tappe'}`].filter(Boolean).join(' · ')}
+                  {[d.city, `${d.items.length} ${d.items.length === 1 ? t('tappa') : t('tappe')}`].filter(Boolean).join(' · ')}
                 </span>
               </span>
               {on ? (
@@ -68,7 +69,7 @@ export function SpostaSheet({ trip, current, open, title = 'Sposta in un altro g
           {action}
         </Pulsante>
         <Pulsante color="secondary-soft" onPress={onClose}>
-          Annulla
+          {t('Annulla')}
         </Pulsante>
       </div>
     </Foglio>

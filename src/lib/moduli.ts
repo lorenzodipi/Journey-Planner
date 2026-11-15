@@ -1,6 +1,7 @@
 // Logica dei fogli (docs/linee-guida/03-modali-e-moduli.md): durate del percorso, notti, «Per chi» a riquadri,
 // conseguenza di «Il costo è» e conteggio dei campi di «Altri dettagli».
 import { formatMoney } from './money'
+import { t } from '../i18n'
 
 /** «45 min», «3 h», «3 h 29 min», «26 h 5 min». Vuoto se la durata non ha senso (zero, negativa, non un numero). */
 export function durataTesto(min: number | null | undefined): string {
@@ -10,7 +11,7 @@ export function durataTesto(min: number | null | undefined): string {
   if (m < 60) return `${m} min`
   const h = Math.floor(m / 60)
   const r = m % 60
-  return r ? `${h} h ${r} min` : `${h} h`
+  return r ? t('{h} h {r} min', { h, r }) : `${h} h`
 }
 
 /** Notti tra due date «aaaa-mm-gg»: «1 notte», «5 notti»; vuoto se mancano o non sono in ordine. */
@@ -18,7 +19,7 @@ export function nottiTesto(checkIn: string, checkOut: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(checkIn) || !/^\d{4}-\d{2}-\d{2}$/.test(checkOut)) return ''
   const n = Math.round((Date.parse(`${checkOut}T00:00:00Z`) - Date.parse(`${checkIn}T00:00:00Z`)) / 86_400_000)
   if (!Number.isFinite(n) || n <= 0) return ''
-  return n === 1 ? '1 notte' : `${n} notti`
+  return n === 1 ? '1 notte' : t('{n} notti', { n })
 }
 
 /** Scelta di «Per chi»: tutti, solo io, solo un'altra persona (viaggi a due) o persone scelte (da tre in su). */
@@ -52,8 +53,8 @@ export function alternaPersona(sel: readonly string[], id: string, all: readonly
 export function conseguenzaCosto(amount: number | null, persone: number, currency: string): { perPersona: string; totale: string } {
   if (amount === null || !(amount > 0) || persone < 2) return { perPersona: '', totale: '' }
   return {
-    perPersona: `${formatMoney(Math.round(amount * persone * 100) / 100, currency)} in tutto`,
-    totale: `${formatMoney(Math.round((amount / persone) * 100) / 100, currency)} a testa`,
+    perPersona: t('{v0} in tutto', { v0: formatMoney(Math.round(amount * persone * 100) / 100, currency) }),
+    totale: t('{v0} a testa', { v0: formatMoney(Math.round((amount / persone) * 100) / 100, currency) }),
   }
 }
 

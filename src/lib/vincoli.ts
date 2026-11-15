@@ -2,12 +2,13 @@
 import type { Booking, DayItem, TimeKind, Trip } from '../types'
 import { dateInZone, formatInZone } from './flights'
 import { oraPrenotazione, tappeDi } from './prenotazioni'
+import { t } from '../i18n'
 
 export const TIME_KIND_LABEL: Record<TimeKind, string> = {
-  fixed: 'Ora prestabilita',
-  window: 'Finestra di accesso',
-  indicative: 'Orario indicativo',
-  unspecified: 'Non specificato',
+  fixed: t('Ora prestabilita'),
+  window: t('Finestra di accesso'),
+  indicative: t('Orario indicativo'),
+  unspecified: t('Non specificato'),
 }
 
 export const isLocked = (i: Pick<DayItem, 'timeLock'>) => i.timeLock === 'locked'

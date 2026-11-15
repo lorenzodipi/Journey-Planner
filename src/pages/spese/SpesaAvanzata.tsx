@@ -10,10 +10,11 @@ import { checkPayers, checkSplit, fxTrace, splitAmounts } from '../../lib/ripart
 import { showToast } from '../../state/toast'
 import { discOf, initials } from '../../state/me'
 import type { ExpenseFile, ExpensePayer, ExpenseShare, SplitMode, Trip } from '../../types'
+import { LOCALE, t } from '../../i18n'
 
 const first = (name: string) => name.split(/\s+/)[0]
 const txt = (n: number) => String(n).replace('.', ',')
-const fmtRate = (n: number) => n.toLocaleString('it-IT', { maximumFractionDigits: n >= 10 ? 2 : 4 })
+const fmtRate = (n: number) => n.toLocaleString(LOCALE, { maximumFractionDigits: n >= 10 ? 2 : 4 })
 
 function Help({ check }: { check: { ok: boolean; message: string } }) {
   if (check.ok || !check.message) return null
@@ -54,8 +55,8 @@ export function PagantiEditor({ trip, total, currency, rows, onRows, single, onS
   )
   if (!rows) {
     return (
-      <div className="fa-fld" role="group" aria-label="Pagata da">
-        Pagata da
+      <div className="fa-fld" role="group" aria-label={t('Pagata da')}>
+        {t('Pagata da')}
         <div className="fa-chips wrap">
           {ppl.map((p) => (
             <Chip key={p.id} on={single === p.id} onPress={() => onSingle(p.id)} icon={disc(p.id)}>
@@ -65,7 +66,7 @@ export function PagantiEditor({ trip, total, currency, rows, onRows, single, onS
         </div>
         {ppl.length > 1 ? (
           <Pulsante color="secondary-soft" iconLeading="plus" onPress={() => onRows([{ id: single, text: total ? txt(total) : '' }, { id: '', text: '' }])}>
-            Aggiungi un pagante
+            {t('Aggiungi un pagante')}
           </Pulsante>
         ) : null}
         {error ? <span className="fa-help bad" role="alert"><Sv name="err" size={16} />{error}</span> : null}
@@ -76,8 +77,8 @@ export function PagantiEditor({ trip, total, currency, rows, onRows, single, onS
   const used = new Set(rows.map((r) => r.id))
   const check = total !== null ? checkPayers(total, payersFromRows(rows), currency) : { ok: true, message: '' }
   return (
-    <div className="fa-fld" role="group" aria-label="Chi ha pagato">
-      Chi ha pagato
+    <div className="fa-fld" role="group" aria-label={t('Chi ha pagato')}>
+      {t('Chi ha pagato')}
       {rows.map((r, i) => (
         <div key={i} style={{ display: 'grid', gap: 8 }}>
           <div className="fa-chips wrap">
@@ -89,10 +90,10 @@ export function PagantiEditor({ trip, total, currency, rows, onRows, single, onS
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
-              <Campo label={`Versa${r.id ? ` · ${first(ppl.find((p) => p.id === r.id)?.name ?? '')}` : ''}`} inputMode="decimal" value={r.text} onChange={(v) => set(i, { text: v })} placeholder="0" trailing={<span>{currency}</span>} />
+              <Campo label={t('Versa{v0}', { v0: r.id ? ` · ${first(ppl.find((p) => p.id === r.id)?.name ?? '')}` : '' })} inputMode="decimal" value={r.text} onChange={(v) => set(i, { text: v })} placeholder="0" trailing={<span>{currency}</span>} />
             </div>
             {rows.length > 1 ? (
-              <PulsanteIcona icon="close" label="Togli questo pagante" onPress={() => {
+              <PulsanteIcona icon="close" label={t('Togli questo pagante')} onPress={() => {
                 if (rows.length === 2) {
                   onSingle(rows[1 - i].id || single)
                   onRows(null)
@@ -104,11 +105,11 @@ export function PagantiEditor({ trip, total, currency, rows, onRows, single, onS
       ))}
       {used.size < ppl.length && !rows.some((r) => !r.id) ? (
         <Pulsante color="secondary-soft" iconLeading="plus" onPress={() => onRows([...rows, { id: '', text: '' }])}>
-          Aggiungi un pagante
+          {t('Aggiungi un pagante')}
         </Pulsante>
       ) : null}
-      {rows.some((r) => !r.id) ? <span className="fa-help bad" role="alert"><Sv name="err" size={16} />Scegli chi è il pagante che hai aggiunto, oppure toglilo.</span> : <Help check={check} />}
-      {check.ok && total !== null && !error && rows.every((r) => r.id) ? <span className="fa-help ok">I versamenti fanno {txt(total)} {currency}</span> : null}
+      {rows.some((r) => !r.id) ? <span className="fa-help bad" role="alert"><Sv name="err" size={16} />{t('Scegli chi è il pagante che hai aggiunto, oppure toglilo.')}</span> : <Help check={check} />}
+      {check.ok && total !== null && !error && rows.every((r) => r.id) ? <span className="fa-help ok">{t('I versamenti fanno {v0} {currency}', { v0: txt(total), currency })}</span> : null}
       {error ? <span className="fa-help bad" role="alert"><Sv name="err" size={16} />{error}</span> : null}
     </div>
   )
@@ -145,7 +146,7 @@ export function DivisioneEditor({ trip, meId, mode, onMode, who, onWho, vals, on
   currency: string
   hint?: string
 }) {
-  const check = who.length === 0 ? { ok: false, message: 'Scegli almeno una persona.', missing: 0 } : checkSplit(mode, total ?? 0, sharesFrom(mode, who, vals), currency)
+  const check = who.length === 0 ? { ok: false, message: t('Scegli almeno una persona.'), missing: 0 } : checkSplit(mode, total ?? 0, sharesFrom(mode, who, vals), currency)
   const scegli = (next: string[]) => {
     onWho(next)
     if (next.length < 2 && mode !== 'equal') {
@@ -158,8 +159,8 @@ export function DivisioneEditor({ trip, meId, mode, onMode, who, onWho, vals, on
       <PerChi trip={trip} meId={meId} value={who} onChange={scegli} />
       {who.length > 1 ? (
         <div className="fa-fld">
-          Come dividere
-          <Segmenti<SplitMode> label="Come dividere" value={mode} onChange={(m) => (onMode(m), onVals(defaultVals(m, who, total)))} options={(['equal', 'percent', 'fixed'] as SplitMode[]).map((m) => ({ value: m, label: SPLIT_BREVE[m] }))} />
+          {t('Come dividere')}
+          <Segmenti<SplitMode> label={t('Come dividere')} value={mode} onChange={(m) => (onMode(m), onVals(defaultVals(m, who, total)))} options={(['equal', 'percent', 'fixed'] as SplitMode[]).map((m) => ({ value: m, label: SPLIT_BREVE[m] }))} />
         </div>
       ) : null}
       {mode !== 'equal' && who.length > 1
@@ -174,7 +175,7 @@ export function DivisioneEditor({ trip, meId, mode, onMode, who, onWho, vals, on
 }
 
 /** Nomi corti dei modi di divisione: tre segmenti stanno su una riga anche a 320 px. */
-const SPLIT_BREVE: Record<SplitMode, string> = { equal: 'Uguali', percent: 'In %', fixed: 'A importi' }
+const SPLIT_BREVE: Record<SplitMode, string> = { equal: t('Uguali'), percent: 'In %', fixed: t('A importi') }
 
 /** Riga del cambio: «1 € = 163,2 ¥ · BCE · 30 ott 09:10», con «Aggiorna» e «Modifica» (si può scrivere a mano; resta la traccia). */
 export function CambioRiga({ base, other, rate, source, at, manual, setBy, busy, onRefresh, onManual }: {
@@ -198,13 +199,13 @@ export function CambioRiga({ base, other, rate, source, at, manual, setBy, busy,
     const n = parseAmount(text)
     return (
       <div style={{ display: 'grid', gap: 8 }}>
-        <Campo label={`Quante ${other} per 1 ${base}`} inputMode="decimal" value={text} onChange={setText} placeholder="0" autoFocus error={text && !(n && n > 0) ? 'Scrivi un numero maggiore di zero.' : undefined} />
+        <Campo label={t('Quante {other} per 1 {base}', { other, base })} inputMode="decimal" value={text} onChange={setText} placeholder="0" autoFocus error={text && !(n && n > 0) ? t('Scrivi un numero maggiore di zero.') : undefined} />
         <div style={{ display: 'flex', gap: 8 }}>
           <Pulsante size="sm" isDisabled={!(n && n > 0)} onPress={() => (onManual(Math.round((1 / (n as number)) * 1e6) / 1e6), setEdit(false))}>
-            Usa questo cambio
+            {t('Usa questo cambio')}
           </Pulsante>
           <Pulsante size="sm" color="tertiary" onPress={() => setEdit(false)}>
-            Annulla
+            {t('Annulla')}
           </Pulsante>
         </div>
       </div>
@@ -213,15 +214,14 @@ export function CambioRiga({ base, other, rate, source, at, manual, setBy, busy,
   return (
     <div style={{ display: 'grid', gap: 8 }}>
       <span className="fa-help">
-        Cambio {fmtRate(per)} {other} per 1 {base}
-        {trace ? ` · ${trace}` : ''}
+        {t('Cambio {v0} {other} per 1 {base}{v3}', { v0: fmtRate(per), other, base, v3: trace ? ` · ${trace}` : '' })}
       </span>
       <div className="fa-btns">
         <Pulsante color="secondary-soft" iconLeading="refresh" isLoading={busy} onPress={onRefresh}>
-          Aggiorna
+          {t('Aggiorna')}
         </Pulsante>
         <Pulsante color="secondary-soft" iconLeading="pencil" onPress={() => (setText(fmtRate(per)), setEdit(true))}>
-          Modifica
+          {t('Modifica')}
         </Pulsante>
       </div>
     </div>
@@ -250,7 +250,7 @@ export function RicevuteEditor({ trip, expenseId, files, added, onAdded, onRemov
       const path = await uploadBookingFile(trip.id, file, `spese/${expenseId}`)
       onAdded([...added, { id: crypto.randomUUID(), path, name: safeFileName(file.name), mimeType: file.type }])
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Non sono riuscito a caricare la ricevuta.')
+      showToast(e instanceof Error ? e.message : t('Non sono riuscito a caricare la ricevuta.'))
     } finally {
       setBusy(false)
       if (input.current) input.current.value = ''
@@ -259,20 +259,20 @@ export function RicevuteEditor({ trip, expenseId, files, added, onAdded, onRemov
   const all = [...files, ...added]
   return (
     <div className="fa-fld">
-      Ricevuta · facoltativa
+      {t('Ricevuta · facoltativa')}
       {all.map((f) => (
         <div key={f.id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <Pulsante color="link-color" size="sm" iconLeading="file" onPress={() => void openBookingFile(f.path).catch((e: Error) => showToast(e.message))}>
-            {f.name || 'Ricevuta'}
+            {f.name || t('Ricevuta')}
           </Pulsante>
-          <PulsanteIcona className="dng" icon="trash" label={`Togli ${f.name || 'la ricevuta'}`} onPress={() => onRemove(f)} />
+          <PulsanteIcona className="dng" icon="trash" label={t('Togli {v0}', { v0: f.name || t('la ricevuta') })} onPress={() => onRemove(f)} />
         </div>
       ))}
       <input ref={input} type="file" accept="image/*,application/pdf" hidden onChange={(e) => void pick(e.currentTarget.files)} />
       <Pulsante color="secondary" iconLeading="camera" isLoading={busy} isDisabled={!online} onPress={() => input.current?.click()}>
-        Aggiungi foto o PDF
+        {t('Aggiungi foto o PDF')}
       </Pulsante>
-      {!online ? <span className="fa-help">Sei offline: aggiungi la ricevuta quando c’è rete.</span> : null}
+      {!online ? <span className="fa-help">{t('Sei offline: aggiungi la ricevuta quando c’è rete.')}</span> : null}
     </div>
   )
 }

@@ -7,6 +7,7 @@ import { paginaPermessa } from '../../lib/ruolo'
 import type { Trip } from '../../types'
 import { Riga } from '../../faraway/Righe'
 import { Vuoto } from '../../faraway/Stati'
+import { t, tv } from '../../i18n'
 
 /** Risultati della ricerca nel viaggio per `q` (da 2 caratteri in su). */
 export function RisultatiRicerca({ trip, q }: { trip: Trip; q: string }) {
@@ -14,12 +15,12 @@ export function RisultatiRicerca({ trip, q }: { trip: Trip; q: string }) {
   // il visualizzatore non apre Luoghi e Prenotazioni: niente risultati che portano lì
   const risultati = useMemo(() => cercaNelViaggio(trip, q).filter((r) => paginaPermessa(r.to, trip)), [trip, q])
   const gruppi = [...new Set(risultati.map((r) => r.gruppo))]
-  if (q.trim().length >= 2 && risultati.length === 0) return <Vuoto title="Nessun risultato" text="Prova con un’altra parola o con il nome di una città." />
+  if (q.trim().length >= 2 && risultati.length === 0) return <Vuoto title={t('Nessun risultato')} text={t('Prova con un’altra parola o con il nome di una città.')} />
   return (
     <>
       {gruppi.map((g) => (
-        <section key={g} aria-label={g} style={{ display: 'grid', gap: 8 }}>
-          <h2 className="fa-h3" style={{ margin: 0 }}>{g}</h2>
+        <section key={g} aria-label={tv(g)} style={{ display: 'grid', gap: 8 }}>
+          <h2 className="fa-h3" style={{ margin: 0 }}>{tv(g)}</h2>
           <div className="fa-list">
             {risultati.filter((r) => r.gruppo === g).map((r) => (
               <Riga key={r.id} title={r.titolo} sub={r.sotto} chevron onPress={() => navigate(r.to)} />

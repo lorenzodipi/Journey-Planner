@@ -4,6 +4,7 @@ import { client } from './db'
 import { budgetColumns, type BudgetInput } from './moneyData'
 import { cleanRates } from './money'
 import type { RigaPagamento } from './debitiSpese'
+import { t } from '../i18n'
 
 // Scritture e letture per budget, spese e tasso di cambio.
 
@@ -43,10 +44,10 @@ async function syncBudgetShares(tripId: string, itemId: string, input: BudgetInp
 
 // ---------- rimborsi (#51) ----------
 
-const MIGRATION_0029 = "Manca la migrazione 0029 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0029_rimborsi.sql)."
+const MIGRATION_0029 = t('Manca la migrazione 0029 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0029_rimborsi.sql).')
 const needs0029 = (e: { message: string }) => (/settlements|decide_settlement|cancel_settlement|balance_version|schema cache|does not exist/i.test(e.message) ? new Error(MIGRATION_0029) : e)
 
-const MIGRATION_0047 = "Manca la migrazione 0047 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0047_pagamenti_senza_conferma.sql)."
+const MIGRATION_0047 = t('Manca la migrazione 0047 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0047_pagamenti_senza_conferma.sql).')
 const senza0047 = (e: { message: string }) => /declare_settlements|dispute_settlement|schema cache|does not exist|Could not find/i.test(e.message)
 
 /** Dopo la migrazione 0047 i pagamenti valgono subito; prima restano «in attesa di conferma». `undefined` = non l'ho ancora scoperto. */
@@ -113,7 +114,7 @@ export async function deleteExpenseFile(id: string, path: string): Promise<void>
 
 // ---------- categorie di spesa ----------
 
-const MIGRATION_0019 = "Manca la migrazione 0019 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0019_spese_previsto_paganti.sql)."
+const MIGRATION_0019 = t('Manca la migrazione 0019 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0019_spese_previsto_paganti.sql).')
 
 /** Previsto della categoria (0019): la crea se è una categoria base non ancora usata; `null` lo toglie. */
 export async function setExpenseCategoryPlanned(tripId: string, label: string, planned: number | null, known: Category[]): Promise<void> {
@@ -123,7 +124,7 @@ export async function setExpenseCategoryPlanned(tripId: string, label: string, p
   if (error) throw /planned/i.test(error.message) ? new Error(MIGRATION_0019) : error
 }
 
-const MIGRATION_0008 = 'Manca la migrazione 0008 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0008_expense_categories.sql).'
+const MIGRATION_0008 = t('Manca la migrazione 0008 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0008_expense_categories.sql).')
 const needs0008 = (error: { message: string }) => (/expense_categories|category_id/i.test(error.message) ? new Error(MIGRATION_0008) : error)
 
 /** Trova la categoria per nome (senza badare alle maiuscole) o la crea. Nome vuoto = nessuna categoria. */

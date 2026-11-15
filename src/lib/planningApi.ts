@@ -4,6 +4,7 @@ import { cacheBookingFile, removeBookingFile, uploadBookingFile } from './bookin
 import { client } from './db'
 import { bookingColumns, checklistColumns, type BookingInput, type ChecklistInput } from './planningData'
 import { templateToAdd } from './checklist'
+import { t } from '../i18n'
 
 // Scritture e letture per checklist e prenotazioni.
 
@@ -62,7 +63,7 @@ export async function addChecklistTemplate(tripId: string, existing: ChecklistIt
 // ---------- prenotazioni ----------
 
 const MIGRATION_0010 =
-  "Manca la migrazione 0010 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0010_booking_cost.sql). Senza, il costo di un documento non si può salvare."
+  t('Manca la migrazione 0010 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0010_booking_cost.sql). Senza, il costo di un documento non si può salvare.')
 const missingCostColumns = (error: { message?: string } | null) => /payer_ids|'cost'|'scope'|'currency'|\bcost\b/.test(error?.message ?? '')
 
 export async function createBooking(tripId: string, input: BookingInput, timeZone: string): Promise<void> {
@@ -123,7 +124,7 @@ export async function setBookingDeleted(id: string, deleted: boolean): Promise<v
 
 // ---------- codici dei biglietti (#38) ----------
 
-const MIGRATION_0023 = "Manca la migrazione 0023 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0023_ticket_codes.sql). Senza, i codici dei biglietti non si possono salvare."
+const MIGRATION_0023 = t('Manca la migrazione 0023 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0023_ticket_codes.sql). Senza, i codici dei biglietti non si possono salvare.')
 
 /** Salva (o sostituisce) l'immagine del codice di una voce per un passeggero; la copia resta sempre sul telefono. */
 export async function saveTicketCode(tripId: string, kind: TicketKind, refId: string, travelerId: string | null, file: File, old?: TicketCode): Promise<void> {
@@ -170,7 +171,7 @@ export async function duplicateChecklist(tripId: string, from: ChecklistItem[], 
 
 // ---------- documenti (#52) ----------
 
-const MIGRATION_0030 = "Manca la migrazione 0030 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0030_documenti.sql)."
+const MIGRATION_0030 = t('Manca la migrazione 0030 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0030_documenti.sql).')
 const needs0030 = (e: { message: string }) => (/documents|document_access|document_links|schema cache|does not exist/i.test(e.message) ? new Error(MIGRATION_0030) : e)
 
 export interface DocumentoInput {

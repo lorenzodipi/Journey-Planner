@@ -15,8 +15,9 @@ import { Ic } from '../ui/Sprite'
 import { cx } from './cx'
 import { G } from './Tappe'
 import { MenuScelta } from './MenuScelta'
+import { LOCALE, t as tt } from '../i18n'
 
-const wdm = (ymd: string) => new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).format(parseYmd(ymd)).replace(/\./g, '')
+const wdm = (ymd: string) => new Intl.DateTimeFormat(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' }).format(parseYmd(ymd)).replace(/\./g, '')
 
 export const discOfPlace = (p: Pick<Place, 'category'>) => {
   const icon = categoryIcon(p.category)
@@ -108,7 +109,7 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
               <G name={s.icon} />
               {s.label}
             </span>
-            {place.lat == null ? <span className="fa-c">Non sulla mappa</span> : null}
+            {place.lat == null ? <span className="fa-c">{tt('Non sulla mappa')}</span> : null}
           </span>
           {selecting ? null : (
             <span className="chv">
@@ -117,9 +118,9 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
           )}
         </button>
         {selecting ? null : (
-          <a aria-label={`Apri ${place.name} su Maps`} className="btn mp" href={mapsLinkFor(place)} target="_blank" rel="noopener noreferrer">
+          <a aria-label={tt('Apri {name} su Maps', { name: place.name })} className="btn mp" href={mapsLinkFor(place)} target="_blank" rel="noopener noreferrer">
             <G name="g-pinout" />
-            Maps
+            {tt('Maps')}
           </a>
         )}
       </div>
@@ -131,8 +132,8 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
                 <G name="g-hour" />
               </span>
               <div className="rx">
-                <div className="rm">Ci si ferma {durata(place.visitMinutes)}</div>
-                <div className="rs">Tempo previsto</div>
+                <div className="rm">{tt('Ci si ferma {v0}', { v0: durata(place.visitMinutes) })}</div>
+                <div className="rs">{tt('Tempo previsto')}</div>
               </div>
             </div>
           ) : null}
@@ -158,7 +159,7 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
                     {place.note}
                   </span>
                 </div>
-                <div className="rs">Note</div>
+                <div className="rs">{tt('Note')}</div>
               </div>
             </div>
           ) : null}
@@ -168,19 +169,19 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
                 <G name="g-cal" />
               </span>
               <div className="rx">
-                <div className="rm">Aggiunto al Giorno {tappa.dayIndex + 1}</div>
+                <div className="rm">{tt('Aggiunto al Giorno {v0}', { v0: tappa.dayIndex + 1 })}</div>
                 <div className="rs">{[wdm(trip.days[tappa.dayIndex].date), ora(tappa.item.time)].filter(Boolean).join(' · ')}</div>
               </div>
               <button type="button" className="btn sec" onClick={onChangeDay}>
-                Cambia
+                {tt('Cambia')}
               </button>
             </div>
           ) : trip.days.length > 0 ? (
             <div className="add">
-              <div className="k">Aggiungi a una tappa</div>
+              <div className="k">{tt('Aggiungi a una tappa')}</div>
               <MenuScelta<string>
-                label="Giorno"
-                titolo="Scegli il giorno"
+                label={tt('Giorno')}
+                titolo={tt('Scegli il giorno')}
                 value={day}
                 onChange={setDay}
                 isOpen={picking}
@@ -194,8 +195,8 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
                       <G name="g-cal" />
                     </span>
                     <span className="fx">
-                      <span className="fl">Giorno</span>
-                      <span className={cx('fv', !chosen && 'pk')}>{chosen ? `Giorno ${trip.days.indexOf(chosen) + 1} · ${wdm(chosen.date)}` : 'Scegli il giorno'}</span>
+                      <span className="fl">{tt('Giorno')}</span>
+                      <span className={cx('fv', !chosen && 'pk')}>{chosen ? tt('Giorno {v0} · {v1}', { v0: trip.days.indexOf(chosen) + 1, v1: wdm(chosen.date) }) : tt('Scegli il giorno')}</span>
                     </span>
                     <span className="sc">
                       <G name="g-chev" />
@@ -207,8 +208,8 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
                   const n = trip.days.indexOf(d) + 1
                   return {
                     id: d.id,
-                    nome: `Giorno ${n} · ${wdm(d.date)}`,
-                    descrizione: [d.city, `${d.items.length} ${d.items.length === 1 ? 'tappa' : 'tappe'}`].filter(Boolean).join(' · '),
+                    nome: tt('Giorno {n} · {v1}', { n, v1: wdm(d.date) }),
+                    descrizione: [d.city, `${d.items.length} ${d.items.length === 1 ? tt('tappa') : tt('tappe')}`].filter(Boolean).join(' · '),
                     segno: <span className="dn">{n}</span>,
                   }
                 })}
@@ -227,18 +228,18 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
                 }}
               >
                 <G name="g-plus" />
-                Aggiungi al giorno
+                {tt('Aggiungi al giorno')}
               </button>
             </div>
           ) : null}
           <div className="acts">
             <button type="button" className="btn sec" onClick={onEdit}>
               <G name="g-pencil" />
-              Modifica
+              {tt('Modifica')}
             </button>
             <button type="button" className="btn del" onClick={onDelete}>
               <G name="g-trash" />
-              Elimina
+              {tt('Elimina')}
             </button>
           </div>
           {foot}

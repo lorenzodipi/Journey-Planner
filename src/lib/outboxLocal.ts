@@ -3,6 +3,7 @@ import { doneCount } from './checklist'
 import { checklistColumns, type ChecklistInput } from './planningData'
 import { expenseColumns, type ExpenseInput } from './moneyData'
 import type { Entry, Local, Op } from './outbox'
+import { t as tt } from '../i18n'
 
 // Dalla coda alle viste: come appaiono i dati con le modifiche ancora da inviare,
 // e come si costruiscono le voci della coda a partire dai moduli.
@@ -138,7 +139,7 @@ export function expenseEntry(
       ...(payers.length > 1 || existing?.payers?.length ? [{ k: 'expensePayers', tripId: trip.id, expenseId: id, payers: payers.length > 1 ? payers.map((x) => ({ travelerId: x.travelerId, amount: x.amount })) : [] } as Op] : []),
     ],
     local: { t: 'expense.save', tripId: trip.id, expense, ...(isNew && category ? { category } : category?.archived ? { category: { ...category, archived: false } } : {}) },
-    label: `Spesa «${expense.label}»`,
+    label: tt('Spesa «{label}»', { label: expense.label }),
   }
 }
 
@@ -182,7 +183,7 @@ export function checklistEntry(
   const write: Op = existing
     ? { k: 'update', table: 'checklist_items', id, patch: full }
     : { k: 'upsert', table: 'checklist_items', row: { id, trip_id: tripId, position, ...full } }
-  return { ops: [write], local: { t: 'checklist.save', tripId, item }, label: `Checklist «${item.text}»` }
+  return { ops: [write], local: { t: 'checklist.save', tripId, item }, label: tt('Checklist «{text}»', { text: item.text }) }
 }
 
 export const deletedPatch = (deleted: boolean) => ({ deleted_at: deleted ? nowIso() : null })

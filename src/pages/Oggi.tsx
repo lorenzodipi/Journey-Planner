@@ -38,6 +38,7 @@ import { RigaApribile, useUnaAperta } from '../faraway/Righe'
 import { Affianca, Colonna, Schermata } from '../faraway/shell'
 import { TappeLista } from '../faraway/Tappe'
 import { useConferma } from '../faraway/Foglio'
+import { LOCALE, t as tt } from '../i18n'
 
 function useNow(): Date {
   const [now, setNow] = useState(() => new Date())
@@ -49,11 +50,11 @@ function useNow(): Date {
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
-const longIn = (d: Date, timeZone?: string) => cap(new Intl.DateTimeFormat('it-IT', { weekday: 'long', day: 'numeric', month: 'long', ...(timeZone ? { timeZone } : {}) }).format(d))
-const hhmmIn = (d: Date, timeZone: string) => new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(d)
+const longIn = (d: Date, timeZone?: string) => cap(new Intl.DateTimeFormat(LOCALE, { weekday: 'long', day: 'numeric', month: 'long', ...(timeZone ? { timeZone } : {}) }).format(d))
+const hhmmIn = (d: Date, timeZone: string) => new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(d)
 const hourIn = (d: Date, timeZone: string) => Number(new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hourCycle: 'h23', timeZone }).format(d))
 const firstName = (n: string | undefined) => n?.trim().split(/\s+/)[0]
-const wdm = (ymd: string) => new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).format(parseYmd(ymd)).replace(/\./g, '')
+const wdm = (ymd: string) => new Intl.DateTimeFormat(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' }).format(parseYmd(ymd)).replace(/\./g, '')
 const deviceTz = () => Intl.DateTimeFormat().resolvedOptions().timeZone
 
 export function Oggi() {
@@ -77,11 +78,11 @@ function Offline() {
       {at ? (
         <div className="fa-off">
           <Sv name="wifi" size={16} />
-          Aggiornato alle {at}
+          {tt('Aggiornato alle {at}', { at })}
         </div>
       ) : null}
-      <Banner tone="az" icon="wifi" title="Sei offline.">
-        Vedi i dati salvati sul telefono. Le modifiche partono quando torna la rete.
+      <Banner tone="az" icon="wifi" title={tt('Sei offline.')}>
+        {tt('Vedi i dati salvati sul telefono. Le modifiche partono quando torna la rete.')}
       </Banner>
     </>
   )
@@ -99,7 +100,7 @@ function useLeMieCose(trip: Trip, me: string | undefined) {
     id: c.id,
     text: c.text,
     done: c.done,
-    tag: c.private || c.travelerId ? 'Solo io' : 'Tutti',
+    tag: c.private || c.travelerId ? tt('Solo io') : tt('Tutti'),
     tagAll: !c.private && !c.travelerId,
     pezzi: (c.quantity ?? 1) > 1 ? { fatti: doneCount(c), totale: c.quantity as number, unita: c.unit || undefined } : undefined,
   }))
@@ -153,8 +154,8 @@ function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string 
   const checklist = useLeMieCose(trip, me?.id)
   const tappeViaggio = tappeDelViaggio(groups)
   return (
-    <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now)} greeting="Ciao" name={firstName(me?.name)} />}>
-      <h1 className="sr-only">Oggi, {trip.destination}</h1>
+    <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now)} greeting={tt('Ciao')} name={firstName(me?.name)} />}>
+      <h1 className="sr-only">{tt('Oggi, {destination}', { destination: trip.destination })}</h1>
       <Offline />
       {/* pieghevole aperto: il biglietto e le tappe a sinistra, «Le mie cose» a destra */}
       <Affianca>
@@ -211,7 +212,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
   // orologi: solo se il fuso di casa è diverso da quello del viaggio
   const homeTz = trip.originTimezone || deviceTz()
   const showClocks = homeTz !== trip.timezone && hhmmIn(now, homeTz) !== hhmmIn(now, trip.timezone)
-  const homeName = countryByCode(trip.originCountry)?.name ?? 'Casa'
+  const homeName = countryByCode(trip.originCountry)?.name ?? tt('Casa')
   const homeHour = hourIn(now, homeTz)
 
   // la tappa in corso si apre da sola (una volta)
@@ -248,7 +249,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
     if (m) showToast(m)
   }
   const onDelete = async (item: DayItem) => {
-    const ok = await ask({ title: 'Eliminare la tappa?', message: `${item.title} sparisce dal programma di oggi. Non si può annullare.`, confirm: 'Elimina la tappa', cancel: 'Tieni la tappa' })
+    const ok = await ask({ title: tt('Eliminare la tappa?'), message: tt('{title} sparisce dal programma di oggi. Non si può annullare.', { title: item.title }), confirm: tt('Elimina la tappa'), cancel: tt('Tieni la tappa') })
     if (!ok) return
     const m = await t.setItemDeleted(item.id, true)
     if (m) showToast(m)
@@ -258,12 +259,12 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
     <section className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }}>
       <div style={{ padding: '16px 16px 16px', display: 'grid', gap: 8 }}>
         <div className="fa-sech" style={{ minHeight: 0 }}>
-          <h2 className="fa-h3">Giornata finita</h2>
+          <h2 className="fa-h3">{tt('Giornata finita')}</h2>
           <span className="fa-c">
-            {items.filter((i) => i.status === 'done' || i.done).length} {items.length === 1 ? 'tappa' : 'tappe'} su {items.length}
+            {tt('{length} {v1} su {length2}', { length: items.filter((i) => i.status === 'done' || i.done).length, v1: items.length === 1 ? tt('tappa') : tt('tappe'), length2: items.length })}
           </span>
         </div>
-        <div className="fa-pbar" role="progressbar" aria-label="Tappe fatte" aria-valuemin={0} aria-valuemax={100} aria-valuenow={100}>
+        <div className="fa-pbar" role="progressbar" aria-label={tt('Tappe fatte')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={100}>
           <i style={{ width: '100%' }} />
         </div>
       </div>
@@ -274,10 +275,10 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
             <Ic name="i-nav-calendar" size={44} />
             <span>
               <span className="t" style={{ display: 'block' }}>
-                Domani · {wdm(tomorrow.date)}
+                {tt('Domani · {v0}', { v0: wdm(tomorrow.date) })}
               </span>
               <span className="s" style={{ display: 'block' }}>
-                {[tomorrow.city, `${tomorrow.items.length} ${tomorrow.items.length === 1 ? 'tappa' : 'tappe'}`, firstTomorrow ? `si parte alle ${ora(firstTomorrow.time)}` : null].filter(Boolean).join(' · ')}
+                {[tomorrow.city, `${tomorrow.items.length} ${tomorrow.items.length === 1 ? tt('tappa') : tt('tappe')}`, firstTomorrow ? tt('si parte alle {v0}', { v0: ora(firstTomorrow.time) }) : null].filter(Boolean).join(' · ')}
               </span>
             </span>
             <span className="end">
@@ -290,28 +291,28 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
   ) : null
 
   return (
-    <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now, trip.timezone)} greeting="Ciao" name={firstName(me?.name)} />}>
-      <h1 className="sr-only">Oggi, {trip.destination}</h1>
+    <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now, trip.timezone)} greeting={tt('Ciao')} name={firstName(me?.name)} />}>
+      <h1 className="sr-only">{tt('Oggi, {destination}', { destination: trip.destination })}</h1>
       <Offline />
       {/* pieghevole aperto: a sinistra ora, meteo, prossima prenotazione e cambio; a destra il programma di oggi */}
       <Affianca>
       <Colonna lato="sinistra">
       {showClocks ? (
         <Orologio
-          here={{ label: city, time: hhmmIn(now, trip.timezone), night: nightNow, sub: nightNow ? 'Notte' : 'Giorno' }}
+          here={{ label: city, time: hhmmIn(now, trip.timezone), night: nightNow, sub: nightNow ? tt('Notte') : tt('Giorno') }}
           home={{ label: homeName, time: hhmmIn(now, homeTz), night: homeHour < 6 || homeHour >= 20 }}
         />
       ) : null}
       {cittaViaggio.length > 1 ? (
         <Pulsante color="tertiary" size="sm" iconLeading="pin" onPress={() => setSceltaCitta(true)}>
-          {rif && cittaViaggio.includes(rif) ? `Località scelta: ${rif}` : 'Cambia località di riferimento'}
+          {rif && cittaViaggio.includes(rif) ? tt('Località scelta: {rif}', { rif }) : tt('Cambia località di riferimento')}
         </Pulsante>
       ) : null}
-      <Foglio open={sceltaCitta} title="Località di riferimento" onClose={() => setSceltaCitta(false)}>
+      <Foglio open={sceltaCitta} title={tt('Località di riferimento')} onClose={() => setSceltaCitta(false)}>
         <div style={{ display: 'grid', gap: 16 }}>
-          <p className="fa-m" style={{ margin: 0 }}>Ora e meteo di Oggi seguono questa città, senza usare il GPS.</p>
+          <p className="fa-m" style={{ margin: 0 }}>{tt('Ora e meteo di Oggi seguono questa città, senza usare il GPS.')}</p>
           <div className="fa-chips wrap">
-            <Chip on={!rif} onPress={() => (setRif(null), setSceltaCitta(false))}>Segui il giorno</Chip>
+            <Chip on={!rif} onPress={() => (setRif(null), setSceltaCitta(false))}>{tt('Segui il giorno')}</Chip>
             {cittaViaggio.map((c) => (
               <Chip key={c} on={rif === c} onPress={() => (setRif(c), setSceltaCitta(false))}>{c}</Chip>
             ))}
@@ -330,7 +331,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
           <TappeLista
             trip={trip}
             day={day}
-            header={{ title: 'Il programma di oggi', date: wdm(today) }}
+            header={{ title: tt('Il programma di oggi'), date: wdm(today) }}
             ctx={ctx}
             segments={segments}
             openId={openId}
@@ -346,10 +347,10 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
       ) : null}
       {!finished && day && items.length === 0 ? (
         <section className="fa-card pad" style={{ display: 'grid', gap: 8, justifyItems: 'start' }}>
-          <h2 className="fa-h3">Giornata libera</h2>
-          <p className="fa-m">{lettura ? "Oggi non c'è niente in programma." : "Oggi non c'è niente in programma. Aggiungi una tappa se ti va."}</p>
+          <h2 className="fa-h3">{tt('Giornata libera')}</h2>
+          <p className="fa-m">{lettura ? tt('Oggi non c\'è niente in programma.') : tt('Oggi non c\'è niente in programma. Aggiungi una tappa se ti va.')}</p>
           {lettura ? null : <button type="button" className="fa-btn soft" style={{ width: 'auto', minHeight: 44, padding: '0 16px', fontSize: 14 }} onClick={() => navigate(`/giorni/${day.id}?aggiungi=1`)}>
-            Aggiungi una tappa
+            {tt('Aggiungi una tappa')}
           </button>}
         </section>
       ) : null}
@@ -359,7 +360,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
       {nextBooking ? (
         <section style={{ display: 'grid', gap: 8 }}>
           <div className="fa-sech">
-            <h2 className="fa-h3">Prossima prenotazione</h2>
+            <h2 className="fa-h3">{tt('Prossima prenotazione')}</h2>
           </div>
           <BigliettoPiccolo
             glyph={nextBooking.type === 'hotel' ? 'g-cat-stay' : nextBooking.type === 'train' ? 'g-tra-train' : nextBooking.type === 'flight' ? 'g-tra-plane' : 'g-cat-food'}
@@ -376,7 +377,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
       {showFx ? (
         <section style={{ display: 'grid', gap: 8 }}>
           <div className="fa-sech">
-            <h2 className="fa-h3">Cambio valuta</h2>
+            <h2 className="fa-h3">{tt('Cambio valuta')}</h2>
           </div>
           <ValutaPiccola base={trip.baseCurrency} local={trip.localCurrency as string} rate={rate as number} baseName={cap(currencyName(trip.baseCurrency) ?? trip.baseCurrency)} localName={cap(currencyName(trip.localCurrency as string) ?? (trip.localCurrency as string))} />
         </section>
@@ -425,11 +426,11 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
   ) : me ? (
     <DareRicevere bilancio={totaliDelViaggio(trip, r.spese, r.fx, me.id)} currency={trip.baseCurrency} />
   ) : (
-    <DueValori a={stats[0]} b={{ l: 'Persone', v: String(people.length), c: people.map((p) => firstName(p.name)).join(', ') }} />
+    <DueValori a={stats[0]} b={{ l: tt('Persone'), v: String(people.length), c: people.map((p) => firstName(p.name)).join(', ') }} />
   )
 
   async function condividi() {
-    const text = `${nDays} giorni in ${trip.destination} con Faraway`
+    const text = tt('{nDays} giorni in {destination} con Faraway', { nDays, destination: trip.destination })
     const el = ticket.current
     try {
       const blob = el ? await nodeToPng(el) : null
@@ -441,7 +442,7 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
         a.href = URL.createObjectURL(file)
         a.download = file.name
         a.click()
-        showToast('Immagine scaricata')
+        showToast(tt('Immagine scaricata'))
       } else if (navigator.share) await navigator.share({ text })
     } catch {
       // condivisione annullata
@@ -449,8 +450,8 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
   }
 
   return (
-    <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now)} greeting="Bentornato" name={firstName(me?.name)} />}>
-      <h1 className="sr-only">Oggi, {trip.destination}</h1>
+    <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now)} greeting={tt('Bentornato')} name={firstName(me?.name)} />}>
+      <h1 className="sr-only">{tt('Oggi, {destination}', { destination: trip.destination })}</h1>
       <Offline />
       {/* pieghevole aperto: riepilogo e giorni a sinistra, il viaggio in numeri a destra */}
       <Affianca>
@@ -469,23 +470,23 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
       </Colonna>
 
       <Colonna lato="destra" alta>
-      <section ref={ticket} aria-label="Il viaggio in numeri" className="fa-r2 fa-tkt" role="group">
+      <section ref={ticket} aria-label={tt('Il viaggio in numeri')} className="fa-r2 fa-tkt" role="group">
         <div className="tp hero">
           <SimboloPiatto style={{ right: 14, top: 14, width: 40 }} />
-          <span className="k">Il viaggio in numeri</span>
+          <span className="k">{tt('Il viaggio in numeri')}</span>
           <div className="n">
             <b>{nDays}</b>
             <span>
-              {nDays === 1 ? 'giorno' : 'giorni'} in <br />
+              {tt('{v0} in', { v0: nDays === 1 ? tt('giorno') : tt('giorni') })}{' '}<br />
               {trip.destination}
             </span>
           </div>
           <span className="s">
-            {rangeText(trip.startDate, trip.endDate)} · {nights} {nights === 1 ? 'notte' : 'notti'}
+            {rangeText(trip.startDate, trip.endDate)} · {nights} {nights === 1 ? tt('notte') : tt('notti')}
           </span>
           {groups.length > 0 && conCitta ? (
             <>
-              <div className="seg" role="img" aria-label="Giorni per città">
+              <div className="seg" role="img" aria-label={tt('Giorni per città')}>
                 {groups.map((g, i) => (
                   <i key={i} style={{ flex: g.cells.length, background: `var(--disco-${colore(g)})` }} />
                 ))}
@@ -501,13 +502,13 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
           ) : null}
         </div>
         <div className="bt">
-          <div className="grp">Sul posto</div>
+          <div className="grp">{tt('Sul posto')}</div>
           <div className="r2">
             <Ic name="i-nav-route" size={48} />
             <div className="tx">
-              <div className="t">Tappe fatte</div>
+              <div className="t">{tt('Tappe fatte')}</div>
               <div className="m">
-                {n.tappeFatte} su {n.tappePianificate} pianificate
+                {tt('{tappeFatte} su {tappePianificate} pianificate', { tappeFatte: n.tappeFatte, tappePianificate: n.tappePianificate })}
               </div>
             </div>
             <div className="rg" role="img" aria-label={`${n.tappeFatte} (${n.tappePianificate ? Math.round((n.tappeFatte / n.tappePianificate) * 100) : 0}%)`} style={{ ['--p' as string]: n.tappePianificate ? Math.round((n.tappeFatte / n.tappePianificate) * 100) : 0 } as React.CSSProperties}>
@@ -517,9 +518,9 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
           <div className="r2">
             <Ic name="i-cat-temple" size={48} />
             <div className="tx">
-              <div className="t">Luoghi visitati</div>
+              <div className="t">{tt('Luoghi visitati')}</div>
               <div className="m">
-                {n.luoghiVisitati} su {n.luoghiSalvati} salvati
+                {tt('{luoghiVisitati} su {luoghiSalvati} salvati', { luoghiVisitati: n.luoghiVisitati, luoghiSalvati: n.luoghiSalvati })}
               </div>
             </div>
             <div className="rg" role="img" aria-label={`${n.luoghiVisitati} (${n.luoghiSalvati ? Math.round((n.luoghiVisitati / n.luoghiSalvati) * 100) : 0}%)`} style={{ ['--p' as string]: n.luoghiSalvati ? Math.round((n.luoghiVisitati / n.luoghiSalvati) * 100) : 0 } as React.CSSProperties}>
@@ -529,19 +530,19 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
           <div className="r2">
             <Ic name="i-cat-stay" size={48} />
             <div className="tx">
-              <div className="t">Notti</div>
+              <div className="t">{tt('Notti')}</div>
               <div className="m">
-                in {n.alloggi} {n.alloggi === 1 ? 'alloggio' : 'alloggi'}
+                {tt('in {alloggi} {v1}', { alloggi: n.alloggi, v1: n.alloggi === 1 ? tt('alloggio') : tt('alloggi') })}
               </div>
             </div>
             <div className="nc">{n.notti}</div>
           </div>
-          {n.spostamenti > 0 ? <div className="grp">Spostamenti</div> : null}
+          {n.spostamenti > 0 ? <div className="grp">{tt('Spostamenti')}</div> : null}
           {n.voli > 0 ? (
             <div className="r2">
               <Ic name="i-tra-plane" size={48} />
               <div className="tx">
-                <div className="t">Voli</div>
+                <div className="t">{tt('Voli')}</div>
                 <div className="m">{n.cittaVoli.join(', ')}</div>
               </div>
               <div className="nc">{n.voli}</div>
@@ -551,8 +552,8 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
             <div className="r2">
               <Ic name="i-tra-train" size={48} />
               <div className="tx">
-                <div className="t">Treni</div>
-                <div className="m">corse in treno</div>
+                <div className="t">{tt('Treni')}</div>
+                <div className="m">{tt('corse in treno')}</div>
               </div>
               <div className="nc">{n.treni}</div>
             </div>
@@ -561,8 +562,8 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
             <div className="r2">
               <Ic name="i-tra-metro" size={48} />
               <div className="tx">
-                <div className="t">Metro e bus</div>
-                <div className="m">corse con biglietto</div>
+                <div className="t">{tt('Metro e bus')}</div>
+                <div className="m">{tt('corse con biglietto')}</div>
               </div>
               <div className="nc">{n.metroBus}</div>
             </div>
@@ -571,15 +572,15 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
             <div className="fr">
               <div>
                 <b>
-                  {n.spostamenti} {n.spostamenti === 1 ? 'spostamento' : 'spostamenti'}
+                  {n.spostamenti} {n.spostamenti === 1 ? tt('spostamento') : tt('spostamenti')}
                 </b>
                 <span>
-                  in {nDays} {nDays === 1 ? 'giorno' : 'giorni'}
+                  {tt('in {nDays} {v1}', { nDays, v1: nDays === 1 ? tt('giorno') : tt('giorni') })}
                 </span>
               </div>
               <button type="button" className="fa-btn" onClick={() => void condividi()}>
                 <Sv name="share" size={18} />
-                Condividi
+                {tt('Condividi')}
               </button>
             </div>
           </div>
@@ -592,13 +593,13 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
       {cityGroups.length > 0 ? (
         <section className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ padding: '16px 16px 8px' }}>
-            <h2 className="fa-h3">Rivedi i giorni</h2>
+            <h2 className="fa-h3">{tt('Rivedi i giorni')}</h2>
           </div>
           {cityGroups.map((g, i) => {
             const id = `${i}-${g.cells[0].day.id}`
             const tappe = g.cells.reduce((s, c) => s + c.day.items.length, 0)
             return (
-              <RigaApribile key={id} icon="i-nav-calendar" title={`${g.title} · ${rangeText(g.cells[0].day.date, g.cells[g.cells.length - 1].day.date)}`} sub={`${g.cells.length} ${g.cells.length === 1 ? 'giorno' : 'giorni'} · ${tappe} ${tappe === 1 ? 'tappa' : 'tappe'}`} open={open.isOpen(id)} onToggle={() => open.toggle(id)}>
+              <RigaApribile key={id} icon="i-nav-calendar" title={`${g.title} · ${rangeText(g.cells[0].day.date, g.cells[g.cells.length - 1].day.date)}`} sub={`${g.cells.length} ${g.cells.length === 1 ? tt('giorno') : tt('giorni')} · ${tappe} ${tappe === 1 ? tt('tappa') : tt('tappe')}`} open={open.isOpen(id)} onToggle={() => open.toggle(id)}>
                 <div className="fa-list">
                   {g.cells.map((c) => (
                     <button key={c.day.id} type="button" className="fa-row" style={{ minHeight: 52, gridTemplateColumns: 'minmax(0,1fr) auto' }} onClick={() => navigate(`/giorni/${c.day.id}`)}>
@@ -607,7 +608,7 @@ function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }
                           {cap(wdm(c.day.date))}
                         </span>
                         <span className="s" style={{ display: 'block' }}>
-                          {c.label} · {c.day.items.length} {c.day.items.length === 1 ? 'tappa' : 'tappe'}
+                          {c.label} · {c.day.items.length} {c.day.items.length === 1 ? tt('tappa') : tt('tappe')}
                         </span>
                       </span>
                       <span className="end">

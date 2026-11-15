@@ -5,17 +5,18 @@ import { useMe } from '../../state/me'
 import { useTrip } from '../../state/trip'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
+import { t } from '../../i18n'
 
 export function RegistroPage() {
   const trip = useTrip()
   const me = useMe(trip)
   const righe = useMemo(() => [...(trip.activity ?? [])].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 200), [trip.activity])
   return (
-    <Schermata bar={<BarraIndietro title="Registro modifiche" back="/altro/impostazioni" />} gap={12}>
+    <Schermata bar={<BarraIndietro title={t('Registro modifiche')} back="/altro/impostazioni" />} gap={12}>
       {!trip.activity ? (
-        <p className="fa-m" style={{ margin: 0 }}>Il registro si attiva con la migrazione 0037 del database.</p>
+        <p className="fa-m" style={{ margin: 0 }}>{t('Il registro si attiva con la migrazione 0037 del database.')}</p>
       ) : righe.length === 0 ? (
-        <Vuoto title="Ancora nessuna modifica" text="Qui compaiono chi aggiunge, cambia o elimina luoghi, tappe, alloggi, prenotazioni e spese." />
+        <Vuoto title={t('Ancora nessuna modifica')} text={t('Qui compaiono chi aggiunge, cambia o elimina luoghi, tappe, alloggi, prenotazioni e spese.')} />
       ) : (
         <div className="fa-list">
           {righe.map((a) => (

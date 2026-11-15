@@ -2,6 +2,7 @@
 // viaggiatori, altrimenti i nomi. Stesso formato in ogni card.
 import { discOf, initials } from '../state/me'
 import type { Trip } from '../types'
+import { t } from '../i18n'
 
 const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']
 
@@ -23,7 +24,7 @@ export function PersoneRiga({ trip, ids }: { trip: Pick<Trip, 'travelers'>; ids:
           </span>
         ))}
       </span>
-      {tutti ? 'Tutti' : people.map((p) => p.name.split(/\s+/)[0]).join(', ')}
+      {tutti ? t('Tutti') : people.map((p) => p.name.split(/\s+/)[0]).join(', ')}
     </>
   )
 }

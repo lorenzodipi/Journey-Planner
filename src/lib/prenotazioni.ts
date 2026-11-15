@@ -1,15 +1,16 @@
 // Prenotazioni (#40): pillole per tipo, gruppi per giorno, orario e righe compatte.
 import type { Booking, BookingStatus, BookingType, Trip } from '../types'
 import { dateInZone, formatInZone } from './flights'
+import { LINGUA, t as tt } from '../i18n'
 
 export type FiltroPrenotazioni = 'all' | 'train' | 'restaurant' | 'rental' | 'activity'
 
 export const FILTRI: { v: FiltroPrenotazioni; l: string }[] = [
-  { v: 'all', l: 'Tutte' },
-  { v: 'train', l: 'Treni' },
-  { v: 'restaurant', l: 'Ristoranti' },
-  { v: 'rental', l: 'Noleggi' },
-  { v: 'activity', l: 'Attività' },
+  { v: 'all', l: tt('Tutte') },
+  { v: 'train', l: tt('Treni') },
+  { v: 'restaurant', l: tt('Ristoranti') },
+  { v: 'rental', l: tt('Noleggi') },
+  { v: 'activity', l: tt('Attività') },
 ]
 
 /** Treni = train · Ristoranti = restaurant · Noleggi = rental + esim · Attività = activity + ticket; gli altri solo in «Tutte». */
@@ -37,7 +38,7 @@ export function perGiorno(bookings: Booking[], timeZone: string): GruppoGiorno[]
   }
   return [...map.entries()]
     .sort(([a], [b]) => (a === '' ? 1 : b === '' ? -1 : a.localeCompare(b)))
-    .map(([ymd, items]) => ({ ymd, items: items.sort((a, b) => (a.validFrom ?? '').localeCompare(b.validFrom ?? '') || a.title.localeCompare(b.title, 'it')) }))
+    .map(([ymd, items]) => ({ ymd, items: items.sort((a, b) => (a.validFrom ?? '').localeCompare(b.validFrom ?? '') || a.title.localeCompare(b.title, LINGUA)) }))
 }
 
 /** «19:30», oppure «» se la prenotazione vale tutto il giorno (mezzanotte nel fuso del viaggio). */
@@ -47,8 +48,8 @@ export function oraPrenotazione(b: Pick<Booking, 'validFrom'>, timeZone: string)
   return t === '00:00' ? '' : t
 }
 
-const PAROLE = ['', 'da solo', 'in due', 'in tre', 'in quattro', 'in cinque', 'in sei']
-export const inPersone = (n: number) => PAROLE[n] || `${n} persone`
+const PAROLE = ['', tt('da solo'), tt('in due'), tt('in tre'), tt('in quattro'), tt('in cinque'), tt('in sei')]
+export const inPersone = (n: number) => PAROLE[n] || tt('{n} persone', { n })
 
 /** «Gion · in quattro», «Stazione di Kyoto · 4 giorni»: luogo, persone, durata. */
 export function sottotitolo(b: Booking, timeZone: string): string {
@@ -58,7 +59,7 @@ export function sottotitolo(b: Booking, timeZone: string): string {
   if (b.validFrom && b.validTo) {
     const a = dateInZone(b.validFrom, timeZone)
     const z = dateInZone(b.validTo, timeZone)
-    if (z > a) parts.push(`${Math.round((Date.parse(z) - Date.parse(a)) / 86400000) + 1} giorni`)
+    if (z > a) parts.push(tt('{v0} giorni', { v0: Math.round((Date.parse(z) - Date.parse(a)) / 86400000) + 1 }))
   }
   return parts.join(' · ') || ''
 }
@@ -66,7 +67,7 @@ export function sottotitolo(b: Booking, timeZone: string): string {
 
 // ---- #53: prenotazioni = tappe con file ----
 
-export const STATO_LABEL: Record<BookingStatus, string> = { to_confirm: 'Da confermare', confirmed: 'Confermata', cancelled: 'Cancellata' }
+export const STATO_LABEL: Record<BookingStatus, string> = { to_confirm: tt('Da confermare'), confirmed: tt('Confermata'), cancelled: tt('Cancellata') }
 export const statoDi = (b: Pick<Booking, 'status'>): BookingStatus => b.status ?? 'confirmed'
 
 export interface TappaScelta {
@@ -144,9 +145,9 @@ export function filtraArchivio(bookings: Booking[], f: FiltriArchivio): Booking[
 /** Dati mancanti da segnalare (BOOK-012): senza data, senza tappa, senza file. */
 export function mancanti(trip: Trip, b: Booking): string[] {
   const out: string[] = []
-  if (!b.validFrom) out.push('Senza data')
-  if (trip.bookingLinks && tappeDi(trip, b.id).length === 0) out.push('Senza tappa')
-  if (!b.filePath) out.push('Senza file')
+  if (!b.validFrom) out.push(tt('Senza data'))
+  if (trip.bookingLinks && tappeDi(trip, b.id).length === 0) out.push(tt('Senza tappa'))
+  if (!b.filePath) out.push(tt('Senza file'))
   return out
 }
 

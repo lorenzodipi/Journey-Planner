@@ -1,14 +1,15 @@
 // Documenti con visibilità (#52): Tutti · Viaggiatori selezionati · Solo io, un file per più punti dell'app.
 import type { DocKind, Documento, Traveler, Visibilita } from '../types'
+import { t as tt, tc } from '../i18n'
 
-export const VIS_LABEL: Record<Visibilita, string> = { all: 'Tutti', selected: 'Viaggiatori selezionati', private: 'Solo io' }
+export const VIS_LABEL: Record<Visibilita, string> = { all: tt('Tutti'), selected: tt('Viaggiatori selezionati'), private: tt('Solo io') }
 
 /** Tipo di file scelto al caricamento: serve solo a proporre la visibilità (si può cambiare prima di salvare). */
 export type TipoCarico = 'conferma' | 'biglietto' | 'personale'
 export const TIPO_LABEL: Record<TipoCarico, string> = {
-  conferma: 'Conferma o voucher di gruppo',
-  biglietto: 'Biglietto nominativo',
-  personale: 'Documento personale',
+  conferma: tt('Conferma o voucher di gruppo'),
+  biglietto: tt('Biglietto nominativo'),
+  personale: tt('Documento personale'),
 }
 
 /** Proposta (BOOK-014): conferme di gruppo → Tutti; biglietti nominativi → i passeggeri; documenti personali → Solo io. */
@@ -20,7 +21,7 @@ export function proponi(tipo: TipoCarico, passeggeri: readonly string[] = []): {
 
 /** «Viaggiatori selezionati» vuole almeno una persona. */
 export function controllaVisibilita(vis: Visibilita, access: readonly string[]): string {
-  return vis === 'selected' && access.length === 0 ? 'Scegli almeno una persona che può vederlo.' : ''
+  return vis === 'selected' && access.length === 0 ? tt('Scegli almeno una persona che può vederlo.') : ''
 }
 
 const RANGO: Record<Visibilita, number> = { private: 0, selected: 1, all: 2 }
@@ -35,10 +36,10 @@ export const puoCambiare = (d: Pick<Documento, 'ownerId'>, userId: string | unde
 
 /** Chi lo vede, a parole: «Tutti», «Solo tu», «Marta e Giorgio». */
 export function chiVede(d: Pick<Documento, 'visibility' | 'access' | 'ownerId'>, travelers: readonly Pick<Traveler, 'id' | 'name' | 'userId'>[], userId: string | undefined): string {
-  if (d.visibility === 'all') return 'Tutti'
-  if (d.visibility === 'private') return d.ownerId === userId ? 'Solo tu' : 'Solo chi l’ha caricato'
+  if (d.visibility === 'all') return tt('Tutti')
+  if (d.visibility === 'private') return d.ownerId === userId ? tt('Solo tu') : tt('Solo chi l’ha caricato')
   const nomi = d.access.map((id) => travelers.find((t) => t.id === id)?.name.split(/\s+/)[0]).filter(Boolean) as string[]
-  return nomi.length > 0 ? nomi.join(', ') : 'Nessuno'
+  return nomi.length > 0 ? nomi.join(', ') : tc('Nessuno', 'persone')
 }
 
 /** Documenti collegati a una voce (alloggio, volo, trasporto, prenotazione…). */

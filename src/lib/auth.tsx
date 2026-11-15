@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { cancellaDatiLocali } from './datiLocali'
 import { isSupabaseConfigured, supabase } from './supabase'
+import { t } from '../i18n'
 
 /** Segnata all'accesso, tolta quando si sceglie il viaggio: l'app apre «Tutti i viaggi» invece dell'ultima pagina. */
 export const SCEGLI_DOPO_ACCESSO = 'jp.scegliDopoAccesso'
@@ -63,18 +64,18 @@ interface AuthValue {
 const AuthContext = createContext<AuthValue>({
   status: 'loading',
   session: null,
-  signIn: async () => 'Non pronto',
+  signIn: async () => t('Non pronto'),
   signOut: async () => undefined,
   profileName: '',
-  setProfileName: async () => 'Non pronto',
+  setProfileName: async () => t('Non pronto'),
   retry: () => undefined,
   useSaved: () => undefined,
 })
 
 function translateError(message: string): string {
-  if (/invalid login credentials/i.test(message)) return 'Email o password non corrette. Controlla i dati e riprova.'
-  if (/failed to fetch|network/i.test(message)) return 'Nessuna connessione: per il primo accesso serve la rete.'
-  if (/email not confirmed/i.test(message)) return 'Email non confermata: conferma l’utente dalla dashboard di Supabase.'
+  if (/invalid login credentials/i.test(message)) return t('Email o password non corrette. Controlla i dati e riprova.')
+  if (/failed to fetch|network/i.test(message)) return t('Nessuna connessione: per il primo accesso serve la rete.')
+  if (/email not confirmed/i.test(message)) return t('Email non confermata: conferma l’utente dalla dashboard di Supabase.')
   return message
 }
 
@@ -155,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null
     },
     async signIn(email, password) {
-      if (!supabase) return 'Supabase non è configurato.'
+      if (!supabase) return t('Supabase non è configurato.')
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
       if (error) return translateError(error.message)
       // subito dopo l'accesso si sceglie il viaggio (riaprendo l'app senza uscire, invece, si torna dov'eri)

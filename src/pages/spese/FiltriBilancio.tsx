@@ -8,26 +8,27 @@ import { cx } from '../../faraway/cx'
 import type { DebitoSpesa } from '../../lib/debitiSpese'
 import { filtriAttivi, FILTRI_VUOTI, ORDINE_BASE, type FiltriBilancio, type Ordine, type OrdinePer, type StatoFiltro } from '../../lib/filtriBilancio'
 import { categoriaDi } from '../../lib/ricevuta'
+import { LINGUA, nomeCategoria, t } from '../../i18n'
 
 const PER: { value: OrdinePer; label: string }[] = [
-  { value: 'predefinito', label: 'Prima da fare, poi le più recenti' },
-  { value: 'data', label: 'Data' },
-  { value: 'importo', label: 'Importo' },
-  { value: 'categoria', label: 'Categoria' },
-  { value: 'persona', label: 'Persona' },
+  { value: 'predefinito', label: t('Prima da fare, poi le più recenti') },
+  { value: 'data', label: t('Data') },
+  { value: 'importo', label: t('Importo') },
+  { value: 'categoria', label: t('Categoria') },
+  { value: 'persona', label: t('Persona') },
 ]
 const STATI: { value: StatoFiltro; label: string }[] = [
-  { value: 'tutti', label: 'Tutti' },
-  { value: 'aperti', label: 'Da pagare o da ricevere' },
-  { value: 'attesa', label: 'In attesa di conferma' },
-  { value: 'pagati', label: 'Pagati' },
+  { value: 'tutti', label: t('Tutti') },
+  { value: 'aperti', label: t('Da pagare o da ricevere') },
+  { value: 'attesa', label: t('In attesa di conferma') },
+  { value: 'pagati', label: t('Pagati') },
 ]
 /** I due versi di ogni ordinamento: il primo è il naturale. */
 const VERSI: Record<Exclude<OrdinePer, 'predefinito'>, [string, string]> = {
-  data: ['Più recenti prima', 'Più vecchie prima'],
-  importo: ['Più alti prima', 'Più bassi prima'],
-  categoria: ['Dalla A alla Z', 'Dalla Z alla A'],
-  persona: ['Dalla A alla Z', 'Dalla Z alla A'],
+  data: [t('Più recenti prima'), t('Più vecchie prima')],
+  importo: [t('Più alti prima'), t('Più bassi prima')],
+  categoria: [t('Dalla A alla Z'), t('Dalla Z alla A')],
+  persona: [t('Dalla A alla Z'), t('Dalla Z alla A')],
 }
 
 export function riassuntoOrdine(o: Ordine) {
@@ -46,16 +47,16 @@ export function FiltriBilancio({ righe, nome, cur, filtri, onFiltri, ordine, onO
   mostrate: number
 }) {
   const [aperto, setAperto] = useState(false)
-  const persone = useMemo(() => [...new Set(righe.map((d) => d.otherId))].sort((a, b) => nome(a).localeCompare(nome(b), 'it')), [righe, nome])
-  const categorie = useMemo(() => [...new Map(righe.map((d) => [categoriaDi(d.expense).toLowerCase(), categoriaDi(d.expense)])).values()].sort((a, b) => a.localeCompare(b, 'it')), [righe])
+  const persone = useMemo(() => [...new Set(righe.map((d) => d.otherId))].sort((a, b) => nome(a).localeCompare(nome(b), LINGUA)), [righe, nome])
+  const categorie = useMemo(() => [...new Map(righe.map((d) => [categoriaDi(d.expense).toLowerCase(), categoriaDi(d.expense)])).values()].sort((a, b) => a.localeCompare(b, LINGUA)), [righe])
   const n = filtriAttivi(filtri)
   const rapidi = useMemo(() => {
     const c = (f: (d: DebitoSpesa) => boolean) => righe.some(f)
     return [
-      { value: 'tutti' as const, label: 'Tutte' },
-      ...(c((d) => d.stato === 'da_pagare' || d.stato === 'contestato') ? [{ value: 'aperti' as const, label: 'Da saldare' }] : []),
-      ...(c((d) => d.stato === 'in_attesa') ? [{ value: 'attesa' as const, label: 'In attesa' }] : []),
-      ...(c((d) => d.stato === 'pagato') ? [{ value: 'pagati' as const, label: 'Saldate' }] : []),
+      { value: 'tutti' as const, label: t('Tutte') },
+      ...(c((d) => d.stato === 'da_pagare' || d.stato === 'contestato') ? [{ value: 'aperti' as const, label: t('Da saldare') }] : []),
+      ...(c((d) => d.stato === 'in_attesa') ? [{ value: 'attesa' as const, label: t('In attesa') }] : []),
+      ...(c((d) => d.stato === 'pagato') ? [{ value: 'pagati' as const, label: t('Saldate') }] : []),
     ]
   }, [righe])
   const attivo = n > 0 || ordine.per !== 'predefinito'
@@ -66,12 +67,12 @@ export function FiltriBilancio({ righe, nome, cur, filtri, onFiltri, ordine, onO
     <>
       {/* «Filtri» resta fermo, le scelte rapide accanto scorrono (come in Prenotazioni) */}
       <div className="fa-frow">
-        <button type="button" className={cx('fa-fbtn', attivo && 'on')} aria-label={attivo ? `Apri filtri e ordine, ${n} filtri attivi` : 'Apri filtri e ordine'} onClick={() => setAperto(true)}>
+        <button type="button" className={cx('fa-fbtn', attivo && 'on')} aria-label={attivo ? t('Apri filtri e ordine, {n} filtri attivi', { n }) : t('Apri filtri e ordine')} onClick={() => setAperto(true)}>
           <Sv name="filter" size={18} />
-          Filtri
+          {t('Filtri')}
           {n > 0 ? <b>{n}</b> : null}
         </button>
-      <div className="fa-chips scroll" role="group" aria-label="Scelte rapide">
+      <div className="fa-chips scroll" role="group" aria-label={t('Scelte rapide')}>
         {rapidi.map((x) => (
           <Chip key={x.value} on={filtri.stato === x.value} onPress={() => set('stato', x.value)}>
             {x.label}
@@ -79,40 +80,40 @@ export function FiltriBilancio({ righe, nome, cur, filtri, onFiltri, ordine, onO
         ))}
         {persone.length > 1
           ? persone.map((id) => (
-              <Chip key={id} on={filtri.persona === id} onPress={() => set('persona', filtri.persona === id ? '' : id)} label={filtri.persona === id ? `Solo ${nome(id)}: tocca per vederle tutte` : `Solo ${nome(id)}`}>
+              <Chip key={id} on={filtri.persona === id} onPress={() => set('persona', filtri.persona === id ? '' : id)} label={filtri.persona === id ? t('Solo {v0}: tocca per vederle tutte', { v0: nome(id) }) : t('Solo {v0}', { v0: nome(id) })}>
                 {nome(id)}
               </Chip>
             ))
           : null}
         {ordine.per !== 'predefinito' ? (
-          <Chip on onPress={() => setAperto(true)} label={`Ordine: ${riassuntoOrdine(ordine)}. Cambia`}>
+          <Chip on onPress={() => setAperto(true)} label={t('Ordine: {v0}. Cambia', { v0: riassuntoOrdine(ordine) })}>
             {riassuntoOrdine(ordine)}
           </Chip>
         ) : null}
-        {attivo ? <Chip onPress={azzera} label="Azzera filtri e ordine">Azzera</Chip> : null}
+        {attivo ? <Chip onPress={azzera} label={t('Azzera filtri e ordine')}>{t('Azzera')}</Chip> : null}
       </div>
       </div>
       {aperto ? (
         <Foglio
           open
-          title="Filtri e ordine"
+          title={t('Filtri e ordine')}
           onClose={() => setAperto(false)}
           headStart={
             attivo ? (
               <button type="button" className="fa-hdtxt" onClick={azzera}>
-                Azzera
+                {t('Azzera')}
               </button>
             ) : (
               <span />
             )
           }
-          footer={<Pulsante onPress={() => setAperto(false)}>{mostrate === 1 ? 'Mostra 1 voce' : `Mostra ${mostrate} voci`}</Pulsante>}
+          footer={<Pulsante onPress={() => setAperto(false)}>{mostrate === 1 ? 'Mostra 1 voce' : t('Mostra {mostrate} voci', { mostrate })}</Pulsante>}
         >
           <div className="frm">
-            <CampoScelta label="Ordina per" value={ordine.per} onChange={(v) => onOrdine({ per: v as OrdinePer, inverso: false })} options={PER} />
+            <CampoScelta label={t('Ordina per')} value={ordine.per} onChange={(v) => onOrdine({ per: v as OrdinePer, inverso: false })} options={PER} />
             {ordine.per !== 'predefinito' ? (
               <Segmenti
-                label="Verso dell'ordine"
+                label={t('Verso dell\'ordine')}
                 value={ordine.inverso ? 'inverso' : 'naturale'}
                 options={[
                   { value: 'naturale', label: VERSI[ordine.per][0] },
@@ -121,16 +122,16 @@ export function FiltriBilancio({ righe, nome, cur, filtri, onFiltri, ordine, onO
                 onChange={(v) => onOrdine({ ...ordine, inverso: v === 'inverso' })}
               />
             ) : null}
-            {persone.length > 1 ? <CampoScelta label="Persona" value={filtri.persona} onChange={(v) => set('persona', v)} options={[{ value: '', label: 'Tutte' }, ...persone.map((id) => ({ value: id, label: nome(id) }))]} /> : null}
-            {categorie.length > 1 ? <CampoScelta label="Categoria" value={filtri.categoria} onChange={(v) => set('categoria', v)} options={[{ value: '', label: 'Tutte' }, ...categorie.map((c) => ({ value: c, label: c }))]} /> : null}
-            <CampoScelta label="Stato" value={filtri.stato} onChange={(v) => set('stato', v as StatoFiltro)} options={STATI} />
+            {persone.length > 1 ? <CampoScelta label={t('Persona')} value={filtri.persona} onChange={(v) => set('persona', v)} options={[{ value: '', label: t('Tutte') }, ...persone.map((id) => ({ value: id, label: nome(id) }))]} /> : null}
+            {categorie.length > 1 ? <CampoScelta label={t('Categoria')} value={filtri.categoria} onChange={(v) => set('categoria', v)} options={[{ value: '', label: t('Tutte') }, ...categorie.map((c) => ({ value: c, label: nomeCategoria(c) }))]} /> : null}
+            <CampoScelta label={t('Stato')} value={filtri.stato} onChange={(v) => set('stato', v as StatoFiltro)} options={STATI} />
             <div className="fa-due">
-              <Campo label="Dal" type="date" value={filtri.dal} onChange={(v) => set('dal', v)} max={filtri.al || undefined} />
-              <Campo label="Al" type="date" value={filtri.al} onChange={(v) => set('al', v)} min={filtri.dal || undefined} />
+              <Campo label={t('Dal')} type="date" value={filtri.dal} onChange={(v) => set('dal', v)} max={filtri.al || undefined} />
+              <Campo label={t('Al')} type="date" value={filtri.al} onChange={(v) => set('al', v)} min={filtri.dal || undefined} />
             </div>
             <div className="fa-due">
-              <Campo label="Importo da" inputMode="decimal" placeholder="0,00" value={filtri.min} onChange={(v) => set('min', v)} trailing={<span>{cur}</span>} />
-              <Campo label="Importo fino a" inputMode="decimal" placeholder="0,00" value={filtri.max} onChange={(v) => set('max', v)} trailing={<span>{cur}</span>} />
+              <Campo label={t('Importo da')} inputMode="decimal" placeholder="0,00" value={filtri.min} onChange={(v) => set('min', v)} trailing={<span>{cur}</span>} />
+              <Campo label={t('Importo fino a')} inputMode="decimal" placeholder="0,00" value={filtri.max} onChange={(v) => set('max', v)} trailing={<span>{cur}</span>} />
             </div>
           </div>
         </Foglio>

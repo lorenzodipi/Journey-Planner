@@ -1,5 +1,6 @@
 // Scelte del dispositivo (#45, #46, #47): notifiche e lingua. Non sono del viaggio: stanno solo su questo telefono.
 import { useEffect, useState } from 'react'
+import { t } from '../i18n'
 
 export type NotificaTipo = 'tappa' | 'pioggia' | 'checklist' | 'budget' | 'checkin'
 export type NotifichePrefs = Record<NotificaTipo, boolean>
@@ -8,11 +9,11 @@ const NOTIF_KEY = 'jp.notif.v1'
 export const NOTIFICHE_DEFAULT: NotifichePrefs = { tappa: false, pioggia: false, checklist: false, budget: false, checkin: false }
 
 export const NOTIFICHE_TESTI: { tipo: NotificaTipo; titolo: string; testo: string }[] = [
-  { tipo: 'tappa', titolo: 'Prossima tappa', testo: 'Un avviso 30 minuti prima' },
-  { tipo: 'pioggia', titolo: 'Pioggia in arrivo', testo: 'Quando serve l’ombrello' },
-  { tipo: 'checklist', titolo: 'Scadenze della checklist', testo: 'Una settimana prima' },
-  { tipo: 'checkin', titolo: 'Check-in online', testo: 'Quando si apre il check-in di voli e trasporti' },
-  { tipo: 'budget', titolo: 'Budget', testo: 'All’80% e al 100% del limite' },
+  { tipo: 'tappa', titolo: t('Prossima tappa'), testo: t('Un avviso 30 minuti prima') },
+  { tipo: 'pioggia', titolo: t('Pioggia in arrivo'), testo: t('Quando serve l’ombrello') },
+  { tipo: 'checklist', titolo: t('Scadenze della checklist'), testo: t('Una settimana prima') },
+  { tipo: 'checkin', titolo: t('Check-in online'), testo: t('Quando si apre il check-in di voli e trasporti') },
+  { tipo: 'budget', titolo: t('Budget'), testo: t('All’80% e al 100% del limite') },
 ]
 
 export function leggiNotifiche(): NotifichePrefs {
@@ -44,5 +45,3 @@ export function useNotifichePrefs(): [NotifichePrefs, (tipo: NotificaTipo, on: b
   return [prefs, (tipo, on) => scriviNotifiche({ ...leggiNotifiche(), [tipo]: on })]
 }
 
-/** Lingue dell'interfaccia: aggiungerne una = aggiungere un file in `src/i18n` (#47). Per ora solo l'italiano. */
-export const LINGUE: { code: string; nome: string }[] = [{ code: 'it', nome: 'Italiano' }]

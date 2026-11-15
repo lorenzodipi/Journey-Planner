@@ -7,6 +7,7 @@ import { STATI_LUOGO, STATO_LUOGO } from '../../lib/luoghi'
 import type { Place, Trip } from '../../types'
 import { Chip, Pulsante } from '../../faraway/base'
 import { Foglio } from '../../faraway/Foglio'
+import { LINGUA, nomeCategoria, t } from '../../i18n'
 
 interface Props {
   trip: Trip
@@ -24,25 +25,25 @@ const SORTS: SortBy[] = ['name', 'day', 'status', 'cost']
 export function FiltriSheet({ trip, places, open, filters, view, onApply, onClose }: Props) {
   const [f, setF] = useState(filters)
   const [v, setV] = useState(view)
-  const cities = [...new Set(places.map((p) => p.city).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'it'))
+  const cities = [...new Set(places.map((p) => p.city).filter(Boolean))].sort((a, b) => a.localeCompare(b, LINGUA))
   const cats = trip.categories.filter((c) => places.some((p) => p.categoryId === c.id))
   const count = filterPlaces(places, f).length
 
   return (
     <Foglio
       open={open}
-      title="Filtri"
+      title={t('Filtri')}
       onClose={onClose}
       headStart={
         <button type="button" className="fa-hdtxt" onClick={() => (setF(EMPTY_FILTERS), setV(view ? { groupBy: 'city', sortBy: 'name' } : undefined))}>
-          Azzera
+          {t('Azzera')}
         </button>
       }
-      footer={<Pulsante onPress={() => (onApply(f, v), onClose())}>{count === 1 ? 'Mostra 1 luogo' : `Mostra ${count} luoghi`}</Pulsante>}
+      footer={<Pulsante onPress={() => (onApply(f, v), onClose())}>{count === 1 ? 'Mostra 1 luogo' : t('Mostra {count} luoghi', { count })}</Pulsante>}
     >
       <div className="frm" style={{ gap: 'var(--gap-sezioni)' }}>
-        <div className="fa-fld" role="group" aria-label="Stato">
-          Stato
+        <div className="fa-fld" role="group" aria-label={t('Stato')}>
+          {t('Stato')}
           <div className="fa-chips wrap">
             {STATI_LUOGO.map((s) => (
               <Chip key={s} on={f.statuses.includes(s)} onPress={() => setF({ ...f, statuses: toggleValue(f.statuses, s) })}>
@@ -52,8 +53,8 @@ export function FiltriSheet({ trip, places, open, filters, view, onApply, onClos
           </div>
         </div>
         {cities.length > 0 ? (
-          <div className="fa-fld" role="group" aria-label="Città">
-            Città
+          <div className="fa-fld" role="group" aria-label={t('Città')}>
+            {t('Città')}
             <div className="fa-chips wrap">
               {cities.map((c) => (
                 <Chip key={c} on={f.cities.includes(c)} onPress={() => setF({ ...f, cities: toggleValue(f.cities, c) })}>
@@ -64,12 +65,12 @@ export function FiltriSheet({ trip, places, open, filters, view, onApply, onClos
           </div>
         ) : null}
         {cats.length > 0 ? (
-          <div className="fa-fld" role="group" aria-label="Categoria">
-            Categoria
+          <div className="fa-fld" role="group" aria-label={t('Categoria')}>
+            {t('Categoria')}
             <div className="fa-chips wrap">
               {cats.map((c) => (
                 <Chip key={c.id} on={f.categories.includes(c.label)} onPress={() => setF({ ...f, categories: toggleValue(f.categories, c.label) })}>
-                  {c.label}
+                  {nomeCategoria(c.label)}
                 </Chip>
               ))}
             </div>
@@ -77,8 +78,8 @@ export function FiltriSheet({ trip, places, open, filters, view, onApply, onClos
         ) : null}
         {v ? (
           <>
-            <div className="fa-fld" role="group" aria-label="Raggruppa per">
-              Raggruppa per
+            <div className="fa-fld" role="group" aria-label={t('Raggruppa per')}>
+              {t('Raggruppa per')}
               <div className="fa-chips wrap">
                 {GROUPS.map((g) => (
                   <Chip key={g} on={v.groupBy === g} onPress={() => setV({ ...v, groupBy: g })}>
@@ -87,8 +88,8 @@ export function FiltriSheet({ trip, places, open, filters, view, onApply, onClos
                 ))}
               </div>
             </div>
-            <div className="fa-fld" role="group" aria-label="Ordina per">
-              Ordina per
+            <div className="fa-fld" role="group" aria-label={t('Ordina per')}>
+              {t('Ordina per')}
               <div className="fa-chips wrap">
                 {SORTS.map((s) => (
                   <Chip key={s} on={v.sortBy === s} onPress={() => setV({ ...v, sortBy: s })}>

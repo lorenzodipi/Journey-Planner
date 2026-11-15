@@ -13,6 +13,7 @@ import { Vuoto } from '../../faraway/Stati'
 import { CodiceBiglietto } from '../../faraway/CodiceBiglietto'
 import { TrasportoSheet } from './TrasportoSheet'
 import { soloLettura } from '../../lib/ruolo'
+import { t as tt } from '../../i18n'
 
 export function TrasportiPage() {
   const trip = useTrip()
@@ -25,16 +26,16 @@ export function TrasportiPage() {
   const lettura = soloLettura(trip)
 
   async function elimina(x: Transport) {
-    const ok = await ask({ title: 'Eliminare il trasporto?', message: conDipendenze(`${x.from} → ${x.to} sparisce dai trasporti e dalle spese. Puoi annullare subito dopo.`, dipendenze(trip, 'trasporto', x.id)), confirm: 'Elimina il trasporto', cancel: 'Tieni il trasporto', destructive: true })
+    const ok = await ask({ title: tt('Eliminare il trasporto?'), message: conDipendenze(tt('{from} → {to} sparisce dai trasporti e dalle spese. Puoi annullare subito dopo.', { from: x.from, to: x.to }), dipendenze(trip, 'trasporto', x.id)), confirm: tt('Elimina il trasporto'), cancel: tt('Tieni il trasporto'), destructive: true })
     if (!ok) return
     const m = await t.setTransportDeleted(x.id, true)
-    showToast(m ?? 'Trasporto eliminato', m ? undefined : { label: 'Annulla', run: () => void t.setTransportDeleted(x.id, false) })
+    showToast(m ?? tt('Trasporto eliminato'), m ? undefined : { label: tt('Annulla'), run: () => void t.setTransportDeleted(x.id, false) })
   }
 
   return (
     <Schermata
-      bar={<BarraIndietro title="Trasporti" back="/altro" />}
-      fab={gruppi.length === 0 || lettura ? null : { label: 'Trasporto', aria: 'Aggiungi un trasporto', onPress: () => setSheet({}) }}
+      bar={<BarraIndietro title={tt('Trasporti')} back="/altro" />}
+      fab={gruppi.length === 0 || lettura ? null : { label: tt('Trasporto'), aria: tt('Aggiungi un trasporto'), onPress: () => setSheet({}) }}
       overlay={
         <>
           {sheet ? <TrasportoSheet key={sheet.transport?.id ?? 'new'} trip={trip} transport={sheet.transport} focus={sheet.focus} open onClose={() => setSheet(null)} /> : null}
@@ -45,9 +46,9 @@ export function TrasportiPage() {
     >
       {gruppi.length === 0 ? (
         lettura ? (
-          <Vuoto title="Nessun trasporto" text="Treni, autobus, metro e taxi del viaggio compariranno qui." />
+          <Vuoto title={tt('Nessun trasporto')} text={tt('Treni, autobus, metro e taxi del viaggio compariranno qui.')} />
         ) : (
-          <Vuoto title="Nessun trasporto" text="Treni, autobus, metro e taxi: orari, prezzo e se è già pagato." action="Aggiungi un trasporto" onAction={() => setSheet({})} />
+          <Vuoto title={tt('Nessun trasporto')} text={tt('Treni, autobus, metro e taxi: orari, prezzo e se è già pagato.')} action={tt('Aggiungi un trasporto')} onAction={() => setSheet({})} />
         )
       ) : null}
       <Affianca uguali>

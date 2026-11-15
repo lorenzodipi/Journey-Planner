@@ -4,6 +4,7 @@ import { formatMoney } from './money'
 import { dateAddDays } from './dates'
 import type { NotifichePrefs } from './prefs'
 import type { Trip } from '../types'
+import { t as tt } from '../i18n'
 
 export interface Avviso {
   /** numero stabile: riprogrammare lo stesso avviso non lo duplica */
@@ -50,7 +51,7 @@ export function avvisiTappe(trip: Trip, now: Date, giorni = 7, anticipoMin = 30)
       const start = istanteLocale(day.date, it.time.padStart(5, '0'), trip.timezone)
       const at = new Date(start.getTime() - anticipoMin * 60_000)
       if (at.getTime() <= now.getTime() || at.getTime() > limite) continue
-      out.push({ id: idStabile(`tappa:${it.id}`), at, title: `Tra ${anticipoMin} min: ${it.title}`, body: `Alle ${it.time.padStart(5, '0')}`, route: `/giorni/${day.id}?tappa=${it.id}` })
+      out.push({ id: idStabile(`tappa:${it.id}`), at, title: tt('Tra {anticipoMin} min: {title}', { anticipoMin, title: it.title }), body: tt('Alle {v0}', { v0: it.time.padStart(5, '0') }), route: `/giorni/${day.id}?tappa=${it.id}` })
     }
   }
   return out.sort((a, b) => a.at.getTime() - b.at.getTime())
@@ -63,7 +64,7 @@ export function avvisiCheckin(trip: Trip, now: Date, giorni = 30): Avviso[] {
   const add = (key: string, titolo: string, checkinAt: string | undefined, route: string) => {
     const at = checkinAt ? new Date(checkinAt) : null
     if (!at || Number.isNaN(at.getTime()) || at.getTime() <= now.getTime() || at.getTime() > limite) return
-    out.push({ id: idStabile(`checkin:${key}`), at, title: `Check-in aperto: ${titolo}`, body: 'Puoi fare il check-in online.', route })
+    out.push({ id: idStabile(`checkin:${key}`), at, title: tt('Check-in aperto: {titolo}', { titolo }), body: tt('Puoi fare il check-in online.'), route })
   }
   for (const f of trip.flights) add(f.id, f.title, f.checkinAt, '/altro/voli')
   for (const t of trip.transports) add(t.id, `${t.from} → ${t.to}`, t.checkinAt, '/altro/trasporti')
@@ -78,7 +79,7 @@ export function avvisiChecklist(trip: Trip, now: Date, meId?: string): Avviso[] 
     if (c.travelerId && c.travelerId !== meId) continue
     const at = istanteLocale(dateAddDays(c.dueDate, -7), '09:00', trip.timezone)
     if (at.getTime() <= now.getTime()) continue
-    out.push({ id: idStabile(`checklist:${c.id}`), at, title: `Tra una settimana: ${c.text}`, body: 'Scade nella checklist del viaggio', route: '/altro/checklist' })
+    out.push({ id: idStabile(`checklist:${c.id}`), at, title: tt('Tra una settimana: {text}', { text: c.text }), body: tt('Scade nella checklist del viaggio'), route: '/altro/checklist' })
   }
   return out.sort((a, b) => a.at.getTime() - b.at.getTime())
 }
@@ -93,7 +94,7 @@ export function avvisoPioggiaDelGiorno(ore: OraPrevista[], city: string, now: Da
   const start = istanteLocale(first.date, `${String(first.h).padStart(2, '0')}:00`, tz)
   if (start.getTime() <= now.getTime() - 3_600_000) return null
   const at = new Date(Math.max(start.getTime() - 3_600_000, now.getTime() + 10_000))
-  return { id: idStabile(`pioggia:${first.date}`), at, title: `${a.title}${city ? ` a ${city}` : ''}`, body: 'Porta l’ombrello', route: '/' }
+  return { id: idStabile(`pioggia:${first.date}`), at, title: `${a.title}${city ? ` a ${city}` : ''}`, body: tt('Porta l’ombrello'), route: '/' }
 }
 
 /** Budget: all'80% e al 100% (una volta ciascuno). `gia` è la soglia già notificata (0, 80 o 100). */
@@ -102,8 +103,8 @@ export function avvisoBudget(trip: Pick<Trip, 'id' | 'baseCurrency'>, speso: num
   const pct = (speso / limite) * 100
   const raggiunta = pct >= 100 ? 100 : pct >= 80 ? 80 : 0
   if (raggiunta <= gia) return { avviso: null, soglia: raggiunta }
-  const title = raggiunta === 100 ? 'Hai raggiunto il budget' : 'Sei all’80% del budget'
-  return { avviso: { id: idStabile(`budget:${trip.id}:${raggiunta}`), at: new Date(now.getTime() + 5_000), title, body: `Speso ${formatMoney(speso, trip.baseCurrency)} su ${formatMoney(limite, trip.baseCurrency)}`, route: '/spese' }, soglia: raggiunta }
+  const title = raggiunta === 100 ? tt('Hai raggiunto il budget') : tt('Sei all’80% del budget')
+  return { avviso: { id: idStabile(`budget:${trip.id}:${raggiunta}`), at: new Date(now.getTime() + 5_000), title, body: tt('Speso {v0} su {v1}', { v0: formatMoney(speso, trip.baseCurrency), v1: formatMoney(limite, trip.baseCurrency) }), route: '/spese' }, soglia: raggiunta }
 }
 
 /** Tutti gli avvisi programmati per le scelte fatte (il budget è a parte: scatta quando si supera la soglia). */

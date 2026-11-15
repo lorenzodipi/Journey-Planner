@@ -1,12 +1,13 @@
 // Stati dei luoghi con i nomi del mock (#33) e regole automatiche:
 // «In programma» quando il luogo è in una tappa (non annullata), «Visitato» quando una tappa collegata è fatta.
 import type { DayItem, Place, PlaceStatus, Trip } from '../types'
+import { t } from '../i18n'
 
 export const STATO_LUOGO: Record<PlaceStatus, { label: string; cls: string; icon: string }> = {
-  idea: { label: 'Da visitare', cls: 's-todo', icon: 'g-pin' },
-  planned: { label: 'In programma', cls: 's-plan', icon: 'g-cal' },
-  done: { label: 'Visitato', cls: 's-done', icon: 'g-check' },
-  skipped: { label: 'Scartato', cls: 's-skip', icon: 'g-minus' },
+  idea: { label: t('Da visitare'), cls: 's-todo', icon: 'g-pin' },
+  planned: { label: t('In programma'), cls: 's-plan', icon: 'g-cal' },
+  done: { label: t('Visitato'), cls: 's-done', icon: 'g-check' },
+  skipped: { label: t('Scartato'), cls: 's-skip', icon: 'g-minus' },
 }
 export const STATI_LUOGO: PlaceStatus[] = ['idea', 'planned', 'done', 'skipped']
 

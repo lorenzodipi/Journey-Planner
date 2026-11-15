@@ -5,6 +5,7 @@ import { missingPosition, startPositionJob, stopPositionJob, usePositionJob } fr
 import { useTrips } from '../../state/trips'
 import { Barra, Pulsante } from '../../faraway/base'
 import { Sv } from '../../faraway/icons'
+import { t as tt } from '../../i18n'
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
@@ -22,16 +23,15 @@ export function TrovaPosizioni() {
     return (
       <section className="fa-card pad" style={{ display: 'grid', gap: 16 }} aria-live="polite">
         <div style={{ display: 'grid', gap: 8 }}>
-          <h2 className="fa-h3" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Loader size={20} label="Ricerca in corso" />Posizioni dei luoghi</h2>
+          <h2 className="fa-h3" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Loader size={20} label={tt('Ricerca in corso')} />{tt('Posizioni dei luoghi')}</h2>
           <p className="fa-m">
-            {mine.done} di {mine.total} · {plural(mine.found, 'trovato', 'trovati')}
-            {mine.current ? ` · ora: ${mine.current}` : ''}
+            {tt('{done} di {total} · {v2}{v3}', { done: mine.done, total: mine.total, v2: plural(mine.found, tt('trovato'), tt('trovati')), v3: mine.current ? tt(' · ora: {current}', { current: mine.current }) : '' })}
           </p>
         </div>
-        <Barra value={mine.done} max={Math.max(1, mine.total)} label="Avanzamento della ricerca" />
-        <p className="fa-m">Una ricerca al secondo, come chiede OpenStreetMap. Puoi cambiare pagina, ma tieni aperta l'app: i pin compaiono man mano.</p>
+        <Barra value={mine.done} max={Math.max(1, mine.total)} label={tt('Avanzamento della ricerca')} />
+        <p className="fa-m">{tt('Una ricerca al secondo, come chiede OpenStreetMap. Puoi cambiare pagina, ma tieni aperta l\'app: i pin compaiono man mano.')}</p>
         <Pulsante color="secondary" onPress={stopPositionJob}>
-          Interrompi
+          {tt('Interrompi')}
         </Pulsante>
       </section>
     )
@@ -45,11 +45,11 @@ export function TrovaPosizioni() {
           <use href="#i-nav-no-pin" />
         </svg>
         <div style={{ minWidth: 0 }}>
-          <div className="fa-b">{plural(missing, 'luogo non è', 'luoghi non sono')} sulla mappa</div>
+          <div className="fa-b">{tt('{v0} sulla mappa', { v0: plural(missing, tt('luogo non è'), tt('luoghi non sono')) })}</div>
           <div className="fa-m">
             {mine && !mine.error && left > 0
-              ? `Per ${plural(left, 'luogo', 'luoghi')} non ho trovato la posizione: aprilo, tocca Modifica e incolla il link lungo di Google Maps.`
-              : "L'app può cercare la posizione da sola partendo da nome, città e indirizzo."}
+              ? tt('Per {v0} non ho trovato la posizione: aprilo, tocca Modifica e incolla il link lungo di Google Maps.', { v0: plural(left, tt('luogo'), tt('luoghi')) })
+              : tt('L\'app può cercare la posizione da sola partendo da nome, città e indirizzo.')}
           </div>
         </div>
       </div>
@@ -61,7 +61,7 @@ export function TrovaPosizioni() {
       ) : null}
       {mine && left > 0 ? (
         <details className="fa-m">
-          <summary style={{ cursor: 'pointer', fontWeight: 600, minHeight: 32 }}>Vedi quali</summary>
+          <summary style={{ cursor: 'pointer', fontWeight: 600, minHeight: 32 }}>{tt('Vedi quali')}</summary>
           <ul style={{ maxHeight: 160, overflow: 'auto', paddingLeft: 24, listStyle: 'disc' }}>
             {mine.notFound.map((p) => (
               <li key={p.id}>{p.name}</li>
@@ -70,7 +70,7 @@ export function TrovaPosizioni() {
         </details>
       ) : null}
       <Pulsante color="secondary" iconLeading="search" onPress={start}>
-        {mine ? 'Riprova a cercare' : 'Trova le posizioni'}
+        {mine ? tt('Riprova a cercare') : tt('Trova le posizioni')}
       </Pulsante>
     </section>
   )

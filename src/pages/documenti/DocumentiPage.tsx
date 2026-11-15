@@ -19,9 +19,10 @@ import { useTrip, useTrips } from '../../state/trip'
 import type { Documento } from '../../types'
 import { DocumentoDettaglio, NuovoDocumentoSheet, spesaDelDocumento } from './DocumentoSheet'
 import { useInCorso } from '../../faraway/Attesa'
+import { LOCALE, t as tt } from '../../i18n'
 
-const formato = (d: Documento) => d.mime?.split('/')[1]?.split(/[.+-]/).pop()?.toUpperCase() || d.name.split('.').pop()?.toUpperCase() || 'File'
-const caricato = (d: Documento) => new Date(d.createdAt).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+const formato = (d: Documento) => d.mime?.split('/')[1]?.split(/[.+-]/).pop()?.toUpperCase() || d.name.split('.').pop()?.toUpperCase() || tt('File')
+const caricato = (d: Documento) => new Date(d.createdAt).toLocaleDateString(LOCALE, { day: '2-digit', month: '2-digit', year: 'numeric' })
 
 export function DocumentiPage() {
   const trip = useTrip()
@@ -37,21 +38,21 @@ export function DocumentiPage() {
 
   const [occ, faiOcc] = useInCorso()
   async function elimina(d: Documento) {
-    const ok = await ask({ title: 'Eliminare il documento?', message: `«${d.name}» sparisce per tutti, anche dai punti a cui è collegato.`, confirm: 'Elimina', cancel: 'Tienilo', destructive: true })
+    const ok = await ask({ title: tt('Eliminare il documento?'), message: tt('«{name}» sparisce per tutti, anche dai punti a cui è collegato.', { name: d.name }), confirm: tt('Elimina'), cancel: tt('Tienilo'), destructive: true })
     if (!ok) return
     const spesa = spesaDelDocumento(trip, d.id)
     const m = await faiOcc(d.id, async () => {
       if (spesa) await t.setExpenseDeleted(spesa.id, true)
       return t.deleteDocument(d.id, d.path)
     })
-    showToast(m ?? 'Documento eliminato')
+    showToast(m ?? tt('Documento eliminato'))
   }
 
   return (
     <Schermata
-      bar={<BarraIndietro title="Documenti" back="/altro" />}
+      bar={<BarraIndietro title={tt('Documenti')} back="/altro" />}
       gap={16}
-      fab={trip.documents ? { label: 'Documento', aria: 'Aggiungi un documento', onPress: () => setNuovo(true) } : undefined}
+      fab={trip.documents ? { label: tt('Documento'), aria: tt('Aggiungi un documento'), onPress: () => setNuovo(true) } : undefined}
       overlay={
         <>
           {nuovo ? <NuovoDocumentoSheet trip={trip} onClose={() => setNuovo(false)} /> : null}
@@ -61,9 +62,9 @@ export function DocumentiPage() {
       }
     >
       {!trip.documents ? (
-        <p className="fa-m" style={{ margin: 0 }}>I documenti con visibilità si attivano con la migrazione 0030 del database.</p>
+        <p className="fa-m" style={{ margin: 0 }}>{tt('I documenti con visibilità si attivano con la migrazione 0030 del database.')}</p>
       ) : lista.length === 0 ? (
-        <p className="fa-m" style={{ margin: 0 }}>Qui metti ciò che non ha un luogo: eSIM, assicurazione, passaporti, visti. Per ogni file scegli chi lo vede.</p>
+        <p className="fa-m" style={{ margin: 0 }}>{tt('Qui metti ciò che non ha un luogo: eSIM, assicurazione, passaporti, visti. Per ogni file scegli chi lo vede.')}</p>
       ) : (
         <Affianca uguali>
         {lista.map((d) => {
@@ -72,11 +73,11 @@ export function DocumentiPage() {
           const spesa = spesaDelDocumento(trip, d.id)
           const vede = chiVede(d, trip.travelers, uid)
           const righe: [string, string][] = [
-            ['Chi lo vede', vede],
-            ['Caricato il', caricato(d)],
-            ['Dimensione', dimensione(d.size)],
-            ['Costo', spesa ? formatMoney(spesa.amount, spesa.currency) : ''],
-            ['Offline', isDocOffline(d.id) ? 'Disponibile anche senza rete' : ''],
+            [tt('Chi lo vede'), vede],
+            [tt('Caricato il'), caricato(d)],
+            [tt('Dimensione'), dimensione(d.size)],
+            [tt('Costo'), spesa ? formatMoney(spesa.amount, spesa.currency) : ''],
+            [tt('Offline'), isDocOffline(d.id) ? tt('Disponibile anche senza rete') : ''],
           ]
           return (
             <div key={d.id} className="k-TicketOrizzontale">
@@ -107,17 +108,17 @@ export function DocumentiPage() {
                           </div>
                         ))}
                     </dl>
-                    {mio ? null : <p className="fa-help" style={{ margin: '16px 0 0' }}>Solo chi l’ha caricato può cambiarne la visibilità o eliminarlo.</p>}
+                    {mio ? null : <p className="fa-help" style={{ margin: '16px 0 0' }}>{tt('Solo chi l’ha caricato può cambiarne la visibilità o eliminarlo.')}</p>}
                     <div className="acts2">
                       <Pulsante size="sm" color="secondary" iconLeading="file" isLoading={occ === `apri:${d.id}`} onPress={() => void faiOcc(`apri:${d.id}`, () => openBookingFile(d.path)).catch((e: Error) => showToast(e.message))}>
-                        Apri
+                        {tt('Apri')}
                       </Pulsante>
                       <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => setModifica(d.id)}>
-                        Modifica
+                        {tt('Modifica')}
                       </Pulsante>
                       {mio ? (
                         <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" isLoading={occ === d.id} onPress={() => void elimina(d)}>
-                          Elimina
+                          {tt('Elimina')}
                         </Pulsante>
                       ) : null}
                     </div>

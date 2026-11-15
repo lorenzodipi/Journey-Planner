@@ -18,6 +18,7 @@ import type { Op } from './outbox'
 import { DEFAULT_CENTER } from './tripForm'
 import { enumerateDates, planDays } from './tripDays'
 import { copiaComeModello } from './tripCopy'
+import { LINGUA, t as tt } from '../i18n'
 
 export { describeError } from './db'
 
@@ -256,7 +257,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
 
   const expenseCategories: Category[] = extras.expenseCategories
     .filter((c) => c.trip_id === row.id)
-    .sort((a, b) => a.position - b.position || a.label.localeCompare(b.label, 'it'))
+    .sort((a, b) => a.position - b.position || a.label.localeCompare(b.label, LINGUA))
     .map((c) => ({ id: c.id, label: c.label, color: c.color ?? undefined, ...(c.planned != null && Number(c.planned) >= 0 ? { planned: Number(c.planned) } : {}), ...(c.archived_at ? { archived: true } : {}), ...(c.icon ? { icon: c.icon } : {}) }))
   const expenseCategoryLabel = new Map(expenseCategories.map((c) => [c.id, c.label]))
 
@@ -283,7 +284,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
       lat: p.lat,
       lng: p.lng,
     }))
-    .sort((a, b) => a.name.localeCompare(b.name, 'it'))
+    .sort((a, b) => a.name.localeCompare(b.name, LINGUA))
   const places: Place[] = allPlaces.filter((p) => !p.archived).map(({ archived: _a, ...p }) => p)
   const archivedPlaces: Place[] = allPlaces.filter((p) => p.archived).map(({ archived: _a, ...p }) => p)
 
@@ -904,7 +905,7 @@ async function creaCategoria(tripId: string, clean: string, known: Category[]): 
 }
 
 const MIGRATION_0015 =
-  "Manca la migrazione 0015 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0015_visit_duration.sql). Senza, il tempo di permanenza non si può salvare."
+  tt('Manca la migrazione 0015 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0015_visit_duration.sql). Senza, il tempo di permanenza non si può salvare.')
 const needs0015 = (error: { message: string }) =>
   /opening_spec/i.test(error.message) ? new Error('Per gli orari esegui la migrazione 0018_luoghi_orari.sql nello SQL Editor di Supabase.') : /visit_minutes|duration_minutes/i.test(error.message) ? new Error(MIGRATION_0015) : error
 
@@ -1172,7 +1173,7 @@ export async function setItemDone(id: string, done: boolean): Promise<void> {
   if (error) throw error
 }
 
-export const MIGRATION_0017 = 'Per gli stati delle tappe esegui la migrazione 0017_tappe_stati.sql nello SQL Editor di Supabase.'
+export const MIGRATION_0017 = tt('Per gli stati delle tappe esegui la migrazione 0017_tappe_stati.sql nello SQL Editor di Supabase.')
 const needs0017 = (error: { message: string }) => (/status|postponed_from_day_id|participants|source_kind|source_id/i.test(error.message) ? new Error(MIGRATION_0017) : error)
 
 /** Cambia lo stato della tappa e salva l'ora del cambio. Senza la 0017 si possono usare solo «Da fare» e «Fatta». */

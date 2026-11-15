@@ -7,6 +7,7 @@ import type { Day } from '../../types'
 import { Campo, Pulsante } from '../../faraway/base'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
+import { t as tt } from '../../i18n'
 
 export function GiornoSheet({ day, open, onClose }: { day: Day; open: boolean; onClose: () => void }) {
   const t = useTrips()
@@ -30,11 +31,11 @@ export function GiornoSheet({ day, open, onClose }: { day: Day; open: boolean; o
   return (
     <Foglio
       open={open}
-      title="Modifica il giorno"
+      title={tt('Modifica il giorno')}
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="giorno-form" isLoading={busy}>
-          Salva il giorno
+          {tt('Salva il giorno')}
         </Pulsante>
       }
     >
@@ -42,9 +43,9 @@ export function GiornoSheet({ day, open, onClose }: { day: Day; open: boolean; o
         <p className="fa-m" style={{ margin: 0 }}>
           {quando.charAt(0).toUpperCase() + quando.slice(1)}
         </p>
-        <Campo label="Città o zona" icon="pin" value={city} onChange={setCity} maxLength={60} autoComplete="off" placeholder="es. Nome della città" />
-        <Campo label="Titolo della giornata" value={title} onChange={setTitle} maxLength={80} autoComplete="off" placeholder="es. Arrivo" />
-        <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="Promemoria per questa giornata" />
+        <Campo label={tt('Città o zona')} icon="pin" value={city} onChange={setCity} maxLength={60} autoComplete="off" placeholder={tt('es. Nome della città')} />
+        <Campo label={tt('Titolo della giornata')} value={title} onChange={setTitle} maxLength={80} autoComplete="off" placeholder={tt('es. Arrivo')} />
+        <Campo label={tt('Note')} textarea value={notes} onChange={setNotes} placeholder={tt('Promemoria per questa giornata')} />
         {error ? (
           <span className="fa-help bad" role="alert">
             <Sv name="err" size={16} />

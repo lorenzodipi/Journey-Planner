@@ -5,6 +5,7 @@
 import { dateInZone } from './flights'
 import { parseYmd } from './dates'
 import type { Day, Trip } from '../types'
+import { LOCALE, t } from '../i18n'
 
 export type CellState = 'past' | 'today' | 'free' | 'future'
 
@@ -26,7 +27,7 @@ export interface DayGroup {
   cells: DayCell[]
 }
 
-const dm = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short' })
+const dm = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short' })
 const clean = (s: string) => s.replace('.', '')
 
 /** Il giorno ha un volo che parte o arriva in quella data (ora locale degli aeroporti). */
@@ -48,12 +49,12 @@ function cellFor(trip: Pick<Trip, 'flights'>, day: Day, today: string, travelRol
   const flight = flightOn(trip, day.date)
   const n = day.items.length
   const first = day.items.find((i) => i.time) ?? day.items[0]
-  const label = day.title || first?.title || (travelRole === 'out' ? 'Partenza' : travelRole === 'in' ? 'Arrivo' : '') || day.city || 'Giorno'
-  if (day.date < today) return { day, state: 'past', label, status: 'Fatto', statusIcon: 'g-check', flight }
-  if (day.date === today) return { day, state: 'today', label, status: 'Oggi', statusIcon: 'g-clock', flight }
-  if (flight && n === 0) return { day, state: 'future', label, status: 'Volo', statusIcon: 'g-clock', flight }
-  if (n === 0 && !day.title) return { day, state: 'free', label: day.city || label, status: 'Libero', statusIcon: 'g-plus', flight }
-  return { day, state: 'future', label, status: plural(n, 'tappa', 'tappe'), statusIcon: 'g-pin', flight }
+  const label = day.title || first?.title || (travelRole === 'out' ? t('Partenza') : travelRole === 'in' ? t('Arrivo') : '') || day.city || t('Giorno')
+  if (day.date < today) return { day, state: 'past', label, status: t('Fatto'), statusIcon: 'g-check', flight }
+  if (day.date === today) return { day, state: 'today', label, status: t('Oggi'), statusIcon: 'g-clock', flight }
+  if (flight && n === 0) return { day, state: 'future', label, status: t('Volo'), statusIcon: 'g-clock', flight }
+  if (n === 0 && !day.title) return { day, state: 'free', label: day.city || label, status: t('Libero'), statusIcon: 'g-plus', flight }
+  return { day, state: 'future', label, status: plural(n, t('tappa'), t('tappe')), statusIcon: 'g-pin', flight }
 }
 
 /** Raggruppa i giorni del viaggio (in ordine di data). `today` = data di oggi nel fuso del viaggio. */
@@ -72,10 +73,10 @@ export function groupDays(trip: Pick<Trip, 'days' | 'flights'>, today: string): 
       const prevCity = days[i - 1]?.city || ''
       const cells = finali.map((x, k) => {
         const cell = cellFor(trip, x, today, k === 0 && finali.length > 1 ? 'out' : null)
-        if (k === finali.length - 1 && !x.title && x.items.length === 0) cell.label = prevCity && x.city && prevCity !== x.city ? `${prevCity} → ${x.city}` : prevCity ? `${prevCity} → casa` : 'Volo di rientro'
+        if (k === finali.length - 1 && !x.title && x.items.length === 0) cell.label = prevCity && x.city && prevCity !== x.city ? `${prevCity} → ${x.city}` : prevCity ? t('{prevCity} → casa', { prevCity }) : t('Volo di rientro')
         return cell
       })
-      groups.push({ kind: 'return', title: 'Rientro', meta: `${plural(finali.length, 'giorno', 'giorni')} · ${rangeText(d.date, days[lastIdx].date)}`, cells })
+      groups.push({ kind: 'return', title: t('Rientro'), meta: `${plural(finali.length, t('giorno'), t('giorni'))} · ${rangeText(d.date, days[lastIdx].date)}`, cells })
       break
     }
     // giorni di volo consecutivi (partenza e arrivo del giorno dopo)
@@ -96,8 +97,8 @@ export function groupDays(trip: Pick<Trip, 'days' | 'flights'>, today: string): 
       const cells = span.map((x, k) => cellFor(trip, x, today, span.length > 1 ? (k === 0 ? 'out' : k === span.length - 1 && arrivo < 0 ? 'in' : null) : 'out'))
       groups.push({
         kind: 'travel',
-        title: partenza ? 'Partenza' : fromCity && toCity && fromCity !== toCity ? `${fromCity} → ${toCity}` : toCity || fromCity || 'In viaggio',
-        meta: `${plural(span.length, 'giorno', 'giorni')} · ${rangeText(span[0].date, span[span.length - 1].date)}`,
+        title: partenza ? t('Partenza') : fromCity && toCity && fromCity !== toCity ? `${fromCity} → ${toCity}` : toCity || fromCity || t('In viaggio'),
+        meta: `${plural(span.length, t('giorno'), t('giorni'))} · ${rangeText(span[0].date, span[span.length - 1].date)}`,
         cells,
       })
       i = j + 1
@@ -112,8 +113,8 @@ export function groupDays(trip: Pick<Trip, 'days' | 'flights'>, today: string): 
     const free = cells.filter((c) => c.state === 'free').length
     groups.push({
       kind: 'city',
-      title: city || 'Da definire',
-      meta: `${plural(span.length, 'giorno', 'giorni')} · ${rangeText(span[0].date, span[span.length - 1].date)}${free > 0 ? ` · ${plural(free, 'libero', 'liberi')}` : ''}`,
+      title: city || t('Da definire'),
+      meta: `${plural(span.length, t('giorno'), t('giorni'))} · ${rangeText(span[0].date, span[span.length - 1].date)}${free > 0 ? ` · ${plural(free, t('libero'), t('liberi'))}` : ''}`,
       cells,
     })
     i = j + 1

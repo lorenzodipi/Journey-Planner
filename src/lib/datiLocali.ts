@@ -3,8 +3,8 @@
 // dal prefisso: una chiave nuova (`jp.…`) viene cancellata da sola, senza dover ricordarsi di aggiungerla qui.
 import { clearBookingCache } from './bookingFiles'
 
-/** Aspetto dell'app (tema, ora e unità, stile della mappa): sono scelte del telefono, non dati dell'account, e restano. */
-export const CHIAVI_DA_TENERE: readonly string[] = ['jp.theme.v1', 'jp.formati.v1', 'jp.mapStyle']
+/** Aspetto dell'app (tema, ora e unità, stile della mappa, lingua): sono scelte del telefono, non dati dell'account, e restano. */
+export const CHIAVI_DA_TENERE: readonly string[] = ['jp.theme.v1', 'jp.formati.v1', 'jp.mapStyle', 'jp.lingua']
 
 /** Tra le chiavi di localStorage, quelle da cancellare: dell'app (`jp.`) e della sessione (`sb-`), tranne l'aspetto. */
 export function chiaviDaCancellare(chiavi: readonly string[]): string[] {

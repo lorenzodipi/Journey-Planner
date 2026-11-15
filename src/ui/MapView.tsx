@@ -14,6 +14,7 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { useEffect, useRef, type MutableRefObject } from 'react'
 import { pinIconSvg, type PinIcon } from '../lib/categoryIcon'
 import { isTap, type TapDown } from '../lib/mapTap'
+import { t } from '../i18n'
 
 // Questo file (e MapLibre) viene caricato solo quando serve una mappa: l'avvio dell'app resta leggero.
 setWorkerUrl(workerUrl)
@@ -80,8 +81,8 @@ class StyleToggle implements IControl {
 
   private render() {
     const detail = this.pref === 'detail'
-    this.button.textContent = detail ? 'Dettagli' : 'Pulita'
-    this.button.setAttribute('aria-label', detail ? 'Mappa dettagliata: tocca per passare alla mappa pulita' : 'Mappa pulita: tocca per passare alla mappa dettagliata')
+    this.button.textContent = detail ? t('Dettagli') : t('Pulita')
+    this.button.setAttribute('aria-label', detail ? t('Mappa dettagliata: tocca per passare alla mappa pulita') : t('Mappa pulita: tocca per passare alla mappa dettagliata'))
   }
 }
 
@@ -103,9 +104,9 @@ function newMap(el: HTMLElement, center: { lat: number; lng: number }, zoom: num
       ? {
           cooperativeGestures: true,
           locale: {
-            'CooperativeGesturesHandler.WindowsHelpText': 'Usa Ctrl + scorrimento per ingrandire la mappa',
-            'CooperativeGesturesHandler.MacHelpText': 'Usa ⌘ + scorrimento per ingrandire la mappa',
-            'CooperativeGesturesHandler.MobileHelpText': 'Usa due dita per muovere la mappa',
+            'CooperativeGesturesHandler.WindowsHelpText': t('Usa Ctrl + scorrimento per ingrandire la mappa'),
+            'CooperativeGesturesHandler.MacHelpText': t('Usa ⌘ + scorrimento per ingrandire la mappa'),
+            'CooperativeGesturesHandler.MobileHelpText': t('Usa due dita per muovere la mappa'),
           },
         }
       : {}),
@@ -219,7 +220,7 @@ function clusterElement(n: number): HTMLElement {
   el.type = 'button'
   el.className = 'fa-pinclu'
   el.textContent = String(n)
-  el.setAttribute('aria-label', `${n} luoghi qui`)
+  el.setAttribute('aria-label', n === 1 ? t('1 luogo qui') : t('{n} luoghi qui', { n }))
   return el
 }
 
@@ -360,7 +361,7 @@ export function MapView({ pins, center, selectedId, onSelect, bare, cluster, onC
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId])
 
-  return <div ref={el} className={bare ? 'fa-mapgl' : 'h-full w-full'} role="application" aria-label="Mappa dei luoghi" />
+  return <div ref={el} className={bare ? 'fa-mapgl' : 'h-full w-full'} role="application" aria-label={t('Mappa dei luoghi')} />
 }
 
 interface PinPickerProps {
@@ -384,7 +385,7 @@ export function PinPicker({ lat, lng, center, onMove }: PinPickerProps) {
     const m = newMap(el.current, start, lat != null ? 16 : 11, false)
     map.current = m
     const mk = new Marker({
-      element: pinElement({ name: 'Posizione', color: '#3d86ff' }, true),
+      element: pinElement({ name: t('Posizione'), color: '#3d86ff' }, true),
       anchor: 'center',
       draggable: true,
     })
@@ -418,7 +419,7 @@ export function PinPicker({ lat, lng, center, onMove }: PinPickerProps) {
     }
   }, [lat, lng])
 
-  return <div ref={el} className="h-56 w-full overflow-hidden rounded-2xl" role="application" aria-label="Sposta il pin" />
+  return <div ref={el} className="h-56 w-full overflow-hidden rounded-2xl" role="application" aria-label={t('Sposta il pin')} />
 }
 
 // ---------- mappa del giorno ----------
@@ -519,7 +520,7 @@ function numberElement(stop: DayMapStop, h: PinHandlers): HTMLElement {
   hit.tabIndex = 0
   hit.title = `${stop.n}. ${stop.name}`
   hit.setAttribute('role', 'button')
-  hit.setAttribute('aria-label', `Tappa ${stop.n}: ${stop.name}`)
+  hit.setAttribute('aria-label', t('Tappa {n}: {name}', { n: stop.n, name: stop.name }))
   const dot = document.createElement('div')
   dot.className = 'jp-num'
   if (stop.state) hit.dataset.state = stop.state
@@ -666,5 +667,5 @@ export function DayMapView({ stops, lines, ends, center, selectedId, onSelect }:
 
   useEffect(markSelected, [selectedId])
 
-  return <div ref={el} className="h-full w-full" role="application" aria-label="Mappa della giornata" />
+  return <div ref={el} className="h-full w-full" role="application" aria-label={t('Mappa della giornata')} />
 }

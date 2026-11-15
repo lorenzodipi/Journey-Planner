@@ -1,6 +1,7 @@
 import { dateInZone, formatInZone } from './flights'
 import { tzOffsetMinutes, minutesOfDay } from './sun'
 import type { Day, DayItem, Trip, TransportMode } from '../types'
+import { LINGUA, LOCALE, t as tt } from '../i18n'
 
 // Cosa serve alla schermata "Oggi": giorno corrente nel fuso del viaggio, prossima tappa,
 // eventi logistici del giorno (voli, check-in/out, spostamenti) e ora della destinazione.
@@ -45,17 +46,17 @@ export function eventsForDay(trip: Pick<Trip, 'timezone' | 'flights' | 'stays' |
     for (const leg of f.legs) {
       const code = leg.flightNumber ? `${leg.flightNumber} · ` : ''
       if (dateInZone(leg.departAt, leg.fromTz) === ymd) {
-        out.push({ at: leg.departAt, time: formatInZone(leg.departAt, leg.fromTz), title: `Volo da ${leg.from}`, sub: `${code}${leg.from} → ${leg.to}`, kind: 'flight', ref: { type: 'flight', id: f.id }, endTime: formatInZone(leg.arriveAt, leg.toTz) })
+        out.push({ at: leg.departAt, time: formatInZone(leg.departAt, leg.fromTz), title: tt('Volo da {from}', { from: leg.from }), sub: `${code}${leg.from} → ${leg.to}`, kind: 'flight', ref: { type: 'flight', id: f.id }, endTime: formatInZone(leg.arriveAt, leg.toTz) })
       }
       if (dateInZone(leg.arriveAt, leg.toTz) === ymd) {
-        out.push({ at: leg.arriveAt, time: formatInZone(leg.arriveAt, leg.toTz), title: `Arrivo a ${leg.to}`, sub: `${code}${leg.from} → ${leg.to}`, kind: 'flight', ref: { type: 'flight', id: f.id } })
+        out.push({ at: leg.arriveAt, time: formatInZone(leg.arriveAt, leg.toTz), title: tt('Arrivo a {to}', { to: leg.to }), sub: `${code}${leg.from} → ${leg.to}`, kind: 'flight', ref: { type: 'flight', id: f.id } })
       }
     }
   }
   for (const s of trip.stays) {
     // check-in/out non hanno un orario esatto: il check-out va in testa, il check-in in coda, con le indicazioni in sottotitolo
-    if (s.checkIn === ymd) out.push({ at: `${ymd}T23:00:00.000Z`, time: '', title: `Check-in · ${s.name}`, sub: s.checkInInfo ?? s.city, kind: 'stay', ref: { type: 'stay', id: s.id } })
-    if (s.checkOut === ymd) out.push({ at: `${ymd}T00:00:00.000Z`, time: '', title: `Check-out · ${s.name}`, sub: s.checkOutInfo ?? s.city, kind: 'stay', ref: { type: 'stay', id: s.id } })
+    if (s.checkIn === ymd) out.push({ at: `${ymd}T23:00:00.000Z`, time: '', title: tt('Check-in · {name}', { name: s.name }), sub: s.checkInInfo ?? s.city, kind: 'stay', ref: { type: 'stay', id: s.id } })
+    if (s.checkOut === ymd) out.push({ at: `${ymd}T00:00:00.000Z`, time: '', title: tt('Check-out · {name}', { name: s.name }), sub: s.checkOutInfo ?? s.city, kind: 'stay', ref: { type: 'stay', id: s.id } })
   }
   for (const t of trip.transports) {
     if (t.departAt && dateInZone(t.departAt, trip.timezone) === ymd) {
@@ -63,17 +64,17 @@ export function eventsForDay(trip: Pick<Trip, 'timezone' | 'flights' | 'stays' |
         at: t.departAt,
         time: formatInZone(t.departAt, trip.timezone),
         title: `${t.from} → ${t.to}`,
-        sub: t.refCode ? `Codice ${t.refCode}` : undefined,
+        sub: t.refCode ? tt('Codice {refCode}', { refCode: t.refCode }) : undefined,
         kind: 'transport',
         ref: { type: 'transport', id: t.id },
         mode: t.mode,
         endTime: t.arriveAt ? formatInZone(t.arriveAt, trip.timezone) : undefined,
-        flag: t.bought ? { text: 'Biglietto acquistato', ok: true } : { text: 'Biglietto non acquistato', ok: false },
+        flag: t.bought ? { text: tt('Biglietto acquistato'), ok: true } : { text: tt('Biglietto non acquistato'), ok: false },
       })
     }
     // MOVE-006: un trasporto che arriva un altro giorno (notte in treno o bus) compare anche nel giorno dell'arrivo
     if (t.departAt && t.arriveAt && dateInZone(t.arriveAt, trip.timezone) === ymd && dateInZone(t.departAt, trip.timezone) !== ymd) {
-      out.push({ at: t.arriveAt, time: formatInZone(t.arriveAt, trip.timezone), title: `Arrivo a ${t.to}`, sub: `${t.from} → ${t.to}`, kind: 'transport', ref: { type: 'transport', id: t.id }, mode: t.mode })
+      out.push({ at: t.arriveAt, time: formatInZone(t.arriveAt, trip.timezone), title: tt('Arrivo a {to}', { to: t.to }), sub: `${t.from} → ${t.to}`, kind: 'transport', ref: { type: 'transport', id: t.id }, mode: t.mode })
     }
   }
   return out.sort((a, b) => a.at.localeCompare(b.at))
@@ -91,17 +92,17 @@ export function destinationClock(timeZone: string, deviceTz: string, now: Date =
 
 /** Che ora è a casa (fuso del telefono), come «HH:MM». */
 export function homeTime(deviceTz: string, now: Date = new Date()): string {
-  return new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: deviceTz }).format(now)
+  return new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: deviceTz }).format(now)
 }
 
 /** Nome del paese di casa dalla lingua del telefono («it-IT» → «Italia»); senza regione, «A casa». */
 export function homeCountry(locale: string | undefined): string {
   const region = /^[a-z]{2,3}[-_]([A-Za-z]{2})\b/.exec(locale ?? '')?.[1]?.toUpperCase()
-  if (!region) return 'A casa'
+  if (!region) return tt('A casa')
   try {
-    return new Intl.DisplayNames('it', { type: 'region' }).of(region) ?? 'A casa'
+    return new Intl.DisplayNames(LINGUA, { type: 'region' }).of(region) ?? tt('A casa')
   } catch {
-    return 'A casa'
+    return tt('A casa')
   }
 }
 

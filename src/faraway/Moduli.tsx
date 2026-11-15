@@ -7,6 +7,7 @@ import type { Trip } from '../types'
 import { Ic } from '../ui/Sprite'
 import { cx } from './cx'
 import { Sv, type SvName } from './icons'
+import { elenco, t } from '../i18n'
 
 const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']
 const primo = (name: string) => name.split(/\s+/)[0]
@@ -54,8 +55,8 @@ export function AltriDettagli({ pieni, contenuto, errore, apriSeCompilati = true
     <details className="fa-altri" open={aperta} onToggle={(e) => setAperta(e.currentTarget.open)}>
       <summary>
         <span>
-          <span className="t">Altri dettagli</span>
-          <span className="m">{pieni > 0 ? `${pieni} ${pieni === 1 ? 'compilato' : 'compilati'}` : contenuto}</span>
+          <span className="t">{t('Altri dettagli')}</span>
+          <span className="m">{pieni > 0 ? `${pieni} ${pieni === 1 ? t('compilato') : t('compilati')}` : contenuto}</span>
         </span>
         <span className="chv" aria-hidden="true">
           <Sv name="chev" size={20} />
@@ -90,7 +91,7 @@ export function Percorso({ da, a, durata, livello = 4 }: { da: Punto; a: Punto; 
         <div className="tp dur">
           <span className="rail" aria-hidden="true" />
           <span className="pill">
-            <span className="sr-only">Durata: </span>
+            <span className="sr-only">{t('Durata:')}{' '}</span>
             {durata}
           </span>
         </div>
@@ -148,7 +149,7 @@ export function Riquadri<T extends string>({ label, cols, value, options, onChan
  * «Diviso tra» a riquadri. Una persona: niente. Due: «Tutti», «Solo io» e «Solo <l'altra>». Da tre in su: «Tutti», «Solo io»
  * e «Scegli», che apre l'elenco delle persone con la spunta. La scelta non resta mai vuota.
  */
-export function PerChi({ trip, meId, value, onChange, label = 'Diviso tra', help }: { trip: Pick<Trip, 'travelers'>; meId?: string | null; value: string[]; onChange: (ids: string[]) => void; label?: string; help?: ReactNode }) {
+export function PerChi({ trip, meId, value, onChange, label = t('Diviso tra'), help }: { trip: Pick<Trip, 'travelers'>; meId?: string | null; value: string[]; onChange: (ids: string[]) => void; label?: string; help?: ReactNode }) {
   const all = trip.travelers.map((p) => p.id)
   const me = meId && all.includes(meId) ? meId : null
   const [scegli, setScegli] = useState(() => all.length >= 3 && modoPerChi(value, all, me, false) === 'pick')
@@ -156,11 +157,11 @@ export function PerChi({ trip, meId, value, onChange, label = 'Diviso tra', help
   const modo = modoPerChi(value, all, me, scegli)
   const nome = (id: string) => primo(trip.travelers.find((p) => p.id === id)?.name ?? '')
   const opzioni: Riquadro<ModoPerChi>[] = [
-    { value: 'all', label: 'Tutti', icona: 'users', sub: all.length === 2 ? `${nome(all[0])} e ${nome(all[1])}` : `${all.length} persone` },
+    { value: 'all', label: t('Tutti'), icona: 'users', sub: all.length === 2 ? elenco([nome(all[0]), nome(all[1])]) : t('{length} persone', { length: all.length }) },
   ]
-  if (me) opzioni.push({ value: 'me', label: 'Solo io', icona: 'user', sub: nome(me) })
-  if (all.length === 2) for (const id of all.filter((x) => x !== me)) opzioni.push({ value: `solo:${id}`, label: `Solo ${nome(id)}`, icona: 'user' })
-  else opzioni.push({ value: 'pick', label: 'Scegli', icona: 'users', sub: modo === 'pick' ? `${value.length} di ${all.length}` : 'Alcune persone' })
+  if (me) opzioni.push({ value: 'me', label: t('Solo io'), icona: 'user', sub: nome(me) })
+  if (all.length === 2) for (const id of all.filter((x) => x !== me)) opzioni.push({ value: `solo:${id}`, label: t('Solo {v0}', { v0: nome(id) }), icona: 'user' })
+  else opzioni.push({ value: 'pick', label: t('Scegli'), icona: 'users', sub: modo === 'pick' ? t('{length} di {length2}', { length: value.length, length2: all.length }) : t('Alcune persone') })
   const scelti = value.length > 0 ? value : all
   return (
     <Riquadri<ModoPerChi>
@@ -175,7 +176,7 @@ export function PerChi({ trip, meId, value, onChange, label = 'Diviso tra', help
       }}
     >
       {modo === 'pick' ? (
-        <div className="pk" role="group" aria-label="Persone">
+        <div className="pk" role="group" aria-label={t('Persone')}>
           {trip.travelers.map((p) => {
             const on = scelti.includes(p.id)
             const ultimo = on && scelti.length === 1
@@ -186,7 +187,7 @@ export function PerChi({ trip, meId, value, onChange, label = 'Diviso tra', help
                 </span>
                 <b>
                   {p.name}
-                  {p.id === me ? ' (io)' : ''}
+                  {p.id === me ? t(' (io)') : ''}
                 </b>
                 <span className={cx('cb', on && 'on')} aria-hidden="true">
                   <Sv name="check" size={14} className="ic" />
@@ -194,7 +195,7 @@ export function PerChi({ trip, meId, value, onChange, label = 'Diviso tra', help
               </button>
             )
           })}
-          {scelti.length === 1 ? <span className="fa-help">Serve almeno una persona.</span> : null}
+          {scelti.length === 1 ? <span className="fa-help">{t('Serve almeno una persona.')}</span> : null}
         </div>
       ) : null}
       {help}
@@ -208,13 +209,13 @@ export function IlCostoE({ value, onChange, amount, persone, currency }: { value
   const c = conseguenzaCosto(amount, persone, currency)
   return (
     <Riquadri<'per_person' | 'total'>
-      label="Il costo è"
+      label={t('Il costo è')}
       cols={2}
       value={value}
       onChange={(v) => v && onChange(v)}
       options={[
-        { value: 'per_person', label: 'A persona', icona: 'user', sub: c.perPersona || undefined },
-        { value: 'total', label: 'Totale', icona: 'users', sub: c.totale || undefined },
+        { value: 'per_person', label: t('A persona'), icona: 'user', sub: c.perPersona || undefined },
+        { value: 'total', label: t('Totale'), icona: 'users', sub: c.totale || undefined },
       ]}
     />
   )
@@ -232,13 +233,13 @@ export function Contatore({ label, hint, value, onChange, min = 1, max = 99, vuo
         {hint ? <span>{hint}</span> : null}
       </span>
       <span className="ctl">
-        <button type="button" className="fa-ib" aria-label={`${label}: uno in meno`} disabled={value === null || (!vuoto && value <= min)} hidden={value === null} onClick={() => onChange(meno)}>
+        <button type="button" className="fa-ib" aria-label={t('{label}: uno in meno', { label })} disabled={value === null || (!vuoto && value <= min)} hidden={value === null} onClick={() => onChange(meno)}>
           <Sv name="minus" size={20} />
         </button>
-        <output aria-live="polite" className={value === null ? 'vuoto' : undefined} aria-label={value === null ? `${label}: non indicato` : undefined}>
+        <output aria-live="polite" className={value === null ? 'vuoto' : undefined} aria-label={value === null ? t('{label}: non indicato', { label }) : undefined}>
           {value === null ? '—' : value}
         </output>
-        <button type="button" className="fa-ib" aria-label={`${label}: uno in più`} disabled={value !== null && value >= max} onClick={() => onChange(piu)}>
+        <button type="button" className="fa-ib" aria-label={t('{label}: uno in più', { label })} disabled={value !== null && value >= max} onClick={() => onChange(piu)}>
           <Sv name="plus" size={20} />
         </button>
       </span>
@@ -258,7 +259,7 @@ export function SegmentiFacoltativi<T extends string>({ label, value, options, o
           </button>
         ))}
       </div>
-      <span className="fa-help">{value ? 'Tocca di nuovo la scelta per toglierla.' : (help ?? 'Facoltativo.')}</span>
+      <span className="fa-help">{value ? t('Tocca di nuovo la scelta per toglierla.') : (help ?? t('Facoltativo.'))}</span>
     </div>
   )
 }

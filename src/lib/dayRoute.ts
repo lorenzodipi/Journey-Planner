@@ -6,6 +6,7 @@ import { distanza } from './formati'
 
 import type { Day, Place, Transport, TransportMode } from '../types'
 import { tipoSuMappa, type MezzoEffettivo } from './spostamenti'
+import { t as tt } from '../i18n'
 
 export interface LatLng {
   lat: number
@@ -285,24 +286,24 @@ export const formatMinutes = (seconds: number) => `${Math.max(1, Math.round(seco
 
 /** Come si fa un tratto tra due tappe: "10 min a piedi · 810 m", "serve un mezzo", ecc. `route`: percorso calcolato, `null` se non disponibile, `undefined` se in calcolo. */
 export function describeLeg(leg: Pick<Leg, 'kind' | 'straightM' | 'via'>, route: WalkRoute | null | undefined): string {
-  if (leg.kind === 'line' && leg.via) return `in viaggio: ${leg.via.fromName} → ${leg.via.toName}`
-  if (leg.kind === 'line') return `${formatDistance(leg.straightM)} in linea d'aria: serve un mezzo`
-  if (leg.kind === 'drive') return route ? `${formatMinutes(route.seconds)} in auto · ${formatDistance(route.meters)}` : route === null ? `${formatDistance(leg.straightM)} in linea d'aria in auto (percorso non disponibile)` : 'Calcolo il percorso…'
-  if (route) return `${formatMinutes(route.seconds)} a piedi · ${formatDistance(route.meters)}`
-  if (route === null) return `${formatDistance(leg.straightM)} in linea d'aria a piedi (percorso non disponibile)`
-  return 'Calcolo il percorso…'
+  if (leg.kind === 'line' && leg.via) return tt('in viaggio: {fromName} → {toName}', { fromName: leg.via.fromName, toName: leg.via.toName })
+  if (leg.kind === 'line') return tt('{v0} in linea d\'aria: serve un mezzo', { v0: formatDistance(leg.straightM) })
+  if (leg.kind === 'drive') return route ? tt('{v0} in auto · {v1}', { v0: formatMinutes(route.seconds), v1: formatDistance(route.meters) }) : route === null ? tt('{v0} in linea d\'aria in auto (percorso non disponibile)', { v0: formatDistance(leg.straightM) }) : tt('Calcolo il percorso…')
+  if (route) return tt('{v0} a piedi · {v1}', { v0: formatMinutes(route.seconds), v1: formatDistance(route.meters) })
+  if (route === null) return tt('{v0} in linea d\'aria a piedi (percorso non disponibile)', { v0: formatDistance(leg.straightM) })
+  return tt('Calcolo il percorso…')
 }
 
 const MODE_IN: Record<TransportMode, string> = {
-  train: 'In treno',
-  metro: 'In metro',
-  bus: 'In bus',
-  taxi: 'In taxi',
-  walk: 'A piedi',
-  car: 'In auto',
-  plane: 'In aereo',
-  ferry: 'In traghetto',
-  other: 'Spostamento',
+  train: tt('In treno'),
+  metro: tt('In metro'),
+  bus: tt('In bus'),
+  taxi: tt('In taxi'),
+  walk: tt('A piedi'),
+  car: tt('In auto'),
+  plane: tt('In aereo'),
+  ferry: tt('In traghetto'),
+  other: tt('Spostamento'),
 }
 
 /** Simbolo del Design System per un mezzo (bus, metro, treno, aereo, a piedi). */
@@ -317,8 +318,8 @@ export function modeSymbol(mode: TransportMode): string {
 /** Riga breve per il tratto tra due tappe, come nei mock: «A piedi · 8 min», «In bus · Kyoto → Nara». */
 export function hopSummary(leg: Pick<Leg, 'kind' | 'straightM' | 'via'>, route: WalkRoute | null | undefined): { symbol: string; text: string } {
   if (leg.kind === 'line' && leg.via) return { symbol: modeSymbol(leg.via.mode), text: `${MODE_IN[leg.via.mode]} · ${leg.via.fromName} → ${leg.via.toName}` }
-  if (leg.kind === 'line') return { symbol: 'i-tra-bus', text: `Serve un mezzo · ${formatDistance(leg.straightM)}` }
-  if (leg.kind === 'drive') return { symbol: 'i-tra-car', text: route ? `In auto · ${formatMinutes(route.seconds)}` : route === null ? `In auto · ${formatDistance(leg.straightM)}` : 'In auto · calcolo…' }
-  if (route) return { symbol: 'i-tra-walk', text: `A piedi · ${formatMinutes(route.seconds)}` }
-  return { symbol: 'i-tra-walk', text: route === null ? `A piedi · ${formatDistance(leg.straightM)}` : 'A piedi · calcolo…' }
+  if (leg.kind === 'line') return { symbol: 'i-tra-bus', text: tt('Serve un mezzo · {v0}', { v0: formatDistance(leg.straightM) }) }
+  if (leg.kind === 'drive') return { symbol: 'i-tra-car', text: route ? tt('In auto · {v0}', { v0: formatMinutes(route.seconds) }) : route === null ? tt('In auto · {v0}', { v0: formatDistance(leg.straightM) }) : tt('In auto · calcolo…') }
+  if (route) return { symbol: 'i-tra-walk', text: tt('A piedi · {v0}', { v0: formatMinutes(route.seconds) }) }
+  return { symbol: 'i-tra-walk', text: route === null ? tt('A piedi · {v0}', { v0: formatDistance(leg.straightM) }) : tt('A piedi · calcolo…') }
 }

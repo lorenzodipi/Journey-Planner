@@ -25,10 +25,11 @@ import { Riquadri } from '../../faraway/Moduli'
 import { Sv } from '../../faraway/icons'
 import { inQuanti } from './testi'
 import { CambioRiga, defaultVals, DivisioneEditor, PagantiEditor, payersFromRows, RicevuteEditor, sharesFrom, type PayRow } from './SpesaAvanzata'
+import { LOCALE, nomeCategoria, t as tt } from '../../i18n'
 
 const sym = (cur: string) => {
   try {
-    return new Intl.NumberFormat('it-IT', { style: 'currency', currency: cur, currencyDisplay: 'narrowSymbol' }).formatToParts(0).find((p) => p.type === 'currency')?.value ?? cur
+    return new Intl.NumberFormat(LOCALE, { style: 'currency', currency: cur, currencyDisplay: 'narrowSymbol' }).formatToParts(0).find((p) => p.type === 'currency')?.value ?? cur
   } catch {
     return cur
   }
@@ -37,7 +38,7 @@ const nome = (cur: string) => {
   const n = currencyName(cur)
   return n ? n.charAt(0).toUpperCase() + n.slice(1) : cur
 }
-const scrivi = (v: number, cur: string) => v.toLocaleString('it-IT', { maximumFractionDigits: decimalsOf(cur), minimumFractionDigits: 0 })
+const scrivi = (v: number, cur: string) => v.toLocaleString(LOCALE, { maximumFractionDigits: decimalsOf(cur), minimumFractionDigits: 0 })
 const leggi = (t: string) => parseAmount(t)
 const NUOVA = '__nuova__'
 /** Glifo della categoria di spesa: quello delle categorie base, altrimenti dall'icona scelta o dedotta dal nome. */
@@ -69,7 +70,7 @@ function Importo({ base, other, rate, side, text, onSide, onText, label, cambioS
             placeholder={attivo ? '0' : '—'}
             onFocus={attivo ? undefined : () => onSide(cur, convTesto)}
             onChange={(e) => onText(e.currentTarget.value)}
-            aria-label={attivo ? `${label} in ${nome(cur)}` : `Scrivi in ${nome(cur)}`}
+            aria-label={attivo ? tt('{label} in {v1}', { label, v1: nome(cur) }) : tt('Scrivi in {v0}', { v0: nome(cur) })}
           />
           <span className="u">{sym(cur)}</span>
         </div>
@@ -87,7 +88,7 @@ function Importo({ base, other, rate, side, text, onSide, onText, label, cambioS
           </span>
           {field(other)}
         </div>
-        {rate && cambioSotto ? null : <div className="rr">{rate ? `1 ${sym(base)} = ${scrivi(1 / rate, other)} ${sym(other)}` : `Manca il cambio tra ${base} e ${other}: la spesa non conta nei totali finché non lo imposti.`}</div>}
+        {rate && cambioSotto ? null : <div className="rr">{rate ? `1 ${sym(base)} = ${scrivi(1 / rate, other)} ${sym(other)}` : tt('Manca il cambio tra {base} e {other}: la spesa non conta nei totali finché non lo imposti.', { base, other })}</div>}
       </div>
     </div>
   )
@@ -170,7 +171,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
       const q = await fetchFxQuote(other, base)
       setFx({ rate: Math.round(q.rate * 1e6) / 1e6, source: q.source, at: q.at })
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Non riesco a leggere il cambio.')
+      showToast(e instanceof Error ? e.message : tt('Non riesco a leggere il cambio.'))
     } finally {
       setFxBusy(false)
     }
@@ -194,14 +195,14 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     const err: typeof errors = {}
-    if (!label.trim()) err.label = 'Scrivi il nome della spesa.'
-    if (amount === null || !(amount > 0)) err.amount = "L'importo non è chiaro: scrivi per esempio 12,50."
+    if (!label.trim()) err.label = tt('Scrivi il nome della spesa.')
+    if (amount === null || !(amount > 0)) err.amount = tt('L\'importo non è chiaro: scrivi per esempio 12,50.')
     const payers = payRows ? payersFromRows(payRows) : []
     if (payRows) {
-      if (payRows.some((r) => !r.id)) err.paidBy = 'Scegli chi è il pagante che hai aggiunto, oppure toglilo.'
+      if (payRows.some((r) => !r.id)) err.paidBy = tt('Scegli chi è il pagante che hai aggiunto, oppure toglilo.')
       else if (amount !== null && !checkPayers(amount, payers, side).ok) err.paidBy = checkPayers(amount, payers, side).message
-    } else if (!paidBy) err.paidBy = 'Manca chi ha pagato. Scegli una persona.'
-    if (who.length === 0) err.who = 'Scegli almeno una persona.'
+    } else if (!paidBy) err.paidBy = tt('Manca chi ha pagato. Scegli una persona.')
+    if (who.length === 0) err.who = tt('Scegli almeno una persona.')
     else if (amount !== null && !checkSplit(mode, amount, sharesFrom(mode, who, vals), side).ok) err.who = checkSplit(mode, amount, sharesFrom(mode, who, vals), side).message
     setErrors(err)
     if (Object.keys(err).length > 0) return
@@ -217,7 +218,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
       currency: side,
       // il cambio resta scritto sulla spesa: i totali di ieri non cambiano se domani il cambio si muove
       fxRate: side !== base && useRate ? useRate : null,
-      ...(side !== base && useRate ? { fxSource: fx.rate ? fx.source : 'Cambio del viaggio', fxAt: fx.rate ? fx.at : undefined, fxManual: !!fx.manual, ...(fx.manual ? { fxSetBy: fx.setBy ?? me?.userId } : {}) } : {}),
+      ...(side !== base && useRate ? { fxSource: fx.rate ? fx.source : tt('Cambio del viaggio'), fxAt: fx.rate ? fx.at : undefined, fxManual: !!fx.manual, ...(fx.manual ? { fxSetBy: fx.setBy ?? me?.userId } : {}) } : {}),
       paidBy: payRows ? (payers[0]?.travelerId ?? paidBy) : paidBy,
       ...(payRows ? { payers } : {}),
       splitMode: mode,
@@ -231,11 +232,11 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
     const message = expense ? await t.updateExpense(trip.id, expense, input) : await t.createExpense(trip.id, input)
     setBusy(false)
     if (message) return setErrors({ form: message })
-    if (expense) showToast('Spesa aggiornata')
+    if (expense) showToast(tt('Spesa aggiornata'))
     else {
       const offline = !navigator.onLine || t.stale
       const quanti = people.length > 1 ? ` ${inQuanti(people.length)}` : ''
-      showToast(offline ? 'Spesa registrata. La invio quando c’è rete.' : `Spesa registrata: ${formatMoney(amount as number, side)}${quanti}.`, { label: 'Annulla', run: () => void t.setExpenseDeleted(id, true) })
+      showToast(offline ? tt('Spesa registrata. La invio quando c’è rete.') : tt('Spesa registrata: {v0}{quanti}.', { v0: formatMoney(amount as number, side), quanti }), { label: tt('Annulla'), run: () => void t.setExpenseDeleted(id, true) })
     }
     onClose()
   }
@@ -244,20 +245,20 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
     <Foglio
       open={open}
       full
-      title={expense ? 'Modifica spesa' : 'Nuova spesa'}
+      title={expense ? tt('Modifica spesa') : tt('Nuova spesa')}
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="spesa-form" isLoading={busy}>
-          {expense ? 'Salva le modifiche' : 'Salva la spesa'}
+          {expense ? tt('Salva le modifiche') : tt('Salva la spesa')}
         </Pulsante>
       }
     >
       <form id="spesa-form" className="frm" onSubmit={submit} noValidate>
-        <Campo label="Nome della spesa" value={label} onChange={setLabel} placeholder="es. Cena al ristorante" maxLength={120} error={errors.label} />
+        <Campo label={tt('Nome della spesa')} value={label} onChange={setLabel} placeholder={tt('es. Cena al ristorante')} maxLength={120} error={errors.label} />
         <div className="fa-fld">
-          <span>Importo</span>
+          <span>{tt('Importo')}</span>
           {others.length > 1 ? (
-            <div className="fa-chips wrap" role="group" aria-label="Valuta">
+            <div className="fa-chips wrap" role="group" aria-label={tt('Valuta')}>
               {others.map((c) => (
                 <Chip key={c} on={other === c} onPress={() => (setOther(c), side !== base && setSide(c))}>
                   {c}
@@ -265,7 +266,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
               ))}
             </div>
           ) : null}
-          <Importo base={base} other={other} rate={rate} side={side} text={text} label="Importo" cambioSotto={!!other && side !== base} onText={setText} onSide={(c, v) => (setSide(c), setText(v), mode === 'fixed' && setVals(defaultVals('fixed', who, leggi(v))))} />
+          <Importo base={base} other={other} rate={rate} side={side} text={text} label={tt('Importo')} cambioSotto={!!other && side !== base} onText={setText} onSide={(c, v) => (setSide(c), setText(v), mode === 'fixed' && setVals(defaultVals('fixed', who, leggi(v))))} />
           {errors.amount ? (
             <span className="fa-help bad" role="alert">
               <Sv name="err" size={16} />
@@ -274,7 +275,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
           ) : null}
         </div>
         {other && side !== base && rate ? (
-          <CambioRiga base={base} other={other} rate={rate} source={fx.rate ? fx.source : (expense?.fxRate ? expense.fxSource : 'Cambio del viaggio')} at={fx.at} manual={fx.manual} setBy={trip.travelers.find((p) => p.userId === fx.setBy)?.name} busy={fxBusy} onRefresh={() => void refreshFx()} onManual={(r) => setFx({ rate: r, source: 'A mano', at: new Date().toISOString(), manual: true, setBy: me?.userId })} />
+          <CambioRiga base={base} other={other} rate={rate} source={fx.rate ? fx.source : (expense?.fxRate ? expense.fxSource : tt('Cambio del viaggio'))} at={fx.at} manual={fx.manual} setBy={trip.travelers.find((p) => p.userId === fx.setBy)?.name} busy={fxBusy} onRefresh={() => void refreshFx()} onManual={(r) => setFx({ rate: r, source: 'A mano', at: new Date().toISOString(), manual: true, setBy: me?.userId })} />
         ) : null}
         <PagantiEditor trip={trip} total={amount} currency={side} rows={payRows} onRows={setPayRows} single={paidBy} onSingle={setPaidBy} error={errors.paidBy} />
         {trip.travelers.length > 1 ? (
@@ -289,7 +290,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
             onVals={setVals}
             total={amount}
             currency={side}
-            hint={mode === 'equal' && each !== null && people.length > 0 ? (people.length === 1 ? `Solo ${people[0] === me?.id ? 'tua' : `di ${trip.travelers.find((p) => p.id === people[0])?.name.split(/\s+/)[0]}`}: ${formatMoney(each, base)}` : `Diviso ${inQuanti(people.length)}: ${formatMoney(each, base)} a testa`) : undefined}
+            hint={mode === 'equal' && each !== null && people.length > 0 ? (people.length === 1 ? tt('Solo {v0}: {v1}', { v0: people[0] === me?.id ? tt('tua') : tt('di {v0}', { v0: trip.travelers.find((p) => p.id === people[0])?.name.split(/\s+/)[0] }), v1: formatMoney(each, base) }) : tt('Diviso {v0}: {v1} a testa', { v0: inQuanti(people.length), v1: formatMoney(each, base) })) : undefined}
           />
         ) : null}
         {errors.who && trip.travelers.length > 1 ? (
@@ -299,7 +300,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
           </span>
         ) : null}
         <Riquadri<string>
-          label="Categoria"
+          label={tt('Categoria')}
           cols={4}
           value={newCat ? NUOVA : (opzioniCat.find((c) => catKey(c) === catKey(category)) ?? '')}
           onChange={(c) => {
@@ -308,9 +309,9 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
             setNewCat(false)
             setCategory(c)
           }}
-          options={[...opzioniCat.map((c) => ({ value: c, label: c, glifo: glifoSpesa(c) })), { value: NUOVA, label: 'Nuova…', glifo: 'g-plus' }]}
+          options={[...opzioniCat.map((c) => ({ value: c, label: nomeCategoria(c), glifo: glifoSpesa(c) })), { value: NUOVA, label: tt('Nuova…'), glifo: 'g-plus' }]}
         >
-          {newCat ? <Campo label="Nuova categoria" hideLabel value={category} onChange={setCategory} placeholder="es. Souvenir" maxLength={40} autoFocus /> : null}
+          {newCat ? <Campo label={tt('Nuova categoria')} hideLabel value={category} onChange={setCategory} placeholder={tt('es. Souvenir')} maxLength={40} autoFocus /> : null}
           {newCat ? <SceltaIcona value={icona ?? iconaDalNome(category)} onChange={setIcona} /> : null}
         </Riquadri>
         <RicevuteEditor trip={trip} expenseId={spesaId} files={(expense?.files ?? []).filter((f) => !gone.includes(f.id))} added={added} onAdded={setAdded} onRemove={(f) => void removeFile(f)} />

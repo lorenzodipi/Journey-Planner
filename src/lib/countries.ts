@@ -1,4 +1,5 @@
 import type { ThemeName } from '../types'
+import { LINGUA } from '../i18n'
 
 // Tutti i paesi (ISO 3166-1, più il Kosovo con il codice XK) con valuta, fuso principale e capitale. Servono a proporre i valori di un nuovo viaggio
 // (fuso, valuta locale, centro mappa) e a scegliere il paese di origine: restano tutti modificabili.
@@ -292,10 +293,10 @@ const ZONES: Record<string, string[]> = {
   DK: ['Europe/Copenhagen'],
 }
 
-const collator = new Intl.Collator('it')
+const collator = new Intl.Collator(LINGUA)
 
 function regionName(code: string): string {
-  for (const lang of ['it', 'en']) {
+  for (const lang of [LINGUA, 'en']) {
     try {
       const n = new Intl.DisplayNames(lang, { type: 'region' }).of(code)
       if (n && n !== code) return n
@@ -316,13 +317,22 @@ export const COUNTRIES: Country[] = RAW.trim()
 
 const byCode = new Map(COUNTRIES.map((c) => [c.code, c]))
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase()
-const byName = new Map(COUNTRIES.map((c) => [norm(c.name), c]))
+/** Nome di un paese in una lingua precisa (per riconoscere i nomi salvati in italiano anche con l'app in inglese). */
+function nomeIn(code: string, lang: string): string | undefined {
+  try {
+    return new Intl.DisplayNames(lang, { type: 'region' }).of(code)
+  } catch {
+    return undefined
+  }
+}
+const byName = new Map<string, Country>()
+for (const c of COUNTRIES) for (const n of [nomeIn(c.code, 'it'), nomeIn(c.code, 'en'), c.name]) if (n && !byName.has(norm(n))) byName.set(norm(n), c)
 
 export function countryByCode(code: string | undefined | null): Country | undefined {
   return code ? byCode.get(code.toUpperCase()) : undefined
 }
 
-/** Il paese con questo nome (in italiano, senza badare a maiuscole e accenti); undefined per un testo libero. */
+/** Il paese con questo nome (in italiano, in inglese o nella lingua dell'app, senza badare a maiuscole e accenti); undefined per un testo libero. */
 export function countryByName(name: string | undefined | null): Country | undefined {
   return name ? byName.get(norm(name)) : undefined
 }

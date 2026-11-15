@@ -2,6 +2,7 @@ import type { Trip } from '../types'
 import { client } from './db'
 import { cifra, decifra, dimenticaChiave } from './cifra'
 import { isDocOffline } from './documentiOffline'
+import { t as tt } from '../i18n'
 
 // File delle prenotazioni (biglietti, conferme) nel bucket privato "bookings" di Supabase Storage.
 // Percorso: <id viaggio>/<id casuale>-<nome>. L'accesso passa dalle policy dello Storage (membri del viaggio).
@@ -21,8 +22,8 @@ export function safeFileName(name: string): string {
 }
 
 export function checkFile(file: File): string | null {
-  if (file.size > MAX_FILE_BYTES) return 'Il file supera 10 MB: usa un PDF o un\'immagine più leggeri.'
-  if (!/^(application\/pdf|image\/)/.test(file.type)) return 'Sono ammessi solo PDF e immagini.'
+  if (file.size > MAX_FILE_BYTES) return tt('Il file supera 10 MB: usa un PDF o un\'immagine più leggeri.')
+  if (!/^(application\/pdf|image\/)/.test(file.type)) return tt('Sono ammessi solo PDF e immagini.')
   return null
 }
 

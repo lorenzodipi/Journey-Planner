@@ -14,6 +14,7 @@ import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { Riga } from '../../faraway/Righe'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
+import { nomeCategoria, t as tt } from '../../i18n'
 
 export function BudgetPage() {
   const trip = useTrip()
@@ -37,12 +38,12 @@ export function BudgetPage() {
     if (m) return setError(m)
     setError(null)
     setEditing(false)
-    showToast(value === null ? 'Budget tolto' : `Budget: ${formatMoney(value, cur)}`)
+    showToast(value === null ? tt('Budget tolto') : tt('Budget: {v0}', { v0: formatMoney(value, cur) }))
   }
   function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     const n = parseAmount(text)
-    if (n === null || !(n > 0)) return setError('Il budget non è chiaro: scrivi un importo, per esempio 5.000.')
+    if (n === null || !(n > 0)) return setError(tt('Il budget non è chiaro: scrivi un importo, per esempio 5.000.'))
     void save(n)
   }
 
@@ -52,13 +53,13 @@ export function BudgetPage() {
 
   const form = (
     <form onSubmit={submit} noValidate style={{ display: 'grid', gap: 16 }}>
-      <Campo label="Budget del viaggio" icon="bag" inputMode="decimal" value={text} onChange={setText} placeholder={`Per esempio ${formatMoney(5000, cur)}`} error={error} autoFocus={editing} />
+      <Campo label={tt('Budget del viaggio')} icon="bag" inputMode="decimal" value={text} onChange={setText} placeholder={tt('Per esempio {v0}', { v0: formatMoney(5000, cur) })} error={error} autoFocus={editing} />
       <Pulsante type="submit" isLoading={busy}>
-        {limit ? 'Salva il budget' : 'Imposta il budget'}
+        {limit ? tt('Salva il budget') : tt('Imposta il budget')}
       </Pulsante>
       {editing ? (
         <Pulsante color="secondary" onPress={() => (setEditing(false), setError(null))}>
-          Annulla
+          {tt('Annulla')}
         </Pulsante>
       ) : null}
     </form>
@@ -66,17 +67,17 @@ export function BudgetPage() {
 
   return (
     <Schermata
-      bar={<BarraIndietro title="Budget" back="/spese" right={<PulsanteIcona icon="dots" label="Altre azioni" onPress={() => setMenu(true)} />} />}
+      bar={<BarraIndietro title={tt('Budget')} back="/spese" right={<PulsanteIcona icon="dots" label={tt('Altre azioni')} onPress={() => setMenu(true)} />} />}
       overlay={
         <>
-          <Foglio open={menu} title="Budget" onClose={() => setMenu(false)} plain>
+          <Foglio open={menu} title={tt('Budget')} onClose={() => setMenu(false)} plain>
             <div className="fa-list">
-              {limit ? <Riga icon={<Sv name="trash" size={22} />} title="Togli il budget" sub="La pagina Spese mostra solo quanto hai speso" onPress={() => (setMenu(false), void save(null))} /> : null}
-              <Riga icon={<Sv name="globe" size={22} />} title="Cambio delle valute" sub="Quanto vale la valuta del paese in quella di casa" onPress={() => (setMenu(false), setFx(true))} />
+              {limit ? <Riga icon={<Sv name="trash" size={22} />} title={tt('Togli il budget')} sub={tt('La pagina Spese mostra solo quanto hai speso')} onPress={() => (setMenu(false), void save(null))} /> : null}
+              <Riga icon={<Sv name="globe" size={22} />} title={tt('Cambio delle valute')} sub={tt('Quanto vale la valuta del paese in quella di casa')} onPress={() => (setMenu(false), setFx(true))} />
             </div>
           </Foglio>
           {fx ? (
-            <Foglio open title="Cambio delle valute" onClose={() => setFx(false)}>
+            <Foglio open title={tt('Cambio delle valute')} onClose={() => setFx(false)}>
               <FxForm
                   trip={trip}
                   onSubmit={(rate, extra) => (Object.keys(extra).length === 0 && !trip.fxRates ? t.setFxRate(trip.id, rate) : t.setFxRates(trip.id, rate, extra))}
@@ -89,9 +90,9 @@ export function BudgetPage() {
     >
       {!limit ? (
         <section className="fa-card xl pad" style={{ display: 'grid', gap: 16 }}>
-          <h2 className="fa-h2">Nessun budget impostato</h2>
+          <h2 className="fa-h2">{tt('Nessun budget impostato')}</h2>
           <p className="fa-lead" style={{ color: 'var(--ink-muted)' }}>
-            Con un budget vedi quanto manca e ricevi un avviso prima di superarlo.
+            {tt('Con un budget vedi quanto manca e ricevi un avviso prima di superarlo.')}
           </p>
           {form}
         </section>
@@ -101,7 +102,7 @@ export function BudgetPage() {
             <div className="fa-banner cor" role="status">
               <Sv name="err" size={20} />
               <span>
-                <b>Budget superato.</b> Hai speso {formatMoney(over, cur)} in più del previsto.
+                <b>{tt('Budget superato.')}</b>{' '}{tt('Hai speso {v0} in più del previsto.', { v0: formatMoney(over, cur) })}
               </span>
             </div>
           ) : null}
@@ -110,24 +111,24 @@ export function BudgetPage() {
               form
             ) : (
               <>
-                <span className="fa-m">Budget del viaggio</span>
+                <span className="fa-m">{tt('Budget del viaggio')}</span>
                 <span style={{ font: '600 40px/44px var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>{formatMoney(limit, cur)}</span>
-                <div className="fa-pbar" role="progressbar" aria-label={over > 0 ? 'Budget superato' : `Budget usato, ${pct}%`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, pct)}>
+                <div className="fa-pbar" role="progressbar" aria-label={over > 0 ? tt('Budget superato') : tt('Budget usato, {pct}%', { pct })} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, pct)}>
                   <i style={{ width: `${Math.min(100, pct)}%`, background: over > 0 ? 'var(--danger)' : undefined }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                  <span className="fa-m">Speso {formatMoney(r.speso, cur)}</span>
+                  <span className="fa-m">{tt('Speso {v0}', { v0: formatMoney(r.speso, cur) })}</span>
                   {over > 0 ? (
                     <span className="fa-st ba">
                       <Sv name="err" size={16} />
-                      Superato di {formatMoney(over, cur)}
+                      {tt('Superato di {v0}', { v0: formatMoney(over, cur) })}
                     </span>
                   ) : (
                     <span className="fa-m">{pct}%</span>
                   )}
                 </div>
                 <Pulsante color="secondary" iconLeading="pencil" onPress={() => setEditing(true)}>
-                  Cambia il budget
+                  {tt('Cambia il budget')}
                 </Pulsante>
               </>
             )}
@@ -135,7 +136,7 @@ export function BudgetPage() {
           {cats.length > 0 ? (
             <>
               <div className="fa-sech">
-                <h2 className="fa-h3">Per categoria</h2>
+                <h2 className="fa-h3">{tt('Per categoria')}</h2>
               </div>
               <section className="fa-card xl" style={{ overflow: 'hidden', padding: '8px 0' }}>
                 {cats.map((c, i) => {
@@ -149,23 +150,23 @@ export function BudgetPage() {
                         <Ic name={iconaSezione(c.label)} size={44} />
                         <div style={{ display: 'grid', gap: 8, minWidth: 0 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                            <span className="fa-b">{c.label}</span>
+                            <span className="fa-b">{nomeCategoria(c.label)}</span>
                             <span className="fa-amt">{formatMoney(c.spent, cur)}</span>
                           </div>
-                          <div className="fa-pbar" role="progressbar" aria-label={`${c.label}, ${Math.round(ratio * 100)}%`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(ratio * 100))}>
+                          <div className="fa-pbar" role="progressbar" aria-label={`${nomeCategoria(c.label)}, ${Math.round(ratio * 100)}%`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(ratio * 100))}>
                             <i style={{ width: `${Math.min(100, Math.round(ratio * 100))}%`, background: color }} />
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                            <span className="fa-c">{c.planned > 0 ? `Previsto ${formatMoney(c.planned, cur)}` : 'Nessun previsto'}</span>
+                            <span className="fa-c">{c.planned > 0 ? tt('Previsto {v0}', { v0: formatMoney(c.planned, cur) }) : tt('Nessun previsto')}</span>
                             {stato === 'paid' ? (
                               <span className="fa-st ok">
                                 <Sv name="check" size={16} />
-                                Pagati
+                                {tt('Pagati')}
                               </span>
                             ) : stato === 'over' ? (
                               <span className="fa-st ba">
                                 <Sv name="err" size={16} />
-                                Oltre il limite
+                                {tt('Oltre il limite')}
                               </span>
                             ) : null}
                           </div>
@@ -176,7 +177,7 @@ export function BudgetPage() {
                 })}
               </section>
               <p className="fa-m" style={{ textAlign: 'center' }}>
-                Il previsto di ogni categoria si cambia toccandola nella ricevuta della pagina Spese.
+                {tt('Il previsto di ogni categoria si cambia toccandola nella ricevuta della pagina Spese.')}
               </p>
             </>
           ) : null}

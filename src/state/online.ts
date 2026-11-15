@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { loadSnapshot } from '../lib/cache'
 import { ora } from '../lib/formati'
+import { LOCALE } from '../i18n'
 
 /** Connessione del dispositivo (per i banner «Sei offline»). */
 export function useOnline(): boolean {
@@ -22,5 +23,5 @@ export function useOnline(): boolean {
 export function savedAtText(): string | null {
   const s = loadSnapshot()
   if (!s?.savedAt) return null
-  return ora(new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(s.savedAt)))
+  return ora(new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(s.savedAt)))
 }

@@ -1,3 +1,4 @@
+import { LOCALE } from '../i18n'
 // Voli con più tratte e scali. Gli orari sono istanti ISO 8601 (con offset o Z),
 // quindi durate e scali si calcolano correttamente anche tra fusi diversi.
 // Per mostrare un orario nel fuso dell'aeroporto si usa `formatInZone`.
@@ -40,7 +41,7 @@ export function formatDuration(minutes: number): string {
 
 /** Orario "HH:MM" di un istante nel fuso IANA indicato (es. "Asia/Tokyo"). */
 export function formatInZone(iso: string, timeZone: string): string {
-  return new Intl.DateTimeFormat('it-IT', {
+  return new Intl.DateTimeFormat(LOCALE, {
     timeZone,
     hour: '2-digit',
     minute: '2-digit',
@@ -68,5 +69,5 @@ export function dayOffset(leg: Leg, fromTz: string, toTz: string): number {
 
 /** "ven 21 nov" di un istante nel fuso indicato. */
 export function formatDateInZone(iso: string, timeZone: string): string {
-  return new Intl.DateTimeFormat('it-IT', { timeZone, weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(iso))
+  return new Intl.DateTimeFormat(LOCALE, { timeZone, weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(iso))
 }

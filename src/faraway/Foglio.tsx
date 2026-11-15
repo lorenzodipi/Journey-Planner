@@ -9,6 +9,7 @@ import { cx } from './cx'
 import { Sv } from './icons'
 import { useVaiAllErrore } from './useVaiAllErrore'
 import { useBloccaSotto } from './bloccaSotto'
+import { t } from '../i18n'
 
 interface FoglioProps {
   open: boolean
@@ -106,13 +107,13 @@ export function Foglio({ open, title, onClose, children, footer, full, plain, he
           <div className="hd" {...handle}>
             {headStart}
             <h2 className="st">{title}</h2>
-            <button type="button" className="fa-ib" style={{ background: 'none' }} aria-label="Chiudi" onClick={onClose}>
+            <button type="button" className="fa-ib" style={{ background: 'none' }} aria-label={t('Chiudi')} onClick={onClose}>
               <Sv name="close" />
             </button>
           </div>
         ) : (
           <div className="hd" {...handle}>
-            <button type="button" className="fa-ib" style={{ background: 'none' }} aria-label="Chiudi" onClick={onClose}>
+            <button type="button" className="fa-ib" style={{ background: 'none' }} aria-label={t('Chiudi')} onClick={onClose}>
               <Sv name="close" />
             </button>
             <h2 className="st">{title}</h2>

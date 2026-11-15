@@ -1,4 +1,5 @@
 import { round2 } from './money'
+import { LOCALE } from '../i18n'
 
 // Cambio mostrato in modo "umano": 1 € = N valuta locale.
 // Nel viaggio il tasso è salvato al contrario: unità di valuta base per 1 unità di valuta locale (es. 0,0056 € per 1 ¥).
@@ -11,7 +12,7 @@ export function localPerBase(rate: number): number {
 /** Cifre decimali usate da una valuta (yen: 0, euro: 2). */
 export function decimalsOf(currency: string): number {
   try {
-    return new Intl.NumberFormat('it-IT', { style: 'currency', currency }).resolvedOptions().maximumFractionDigits ?? 2
+    return new Intl.NumberFormat(LOCALE, { style: 'currency', currency }).resolvedOptions().maximumFractionDigits ?? 2
   } catch {
     return 2
   }
@@ -40,7 +41,7 @@ export function examples(rate: number, localCurrency: string, amounts: number[] 
 /** Numero con decimali fissi, formato italiano (178,57). Per il "1 € = …" serve sempre qualche decimale. */
 export function formatRateNumber(n: number): string {
   const digits = n < 1 ? 4 : 2
-  return new Intl.NumberFormat('it-IT', { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n)
+  return new Intl.NumberFormat(LOCALE, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n)
 }
 
 /** Testo per un campo: senza zeri inutili, virgola decimale, nessun separatore delle migliaia. */

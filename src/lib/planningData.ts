@@ -1,5 +1,6 @@
 import type { Attivita, Booking, BookingLink, BookingStatus, BookingType, TimeKind, ChecklistItem, ChecklistKind, DocKind, Documento, Scope, TicketCode, TicketKind } from '../types'
 import { zonedToInstant } from './zoned'
+import { LINGUA } from '../i18n'
 
 // Checklist e prenotazioni: righe del database <-> tipi dell'app, e colonne da salvare.
 
@@ -161,7 +162,7 @@ export function mapBookings(rows: BookingRow[], tripId: string): Booking[] {
       participants: r.participants?.length ? r.participants : undefined,
       timeKind: r.time_kind ?? undefined,
     }))
-    .sort((a, b) => (a.validFrom ?? '9999').localeCompare(b.validFrom ?? '9999') || a.title.localeCompare(b.title, 'it'))
+    .sort((a, b) => (a.validFrom ?? '9999').localeCompare(b.validFrom ?? '9999') || a.title.localeCompare(b.title, LINGUA))
 }
 
 export interface ActivityRow {

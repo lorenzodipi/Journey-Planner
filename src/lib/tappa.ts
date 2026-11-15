@@ -4,6 +4,7 @@ import { distanceM, transportBetween, type TransportLine } from './dayRoute'
 import { itemDuration } from './duration'
 import type { DayItem, ItemStatus, Place } from '../types'
 import { comeCiSiMuove, durata, impostazioniViaggio, spostamento, type Impostazioni, type Spostamento } from './spostamenti'
+import { LOCALE, t } from '../i18n'
 
 export interface TappaStato {
   value: ItemStatus
@@ -17,12 +18,12 @@ export interface TappaStato {
 
 /** Registro degli stati: aggiungerne uno è una riga (compare nel menu, che scorre dopo sei voci). */
 export const TAPPA_STATI: TappaStato[] = [
-  { value: 'todo', label: 'Da fare', hint: 'Non ancora iniziata', cls: 's-todo', icon: 'g-clock' },
-  { value: 'done', label: 'Fatta', hint: 'Completata', cls: 's-done', icon: 'g-check' },
-  { value: 'skipped', label: 'Saltata', hint: 'Non la farete', cls: 's-skip', icon: 'g-minus' },
-  { value: 'late', label: 'In ritardo', hint: 'Slitta rispetto al programma', cls: 's-late', icon: 'g-clock' },
-  { value: 'postponed', label: 'Rimandata', hint: 'Spostata a un altro giorno', cls: 's-moved', icon: 'g-pencil' },
-  { value: 'cancelled', label: 'Annullata', hint: 'Il luogo è chiuso o la prenotazione è saltata', cls: 's-cancel', icon: 'g-close' },
+  { value: 'todo', label: t('Da fare'), hint: t('Non ancora iniziata'), cls: 's-todo', icon: 'g-clock' },
+  { value: 'done', label: t('Fatta'), hint: t('Completata'), cls: 's-done', icon: 'g-check' },
+  { value: 'skipped', label: t('Saltata'), hint: t('Non la farete'), cls: 's-skip', icon: 'g-minus' },
+  { value: 'late', label: t('In ritardo'), hint: t('Slitta rispetto al programma'), cls: 's-late', icon: 'g-clock' },
+  { value: 'postponed', label: t('Rimandata'), hint: t('Spostata a un altro giorno'), cls: 's-moved', icon: 'g-pencil' },
+  { value: 'cancelled', label: t('Annullata'), hint: t('Il luogo è chiuso o la prenotazione è saltata'), cls: 's-cancel', icon: 'g-close' },
 ]
 
 export const statoOf = (s: ItemStatus | undefined): TappaStato => TAPPA_STATI.find((x) => x.value === (s ?? 'todo')) ?? TAPPA_STATI[0]
@@ -87,9 +88,9 @@ export function riepilogo(items: DayItem[], ctx: { isToday: boolean; nowMin: num
   const closed = items.filter(isClosed).length
   const skipped = items.filter((i) => statusOf(i) === 'skipped').length
   const cancelled = items.filter((i) => statusOf(i) === 'cancelled').length
-  const parts = [`${closed} di ${total} ${total === 1 ? 'tappa chiusa' : 'tappe chiuse'}`]
-  if (skipped) parts.push(`${skipped} ${skipped === 1 ? 'saltata' : 'saltate'}`)
-  if (cancelled) parts.push(`${cancelled} ${cancelled === 1 ? 'annullata' : 'annullate'}`)
+  const parts = [t('{closed} di {total} {v2}', { closed, total, v2: total === 1 ? t('tappa chiusa') : t('tappe chiuse') })]
+  if (skipped) parts.push(`${skipped} ${skipped === 1 ? t('saltata') : t('saltate')}`)
+  if (cancelled) parts.push(`${cancelled} ${cancelled === 1 ? t('annullata') : t('annullate')}`)
   const upcoming = items.filter((i) => !isClosed(i) && toMin(i.time) !== null && (!ctx.isToday || (toMin(i.time) as number) > ctx.nowMin))
   const next = upcoming.sort((a, b) => (toMin(a.time) as number) - (toMin(b.time) as number))[0]
   return { line: parts.join(' · '), next: next?.time ?? null, closed, total }
@@ -113,13 +114,13 @@ export function riepilogoPercorso(stops: number, legs: Spostamento[]): { title: 
   const km = legs.reduce((s, l) => s + l.meters, 0) / 1000
   const mins = legs.reduce((s, l) => s + l.minutes, 0)
   const how = comeCiSiMuove(legs.map((l) => l.mode))
-  const kmText = km.toLocaleString('it-IT', { maximumFractionDigits: 1, minimumFractionDigits: km < 10 ? 1 : 0 })
-  return { title: `${stops} ${stops === 1 ? 'tappa' : 'tappe'}${legs.length ? ` · ${kmText} km` : ''}`, sub: legs.length ? `${durata(mins)} ${how}`.trim() : '' }
+  const kmText = km.toLocaleString(LOCALE, { maximumFractionDigits: 1, minimumFractionDigits: km < 10 ? 1 : 0 })
+  return { title: `${stops} ${stops === 1 ? t('tappa') : t('tappe')}${legs.length ? ` · ${kmText} km` : ''}`, sub: legs.length ? `${durata(mins)} ${how}`.trim() : '' }
 }
 
 // ---------------------------------------------------------------- testi della card aperta
 
-const clock = (iso: string, timeZone: string) => new Intl.DateTimeFormat('it-IT', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(new Date(iso))
+const clock = (iso: string, timeZone: string) => new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(new Date(iso))
 
 /** Prima riga della card aperta (orario) e seconda riga (quando / come è andata). */
 export function rigaOrario(item: DayItem, place: Pick<Place, 'visitMinutes'> | undefined, ctx: { isToday: boolean; nowMin: number; timeZone: string }): { main: string; sub: string | null } | null {
@@ -135,14 +136,14 @@ export function rigaOrario(item: DayItem, place: Pick<Place, 'visitMinutes'> | u
     if (s !== null && planned) {
       const actual = doneMin - s
       const diff = actual - planned
-      sub = Math.abs(diff) <= 5 ? `${durata(planned)}, come previsto` : `${durata(Math.abs(diff))} ${diff > 0 ? 'più' : 'meno'} del previsto`
+      sub = Math.abs(diff) <= 5 ? t('{v0}, come previsto', { v0: durata(planned) }) : t('{v0} {v1} del previsto', { v0: durata(Math.abs(diff)), v1: diff > 0 ? t('più') : t('meno') })
     }
-    return { main: `Fatta alle ${at}`, sub }
+    return { main: t('Fatta alle {at}', { at }), sub }
   }
   if ((st === 'skipped' || st === 'cancelled') && item.statusChangedAt) {
-    return { main: s !== null ? `Era previsto alle ${hhmm(s)}` : statoOf(st).label, sub: `${statoOf(st).label} alle ${clock(item.statusChangedAt, ctx.timeZone)}` }
+    return { main: s !== null ? t('Era previsto alle {v0}', { v0: hhmm(s) }) : statoOf(st).label, sub: t('{label} alle {v1}', { label: statoOf(st).label, v1: clock(item.statusChangedAt, ctx.timeZone) }) }
   }
   if (!range) return null
-  if (ctx.isToday && s !== null && s > ctx.nowMin) return { main: range, sub: `Tra ${durata(s - ctx.nowMin)}` }
+  if (ctx.isToday && s !== null && s > ctx.nowMin) return { main: range, sub: t('Tra {v0}', { v0: durata(s - ctx.nowMin) }) }
   return { main: range, sub: null }
 }

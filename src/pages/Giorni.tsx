@@ -21,11 +21,12 @@ import { Sv } from '../faraway/icons'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
 import { nottiScoperte } from '../lib/stays'
 import { Vuoto } from '../faraway/Stati'
+import { LOCALE, t } from '../i18n'
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).replace('.', '')
-const wk = new Intl.DateTimeFormat('it-IT', { weekday: 'short' })
-const mo = new Intl.DateTimeFormat('it-IT', { month: 'short' })
-const dm = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short' })
+const wk = new Intl.DateTimeFormat(LOCALE, { weekday: 'short' })
+const mo = new Intl.DateTimeFormat(LOCALE, { month: 'short' })
+const dm = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short' })
 
 function hourIn(timeZone: string): number {
   return Number(new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hourCycle: 'h23', timeZone }).format(new Date()))
@@ -36,9 +37,9 @@ function Calendarietto({ cell, onOpen, scoperta, scelto }: { cell: DayCell; onOp
   const w = cap(wk.format(d))
   const m = cap(mo.format(d))
   return (
-    <button type="button" className={cx('cl', cell.state !== 'future' && cell.state, scelto && 'sel')} aria-current={scelto ? 'true' : undefined} data-giorno={cell.day.id} aria-label={`${w} ${d.getDate()} ${m}, ${cell.label}, ${cell.status}${scoperta ? ', notte senza alloggio' : ''}`} onClick={onOpen}>
+    <button type="button" className={cx('cl', cell.state !== 'future' && cell.state, scelto && 'sel')} aria-current={scelto ? 'true' : undefined} data-giorno={cell.day.id} aria-label={`${w} ${d.getDate()} ${m}, ${cell.label}, ${cell.status}${scoperta ? t(', notte senza alloggio') : ''}`} onClick={onOpen}>
       <span className="mo">{m}</span>
-      {scoperta ? <span style={{ position: 'absolute', top: 6, right: 8, display: 'inline-flex' }} title="Notte senza alloggio"><Sv name="moon" size={16} /></span> : null}
+      {scoperta ? <span style={{ position: 'absolute', top: 6, right: 8, display: 'inline-flex' }} title={t('Notte senza alloggio')}><Sv name="moon" size={16} /></span> : null}
       <i className="rg1" />
       <i className="rg2" />
       <span className="bd">
@@ -83,7 +84,7 @@ function PannelloGiorno({ id }: { id: string }) {
     box.current?.scrollTo({ top: 0 })
   }, [id])
   return (
-    <aside ref={box} className="fa-gpanel" aria-label="Giorno scelto">
+    <aside ref={box} className="fa-gpanel" aria-label={t('Giorno scelto')}>
       <DettaglioGiorno key={id} id={id} incastrato />
     </aside>
   )
@@ -112,7 +113,7 @@ function ElencoGiorni({ scelto }: { scelto?: string }) {
   const first = trip.days[0]?.date
   const last = trip.days[trip.days.length - 1]?.date
   const people = trip.travelers.length
-  const sub = first && last ? [`${dm.format(parseYmd(first)).replace('.', '')} – ${dm.format(parseYmd(last)).replace('.', '')}`, `${trip.days.length} ${trip.days.length === 1 ? 'giorno' : 'giorni'}`, people > 1 ? `${people} persone` : null].filter(Boolean).join(' · ') : undefined
+  const sub = first && last ? [`${dm.format(parseYmd(first)).replace('.', '')} – ${dm.format(parseYmd(last)).replace('.', '')}`, `${trip.days.length} ${trip.days.length === 1 ? t('giorno') : t('giorni')}`, people > 1 ? t('{people} persone', { people }) : null].filter(Boolean).join(' · ') : undefined
 
   const hour = hourIn(trip.timezone)
   // temperatura attuale di ogni città; fuori dal periodo di previsione la riga non compare
@@ -136,11 +137,11 @@ function ElencoGiorni({ scelto }: { scelto?: string }) {
         searching ? (
           <div className="fa-fld">
             <label htmlFor="cerca-giorni" className="sr-only">
-              Cerca nei giorni
+              {t('Cerca nei giorni')}
             </label>
             <span className="fa-in">
               <Sv name="search" size={20} />
-              <input ref={focoRicerca} id="cerca-giorni" type="search" value={query} onChange={(e) => setQuery(e.currentTarget.value)} placeholder="Città, tappa o titolo" enterKeyHint="search" />
+              <input ref={focoRicerca} id="cerca-giorni" type="search" value={query} onChange={(e) => setQuery(e.currentTarget.value)} placeholder={t('Città, tappa o titolo')} enterKeyHint="search" />
             </span>
           </div>
         ) : null
@@ -149,13 +150,13 @@ function ElencoGiorni({ scelto }: { scelto?: string }) {
         <BarraGrande
           title={trip.title}
           sub={sub}
-          actions={<PulsanteIcona icon={searching ? 'close' : 'search'} label={searching ? 'Chiudi la ricerca' : 'Cerca nei giorni'} expanded={searching} onPress={() => (setSearching(!searching), setQuery(''))} />}
+          actions={<PulsanteIcona icon={searching ? 'close' : 'search'} label={searching ? t('Chiudi la ricerca') : t('Cerca nei giorni')} expanded={searching} onPress={() => (setSearching(!searching), setQuery(''))} />}
         />
       }
     >
 
       {weather.length === 0 && inAttesa.size > 0 && !q ? (
-        <div className="k-Meteo" role="status" aria-busy="true" aria-label="Meteo delle città in caricamento">
+        <div className="k-Meteo" role="status" aria-busy="true" aria-label={t('Meteo delle città in caricamento')}>
           <ul className="chips sk" role="presentation" aria-hidden="true">
             {[0, 1, 2].map((i) => (
               <li key={i} className="chip">
@@ -168,9 +169,9 @@ function ElencoGiorni({ scelto }: { scelto?: string }) {
 
       {weather.length > 0 && !q ? (
         <div className="k-Meteo">
-          <ul className="chips" role="list" tabIndex={0} aria-label="Meteo delle città, scorri in orizzontale">
+          <ul className="chips" role="list" tabIndex={0} aria-label={t('Meteo delle città, scorri in orizzontale')}>
             {weather.map(({ city, w }) => (
-              <li className="chip" key={city} aria-label={`${city}, ${w!.t} gradi`}>
+              <li className="chip" key={city} aria-label={t('{city}, {t} gradi', { city, t: w!.t })}>
                 <Wx kind={wxKind(w!.code)} size={24} />
                 <span>
                   <b>{city}</b> {gradi(w!.t)}
@@ -182,8 +183,8 @@ function ElencoGiorni({ scelto }: { scelto?: string }) {
       ) : null}
 
       {trip.days.length > 0 && !soloLettura(trip) ? <AvvisoNotti trip={trip} /> : null}
-      {trip.days.length === 0 ? <Vuoto art="calendario" title="Nessun giorno" text="Imposta le date del viaggio da Altro → Modifica viaggio: i giorni si creano da soli." /> : null}
-      {trip.days.length > 0 && shown.length === 0 ? <Vuoto art="calendario" title="Nessun giorno trovato" text="Prova con un'altra città o tappa." /> : null}
+      {trip.days.length === 0 ? <Vuoto art="calendario" title={t('Nessun giorno')} text={t('Imposta le date del viaggio da Altro → Modifica viaggio: i giorni si creano da soli.')} /> : null}
+      {trip.days.length > 0 && shown.length === 0 ? <Vuoto art="calendario" title={t('Nessun giorno trovato')} text={t('Prova con un\'altra città o tappa.')} /> : null}
 
       {/* pieghevole aperto: le città una dopo l'altra, che vanno a capo come un testo (sul telefono il contenitore non esiste) */}
       <div className="fa-flusso">

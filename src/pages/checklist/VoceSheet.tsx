@@ -14,6 +14,7 @@ import { discOf, initials } from '../../state/me'
 const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
+import { nomeCategoria, t } from '../../i18n'
 
 interface Props {
   trip: Trip
@@ -51,11 +52,11 @@ export function VoceSheet({ trip, item, where = 'all', open, onClose }: Props) {
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     const err: typeof errors = {}
-    if (!text.trim()) err.text = 'Scrivi cosa serve, per esempio «Adattatore per le prese».'
-    if (url.trim() && !cleanUrl(url)) err.url = 'Il link non è valido: scrivi un indirizzo che inizia con https://'
+    if (!text.trim()) err.text = t('Scrivi cosa serve, per esempio «Adattatore per le prese».')
+    if (url.trim() && !cleanUrl(url)) err.url = t('Il link non è valido: scrivi un indirizzo che inizia con https://')
     const cat = creating ? newCat.trim() : category
-    if (creating && !cat) err.cat = 'Scrivi il nome della categoria.'
-    if (dove === 'pick' && scelti.size === 0) err.chi = 'Scegli almeno una persona.'
+    if (creating && !cat) err.cat = t('Scrivi il nome della categoria.')
+    if (dove === 'pick' && scelti.size === 0) err.chi = t('Scegli almeno una persona.')
     setErrors(err)
     if (Object.keys(err).length > 0) return
     const q = quantity.trim() ? parseQuantity(quantity) : 1
@@ -70,8 +71,8 @@ export function VoceSheet({ trip, item, where = 'all', open, onClose }: Props) {
     setBusy(true)
     const message = item ? await tr.updateChecklistItem(item.id, input) : await tr.createChecklistItem(trip.id, input)
     setBusy(false)
-    if (message) return setErrors({ form: /for_travelers/.test(message) ? 'Per scegliere le persone serve la migrazione 0044 del database.' : message })
-    showToast(item ? 'Voce aggiornata' : 'Voce aggiunta')
+    if (message) return setErrors({ form: /for_travelers/.test(message) ? t('Per scegliere le persone serve la migrazione 0044 del database.') : message })
+    showToast(item ? t('Voce aggiornata') : t('Voce aggiunta'))
     onClose()
   }
 
@@ -79,44 +80,44 @@ export function VoceSheet({ trip, item, where = 'all', open, onClose }: Props) {
     <Foglio
       open={open}
       full
-      title={item ? 'Modifica voce' : 'Nuova voce'}
+      title={item ? t('Modifica voce') : t('Nuova voce')}
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="voce-form" isLoading={busy}>
-          {item ? 'Salva le modifiche' : 'Aggiungi alla checklist'}
+          {item ? t('Salva le modifiche') : t('Aggiungi alla checklist')}
         </Pulsante>
       }
     >
       <form id="voce-form" className="frm" onSubmit={submit} noValidate>
-        <Campo label="Cosa serve" value={text} onChange={setText} placeholder="es. Adattatore per le prese" error={errors.text} autoFocus={!item} />
-        <Campo label="Descrizione (facoltativa)" textarea value={description} onChange={setDescription} />
+        <Campo label={t('Cosa serve')} value={text} onChange={setText} placeholder={t('es. Adattatore per le prese')} error={errors.text} autoFocus={!item} />
+        <Campo label={t('Descrizione (facoltativa)')} textarea value={description} onChange={setDescription} />
         <div className="fa-2c">
-          <Campo label="Quantità" inputMode="numeric" value={quantity} onChange={setQuantity} placeholder="1" maxLength={3} />
-          <Campo label="Unità" value={unit} onChange={setUnit} placeholder="es. magliette" maxLength={20} />
+          <Campo label={t('Quantità')} inputMode="numeric" value={quantity} onChange={setQuantity} placeholder="1" maxLength={3} />
+          <Campo label={t('Unità')} value={unit} onChange={setUnit} placeholder={t('es. magliette')} maxLength={20} />
         </div>
-        <div className="fa-fld" role="group" aria-label="Categoria">
-          Categoria
+        <div className="fa-fld" role="group" aria-label={t('Categoria')}>
+          {t('Categoria')}
           <div className="fa-chips wrap">
             {cats.map((c) => (
               <Chip key={c} on={!creating && category.toLowerCase() === c.toLowerCase()} onPress={() => (setCreating(false), setCategory(c))}>
-                {c}
+                {nomeCategoria(c)}
               </Chip>
             ))}
             <Chip on={creating} onPress={() => setCreating(true)} icon={<Sv name="plus" size={16} />}>
-              Nuova categoria
+              {t('Nuova categoria')}
             </Chip>
           </div>
-          {creating ? <Campo label="Nome della categoria" value={newCat} onChange={setNewCat} maxLength={30} error={errors.cat} autoFocus /> : null}
+          {creating ? <Campo label={t('Nome della categoria')} value={newCat} onChange={setNewCat} maxLength={30} error={errors.cat} autoFocus /> : null}
         </div>
         {canPrivate ? (
-          <div className="fa-fld k-ChecklistNuova" role="group" aria-label="Dove">
-            Dove
+          <div className="fa-fld k-ChecklistNuova" role="group" aria-label={t('Dove')}>
+            {t('Dove')}
             <div className="sg" style={{ gridTemplateColumns: `repeat(${canPick ? 3 : 2},minmax(0,1fr))` }}>
               {(
                 [
-                  { value: 'all', label: 'Tutti', icon: 'users' },
-                  { value: 'mine', label: 'Solo io', icon: 'user' },
-                  { value: 'pick', label: 'Scegli', icon: 'users' },
+                  { value: 'all', label: t('Tutti'), icon: 'users' },
+                  { value: 'mine', label: t('Solo io'), icon: 'user' },
+                  { value: 'pick', label: t('Scegli'), icon: 'users' },
                 ] as const
               ).filter((o) => canPick || o.value !== 'pick').map((o) => (
                 <button key={o.value} type="button" className={cx('seg', dove === o.value && 'on')} aria-pressed={dove === o.value} onClick={() => setDove(o.value)}>
@@ -126,7 +127,7 @@ export function VoceSheet({ trip, item, where = 'all', open, onClose }: Props) {
               ))}
             </div>
             {dove === 'pick' ? (
-              <div className="pk" role="group" aria-label="Persone">
+              <div className="pk" role="group" aria-label={t('Persone')}>
                 {trip.travelers.map((p) => {
                   const on = scelti.has(p.id)
                   return (
@@ -140,7 +141,7 @@ export function VoceSheet({ trip, item, where = 'all', open, onClose }: Props) {
                       style={{ all: 'unset', boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: 12, minHeight: 48, cursor: 'pointer' }}
                     >
                       <span className="av" aria-hidden="true" style={{ ['--c' as string]: `var(--disco-${COL[(discOf(trip, p.id) - 1) % 5]})` }}>{initials(p.name)}</span>
-                      <b>{p.name}{p.id === trip.myTravelerId ? ' (io)' : ''}</b>
+                      <b>{p.name}{p.id === trip.myTravelerId ? t(' (io)') : ''}</b>
                       <span className={cx('cb', on && 'on')} aria-hidden="true">
                         <Sv name="check" size={14} className="ic" />
                       </span>
@@ -155,11 +156,11 @@ export function VoceSheet({ trip, item, where = 'all', open, onClose }: Props) {
                 {errors.chi}
               </span>
             ) : null}
-            <span className="fa-m">{dove === 'all' ? 'Lista comune: ognuno spunta la sua.' : dove === 'mine' ? 'Lista privata: la vedi solo tu.' : 'Lista comune: la spuntano solo le persone scelte.'}</span>
+            <span className="fa-m">{dove === 'all' ? t('Lista comune: ognuno spunta la sua.') : dove === 'mine' ? t('Lista privata: la vedi solo tu.') : t('Lista comune: la spuntano solo le persone scelte.')}</span>
           </div>
         ) : null}
-        <Campo label="Link (facoltativo)" type="url" value={url} onChange={setUrl} placeholder="https://…" error={errors.url} />
-        <Campo label="Entro il (facoltativo)" type="date" icon="cal" value={due} onChange={setDue} />
+        <Campo label={t('Link (facoltativo)')} type="url" value={url} onChange={setUrl} placeholder="https://…" error={errors.url} />
+        <Campo label={t('Entro il (facoltativo)')} type="date" icon="cal" value={due} onChange={setDue} />
         {errors.form ? (
           <span className="fa-help bad" role="alert">
             <Sv name="err" size={16} />

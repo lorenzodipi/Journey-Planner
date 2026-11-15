@@ -8,12 +8,13 @@ import { Banner, Pulsante } from './base'
 import { Sv } from './icons'
 import { BarraGrande, Schermata } from './shell'
 import { Caricamento } from './Stati'
+import { t } from '../i18n'
 
 /** Avvio: nome del viaggio, scheletri delle card e «Sto caricando il viaggio» (Fa-49 chiaro). */
 export function SchermataCaricamento({ title }: { title: string }) {
   return (
     <Schermata bar={<BarraGrande title={title} />} rete={false}>
-      <Caricamento text="Sto caricando il viaggio" rows={4} />
+      <Caricamento text={t('Sto caricando il viaggio')} rows={4} />
     </Schermata>
   )
 }
@@ -29,24 +30,24 @@ export function SchermataErrore({ title, onRetry, onSaved }: { title: string; on
     <Schermata bar={<BarraGrande title={title} />} rete={false}>
       <section className="fa-card xl pad fa-errcard" role="alert" style={{ display: 'grid', gap: 16 }}>
         <Sv name={online ? 'err' : 'wifi'} size={28} className="ei" />
-        <h2 className="fa-h3">{online ? 'Non riesco a caricare il viaggio' : 'Sei offline'}</h2>
+        <h2 className="fa-h3">{online ? t('Non riesco a caricare il viaggio') : t('Sei offline')}</h2>
         <p className="fa-m">
           {online
-            ? 'La connessione è lenta o il servizio non risponde. I dati salvati sul telefono sono al sicuro.'
+            ? t('La connessione è lenta o il servizio non risponde. I dati salvati sul telefono sono al sicuro.')
             : onSaved
-              ? 'Non c’è connessione. I dati salvati sul telefono sono al sicuro.'
-              : 'Per caricare il viaggio la prima volta serve la rete. Collegati e tocca Riprova.'}
+              ? t('Non c’è connessione. I dati salvati sul telefono sono al sicuro.')
+              : t('Per caricare il viaggio la prima volta serve la rete. Collegati e tocca Riprova.')}
         </p>
-        <Pulsante onPress={onRetry}>Riprova</Pulsante>
+        <Pulsante onPress={onRetry}>{t('Riprova')}</Pulsante>
         {onSaved ? (
           <Pulsante color="secondary" onPress={onSaved}>
-            Usa i dati salvati
+            {t('Usa i dati salvati')}
           </Pulsante>
         ) : null}
       </section>
       {onSaved && at ? (
-        <Banner tone="az" icon="info" title={`Ultimo aggiornamento alle ${at}.`}>
-          Fino a quando torna la rete vedi i dati salvati.
+        <Banner tone="az" icon="info" title={t('Ultimo aggiornamento alle {at}.', { at })}>
+          {t('Fino a quando torna la rete vedi i dati salvati.')}
         </Banner>
       ) : null}
     </Schermata>
@@ -65,10 +66,10 @@ export function StatoRete() {
           key={f.id}
           tone="cor"
           icon="err"
-          title={`Non salvata: ${f.label}.`}
+          title={t('Non salvata: {label}.', { label: f.label })}
           action={
             <button type="button" className="fa-btn txt" onClick={() => dismissFailed(f.id)}>
-              Scarta
+              {t('Scarta')}
             </button>
           }
         >
@@ -76,8 +77,8 @@ export function StatoRete() {
         </Banner>
       ))}
       {offline && pending > 0 ? (
-        <Banner tone="az" icon="clock" title={`${pending} ${pending === 1 ? 'modifica in attesa.' : 'modifiche in attesa.'}`}>
-          {pending === 1 ? 'Parte' : 'Partono'} appena torna la rete.
+        <Banner tone="az" icon="clock" title={`${pending} ${pending === 1 ? t('modifica in attesa.') : t('modifiche in attesa.')}`}>
+          {t('{v0} appena torna la rete.', { v0: pending === 1 ? t('Parte') : t('Partono') })}
         </Banner>
       ) : null}
       {!offline ? <InvioPillola count={pending} /> : null}
@@ -96,7 +97,7 @@ function InvioPillola({ count }: { count: number }) {
   if (!visible || count === 0) return null
   return (
     <p className="fa-sending" role="status">
-      <Loader size={16} label={`Invio di ${count} ${count === 1 ? 'modifica' : 'modifiche'}`} />
+      <Loader size={16} label={t('Invio di {count} {v1}', { count, v1: count === 1 ? t('modifica') : t('modifiche') })} />
       {count}
     </p>
   )
@@ -110,7 +111,7 @@ export function PillolaOffline() {
   return (
     <p className="fa-off" style={{ justifySelf: 'center' }}>
       <Sv name="wifi" size={16} />
-      Sei offline
+      {t('Sei offline')}
     </p>
   )
 }

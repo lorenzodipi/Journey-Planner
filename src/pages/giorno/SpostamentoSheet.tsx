@@ -12,6 +12,7 @@ import { durata, etichettaMezzo, MEZZI_TRATTO, NOME_MEZZO, scegliMezzo, sceltoPe
 import { formatDistance } from '../../lib/dayRoute'
 import { useTrips } from '../../state/trip'
 import type { DayItem } from '../../types'
+import { t as tt } from '../../i18n'
 
 const GLIFO: Record<MezzoTratto, string> = { walk: 'g-tra-walk', metro: 'g-tra-metro', bus: 'g-tra-bus', train: 'g-tra-train', taxi: 'g-tra-taxi', car: 'g-tra-car' }
 
@@ -55,7 +56,7 @@ export function SpostamentoSheet({ open, onClose, da, a, leg, strada, imp }: {
   function submit(e: React.FormEvent) {
     e.preventDefault()
     const min = parseDuration(testo)
-    if (min !== null && Number.isNaN(min)) return setErrore('Scrivi la durata in ore e minuti, da 1 minuto a 24 ore.')
+    if (min !== null && Number.isNaN(min)) return setErrore(tt('Scrivi la durata in ore e minuti, da 1 minuto a 24 ore.'))
     // scegliere il mezzo che il viaggio darebbe comunque non lo fissa: se cambia il mezzo del viaggio, lo spostamento lo segue
     const nuovo = !mezzo ? null : scelto || mezzo !== predefinito ? mezzo : null
     void salva(nuovo, min)
@@ -64,41 +65,41 @@ export function SpostamentoSheet({ open, onClose, da, a, leg, strada, imp }: {
   return (
     <Foglio
       open={open}
-      title={`Da ${da.title} a ${a.title}`}
+      title={tt('Da {title} a {title2}', { title: da.title, title2: a.title })}
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="spostamento-form" isLoading={busy}>
-          Salva lo spostamento
+          {tt('Salva lo spostamento')}
         </Pulsante>
       }
     >
       <form id="spostamento-form" className="frm" onSubmit={submit} noValidate>
         <Riquadri<MezzoTratto>
-          label="Come ci vai"
+          label={tt('Come ci vai')}
           cols={3}
           value={mezzo}
           onChange={(m) => (setMezzo(m), setErrore(null))}
           options={MEZZI_TRATTO.map((m) => ({ value: m, label: NOME_MEZZO[m], glifo: GLIFO[m], sub: durata(tempo(m)) }))}
         >
           <span className="fa-help">
-            {`${formatDistance(leg.straightM)} in linea d’aria. `}
-            {scelto ? 'Scelto a mano per questo spostamento.' : `Senza scelte vale il mezzo del viaggio: ${etichettaMezzo(predefinito).toLowerCase()}.`}
+            {tt('{v0} in linea d’aria. ', { v0: formatDistance(leg.straightM) })}
+            {scelto ? tt('Scelto a mano per questo spostamento.') : tt('Senza scelte vale il mezzo del viaggio: {v0}.', { v0: etichettaMezzo(predefinito).toLowerCase() })}
           </span>
         </Riquadri>
         <CampoDurata
-          label="Durata"
+          label={tt('Durata')}
           value={testo}
           onChange={(v) => (setTesto(v), setErrore(null))}
-          hint="Se la conosci, per esempio da Google Maps, scrivila: vale più della stima."
+          hint={tt('Se la conosci, per esempio da Google Maps, scrivila: vale più della stima.')}
           error={errore}
         />
         <a className="fa-btn out" href={maps} target="_blank" rel="noopener noreferrer" style={{ minHeight: 44, fontSize: 14 }}>
           <Sv name="pin" size={20} />
-          Controlla su Maps
+          {tt('Controlla su Maps')}
         </a>
         {manuale ? (
           <Pulsante color="tertiary" iconLeading="refresh" isLoading={busy} onPress={() => void salva(null, null)}>
-            Torna al mezzo del viaggio
+            {tt('Torna al mezzo del viaggio')}
           </Pulsante>
         ) : null}
       </form>

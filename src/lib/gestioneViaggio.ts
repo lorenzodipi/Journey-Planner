@@ -2,6 +2,7 @@
 import type { Trip } from '../types'
 import { daysBetween, parseYmd, toYmd } from './dates'
 import { dateInZone } from './flights'
+import { t as tt } from '../i18n'
 
 const plur = (n: number, uno: string, molti: string) => `${n} ${n === 1 ? uno : molti}`
 
@@ -11,16 +12,16 @@ export function impattoDate(trip: Pick<Trip, 'days' | 'stays' | 'flights' | 'tra
   const out: string[] = []
   const conTappe = trip.days.filter((d) => fuori(d.date) && d.items.length > 0)
   const vuoti = trip.days.filter((d) => fuori(d.date) && d.items.length === 0)
-  if (conTappe.length) out.push(`${plur(conTappe.length, 'giorno con tappe verrà tolto', 'giorni con tappe verranno tolti')} (${plur(conTappe.reduce((n, d) => n + d.items.length, 0), 'tappa', 'tappe')}): tornano se rimetti le date`)
-  if (vuoti.length) out.push(`${plur(vuoti.length, 'giorno vuoto verrà tolto', 'giorni vuoti verranno tolti')}`)
+  if (conTappe.length) out.push(tt('{v0} ({v1}): tornano se rimetti le date', { v0: plur(conTappe.length, tt('giorno con tappe verrà tolto'), tt('giorni con tappe verranno tolti')), v1: plur(conTappe.reduce((n, d) => n + d.items.length, 0), tt('tappa'), tt('tappe')) }))
+  if (vuoti.length) out.push(`${plur(vuoti.length, tt('giorno vuoto verrà tolto'), tt('giorni vuoti verranno tolti'))}`)
   const stays = trip.stays.filter((s) => s.checkIn < start || s.checkOut > end)
-  if (stays.length) out.push(`${plur(stays.length, 'alloggio', 'alloggi')} fuori dalle nuove date`)
+  if (stays.length) out.push(tt('{v0} fuori dalle nuove date', { v0: plur(stays.length, tt('alloggio'), tt('alloggi')) }))
   const voli = trip.flights.filter((f) => f.legs.some((l) => fuori(dateInZone(l.departAt, l.fromTz)) || fuori(dateInZone(l.arriveAt, l.toTz))))
-  if (voli.length) out.push(`${plur(voli.length, 'volo', 'voli')} fuori dalle nuove date`)
+  if (voli.length) out.push(tt('{v0} fuori dalle nuove date', { v0: plur(voli.length, tt('volo'), tt('voli')) }))
   const trasp = trip.transports.filter((t) => (t.departAt && fuori(dateInZone(t.departAt, trip.timezone))) || (t.departDate && fuori(t.departDate)))
-  if (trasp.length) out.push(`${plur(trasp.length, 'trasporto', 'trasporti')} fuori dalle nuove date`)
+  if (trasp.length) out.push(tt('{v0} fuori dalle nuove date', { v0: plur(trasp.length, tt('trasporto'), tt('trasporti')) }))
   const pren = trip.bookings.filter((b) => b.validFrom && fuori(dateInZone(b.validFrom, trip.timezone)))
-  if (pren.length) out.push(`${plur(pren.length, 'prenotazione', 'prenotazioni')} fuori dalle nuove date`)
+  if (pren.length) out.push(tt('{v0} fuori dalle nuove date', { v0: plur(pren.length, tt('prenotazione'), tt('prenotazioni')) }))
   return out
 }
 

@@ -1,6 +1,7 @@
 // Profilo (#45, mock Fa-47): numeri e distintivi calcolati dai dati, senza tabelle nuove.
 import { countryByCode } from './countries'
 import type { Trip } from '../types'
+import { t as tt } from '../i18n'
 
 export interface NumeriProfilo {
   viaggi: number
@@ -42,7 +43,7 @@ export interface Distintivo {
   mancano: string
 }
 
-const manca = (n: number, one: string, many: string) => `Ti ${n === 1 ? 'manca' : 'mancano'} ${n} ${n === 1 ? one : many}`
+const manca = (n: number, one: string, many: string) => tt('Ti {v0} {n} {v2}', { v0: n === 1 ? tt('manca') : tt('mancano'), n, v2: n === 1 ? one : many })
 
 export function distintivi(n: NumeriProfilo): Distintivo[] {
   const mk = (id: Distintivo['id'], titolo: string, regola: string, have: number, need: number, one: string, many: string): Distintivo => ({
@@ -52,12 +53,12 @@ export function distintivi(n: NumeriProfilo): Distintivo[] {
     have: Math.min(have, need),
     need,
     preso: have >= need,
-    mancano: have >= need ? 'Preso' : manca(need - have, one, many),
+    mancano: have >= need ? tt('Preso') : manca(need - have, one, many),
   })
   return [
-    mk('esploratore', 'Esploratore', '3 paesi diversi', n.paesi, 3, 'paese', 'paesi'),
-    mk('curioso', 'Curioso', '50 luoghi visitati', n.luoghi, 50, 'luogo', 'luoghi'),
-    mk('buongustaio', 'Buongustaio', '20 tappe o luoghi di cibo', n.cibo, 20, 'tappa', 'tappe'),
+    mk('esploratore', tt('Esploratore'), tt('3 paesi diversi'), n.paesi, 3, tt('paese'), tt('paesi')),
+    mk('curioso', tt('Curioso'), tt('50 luoghi visitati'), n.luoghi, 50, tt('luogo'), tt('luoghi')),
+    mk('buongustaio', tt('Buongustaio'), tt('20 tappe o luoghi di cibo'), n.cibo, 20, tt('tappa'), tt('tappe')),
   ]
 }
 
@@ -66,5 +67,5 @@ export function sottotitoloProfilo(createdAt: string | undefined, trips: readonl
   const anno = createdAt && !Number.isNaN(Date.parse(createdAt)) ? new Date(createdAt).getFullYear() : null
   const ultimo = [...trips].filter((t) => t.originCountry).sort((a, b) => b.startDate.localeCompare(a.startDate))[0]
   const paese = ultimo ? countryByCode(ultimo.originCountry)?.name : undefined
-  return [anno ? `Viaggiatore dal ${anno}` : 'Viaggiatore', paese].filter(Boolean).join(' · ')
+  return [anno ? tt('Viaggiatore dal {anno}', { anno }) : tt('Viaggiatore'), paese].filter(Boolean).join(' · ')
 }

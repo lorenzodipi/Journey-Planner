@@ -4,6 +4,7 @@ import { fetchFxRate } from '../lib/moneyApi'
 import type { Trip } from '../types'
 import { Campo, Pulsante } from '../faraway/base'
 import { Sv } from '../faraway/icons'
+import { t as tt } from '../i18n'
 
 interface Props {
   trip: Trip
@@ -40,7 +41,7 @@ export function FxForm({ trip, onSubmit, onDone }: Props) {
       setRate(toText(got[0]))
       setExtras(extras.map((x, i) => ({ ...x, text: toText(got[i + 1]) })))
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Non riesco a leggere il cambio. Scrivilo a mano.')
+      setError(e instanceof Error ? e.message : tt('Non riesco a leggere il cambio. Scrivilo a mano.'))
     } finally {
       setLoading(false)
     }
@@ -48,8 +49,8 @@ export function FxForm({ trip, onSubmit, onDone }: Props) {
 
   function addCurrency() {
     const code = newCode.trim().toUpperCase()
-    if (!/^[A-Z]{3}$/.test(code)) return setError('La valuta è un codice di 3 lettere (es. KRW).')
-    if (code === base || code === local || extras.some((x) => x.code === code)) return setError(`${code} c'è già tra le valute del viaggio.`)
+    if (!/^[A-Z]{3}$/.test(code)) return setError(tt('La valuta è un codice di 3 lettere (es. KRW).'))
+    if (code === base || code === local || extras.some((x) => x.code === code)) return setError(tt('{code} c\'è già tra le valute del viaggio.', { code }))
     setExtras([...extras, { code, text: '' }])
     setNewCode('')
     setAdding(false)
@@ -58,11 +59,11 @@ export function FxForm({ trip, onSubmit, onDone }: Props) {
 
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
-    if (!value || value <= 0) return setError('Inserisci un tasso maggiore di zero (es. 0,0056).')
+    if (!value || value <= 0) return setError(tt('Inserisci un tasso maggiore di zero (es. 0,0056).'))
     const extra: Record<string, number> = {}
     for (const x of extras) {
       const r = parseRate(x.text)
-      if (!r) return setError(`Inserisci il cambio di ${x.code} (quanti ${base} vale 1 ${x.code}), oppure toglila.`)
+      if (!r) return setError(tt('Inserisci il cambio di {code} (quanti {base} vale 1 {code}), oppure toglila.', { code: x.code, base }))
       extra[x.code] = r
     }
     setBusy(true)
@@ -77,8 +78,8 @@ export function FxForm({ trip, onSubmit, onDone }: Props) {
     <form style={{ display: 'grid', gap: 16 }} onSubmit={submit} noValidate>
       <p className="fa-m" style={{ margin: 0 }}>
         {multi
-          ? `Servono a mettere nella stessa valuta (${base}) le voci in valuta estera. Le spese possono avere un cambio proprio, che ha la precedenza.`
-          : `Serve a mettere nella stessa valuta (${base}) le voci in ${local}. Le spese possono avere un cambio proprio, che ha la precedenza.`}
+          ? tt('Servono a mettere nella stessa valuta ({base}) le voci in valuta estera. Le spese possono avere un cambio proprio, che ha la precedenza.', { base })
+          : tt('Serve a mettere nella stessa valuta ({base}) le voci in {local}. Le spese possono avere un cambio proprio, che ha la precedenza.', { base, local })}
       </p>
       <Campo label={`1 ${local} = ? ${base}`} value={rate} onChange={setRate} inputMode="decimal" placeholder="0,0056" hint={value ? `${formatMoney(10_000, local)} ≈ ${formatMoney(Math.round(10_000 * value * 100) / 100, base)}` : undefined} />
 
@@ -95,7 +96,7 @@ export function FxForm({ trip, onSubmit, onDone }: Props) {
               hint={[currencyName(x.code), v ? `${formatMoney(10_000, x.code)} ≈ ${formatMoney(Math.round(10_000 * v * 100) / 100, base)}` : ''].filter(Boolean).join(' · ') || undefined}
             />
             <Pulsante color="tertiary-destructive" iconLeading="trash" onPress={() => setExtras(extras.filter((_, j) => j !== i))}>
-              Togli {x.code}
+              {tt('Togli {code}', { code: x.code })}
             </Pulsante>
           </div>
         )
@@ -103,24 +104,24 @@ export function FxForm({ trip, onSubmit, onDone }: Props) {
 
       {adding ? (
         <div style={{ display: 'grid', gap: 8 }}>
-          <Campo label="Codice della valuta (3 lettere)" value={newCode} onChange={(v) => setNewCode(v.toUpperCase())} maxLength={3} autoComplete="off" placeholder="KRW" />
+          <Campo label={tt('Codice della valuta (3 lettere)')} value={newCode} onChange={(v) => setNewCode(v.toUpperCase())} maxLength={3} autoComplete="off" placeholder="KRW" />
           <div className="fa-btns">
             <Pulsante color="secondary" onPress={() => (setAdding(false), setNewCode(''))}>
-              Annulla
+              {tt('Annulla')}
             </Pulsante>
             <Pulsante color="secondary-soft" iconLeading="plus" onPress={addCurrency}>
-              Aggiungi
+              {tt('Aggiungi')}
             </Pulsante>
           </div>
         </div>
       ) : (
         <Pulsante color="secondary-soft" iconLeading="plus" onPress={() => setAdding(true)}>
-          Aggiungi valuta
+          {tt('Aggiungi valuta')}
         </Pulsante>
       )}
 
       <Pulsante color="secondary" iconLeading="refresh" isLoading={loading} onPress={() => void fetchRates()}>
-        {multi ? 'Prendi i cambi di oggi (BCE)' : 'Prendi il cambio di oggi (BCE)'}
+        {multi ? tt('Prendi i cambi di oggi (BCE)') : tt('Prendi il cambio di oggi (BCE)')}
       </Pulsante>
       {error ? (
         <span className="fa-help bad" role="alert" data-errore>
@@ -129,7 +130,7 @@ export function FxForm({ trip, onSubmit, onDone }: Props) {
         </span>
       ) : null}
       <Pulsante type="submit" isLoading={busy}>
-        {multi ? 'Salva cambi' : 'Salva cambio'}
+        {multi ? tt('Salva cambi') : tt('Salva cambio')}
       </Pulsante>
     </form>
   )

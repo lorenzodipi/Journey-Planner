@@ -19,9 +19,10 @@ import { CampoDurata } from '../../faraway/CampoDurata'
 import { Foglio, useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { UltimaModifica } from '../../faraway/UltimaModifica'
+import { nomeCategoria, t as tt } from '../../i18n'
 
-const PARTS = ['', 'da solo', 'in due', 'in tre', 'in quattro', 'in cinque', 'in sei', 'in sette', 'in otto']
-export const inQuanti = (n: number) => PARTS[n] ?? `in ${n}`
+const PARTS = ['', tt('da solo'), tt('in due'), tt('in tre'), tt('in quattro'), tt('in cinque'), tt('in sei'), tt('in sette'), tt('in otto')]
+export const inQuanti = (n: number) => PARTS[n] ?? tt('in {n}', { n })
 
 interface Props {
   trip: Trip
@@ -86,11 +87,11 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
 
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
-    if (!title.trim()) return setError('Scrivi il luogo o cosa fate in questa tappa.')
+    if (!title.trim()) return setError(tt('Scrivi il luogo o cosa fate in questa tappa.'))
     const minutes = parseDuration(duration)
-    if (Number.isNaN(minutes)) return setError('La durata non è chiara: scrivi per esempio 45min o 1h 30min.')
-    if (cost.trim() && (amount === null || amount < 0)) return setError("Il costo non è chiaro: scrivi un importo, per esempio 12,50.")
-    if (amount && !paidBy) return setError('Manca chi ha pagato. Scegli una persona.')
+    if (Number.isNaN(minutes)) return setError(tt('La durata non è chiara: scrivi per esempio 45min o 1h 30min.'))
+    if (cost.trim() && (amount === null || amount < 0)) return setError(tt('Il costo non è chiaro: scrivi un importo, per esempio 12,50.'))
+    if (amount && !paidBy) return setError(tt('Manca chi ha pagato. Scegli una persona.'))
     if (!(await procediConflitto())) return
     setBusy(true)
     setError(null)
@@ -123,11 +124,11 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
   return (
     <Foglio
       open={open}
-      title={editing ? 'Modifica tappa' : 'Aggiungi tappa'}
+      title={editing ? tt('Modifica tappa') : tt('Aggiungi tappa')}
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="tappa-form" isLoading={busy}>
-          {editing ? 'Salva modifiche' : `Aggiungi al Giorno ${dayNumber}`}
+          {editing ? tt('Salva modifiche') : tt('Aggiungi al Giorno {dayNumber}', { dayNumber })}
         </Pulsante>
       }
     >
@@ -144,14 +145,14 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
             disableAutoFocusFirst
           >
             <AriaTextField className="fa-fld" maxLength={120}>
-              <AriaLabel>Luogo o attività</AriaLabel>
+              <AriaLabel>{tt('Luogo o attività')}</AriaLabel>
               <span className="fa-in">
                 <Sv name="pin" size={20} />
-                <AriaInput className="" placeholder="Cerca tra i luoghi o scrivi" autoComplete="off" />
+                <AriaInput className="" placeholder={tt('Cerca tra i luoghi o scrivi')} autoComplete="off" />
               </span>
             </AriaTextField>
             {suggestions.length > 0 ? (
-              <ListBox className="fa-list fa-sugg" aria-label="Luoghi salvati" onAction={(k) => pickPlace(String(k))}>
+              <ListBox className="fa-list fa-sugg" aria-label={tt('Luoghi salvati')} onAction={(k) => pickPlace(String(k))}>
                 {suggestions.map((p) => (
                   <ListBoxItem key={p.id} id={p.id} textValue={p.name} className="fa-row" style={{ minHeight: 52, gridTemplateColumns: '20px minmax(0,1fr) auto' }}>
                     <Sv name="pin" size={20} />
@@ -160,7 +161,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
                         {p.name}
                       </Text>
                       <Text slot="description" className="s" style={{ display: 'block' }}>
-                        {[p.city, p.category].filter(Boolean).join(' · ')}
+                        {[p.city, p.category ? nomeCategoria(p.category) : ''].filter(Boolean).join(' · ')}
                       </Text>
                     </span>
                     <span />
@@ -171,28 +172,28 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
           </Autocomplete>
         </div>
         {kind === 'visit' || kind === 'meal' || kind === 'free' || kind === 'note' ? (
-          <div className="fa-fld" role="group" aria-label="Tipo di tappa">
-            Tipo
+          <div className="fa-fld" role="group" aria-label={tt('Tipo di tappa')}>
+            {tt('Tipo')}
             <div className="fa-chips wrap">
-              {([['visit', 'Luogo'], ['meal', 'Pasto'], ['free', 'Attività libera'], ['note', 'Nota']] as [ItemKind, string][]).map(([k, l]) => (
+              {([['visit', tt('Luogo')], ['meal', tt('Pasto')], ['free', tt('Attività libera')], ['note', tt('Nota')]] as [ItemKind, string][]).map(([k, l]) => (
                 <Chip key={k} on={kind === k} onPress={() => setKind(k)}>{l}</Chip>
               ))}
             </div>
-            {kind === 'free' || kind === 'note' ? <span className="fa-help">Senza posizione: pause, pasti e note stanno nella lista ma non sulla mappa.</span> : null}
+            {kind === 'free' || kind === 'note' ? <span className="fa-help">{tt('Senza posizione: pause, pasti e note stanno nella lista ma non sulla mappa.')}</span> : null}
           </div>
         ) : null}
         <div className="fa-2c">
-          <Campo da00 label="Ora" icon="clock" type="time" value={time} onChange={setTime} />
-          <CampoDurata label="Durata" value={duration} onChange={setDuration} placeholder={place?.visitMinutes ? durata(place.visitMinutes) : '1h 30min'} />
+          <Campo da00 label={tt('Ora')} icon="clock" type="time" value={time} onChange={setTime} />
+          <CampoDurata label={tt('Durata')} value={duration} onChange={setDuration} placeholder={place?.visitMinutes ? durata(place.visitMinutes) : '1h 30min'} />
         </div>
         {editing && time && schema.timeLock ? (
           <Interruttore
-            label="Orario vincolato"
-            hint={vincolata ? 'Riordino e «Ottimizza percorso» non spostano questa tappa.' : 'Flessibile: può essere spostata dall’ottimizzazione.'}
+            label={tt('Orario vincolato')}
+            hint={vincolata ? tt('Riordino e «Ottimizza percorso» non spostano questa tappa.') : tt('Flessibile: può essere spostata dall’ottimizzazione.')}
             isSelected={vincolata}
             onChange={async (v) => {
               if (!v && fisse.length) {
-                const ok = await ask({ title: 'Sbloccare l’orario?', message: `«${fisse[0].title}» è a ora fissa: sbloccando la tappa può andare in conflitto. La prenotazione non cambia.`, confirm: 'Sblocca', cancel: 'Lascia vincolato', destructive: false })
+                const ok = await ask({ title: tt('Sbloccare l’orario?'), message: tt('«{title}» è a ora fissa: sbloccando la tappa può andare in conflitto. La prenotazione non cambia.', { title: fisse[0].title }), confirm: tt('Sblocca'), cancel: tt('Lascia vincolato'), destructive: false })
                 if (!ok) return
               }
               setVincolata(v)
@@ -200,21 +201,21 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
           />
         ) : null}
         {diversi.map((d) => (
-          <Banner key={d.booking.id} tone="ac" icon="warn" title="Orari diversi" action={<Pulsante size="sm" color="secondary" onPress={() => setTime(d.oraPrenotazione)}>Verifica</Pulsante>}>
-            Tappa {d.oraTappa}, prenotazione «{d.booking.title}» {d.oraPrenotazione}. «Verifica» porta qui l’ora della prenotazione: l’orario cambia solo se salvi.
+          <Banner key={d.booking.id} tone="ac" icon="warn" title={tt('Orari diversi')} action={<Pulsante size="sm" color="secondary" onPress={() => setTime(d.oraPrenotazione)}>{tt('Verifica')}</Pulsante>}>
+            {tt('Tappa {oraTappa}, prenotazione «{title}» {oraPrenotazione}. «Verifica» porta qui l’ora della prenotazione: l’orario cambia solo se salvi.', { oraTappa: d.oraTappa, title: d.booking.title, oraPrenotazione: d.oraPrenotazione })}
           </Banner>
         ))}
         {cats.length > 0 ? (
-          <div className="fa-fld" role="group" aria-label="Categoria">
-            Categoria
+          <div className="fa-fld" role="group" aria-label={tt('Categoria')}>
+            {tt('Categoria')}
             <div className="fa-chips scroll" style={{ overflowX: 'auto' }}>
               {cats.map((c) => (
                 <Chip key={c.id} on={categoryId === c.id} onPress={() => setCategoryId(categoryId === c.id ? '' : c.id)}>
-                  {c.label}
+                  {nomeCategoria(c.label)}
                 </Chip>
               ))}
               <Chip on={!categoryId} onPress={() => setCategoryId('')}>
-                Altro
+                {tt('Altro')}
               </Chip>
             </div>
           </div>
@@ -223,14 +224,14 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
           <>
             <div className="fa-2c">
               <Campo
-                label="Costo"
+                label={tt('Costo')}
                 icon="bag"
                 inputMode="decimal"
                 value={cost}
                 onChange={setCost}
                 placeholder="0,00"
                 trailing={
-                  <select aria-label="Valuta" value={currency} onChange={(e) => setCurrency(e.currentTarget.value)} style={{ flex: 'none', width: 'auto', fontWeight: 600 }}>
+                  <select aria-label={tt('Valuta')} value={currency} onChange={(e) => setCurrency(e.currentTarget.value)} style={{ flex: 'none', width: 'auto', fontWeight: 600 }}>
                     {tripCurrencies(trip, currency).map((c) => (
                       <option key={c} value={c}>
                         {c}
@@ -240,7 +241,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
                 }
               />
               <div className="fa-fld">
-                <label htmlFor="pagato-da">Pagato da</label>
+                <label htmlFor="pagato-da">{tt('Pagato da')}</label>
                 <span className="fa-in">
                   <Sv name="user" size={20} />
                   <select id="pagato-da" value={paidBy} onChange={(e) => setPaidBy(e.currentTarget.value)}>
@@ -254,11 +255,11 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
               </div>
             </div>
             {trip.travelers.length > 1 ? (
-              <div className="fa-fld" role="group" aria-label="Per chi">
-                Per chi
+              <div className="fa-fld" role="group" aria-label={tt('Per chi')}>
+                {tt('Per chi')}
                 <div className="fa-chips wrap">
                   <Chip on={who.length === 0} onPress={() => setWho([])}>
-                    Tutti
+                    {tt('Tutti')}
                   </Chip>
                   {trip.travelers.map((p) => (
                     <Chip key={p.id} on={who.includes(p.id)} onPress={() => toggleWho(p.id)}>
@@ -270,12 +271,12 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
             ) : null}
             {each !== null && amount ? (
               <span className="fa-m" style={{ color: 'var(--ink-muted)' }}>
-                {people > 1 ? `Diviso ${inQuanti(people)}: ${formatMoney(each, currency)} a testa. ` : ''}La spesa si aggiorna anche in Spese.
+                {tt('{v0}La spesa si aggiorna anche in Spese.', { v0: people > 1 ? tt('Diviso {v0}: {v1} a testa. ', { v0: inQuanti(people), v1: formatMoney(each, currency) }) : '' })}
               </span>
             ) : null}
           </>
         ) : null}
-        <Campo label="Note" value={notes} onChange={setNotes} placeholder="es. Scarpe comode" />
+        <Campo label={tt('Note')} value={notes} onChange={setNotes} placeholder={tt('es. Scarpe comode')} />
         {item ? <UltimaModifica trip={trip} table="day_items" rowId={item.id} /> : null}
         {error ? (
           <span className="fa-help bad" role="alert">

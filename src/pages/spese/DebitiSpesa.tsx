@@ -25,13 +25,14 @@ import { DecidiSheet, DichiaraSheet } from './Rimborsi'
 import { SpesaSheet } from './SpesaSheet'
 import { sorgente, testoVerso } from './testi'
 import { Affianca, InTesta } from '../../faraway/shell'
+import { t as tt } from '../../i18n'
 
 
 function Stato({ d }: { d: DebitoSpesa }) {
-  if (d.stato === 'contestato') return <Pillola tone="cor">Contestato</Pillola>
-  if (d.stato === 'pagato') return <Pillola tone="acq" icon="check">Pagato</Pillola>
-  if (d.stato === 'in_attesa') return <Pillola tone="soft" icon="clock">{d.verso === 'devo' ? 'In attesa' : 'Da confermare'}</Pillola>
-  return <Pillola tone={d.verso === 'devo' ? 'cor' : 'mut'}>{d.verso === 'devo' ? 'Da pagare' : 'Da ricevere'}</Pillola>
+  if (d.stato === 'contestato') return <Pillola tone="cor">{tt('Contestato')}</Pillola>
+  if (d.stato === 'pagato') return <Pillola tone="acq" icon="check">{tt('Pagato')}</Pillola>
+  if (d.stato === 'in_attesa') return <Pillola tone="soft" icon="clock">{d.verso === 'devo' ? tt('In attesa') : tt('Da confermare')}</Pillola>
+  return <Pillola tone={d.verso === 'devo' ? 'cor' : 'mut'}>{d.verso === 'devo' ? tt('Da pagare') : tt('Da ricevere')}</Pillola>
 }
 
 export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: Trip; spese: readonly SpesaVista[]; fx: FxContext; me: string | undefined; abilitaPagamento: boolean }) {
@@ -49,52 +50,52 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
   const rimborso = (id: string) => trip.settlements?.find((x) => x.id === id)
   async function annulla(id: string) {
     const m = await t.cancelSettlement(id)
-    showToast(m ?? 'Richiesta annullata')
+    showToast(m ?? tt('Richiesta annullata'))
   }
   /** Reclamo: il pagamento smette di contare e la voce torna aperta (vale per tutta la «Bilancia» se è di gruppo). */
   async function reclamo(r: Rimborso) {
     const ok = await ask({
-      title: 'Fare reclamo?',
-      message: `${r.groupId ? 'I pagamenti e le compensazioni registrati insieme' : `Il pagamento di ${formatMoney(r.amount, r.currency)}`} non contano più nei saldi e le voci tornano da pagare. ${nome(r.fromId === io?.id ? r.toId : r.fromId)} lo vede come contestato.`,
-      confirm: 'Fai reclamo',
-      cancel: "Lascia com'è",
+      title: tt('Fare reclamo?'),
+      message: tt('{v0} non contano più nei saldi e le voci tornano da pagare. {v1} lo vede come contestato.', { v0: r.groupId ? tt('I pagamenti e le compensazioni registrati insieme') : tt('Il pagamento di {v0}', { v0: formatMoney(r.amount, r.currency) }), v1: nome(r.fromId === io?.id ? r.toId : r.fromId) }),
+      confirm: tt('Fai reclamo'),
+      cancel: tt('Lascia com\'è'),
       destructive: true,
     })
     if (!ok) return
     const m = await t.disputeSettlement(r.id)
-    showToast(m ?? 'Reclamo fatto: la voce è tornata aperta')
+    showToast(m ?? tt('Reclamo fatto: la voce è tornata aperta'))
   }
   /** Ritiro un pagamento che ho registrato io (anche tutta la «Bilancia»). */
   async function ritira(r: Rimborso) {
     const m = await t.cancelSettlement(r.id)
-    showToast(m ?? 'Pagamento annullato')
+    showToast(m ?? tt('Pagamento annullato'))
   }
   /** Le azioni possibili su una card, secondo chi deve a chi e lo stato dei rimborsi che la coprono. */
   function azioni(d: DebitoSpesa) {
     const out: { id: string; label: string; onPress: () => void }[] = []
-    const piu = (n: number, base: string, amount: number) => (n > 1 ? `${base} di ${formatMoney(amount, cur)}` : base)
+    const piu = (n: number, base: string, amount: number) => (n > 1 ? tt('{base} di {v1}', { base, v1: formatMoney(amount, cur) }) : base)
     const daDichiarare = round2(d.residuo - d.inAttesa)
     if (d.verso === 'devo') {
-      if (abilitaPagamento && daDichiarare > 0.004) out.push({ id: 'paga', label: 'Ho pagato', onPress: () => setPaga({ ...d, residuo: daDichiarare }) })
-      for (const c of d.richieste) out.push({ id: `annulla:${c.id}`, label: piu(d.richieste.length, 'Annulla la richiesta', c.amount), onPress: () => void annulla(c.id) })
+      if (abilitaPagamento && daDichiarare > 0.004) out.push({ id: 'paga', label: tt('Ho pagato'), onPress: () => setPaga({ ...d, residuo: daDichiarare }) })
+      for (const c of d.richieste) out.push({ id: `annulla:${c.id}`, label: piu(d.richieste.length, tt('Annulla la richiesta'), c.amount), onPress: () => void annulla(c.id) })
     } else {
       for (const c of d.richieste) {
         const r = rimborso(c.id)
-        if (r) out.push({ id: `rispondi:${c.id}`, label: piu(d.richieste.length, 'Rispondi', c.amount), onPress: () => setRispondi(r) })
+        if (r) out.push({ id: `rispondi:${c.id}`, label: piu(d.richieste.length, tt('Rispondi'), c.amount), onPress: () => setRispondi(r) })
       }
     }
     // pagamenti già validi che coprono la card: li ritira chi li ha registrati, li contesta l'altra persona
     for (const c of d.confermati) {
       const r = rimborso(c.id)
       if (!r || r.status !== 'confermato') continue
-      if (io?.userId && r.createdBy === io.userId) out.push({ id: `ritira:${c.id}`, label: piu(d.confermati.length, r.groupId ? 'Annulla la bilancia' : 'Annulla il pagamento', c.amount), onPress: () => void ritira(r) })
-      else if (r.toId === io?.id || (r.groupId && r.fromId === io?.id)) out.push({ id: `reclamo:${c.id}`, label: piu(d.confermati.length, r.compensation ? 'Reclamo sulla compensazione' : 'Reclamo', c.amount), onPress: () => void reclamo(r) })
+      if (io?.userId && r.createdBy === io.userId) out.push({ id: `ritira:${c.id}`, label: piu(d.confermati.length, r.groupId ? tt('Annulla la bilancia') : tt('Annulla il pagamento'), c.amount), onPress: () => void ritira(r) })
+      else if (r.toId === io?.id || (r.groupId && r.fromId === io?.id)) out.push({ id: `reclamo:${c.id}`, label: piu(d.confermati.length, r.compensation ? tt('Reclamo sulla compensazione') : tt('Reclamo'), c.amount), onPress: () => void reclamo(r) })
     }
     // la spesa si modifica da qui come dal Dettaglio: quelle nate da un'altra voce si aprono là, le altre solo se sono mie
     const vista = spese.find((x) => x.id === d.expenseId)
     const src = vista ? sorgente(vista, trip) : null
     if (vista?.derived && src) out.push({ id: 'modifica', label: src.label, onPress: () => navigate(src.href) })
-    else if (!vista?.derived && puoModificareSpesa(d.expense, io?.userId, io?.id)) out.push({ id: 'modifica', label: 'Modifica', onPress: () => setModifica(d.expense) })
+    else if (!vista?.derived && puoModificareSpesa(d.expense, io?.userId, io?.id)) out.push({ id: 'modifica', label: tt('Modifica'), onPress: () => setModifica(d.expense) })
     return out
   }
   const validi = rimborsiValidi(trip)
@@ -102,8 +103,8 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
   const righe = useMemo(() => ordinaBilancio(filtraBilancio(tutte, filtri), ordine, nome), [tutte, filtri, ordine, nome])
   const filtrate = righe.length !== tutte.length
   const sezioni: { verso: DebitoSpesa['verso']; titolo: string }[] = [
-    { verso: 'devo', titolo: 'Da dare' },
-    { verso: 'devono', titolo: 'Da ricevere' },
+    { verso: 'devo', titolo: tt('Da dare') },
+    { verso: 'devono', titolo: tt('Da ricevere') },
   ]
   return (
     <>
@@ -112,7 +113,7 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
         <FiltriBilancio righe={tutte} nome={nome} cur={cur} filtri={filtri} onFiltri={setFiltri} ordine={ordine} onOrdine={setOrdine} mostrate={righe.length} />
       </InTesta>
       {filtrate && righe.length === 0 ? (
-        <VuotoFiltro title="Nessuna voce trovata" text="Prova con altri filtri." action="Azzera i filtri" onAction={() => (setFiltri(FILTRI_VUOTI), setOrdine(ORDINE_BASE))} />
+        <VuotoFiltro title={tt('Nessuna voce trovata')} text={tt('Prova con altri filtri.')} action={tt('Azzera i filtri')} onAction={() => (setFiltri(FILTRI_VUOTI), setOrdine(ORDINE_BASE))} />
       ) : null}
       <Affianca>
       {sezioni.map(({ verso, titolo }) => {
@@ -125,7 +126,7 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
               <h2 className="fa-h3">{titolo}</h2>
               {totale > 0 ? <span className="fa-c">{formatMoney(totale, cur)}</span> : null}
             </div>
-            {filtrate ? <p className="fa-m" style={{ margin: 0 }}>Solo le voci filtrate.</p> : null}
+            {filtrate ? <p className="fa-m" style={{ margin: 0 }}>{tt('Solo le voci filtrate.')}</p> : null}
             <div className="fa-list">
               {list.map((d) => (
                 <div key={`${d.expenseId}:${d.otherId}`} className="fa-dbt">
@@ -142,7 +143,7 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
                         {(() => {
                           const a = azioni(d)
                           // senza azioni resta lo spazio, così gli importi restano allineati
-                          return a.length > 0 ? <MenuAzioni label={`Azioni su ${d.expense.label}`} azioni={a} /> : <span className="fa-dots-vuoto" aria-hidden="true" />
+                          return a.length > 0 ? <MenuAzioni label={tt('Azioni su {label}', { label: d.expense.label })} azioni={a} /> : <span className="fa-dots-vuoto" aria-hidden="true" />
                         })()}
                       </span>
                       <Stato d={d} />
@@ -150,12 +151,12 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
                   </div>
                   {d.eccedenza > 0 ? (
                     <span className="fa-m">
-                      {verso === 'devo' ? `Hai dato ${formatMoney(d.eccedenza, cur)} in più.` : `${nome(d.otherId)} ti ha dato ${formatMoney(d.eccedenza, cur)} in più: se non torna, fai un reclamo dal menu.`}
+                      {verso === 'devo' ? tt('Hai dato {v0} in più.', { v0: formatMoney(d.eccedenza, cur) }) : tt('{v0} ti ha dato {v1} in più: se non torna, fai un reclamo dal menu.', { v0: nome(d.otherId), v1: formatMoney(d.eccedenza, cur) })}
                     </span>
                   ) : null}
                   {d.stato === 'da_pagare' && d.pagato > 0 ? (
                     <span className="fa-m">
-                      Già dati {formatMoney(d.pagato, cur)} su {formatMoney(d.importo, cur)}
+                      {tt('Già dati {v0} su {v1}', { v0: formatMoney(d.pagato, cur), v1: formatMoney(d.importo, cur) })}
                     </span>
                   ) : null}
                 </div>

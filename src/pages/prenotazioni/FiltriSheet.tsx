@@ -6,6 +6,7 @@ import { filtraArchivio, STATO_LABEL, type FiltriArchivio } from '../../lib/pren
 import type { Booking, BookingStatus } from '../../types'
 import { Chip, Pulsante } from '../../faraway/base'
 import { Foglio } from '../../faraway/Foglio'
+import { t } from '../../i18n'
 
 interface Props {
   /** le prenotazioni del tipo scelto sulla pagina: il conteggio parte da queste */
@@ -17,8 +18,8 @@ interface Props {
 
 const STATI: BookingStatus[] = ['to_confirm', 'confirmed', 'cancelled']
 const ALLEGATI: { v: 'con' | 'senza'; l: string }[] = [
-  { v: 'con', l: 'Con file' },
-  { v: 'senza', l: 'Senza file' },
+  { v: 'con', l: t('Con file') },
+  { v: 'senza', l: t('Senza file') },
 ]
 
 /** Quanti filtri del foglio sono accesi (la ricerca testuale non conta: ha la sua barra). */
@@ -31,18 +32,18 @@ export function FiltriPrenotazioniSheet({ bookings, filters, onApply, onClose }:
   return (
     <Foglio
       open
-      title="Filtri"
+      title={t('Filtri')}
       onClose={onClose}
       headStart={
         <button type="button" className="fa-hdtxt" onClick={() => setF({ ...f, stato: 'all', allegati: 'all' })}>
-          Azzera
+          {t('Azzera')}
         </button>
       }
-      footer={<Pulsante onPress={() => (onApply(f), onClose())}>{count === 1 ? 'Mostra 1 prenotazione' : `Mostra ${count} prenotazioni`}</Pulsante>}
+      footer={<Pulsante onPress={() => (onApply(f), onClose())}>{count === 1 ? 'Mostra 1 prenotazione' : t('Mostra {count} prenotazioni', { count })}</Pulsante>}
     >
       <div className="frm" style={{ gap: 'var(--gap-sezioni)' }}>
-        <div className="fa-fld" role="group" aria-label="Stato">
-          Stato
+        <div className="fa-fld" role="group" aria-label={t('Stato')}>
+          {t('Stato')}
           <div className="fa-chips wrap">
             {STATI.map((s) => (
               <Chip key={s} on={f.stato === s} onPress={() => setF({ ...f, stato: f.stato === s ? 'all' : s })}>
@@ -51,8 +52,8 @@ export function FiltriPrenotazioniSheet({ bookings, filters, onApply, onClose }:
             ))}
           </div>
         </div>
-        <div className="fa-fld" role="group" aria-label="Allegati">
-          Allegati
+        <div className="fa-fld" role="group" aria-label={t('Allegati')}>
+          {t('Allegati')}
           <div className="fa-chips wrap">
             {ALLEGATI.map((a) => (
               <Chip key={a.v} on={f.allegati === a.v} onPress={() => setF({ ...f, allegati: f.allegati === a.v ? 'all' : a.v })}>

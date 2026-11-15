@@ -47,8 +47,9 @@ import { SpostamentoSheet } from './giorno/SpostamentoSheet'
 import { alloggiDelGiorno } from '../lib/fattibilita'
 import { useInCorso } from '../faraway/Attesa'
 import { soloLettura } from '../lib/ruolo'
+import { LOCALE, nomeCategoria, t as tt } from '../i18n'
 
-const wdm = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
+const wdm = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' })
 const fmt = (ymd: string) => wdm.format(parseYmd(ymd)).replace(/\./g, '')
 
 type Sheet = { kind: 'add' } | { kind: 'edit'; item: DayItem } | { kind: 'move'; item: DayItem; postpone: boolean } | { kind: 'seg'; item: DayItem } | null
@@ -102,8 +103,8 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
 
   if (!day) {
     return (
-      <Schermata bar={<BarraIndietro title="Giorni" back="/giorni" senzaIndietro={incastrato} />} tabs={!incastrato} incastrata={incastrato} rete={!incastrato}>
-        <Vuoto art="calendario" title="Giorno non trovato" text="Questo giorno non esiste più: torna all'elenco e scegline un altro." action="Vai ai giorni" actionIcon="back" onAction={() => navigate('/giorni')} />
+      <Schermata bar={<BarraIndietro title={tt('Giorni')} back="/giorni" senzaIndietro={incastrato} />} tabs={!incastrato} incastrata={incastrato} rete={!incastrato}>
+        <Vuoto art="calendario" title={tt('Giorno non trovato')} text={tt('Questo giorno non esiste più: torna all\'elenco e scegline un altro.')} action={tt('Vai ai giorni')} actionIcon="back" onAction={() => navigate('/giorni')} />
       </Schermata>
     )
   }
@@ -138,12 +139,12 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
     if (!stop) return null
     if (here && ctx.isToday) {
       const s = stimaSpostamento(here, stop, [], imp)
-      return `${durata(s.minutes)} ${testoMezzo(s.mode)} da qui`
+      return tt('{v0} {v1} da qui', { v0: durata(s.minutes), v1: testoMezzo(s.mode) })
     }
     const i = day.items.indexOf(item)
     const prevItem = day.items[i - 1]
     const seg = segments.get(item.id)
-    if (prevItem && seg) return `${durata(seg.minutes)} ${testoMezzo(seg.mode)} da ${prevItem.title}`
+    if (prevItem && seg) return tt('{v0} {v1} da {title}', { v0: durata(seg.minutes), v1: testoMezzo(seg.mode), title: prevItem.title })
     return null
   }
 
@@ -156,10 +157,10 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
   const onDelete = async (item: DayItem) => {
     const exp = linkedExpense(trip, item)
     const ok = await ask({
-      title: 'Eliminare la tappa?',
-      message: conDipendenze(`${item.title} sparisce dal Giorno ${n}${exp ? ' e dalla spesa collegata' : ''}. Non si può annullare.`, dipendenze(trip, 'tappa', item.id)),
-      confirm: 'Elimina la tappa',
-      cancel: 'Tieni la tappa',
+      title: tt('Eliminare la tappa?'),
+      message: conDipendenze(tt('{title} sparisce dal Giorno {n}{v2}. Non si può annullare.', { title: item.title, n, v2: exp ? tt(' e dalla spesa collegata') : '' }), dipendenze(trip, 'tappa', item.id)),
+      confirm: tt('Elimina la tappa'),
+      cancel: tt('Tieni la tappa'),
     })
     if (!ok) return
     let m = await t.setItemDeleted(item.id, true)
@@ -186,13 +187,13 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
   const [occ, faiOcc] = useInCorso()
   const optimize = async () => {
     if (!plan) return
-    if (plan.changed.length === 0) return showToast('Il percorso è già il più corto')
+    if (plan.changed.length === 0) return showToast(tt('Il percorso è già il più corto'))
     const old = new Map(day.items.map((i) => [i.id, i.position ?? 0]))
     const previous = plan.changed.map((c) => ({ id: c.id, position: old.get(c.id) ?? 0 }))
     const m = await faiOcc('ottimizza', () => t.setItemPositions(plan.changed))
     if (m) return showToast(m)
-    showToast(plan.afterM < plan.beforeM - 50 ? `Percorso accorciato da ${formatDistance(plan.beforeM)} a ${formatDistance(plan.afterM)}` : 'Tappe senza orario messe dopo quelle con orario', {
-      label: 'Annulla',
+    showToast(plan.afterM < plan.beforeM - 50 ? tt('Percorso accorciato da {v0} a {v1}', { v0: formatDistance(plan.beforeM), v1: formatDistance(plan.afterM) }) : tt('Tappe senza orario messe dopo quelle con orario'), {
+      label: tt('Annulla'),
       run: () => void t.setItemPositions(previous).then((x) => x && showToast(x)),
     })
   }
@@ -211,18 +212,18 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
       tabs={!incastrato}
       incastrata={incastrato}
       rete={!incastrato}
-      bar={<BarraIndietro title={incastrato ? fmt(day.date).replace(/^./, (c) => c.toUpperCase()) : 'Giorni'} back="/giorni" senzaIndietro={incastrato} right={lettura ? undefined : <PulsanteIcona icon="dots" label="Modifica il giorno" onPress={() => setModificaGiorno(true)} />} />}
+      bar={<BarraIndietro title={incastrato ? fmt(day.date).replace(/^./, (c) => c.toUpperCase()) : tt('Giorni')} back="/giorni" senzaIndietro={incastrato} right={lettura ? undefined : <PulsanteIcona icon="dots" label={tt('Modifica il giorno')} onPress={() => setModificaGiorno(true)} />} />}
     >
       <Affianca>
         {/* pieghevole aperto: mappa, meteo, alloggio, spese e prenotazioni a sinistra; le tappe a destra */}
         <Colonna lato="sinistra">
           {day.items.length > 0 || route.transports.length > 0 ? (
-            <section className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }} aria-label="Mappa del giorno">
+            <section className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }} aria-label={tt('Mappa del giorno')}>
               <div className="fa-dm" style={{ position: 'relative' }}>
                 <DayMapPanel route={route} center={dayView.center} selectedId={openId} onSelect={onPin} height={240} bare stopState={stopState} />
                 {route.stops.length > 1 ? (
                   <span className="fa-pillst soft" style={{ position: 'absolute', left: 12, top: 12, background: 'var(--surface-card)', zIndex: 2 }}>
-                    Percorso migliore
+                    {tt('Percorso migliore')}
                   </span>
                 ) : null}
               </div>
@@ -234,13 +235,13 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
                       {percorso.sub}
                     </div>
                   ) : route.missing > 0 ? (
-                    <div className="fa-m">{route.missing === 1 ? '1 tappa senza posizione' : `${route.missing} tappe senza posizione`}</div>
+                    <div className="fa-m">{route.missing === 1 ? tt('1 tappa senza posizione') : tt('{missing} tappe senza posizione', { missing: route.missing })}</div>
                   ) : null}
                 </div>
                 {routeHref ? (
                   <a className="fa-btn sm out" href={routeHref} target="_blank" rel="noopener noreferrer">
                     <Sv name="pin" size={18} />
-                    Maps
+                    {tt('Maps')}
                   </a>
                 ) : null}
               </div>
@@ -254,7 +255,7 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
             <TappeLista
               trip={trip}
               day={day}
-              header={{ title: `Giorno ${n} · ${city}`, date: fmt(day.date) }}
+              header={{ title: tt('Giorno {n} · {city}', { n, city }), date: fmt(day.date) }}
               ctx={ctx}
               segments={segments}
               openId={openId}
@@ -270,24 +271,24 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
               meteoDi={(item) => meteoDellaTappa(previsioniCitta.get(cittaTappa(trip, day, item)), day.date, item.time)}
               highlight={highlight}
             />
-            {day.items.length === 0 ? <p className="fa-m">{lettura ? 'Giornata ancora libera.' : 'Giornata ancora libera: aggiungi la prima tappa.'}</p> : null}
+            {day.items.length === 0 ? <p className="fa-m">{lettura ? tt('Giornata ancora libera.') : tt('Giornata ancora libera: aggiungi la prima tappa.')}</p> : null}
           </div>
 
           {lettura ? null : (
             <Pulsante iconLeading="plus" onPress={() => setSheet({ kind: 'add' })}>
-              Aggiungi tappa
+              {tt('Aggiungi tappa')}
             </Pulsante>
           )}
           {!lettura && plan && day.items.filter((i) => !i.time).length > 1 ? (
             <Pulsante color="secondary" iconLeading="move" isLoading={occ === 'ottimizza'} onPress={() => void optimize()}>
-              Ottimizza percorso
+              {tt('Ottimizza percorso')}
             </Pulsante>
           ) : null}
         </Colonna>
         <Colonna lato="sinistra" mobile>
           {spostamenti.length > 0 ? (
-            <section style={{ display: 'grid', gap: 16 }} aria-label="Voli e spostamenti">
-              <Sezione title="Voli e spostamenti" />
+            <section style={{ display: 'grid', gap: 16 }} aria-label={tt('Voli e spostamenti')}>
+              <Sezione title={tt('Voli e spostamenti')} />
               <div className="fa-list">
                 {spostamenti.map((e, i) => (
                   <Riga
@@ -303,8 +304,8 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
           ) : null}
 
           {stayList.length > 0 ? (
-            <section style={{ display: 'grid', gap: 16 }} aria-label="Alloggio">
-              <Sezione title="Alloggio" right={<Link href="/altro/alloggi" className="fa-lnk">Tutti</Link>} />
+            <section style={{ display: 'grid', gap: 16 }} aria-label={tt('Alloggio')}>
+              <Sezione title={tt('Alloggio')} right={<Link href="/altro/alloggi" className="fa-lnk">{tt('Tutti')}</Link>} />
               <div className="fa-list">
               {stayList.map((s) => (
                 <RigaAlloggio
@@ -317,10 +318,10 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
                   lettura={lettura}
                   onEdit={() => setStayEdit(s)}
                   onDelete={async () => {
-                    const ok = await ask({ title: 'Eliminare l’alloggio?', message: conDipendenze(`${s.name} sparisce dagli alloggi e dalle spese. Puoi annullare subito dopo.`, dipendenze(trip, 'alloggio', s.id)), confirm: 'Elimina l’alloggio', cancel: 'Tieni l’alloggio', destructive: true })
+                    const ok = await ask({ title: tt('Eliminare l’alloggio?'), message: conDipendenze(tt('{name} sparisce dagli alloggi e dalle spese. Puoi annullare subito dopo.', { name: s.name }), dipendenze(trip, 'alloggio', s.id)), confirm: tt('Elimina l’alloggio'), cancel: tt('Tieni l’alloggio'), destructive: true })
                     if (!ok) return
                     const m = await t.setStayDeleted(s.id, true)
-                    showToast(m ?? 'Alloggio eliminato', m ? undefined : { label: 'Annulla', run: () => void t.setStayDeleted(s.id, false) })
+                    showToast(m ?? tt('Alloggio eliminato'), m ? undefined : { label: tt('Annulla'), run: () => void t.setStayDeleted(s.id, false) })
                   }}
                 />
               ))}
@@ -329,15 +330,15 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
           ) : null}
 
           {expenses.length > 0 && !lettura ? (
-            <section style={{ display: 'grid', gap: 16 }} aria-label="Spese del giorno">
-              <Sezione title="Spese del giorno" right={<span className="fa-c">{formatMoney(total, trip.baseCurrency)}</span>} />
+            <section style={{ display: 'grid', gap: 16 }} aria-label={tt('Spese del giorno')}>
+              <Sezione title={tt('Spese del giorno')} right={<span className="fa-c">{formatMoney(total, trip.baseCurrency)}</span>} />
               <div className="fa-list">
                 {expenses.map((e) => (
                   <Riga
                     key={e.id}
                     icon={iconaSpesa(e)}
                     title={e.label}
-                    sub={[e.paidBy ? `Pagata da ${payer.get(e.paidBy) ?? '—'}` : null, e.category].filter(Boolean).join(' · ')}
+                    sub={[e.paidBy ? tt('Pagata da {v0}', { v0: payer.get(e.paidBy) ?? '—' }) : null, e.category ? nomeCategoria(e.category) : null].filter(Boolean).join(' · ')}
                     end={<span className="amt">{formatMoney(e.amount, e.currency)}</span>}
                     onPress={() => setSpesa(e)}
                   />
@@ -347,11 +348,11 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
           ) : null}
 
           {bookings.length > 0 && !lettura ? (
-            <section style={{ display: 'grid', gap: 16 }} aria-label="Prenotazioni del giorno">
-              <Sezione title="Prenotazioni del giorno" right={<Link href="/altro/prenotazioni" className="fa-lnk">Tutte</Link>} />
+            <section style={{ display: 'grid', gap: 16 }} aria-label={tt('Prenotazioni del giorno')}>
+              <Sezione title={tt('Prenotazioni del giorno')} right={<Link href="/altro/prenotazioni" className="fa-lnk">{tt('Tutte')}</Link>} />
               <div className="fa-list">
                 {bookings.map(({ booking: b, tappa }) => (
-                  <Riga key={b.id} icon="i-sez-ticket" title={b.title} sub={[tappa ? `Tappa: ${tappa.title}` : trip.bookingLinks ? 'Non collegata a una tappa' : '', b.code ? `Codice ${b.code}` : ''].filter(Boolean).join(' · ') || 'Prenotazione'} onPress={() => setPrenotazione(b)} />
+                  <Riga key={b.id} icon="i-sez-ticket" title={b.title} sub={[tappa ? tt('Tappa: {title}', { title: tappa.title }) : trip.bookingLinks ? tt('Non collegata a una tappa') : '', b.code ? tt('Codice {code}', { code: b.code }) : ''].filter(Boolean).join(' · ') || tt('Prenotazione')} onPress={() => setPrenotazione(b)} />
                 ))}
               </div>
             </section>
@@ -360,9 +361,9 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
       </Affianca>
 
       {prev || next ? (
-        <nav aria-label="Giorni vicini" style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+        <nav aria-label={tt('Giorni vicini')} style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
           {prev ? (
-            <Link href={`/giorni/${prev.id}`} replace className="fa-btn sm out" aria-label={`Giorno precedente, ${fmt(prev.date)}`}>
+            <Link href={`/giorni/${prev.id}`} replace className="fa-btn sm out" aria-label={tt('Giorno precedente, {v0}', { v0: fmt(prev.date) })}>
               <Sv name="back" size={18} />
               {fmt(prev.date)}
             </Link>
@@ -370,7 +371,7 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
             <span />
           )}
           {next ? (
-            <Link href={`/giorni/${next.id}`} replace className="fa-btn sm out" aria-label={`Giorno successivo, ${fmt(next.date)}`}>
+            <Link href={`/giorni/${next.id}`} replace className="fa-btn sm out" aria-label={tt('Giorno successivo, {v0}', { v0: fmt(next.date) })}>
               {fmt(next.date)}
               <Sv name="chevr" size={18} />
             </Link>
@@ -387,8 +388,8 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
           trip={trip}
           current={day}
           open
-          title={sheet.postpone ? 'Rimanda a un altro giorno' : 'Sposta in un altro giorno'}
-          action={sheet.postpone ? 'Rimanda qui' : 'Sposta qui'}
+          title={sheet.postpone ? tt('Rimanda a un altro giorno') : tt('Sposta in un altro giorno')}
+          action={sheet.postpone ? tt('Rimanda qui') : tt('Sposta qui')}
           onClose={() => setSheet(null)}
           onMove={async (to) => {
             const m = await t.moveItemToDay(trip.id, sheet.item.id, to, sheet.postpone)

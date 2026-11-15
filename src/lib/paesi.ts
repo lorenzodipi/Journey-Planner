@@ -3,6 +3,7 @@
 import type { Trip, TripCountry } from '../types'
 import { countryByCode, countryByName } from './countries'
 import { enumerateDates } from './tripDays'
+import { t } from '../i18n'
 
 type Base = Pick<Trip, 'destination' | 'timezone' | 'localCurrency' | 'fxRate' | 'startDate' | 'endDate' | 'center'> & { countries?: TripCountry[] }
 
@@ -67,12 +68,12 @@ export interface ErrorePaesi {
 
 /** Le date dei paesi devono stare dentro quelle del viaggio e ogni paese deve finire dopo l'inizio. */
 export function validaPaesi(list: Pick<TripCountry, 'name' | 'startDate' | 'endDate'>[], start: string, end: string): ErrorePaesi | null {
-  if (list.length === 0) return { index: null, message: 'Aggiungi almeno un paese.' }
+  if (list.length === 0) return { index: null, message: t('Aggiungi almeno un paese.') }
   for (let i = 0; i < list.length; i++) {
     const c = list[i]
-    if (!c.name) return { index: i, message: 'Scegli il paese.' }
-    if (c.endDate < c.startDate) return { index: i, message: `Le date di ${c.name} non tornano: la fine è prima dell'inizio.` }
-    if (c.startDate < start || c.endDate > end) return { index: i, message: `Le date di ${c.name} devono stare dentro quelle del viaggio.` }
+    if (!c.name) return { index: i, message: t('Scegli il paese.') }
+    if (c.endDate < c.startDate) return { index: i, message: t('Le date di {name} non tornano: la fine è prima dell\'inizio.', { name: c.name }) }
+    if (c.startDate < start || c.endDate > end) return { index: i, message: t('Le date di {name} devono stare dentro quelle del viaggio.', { name: c.name }) }
   }
   return null
 }

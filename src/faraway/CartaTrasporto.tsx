@@ -12,6 +12,7 @@ import { Pulsante } from './base'
 import { cx } from './cx'
 import { Sv } from './icons'
 import { PersoneRiga } from './Persone'
+import { t as tt } from '../i18n'
 
 /** Un solo «Maps» per il tragitto: indicazioni da partenza ad arrivo (con le coordinate, se ci sono). */
 const direzioni = (t: Transport) => {
@@ -43,15 +44,15 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
   const sub = [dataBreve, fermate(t)].filter(Boolean).join(' · ')
   const manca = prezzo.totale === null
   const rows: [string, ReactNode][] = [
-    ['Codice', t.refCode ?? ''],
-    ['Operatore', t.operator ?? ''],
-    ['Terminal', t.terminal ?? ''],
-    ['Binario', t.platform ?? ''],
-    ['Passeggeri', people.length ? <PersoneRiga trip={trip} ids={people.map((p) => p.id)} /> : ''],
-    ...(lettura ? [] : [['Prezzo', manca ? 'Non ancora inserito' : prezzo.persone > 1 && prezzo.aTesta !== null ? `${prezzo.persone} × ${formatMoney(prezzo.aTesta, cur)}` : formatMoney(prezzo.totale as number, cur)] as [string, ReactNode]]),
-    ['Bagaglio', t.baggage ?? ''],
-    ['Cambio e rimborso', t.policy ?? ''],
-    ['Nota', t.notes ?? ''],
+    [tt('Codice'), t.refCode ?? ''],
+    [tt('Operatore'), t.operator ?? ''],
+    [tt('Terminal'), t.terminal ?? ''],
+    [tt('Binario'), t.platform ?? ''],
+    [tt('Passeggeri'), people.length ? <PersoneRiga trip={trip} ids={people.map((p) => p.id)} /> : ''],
+    ...(lettura ? [] : [[tt('Prezzo'), manca ? tt('Non ancora inserito') : prezzo.persone > 1 && prezzo.aTesta !== null ? `${prezzo.persone} × ${formatMoney(prezzo.aTesta, cur)}` : formatMoney(prezzo.totale as number, cur)] as [string, ReactNode]]),
+    [tt('Bagaglio'), t.baggage ?? ''],
+    [tt('Cambio e rimborso'), t.policy ?? ''],
+    [tt('Nota'), t.notes ?? ''],
   ]
   return (
     <div className="k-TicketOrizzontale">
@@ -70,7 +71,7 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
               {lettura ? null : (
                 <span className={cx('pl3b', t.bought ? 'ok' : 'td')}>
                   <Sv name={t.bought ? 'check' : 'clock'} size={16} />
-                  {t.bought ? 'Pagato' : 'Non pagato'}
+                  {t.bought ? tt('Pagato') : tt('Non pagato')}
                 </span>
               )}
               <span className="chv" aria-hidden="true">
@@ -109,13 +110,13 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
                 <div>
                   {lettura ? null : (
                     <div className="pv" style={manca ? { color: 'var(--ink-muted)' } : undefined}>
-                      {manca ? 'Prezzo non inserito' : formatMoney(prezzo.totale as number, cur)}
+                      {manca ? tt('Prezzo non inserito') : formatMoney(prezzo.totale as number, cur)}
                     </div>
                   )}
                 </div>
                 {manca && !lettura ? (
                   <Pulsante size="sm" iconLeading="plus" onPress={() => onEdit('prezzo')}>
-                    Aggiungi prezzo
+                    {tt('Aggiungi prezzo')}
                   </Pulsante>
                 ) : null}
               </div>
@@ -131,19 +132,19 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
                 ))}
             </dl>
             <div className="acts2">
-              <Pulsante size="sm" color="secondary" iconLeading="pin" href={direzioni(t)} target="_blank" aria-label={`Maps: da ${t.from} a ${t.to}`}>
-                Maps
+              <Pulsante size="sm" color="secondary" iconLeading="pin" href={direzioni(t)} target="_blank" aria-label={tt('Maps: da {from} a {to}', { from: t.from, to: t.to })}>
+                {tt('Maps')}
               </Pulsante>
               <Pulsante size="sm" color="secondary" iconLeading="qr" onPress={onCode}>
-                Codice
+                {tt('Codice')}
               </Pulsante>
               {lettura ? null : (
                 <>
                   <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => onEdit()}>
-                    Modifica
+                    {tt('Modifica')}
                   </Pulsante>
                   <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
-                    Elimina
+                    {tt('Elimina')}
                   </Pulsante>
                 </>
               )}

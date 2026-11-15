@@ -18,6 +18,7 @@ import { CampoValuta } from '../../faraway/CampoValuta'
 import { ChiHaPagato } from '../../faraway/ChiHaPagato'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
+import { t as tt } from '../../i18n'
 
 const MODI: TransportMode[] = ['train', 'metro', 'bus', 'taxi', 'walk', 'car', 'ferry', 'plane', 'other']
 const MODE_GLIFO: Record<TransportMode, string> = { train: 'g-tra-train', metro: 'g-tra-metro', bus: 'g-tra-bus', taxi: 'g-tra-taxi', walk: 'g-tra-walk', car: 'g-tra-car', ferry: 'g-tra-ferry', plane: 'g-tra-plane', other: 'g-cat-pin' }
@@ -76,13 +77,13 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     const err: typeof errors = {}
-    if (!from.trim()) err.from = 'Scrivi da dove parte.'
-    if (!to.trim()) err.to = 'Scrivi dove arriva.'
+    if (!from.trim()) err.from = tt('Scrivi da dove parte.')
+    if (!to.trim()) err.to = tt('Scrivi dove arriva.')
     const amount = parseAmount(cost)
-    if (cost.trim() && amount === null) err.cost = 'Il costo non è chiaro: scrivi per esempio 15,50.'
-    if (paid && amount && payers.length === 0) err.paidBy = 'Manca chi ha pagato. Scegli una persona.'
-    if ((dt && !dd) || (at && !ad)) err.when = 'Con l’ora serve anche la data.'
-    else if (isCompleteZoned(dd, dt) && isCompleteZoned(ad, at) && Date.parse(zonedToInstant(ad, at, trip.timezone)) <= Date.parse(zonedToInstant(dd, dt, trip.timezone))) err.when = 'L’arrivo è prima della partenza.'
+    if (cost.trim() && amount === null) err.cost = tt('Il costo non è chiaro: scrivi per esempio 15,50.')
+    if (paid && amount && payers.length === 0) err.paidBy = tt('Manca chi ha pagato. Scegli una persona.')
+    if ((dt && !dd) || (at && !ad)) err.when = tt('Con l’ora serve anche la data.')
+    else if (isCompleteZoned(dd, dt) && isCompleteZoned(ad, at) && Date.parse(zonedToInstant(ad, at, trip.timezone)) <= Date.parse(zonedToInstant(dd, dt, trip.timezone))) err.when = tt('L’arrivo è prima della partenza.')
     setErrors(err)
     if (Object.keys(err).length > 0) return
     // la posizione sulla mappa resta solo se il nome del posto non è cambiato
@@ -101,7 +102,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
     const message = t ? await tr.updateTransport(trip.id, t.id, input) : await tr.createTransport(trip.id, input)
     setBusy(false)
     if (message) return setErrors({ form: message })
-    showToast(t ? 'Trasporto aggiornato' : 'Trasporto salvato')
+    showToast(t ? tt('Trasporto aggiornato') : tt('Trasporto salvato'))
     onClose()
   }
 
@@ -113,40 +114,40 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
     <Foglio
       open={open}
       full
-      title={t ? 'Modifica trasporto' : 'Nuovo trasporto'}
+      title={t ? tt('Modifica trasporto') : tt('Nuovo trasporto')}
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="trasporto-form" isLoading={busy}>
-          {t ? 'Salva le modifiche' : 'Salva il trasporto'}
+          {t ? tt('Salva le modifiche') : tt('Salva il trasporto')}
         </Pulsante>
       }
     >
       <form id="trasporto-form" className="frm grp" onSubmit={submit} noValidate>
-        <Gruppo titolo="Tragitto">
-          <Riquadri<TransportMode> label="Mezzo" cols={3} value={mode} onChange={(m) => m && setMode(m)} options={MODI.map((m) => ({ value: m, label: m === 'other' ? 'Altro' : MODE_NOME[m], glifo: MODE_GLIFO[m] }))} />
-          <Campo label="Nome o numero del mezzo" value={title} onChange={setTitle} placeholder="es. Treno 9512" maxLength={60} />
+        <Gruppo titolo={tt('Tragitto')}>
+          <Riquadri<TransportMode> label={tt('Mezzo')} cols={3} value={mode} onChange={(m) => m && setMode(m)} options={MODI.map((m) => ({ value: m, label: m === 'other' ? tt('Altro') : MODE_NOME[m], glifo: MODE_GLIFO[m] }))} />
+          <Campo label={tt('Nome o numero del mezzo')} value={title} onChange={setTitle} placeholder={tt('es. Treno 9512')} maxLength={60} />
           <Percorso
             durata={durata}
             da={{
-              titolo: 'Partenza',
+              titolo: tt('Partenza'),
               children: (
                 <>
-                  <Campo label="Luogo" icon="pin" value={from} onChange={setFrom} placeholder="Città o stazione" error={errors.from} />
+                  <Campo label={tt('Luogo')} icon="pin" value={from} onChange={setFrom} placeholder={tt('Città o stazione')} error={errors.from} />
                   <div className="dt">
-                    <Campo label="Data" type="date" icon="cal" value={dd} onChange={(v) => (setDd(v), !ad || ad < v ? setAd(v) : null)} />
-                    <Campo label="Ora" type="time" icon="clock" value={dt} onChange={setDt} />
+                    <Campo label={tt('Data')} type="date" icon="cal" value={dd} onChange={(v) => (setDd(v), !ad || ad < v ? setAd(v) : null)} />
+                    <Campo label={tt('Ora')} type="time" icon="clock" value={dt} onChange={setDt} />
                   </div>
                 </>
               ),
             }}
             a={{
-              titolo: 'Arrivo',
+              titolo: tt('Arrivo'),
               children: (
                 <>
-                  <Campo label="Luogo" icon="pin" value={to} onChange={setTo} placeholder="Città o stazione" error={errors.to} />
+                  <Campo label={tt('Luogo')} icon="pin" value={to} onChange={setTo} placeholder={tt('Città o stazione')} error={errors.to} />
                   <div className="dt">
-                    <Campo label="Data" type="date" icon="cal" value={ad} onChange={setAd} min={dd || undefined} />
-                    <Campo label="Ora" type="time" icon="clock" value={at} onChange={setAt} />
+                    <Campo label={tt('Data')} type="date" icon="cal" value={ad} onChange={setAd} min={dd || undefined} />
+                    <Campo label={tt('Ora')} type="time" icon="clock" value={at} onChange={setAt} />
                   </div>
                 </>
               ),
@@ -155,50 +156,50 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
           {errors.when ? <Errore>{errors.when}</Errore> : null}
           {paesiDi(trip).length > 1 && dd ? (
             <span className="fa-help">
-              {ad && paeseDelGiorno(trip, ad).name !== paeseDelGiorno(trip, dd).name ? `Parte in ${paeseDelGiorno(trip, dd).name}, arriva in ${paeseDelGiorno(trip, ad).name}` : `Giorno in ${paeseDelGiorno(trip, dd).name}`}
+              {ad && paeseDelGiorno(trip, ad).name !== paeseDelGiorno(trip, dd).name ? tt('Parte in {name}, arriva in {name2}', { name: paeseDelGiorno(trip, dd).name, name2: paeseDelGiorno(trip, ad).name }) : tt('Giorno in {name}', { name: paeseDelGiorno(trip, dd).name })}
             </span>
           ) : null}
           <SegmentiFacoltativi
-            label="Fermate"
+            label={tt('Fermate')}
             value={stops === 'nd' ? '' : stops}
             onChange={(v) => setStops(v || 'nd')}
-            help="Se non lo sai, lascia vuoto."
+            help={tt('Se non lo sai, lascia vuoto.')}
             options={[
-              { value: '0', label: 'Diretto' },
-              { value: '1', label: '1', nome: 'Una fermata' },
-              { value: '2', label: '2', nome: 'Due fermate' },
-              { value: '3', label: '3+', nome: 'Tre o più fermate' },
+              { value: '0', label: tt('Diretto') },
+              { value: '1', label: '1', nome: tt('Una fermata') },
+              { value: '2', label: '2', nome: tt('Due fermate') },
+              { value: '3', label: '3+', nome: tt('Tre o più fermate') },
             ]}
           />
         </Gruppo>
-        <Gruppo titolo="Costo">
+        <Gruppo titolo={tt('Costo')}>
           <PerChi trip={trip} meId={me?.id} value={people} onChange={setWho} />
           <div className="fa-2c">
-            <Campo label="Costo" inputMode="decimal" value={cost} onChange={setCost} placeholder="es. 15,50" error={errors.cost} autoFocus={focus === 'prezzo'} />
+            <Campo label={tt('Costo')} inputMode="decimal" value={cost} onChange={setCost} placeholder={tt('es. 15,50')} error={errors.cost} autoFocus={focus === 'prezzo'} />
             <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, t?.currency)} />
           </div>
           <IlCostoE value={scope} onChange={setScope} amount={amountNow} persone={people.length} currency={currency} />
-          <Interruttore label="Pagato" hint={paid ? 'Con un costo, il trasporto diventa una spesa.' : 'Non pagato'} isSelected={paid} onChange={setPaid} />
+          <Interruttore label={tt('Pagato')} hint={paid ? tt('Con un costo, il trasporto diventa una spesa.') : tt('Non pagato')} isSelected={paid} onChange={setPaid} />
           {paid && cost.trim() ? <ChiHaPagato travelers={trip.travelers} value={payers} onChange={setPayers} error={errors.paidBy} /> : null}
         </Gruppo>
-        <Gruppo titolo="Biglietto">
-          <Campo label="Operatore" value={operator} onChange={setOperator} placeholder="Nome della compagnia" />
-          <Campo label="Codice di prenotazione" value={refCode} onChange={(v) => setRefCode(v.toUpperCase())} placeholder="es. 4K7QX2" autoComplete="off" />
+        <Gruppo titolo={tt('Biglietto')}>
+          <Campo label={tt('Operatore')} value={operator} onChange={setOperator} placeholder={tt('Nome della compagnia')} />
+          <Campo label={tt('Codice di prenotazione')} value={refCode} onChange={(v) => setRefCode(v.toUpperCase())} placeholder={tt('es. 4K7QX2')} autoComplete="off" />
         </Gruppo>
-        <Gruppo titolo="Regole e note">
-          <Campo label="Bagaglio" value={baggage} onChange={setBaggage} placeholder="es. 1 valigia grande" />
-          <Campo label="Cambio e rimborso" textarea value={policy} onChange={setPolicy} placeholder="es. Cambio gratuito fino alla partenza" />
-          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="es. Biglietto da ritirare in stazione" />
+        <Gruppo titolo={tt('Regole e note')}>
+          <Campo label={tt('Bagaglio')} value={baggage} onChange={setBaggage} placeholder={tt('es. 1 valigia grande')} />
+          <Campo label={tt('Cambio e rimborso')} textarea value={policy} onChange={setPolicy} placeholder={tt('es. Cambio gratuito fino alla partenza')} />
+          <Campo label={tt('Note')} textarea value={notes} onChange={setNotes} placeholder={tt('es. Biglietto da ritirare in stazione')} />
         </Gruppo>
-        <AltriDettagli pieni={altri} contenuto="Terminal, binario, check-in">
+        <AltriDettagli pieni={altri} contenuto={tt('Terminal, binario, check-in')}>
           <div className="fa-2c">
-            <Campo label="Terminal" value={terminal} onChange={setTerminal} maxLength={10} placeholder="es. T1" />
-            <Campo label="Binario" value={platform} onChange={setPlatform} maxLength={10} placeholder="es. 14" />
+            <Campo label={tt('Terminal')} value={terminal} onChange={setTerminal} maxLength={10} placeholder={tt('es. T1')} />
+            <Campo label={tt('Binario')} value={platform} onChange={setPlatform} maxLength={10} placeholder={tt('es. 14')} />
           </div>
-          <Micro titolo="Apertura del check-in" />
+          <Micro titolo={tt('Apertura del check-in')} />
           <div className="fa-2c dt">
-            <Campo label="Data" type="date" icon="cal" value={checkin.date} onChange={(v) => setCheckin({ ...checkin, date: v })} />
-            <Campo label="Ora" type="time" icon="clock" value={checkin.time} onChange={(v) => setCheckin({ ...checkin, time: v })} />
+            <Campo label={tt('Data')} type="date" icon="cal" value={checkin.date} onChange={(v) => setCheckin({ ...checkin, date: v })} />
+            <Campo label={tt('Ora')} type="time" icon="clock" value={checkin.time} onChange={(v) => setCheckin({ ...checkin, time: v })} />
           </div>
         </AltriDettagli>
         {t ? <DocumentiCollegati trip={trip} kind={'transport'} refId={t.id} /> : null}

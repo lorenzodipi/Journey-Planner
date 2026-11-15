@@ -5,6 +5,7 @@ import { gradi } from './formati'
 import { ora } from './formati'
 import { toMin } from './tappa'
 import { weatherLabel, type DayWeather, type HourWeather } from './weather'
+import { t as tt } from '../i18n'
 
 /** Città di una tappa: quella del luogo collegato, altrimenti quella del giorno. */
 export function cittaTappa(trip: Pick<Trip, 'places' | 'destination'>, day: Pick<Day, 'city'>, item: Pick<DayItem, 'placeId'>): string {
@@ -52,7 +53,7 @@ export function meteoDellaTappa(giorniCitta: DayWeather[] | undefined, date: str
   if (m === null) return null
   const h = oraDelMeteo(giorniCitta?.find((d) => d.date === date), Math.floor(m / 60))
   if (!h) return null
-  return `${gradi(h.t)} · ${weatherLabel(h.code).label.toLowerCase()} alle ${ora(time)}`
+  return tt('{v0} · {v1} alle {v2}', { v0: gradi(h.t), v1: weatherLabel(h.code).label.toLowerCase(), v2: ora(time) })
 }
 
 /** Precipitazione totale prevista nel giorno (mm). */

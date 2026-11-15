@@ -3,6 +3,7 @@
 import { parseDate, type CalendarDate } from '@internationalized/date'
 import { Button, CalendarCell, CalendarGrid, CalendarGridBody, CalendarGridHeader, CalendarHeaderCell, Heading, I18nProvider, RangeCalendar } from 'react-aria-components'
 import { Sv } from './icons'
+import { LOCALE, t } from '../i18n'
 
 export interface Intervallo {
   /** «aaaa-mm-gg» */
@@ -13,21 +14,21 @@ export interface Intervallo {
 export function CalendarioIntervallo({ value, onChange, mese }: { value: Intervallo | null; onChange: (v: Intervallo) => void; /** mese da mostrare se non c'è ancora una scelta («aaaa-mm-gg») */ mese?: string }) {
   const v = value ? { start: parseDate(value.dal), end: parseDate(value.al) } : null
   return (
-    <I18nProvider locale="it-IT">
+    <I18nProvider locale={LOCALE}>
       <RangeCalendar
         className="fa-cal"
-        aria-label="Date delle spese"
+        aria-label={t('Date delle spese')}
         value={v}
         defaultFocusedValue={v?.start ?? (mese ? parseDate(mese) : undefined)}
         firstDayOfWeek="mon"
         onChange={(r: { start: CalendarDate; end: CalendarDate }) => onChange({ dal: r.start.toString(), al: r.end.toString() })}
       >
         <header className="fa-cal-h">
-          <Button slot="previous" className="fa-cal-nav" aria-label="Mese precedente">
+          <Button slot="previous" className="fa-cal-nav" aria-label={t('Mese precedente')}>
             <Sv name="chevr" size={20} className="fa-cal-prev" />
           </Button>
           <Heading className="fa-cal-t" />
-          <Button slot="next" className="fa-cal-nav" aria-label="Mese successivo">
+          <Button slot="next" className="fa-cal-nav" aria-label={t('Mese successivo')}>
             <Sv name="chevr" size={20} />
           </Button>
         </header>

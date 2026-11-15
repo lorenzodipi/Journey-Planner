@@ -25,6 +25,7 @@ import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { VuotoFiltro } from '../../faraway/Stati'
 import { SpesaSheet } from './SpesaSheet'
 import { giornoSpese, inQuanti, pagataDa, rigaSpesa, sorgente } from './testi'
+import { LINGUA, nomeCategoria, t as tt } from '../../i18n'
 
 type Vista = 'tutti' | 'mie'
 
@@ -58,7 +59,7 @@ export function Dettaglio() {
       const i = CATEGORIE_BASE.findIndex((b) => catKey(b.label) === k)
       return k === 'altro' ? 1000 : i >= 0 ? i : 100
     }
-    return keys.sort((a, b) => order(a) - order(b) || a.localeCompare(b, 'it')).map((k) => categoriaDi(inVista.find((e) => catKey(categoriaDi(e)) === k) as SpesaVista))
+    return keys.sort((a, b) => order(a) - order(b) || a.localeCompare(b, LINGUA)).map((k) => categoriaDi(inVista.find((e) => catKey(categoriaDi(e)) === k) as SpesaVista))
   }, [inVista])
   const q = text.trim().toLowerCase()
   const nelleDate = (e: SpesaVista) => {
@@ -83,59 +84,59 @@ export function Dettaglio() {
     // i pagamenti registrati su questa spesa smettono di contare (rimborsiValidi): meglio dirlo prima
     const pagati = round2((trip.settlements ?? []).filter((r) => r.expenseId === e.id && r.status === 'confermato').reduce((n, r) => n + (r.compensation ? 0 : r.amount), 0))
     const ok = await ask({
-      title: 'Eliminare la spesa?',
-      message: `${e.label} sparisce dalle spese${tappa ? ' e dal costo della tappa' : ''}.${pagati > 0 ? ` Anche i pagamenti già registrati su questa spesa (${formatMoney(pagati, trip.baseCurrency)}) non contano più.` : ''} Puoi annullare subito dopo.`,
-      confirm: 'Elimina la spesa',
-      cancel: 'Tieni la spesa',
+      title: tt('Eliminare la spesa?'),
+      message: tt('{label} sparisce dalle spese{v1}.{v2} Puoi annullare subito dopo.', { label: e.label, v1: tappa ? tt(' e dal costo della tappa') : '', v2: pagati > 0 ? tt(' Anche i pagamenti già registrati su questa spesa ({v0}) non contano più.', { v0: formatMoney(pagati, trip.baseCurrency) }) : '' }),
+      confirm: tt('Elimina la spesa'),
+      cancel: tt('Tieni la spesa'),
       destructive: true,
     })
     if (!ok) return
     const m = await t.setExpenseDeleted(e.id, true)
-    showToast(m ?? 'Spesa eliminata', m ? undefined : { label: 'Annulla', run: () => void t.setExpenseDeleted(e.id, false) })
+    showToast(m ?? tt('Spesa eliminata'), m ? undefined : { label: tt('Annulla'), run: () => void t.setExpenseDeleted(e.id, false) })
   }
 
   return (
     <Schermata
       bar={
         <BarraIndietro
-          title="Dettaglio spese"
+          title={tt('Dettaglio spese')}
           back="/spese"
           right={
-            <button type="button" className="fa-ib" aria-label="Cerca una spesa" aria-pressed={searchOpen} onClick={() => (setSearchOpen(!searchOpen), setText(''))}>
+            <button type="button" className="fa-ib" aria-label={tt('Cerca una spesa')} aria-pressed={searchOpen} onClick={() => (setSearchOpen(!searchOpen), setText(''))}>
               <Sv name="search" size={22} />
             </button>
           }
         />
       }
-      fab={{ label: 'Spesa', aria: 'Aggiungi una spesa', onPress: () => setSheet({}) }}
+      fab={{ label: tt('Spesa'), aria: tt('Aggiungi una spesa'), onPress: () => setSheet({}) }}
       // nella testa: ricerca, «Di tutti | Mie» e filtri, così si nascondono e tornano con la barra
       fissa={
         <>
-          {searchOpen ? <Campo label="Cerca una spesa" hideLabel icon="search" type="search" value={text} onChange={setText} placeholder="Nome o categoria" autoFocus /> : null}
+          {searchOpen ? <Campo label={tt('Cerca una spesa')} hideLabel icon="search" type="search" value={text} onChange={setText} placeholder={tt('Nome o categoria')} autoFocus /> : null}
           {gruppo ? (
             <Segmenti
-              label="Spese"
+              label={tt('Spese')}
               value={vista}
               options={[
-                { value: 'tutti', label: 'Di tutti' },
-                { value: 'mie', label: 'Mie' },
+                { value: 'tutti', label: tt('Di tutti') },
+                { value: 'mie', label: tt('Mie') },
               ]}
               onChange={(v) => (setVista(v), setCat(null), open.setOpen(null))}
             />
           ) : null}
           {inVista.length > 0 ? (
-            <div className="fa-chips scroll" role="group" aria-label="Filtri">
-              <Chip on={!!date} icon={<Sv name="cal" size={18} />} label={date ? `Date: ${testoDate}. Cambia le date` : 'Filtra per data'} onPress={() => setCalendario(true)}>
+            <div className="fa-chips scroll" role="group" aria-label={tt('Filtri')}>
+              <Chip on={!!date} icon={<Sv name="cal" size={18} />} label={date ? tt('Date: {testoDate}. Cambia le date', { testoDate }) : tt('Filtra per data')} onPress={() => setCalendario(true)}>
                 {date ? testoDate : null}
               </Chip>
               {cats.length > 1 ? (
                 <>
                   <Chip on={!cat} onPress={() => setCat(null)}>
-                    Tutte
+                    {tt('Tutte')}
                   </Chip>
                   {cats.map((c) => (
                     <Chip key={c} on={cat !== null && catKey(cat) === catKey(c)} onPress={() => setCat(c)}>
-                      {c}
+                      {nomeCategoria(c)}
                     </Chip>
                   ))}
                 </>
@@ -151,36 +152,36 @@ export function Dettaglio() {
           {calendario ? (
             <Foglio
               open
-              title="Filtra per data"
+              title={tt('Filtra per data')}
               onClose={() => setCalendario(false)}
               headStart={
                 date ? (
                   <button type="button" className="fa-hdtxt" onClick={() => (setDate(null), setCalendario(false))}>
-                    Azzera
+                    {tt('Azzera')}
                   </button>
                 ) : (
                   <span />
                 )
               }
             >
-              <p className="fa-m" style={{ margin: 0 }}>Tocca il primo e l’ultimo giorno. Per un giorno solo, toccalo due volte.</p>
+              <p className="fa-m" style={{ margin: 0 }}>{tt('Tocca il primo e l’ultimo giorno. Per un giorno solo, toccalo due volte.')}</p>
               <CalendarioIntervallo value={date} mese={trip.days[0]?.date ?? today} onChange={(v) => (setDate(v), setCalendario(false), open.setOpen(null))} />
             </Foglio>
           ) : null}
         </>
       }
     >
-      {gruppo && vista === 'mie' ? <p className="fa-m" style={{ margin: 0 }}>Spese pagate da te o divise con te e solo alcune persone.</p> : null}
+      {gruppo && vista === 'mie' ? <p className="fa-m" style={{ margin: 0 }}>{tt('Spese pagate da te o divise con te e solo alcune persone.')}</p> : null}
       {shown.length === 0 ? (
         inVista.length === 0 ? (
           <VuotoFiltro
-            title={vista === 'mie' && gruppo ? 'Nessuna spesa tua' : 'Nessuna spesa'}
-            text={vista === 'mie' && gruppo ? 'Qui trovi le spese pagate da te o divise con te e solo alcune persone.' : 'Registra la prima spesa: la trovi qui, divisa per giorno.'}
-            action="Registra una spesa"
+            title={vista === 'mie' && gruppo ? tt('Nessuna spesa tua') : tt('Nessuna spesa')}
+            text={vista === 'mie' && gruppo ? tt('Qui trovi le spese pagate da te o divise con te e solo alcune persone.') : tt('Registra la prima spesa: la trovi qui, divisa per giorno.')}
+            action={tt('Registra una spesa')}
             onAction={() => setSheet({})}
           />
         ) : (
-          <VuotoFiltro title="Nessuna spesa trovata" text={date ? "Prova con altre date, un'altra categoria o un altro nome." : "Prova con un'altra categoria o un altro nome."} action="Mostra tutte le spese" onAction={() => (setCat(null), setText(''), setDate(null))} />
+          <VuotoFiltro title={tt('Nessuna spesa trovata')} text={date ? tt('Prova con altre date, un\'altra categoria o un altro nome.') : tt('Prova con un\'altra categoria o un altro nome.')} action={tt('Mostra tutte le spese')} onAction={() => (setCat(null), setText(''), setDate(null))} />
         )
       ) : null}
       <Affianca>
@@ -204,7 +205,7 @@ export function Dettaglio() {
               const paid = multi ? expensePaid(e, r.fx) : null
               const pays = paid ?? (amount !== null ? payersOf(e).slice(0, 1).map((x) => ({ travelerId: x.travelerId, amount })) : [])
               const saldo = me && amount !== null && pays.length > 0 ? expenseBalance(pays, owed ?? expenseOwed(e, trip.travelers, r.fx) ?? []).find((b) => b.travelerId === me.id) : undefined
-              const nm = (id: string) => (id === me?.id ? 'Tu' : (trip.travelers.find((p) => p.id === id)?.name.split(/\s+/)[0] ?? '—'))
+              const nm = (id: string) => (id === me?.id ? tt('Tu') : (trip.travelers.find((p) => p.id === id)?.name.split(/\s+/)[0] ?? '—'))
               const attesa = coda && t.pendingIds.has(e.id)
               const importo = amount === null ? formatMoney(e.amount, e.currency) : formatMoney(amount, cur)
               return (
@@ -216,7 +217,7 @@ export function Dettaglio() {
                         {e.label}
                       </span>
                       <span className="s" style={{ display: 'block' }}>
-                        {coda ? `${attesa ? 'In attesa di invio' : 'Salvata'} · ${importo}` : rigaSpesa(e, trip, me?.id)}
+                        {coda ? `${attesa ? tt('In attesa di invio') : tt('Salvata')} · ${importo}` : rigaSpesa(e, trip, me?.id)}
                       </span>
                     </span>
                     <span className="end">
@@ -224,7 +225,7 @@ export function Dettaglio() {
                         attesa ? (
                           <span className="fa-wait">
                             <Sv name="clock" size={16} />
-                            In attesa
+                            {tt('In attesa')}
                           </span>
                         ) : null
                       ) : (
@@ -248,7 +249,7 @@ export function Dettaglio() {
                         <div>
                           {who.length > 1 && owed ? (
                             <>
-                              <div className="t">Diviso {inQuanti(who.length)} · {SPLIT_LABEL[e.splitMode ?? 'equal'].toLowerCase()}</div>
+                              <div className="t">{tt('Diviso {v0} · {v1}', { v0: inQuanti(who.length), v1: SPLIT_LABEL[e.splitMode ?? 'equal'].toLowerCase() })}</div>
                               {owed.map((o, k) => (
                                 <div key={o.travelerId} className="s">
                                   {nm(o.travelerId)}: {formatMoney(o.amount, cur)}
@@ -258,11 +259,11 @@ export function Dettaglio() {
                             </>
                           ) : who.length > 1 ? (
                             <>
-                              <div className="t">Diviso {inQuanti(who.length)}</div>
-                              {amount !== null ? <div className="s">{formatMoney(round2(amount / who.length), cur)} a testa</div> : null}
+                              <div className="t">{tt('Diviso {v0}', { v0: inQuanti(who.length) })}</div>
+                              {amount !== null ? <div className="s">{tt('{v0} a testa', { v0: formatMoney(round2(amount / who.length), cur) })}</div> : null}
                             </>
                           ) : (
-                            <div className="t">{who[0] === me?.id ? 'Solo tua' : `Solo di ${trip.travelers.find((p) => p.id === who[0])?.name.split(/\s+/)[0] ?? '—'}`}</div>
+                            <div className="t">{who[0] === me?.id ? tt('Solo tua') : tt('Solo di {v0}', { v0: trip.travelers.find((p) => p.id === who[0])?.name.split(/\s+/)[0] ?? '—' })}</div>
                           )}
                         </div>
                       </div>
@@ -270,7 +271,7 @@ export function Dettaglio() {
                         <div className="kv">
                           <Sv name="user" size={20} />
                           <div>
-                            <div className="t">Chi ha pagato</div>
+                            <div className="t">{tt('Chi ha pagato')}</div>
                             {paid.map((p) => (
                               <div key={p.travelerId} className="s">
                                 {nm(p.travelerId)}: {formatMoney(p.amount, cur)}
@@ -283,9 +284,9 @@ export function Dettaglio() {
                         <div className="kv">
                           <Sv name="info" size={20} />
                           <div>
-                            <div className="t">{saldo.net > 0 ? `Devi ricevere ${formatMoney(saldo.net, cur)}` : `Devi dare ${formatMoney(-saldo.net, cur)}`}</div>
+                            <div className="t">{saldo.net > 0 ? tt('Devi ricevere {v0}', { v0: formatMoney(saldo.net, cur) }) : tt('Devi dare {v0}', { v0: formatMoney(-saldo.net, cur) })}</div>
                             <div className="s">
-                              Hai versato {formatMoney(saldo.paid, cur)}, la tua parte è {formatMoney(saldo.owed, cur)}
+                              {tt('Hai versato {v0}, la tua parte è {v1}', { v0: formatMoney(saldo.paid, cur), v1: formatMoney(saldo.owed, cur) })}
                             </div>
                           </div>
                         </div>
@@ -295,23 +296,23 @@ export function Dettaglio() {
                           <Sv name="globe" size={20} />
                           <div>
                             <div className="t">{formatMoney(e.amount, e.currency)}</div>
-                            <div className="s">{amount === null ? 'Manca il cambio: non conta nei totali' : `= ${formatMoney(amount, cur)}`}</div>
+                            <div className="s">{amount === null ? tt('Manca il cambio: non conta nei totali') : `= ${formatMoney(amount, cur)}`}</div>
                           </div>
                         </div>
                       ) : null}
                       <div className="kv">
                         <Sv name="info" size={20} />
                         <div>
-                          <div className="t">Categoria</div>
-                          <div className="s">{categoriaDi(e)}</div>
+                          <div className="t">{tt('Categoria')}</div>
+                          <div className="s">{nomeCategoria(categoriaDi(e))}</div>
                         </div>
                       </div>
                       {day >= 0 ? (
                         <div className="kv">
                           <Sv name="cal" size={20} />
                           <div>
-                            <div className="t">Tappa del Giorno {day + 1}</div>
-                            <div className="s">Il costo si aggiorna anche nella tappa</div>
+                            <div className="t">{tt('Tappa del Giorno {v0}', { v0: day + 1 })}</div>
+                            <div className="s">{tt('Il costo si aggiorna anche nella tappa')}</div>
                           </div>
                         </div>
                       ) : null}
@@ -322,16 +323,16 @@ export function Dettaglio() {
                             {src.label}
                           </button>
                         ) : !mio ? (
-                          <span className="fa-help" style={{ flex: 1 }}>Solo chi l'ha creata o pagata può modificarla.</span>
+                          <span className="fa-help" style={{ flex: 1 }}>{tt('Solo chi l\'ha creata o pagata può modificarla.')}</span>
                         ) : (
                           <>
                             <button type="button" className="fa-btn sm out" onClick={() => setSheet({ expense: e })}>
                               <Sv name="pencil" size={18} />
-                              Modifica
+                              {tt('Modifica')}
                             </button>
                             <button type="button" className="fa-btn sm del" style={{ color: 'var(--danger)' }} onClick={() => void elimina(e)}>
                               <Sv name="trash" size={18} />
-                              Elimina
+                              {tt('Elimina')}
                             </button>
                           </>
                         )}

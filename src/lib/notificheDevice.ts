@@ -1,6 +1,7 @@
 // Notifiche locali sul dispositivo (#46): permesso, programmazione e tocco. Nell'app Android/iOS usa
 // `@capacitor/local-notifications`; sul web la Notification API (gli avvisi futuri partono finché l'app è aperta).
 import type { Avviso } from './notifiche'
+import { t as tt } from '../i18n'
 
 export type PermessoNotifiche = 'granted' | 'denied' | 'prompt' | 'unsupported'
 export type EsitoPermesso = { ok: true } | { ok: false; motivo: string }
@@ -25,18 +26,18 @@ export async function statoPermesso(): Promise<PermessoNotifiche> {
 export async function attivaNotifica(): Promise<EsitoPermesso> {
   const stato = await statoPermesso()
   if (stato === 'granted') return { ok: true }
-  if (stato === 'unsupported') return { ok: false, motivo: 'Questo browser non mostra le notifiche. Sull’iPhone servono l’app o la PWA installata.' }
-  if (stato === 'denied') return { ok: false, motivo: 'Le notifiche sono bloccate: riattivale dalle impostazioni del telefono.' }
+  if (stato === 'unsupported') return { ok: false, motivo: tt('Questo browser non mostra le notifiche. Sull’iPhone servono l’app o la PWA installata.') }
+  if (stato === 'denied') return { ok: false, motivo: tt('Le notifiche sono bloccate: riattivale dalle impostazioni del telefono.') }
   try {
     if (__NATIVE__) {
       const { LocalNotifications } = await import('@capacitor/local-notifications')
       const r = await LocalNotifications.requestPermissions()
-      return r.display === 'granted' ? { ok: true } : { ok: false, motivo: 'Senza il permesso non posso avvisarti.' }
+      return r.display === 'granted' ? { ok: true } : { ok: false, motivo: tt('Senza il permesso non posso avvisarti.') }
     }
     const r = await Notification.requestPermission()
-    return r === 'granted' ? { ok: true } : { ok: false, motivo: 'Senza il permesso non posso avvisarti.' }
+    return r === 'granted' ? { ok: true } : { ok: false, motivo: tt('Senza il permesso non posso avvisarti.') }
   } catch {
-    return { ok: false, motivo: 'Non sono riuscito a chiedere il permesso.' }
+    return { ok: false, motivo: tt('Non sono riuscito a chiedere il permesso.') }
   }
 }
 

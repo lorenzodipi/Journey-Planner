@@ -14,6 +14,7 @@ import { codiciDi } from '../../lib/codici'
 import { CodiceBiglietto } from '../../faraway/CodiceBiglietto'
 import { VoloSheet } from './VoloSheet'
 import { soloLettura } from '../../lib/ruolo'
+import { t as tt } from '../../i18n'
 
 export function VoliPage() {
   const trip = useTrip()
@@ -26,16 +27,16 @@ export function VoliPage() {
   const lettura = soloLettura(trip)
 
   async function elimina(f: Flight) {
-    const ok = await ask({ title: 'Eliminare il volo?', message: conDipendenze(`${f.title} sparisce dai voli e dalle spese. Puoi annullare subito dopo.`, dipendenze(trip, 'volo', f.id)), confirm: 'Elimina il volo', cancel: 'Tieni il volo', destructive: true })
+    const ok = await ask({ title: tt('Eliminare il volo?'), message: conDipendenze(tt('{title} sparisce dai voli e dalle spese. Puoi annullare subito dopo.', { title: f.title }), dipendenze(trip, 'volo', f.id)), confirm: tt('Elimina il volo'), cancel: tt('Tieni il volo'), destructive: true })
     if (!ok) return
     const m = await t.setFlightDeleted(f.id, true)
-    showToast(m ?? 'Volo eliminato', m ? undefined : { label: 'Annulla', run: () => void t.setFlightDeleted(f.id, false) })
+    showToast(m ?? tt('Volo eliminato'), m ? undefined : { label: tt('Annulla'), run: () => void t.setFlightDeleted(f.id, false) })
   }
 
   return (
     <Schermata
-      bar={<BarraIndietro title="Voli" back="/altro" />}
-      fab={gruppi.length === 0 || lettura ? null : { label: 'Volo', aria: 'Aggiungi un volo', onPress: () => setSheet({}) }}
+      bar={<BarraIndietro title={tt('Voli')} back="/altro" />}
+      fab={gruppi.length === 0 || lettura ? null : { label: tt('Volo'), aria: tt('Aggiungi un volo'), onPress: () => setSheet({}) }}
       overlay={
         <>
           {sheet ? <VoloSheet key={sheet.flight?.id ?? 'new'} trip={trip} flight={sheet.flight} open onClose={() => setSheet(null)} /> : null}
@@ -46,9 +47,9 @@ export function VoliPage() {
     >
       {gruppi.length === 0 ? (
         lettura ? (
-          <Vuoto title="Nessun volo" text="I voli del viaggio compariranno qui, con gli scali." />
+          <Vuoto title={tt('Nessun volo')} text={tt('I voli del viaggio compariranno qui, con gli scali.')} />
         ) : (
-          <Vuoto title="Nessun volo" text="Aggiungi i voli del viaggio: li trovi qui come carte d'imbarco, con gli scali." action="Aggiungi un volo" onAction={() => setSheet({})} />
+          <Vuoto title={tt('Nessun volo')} text={tt('Aggiungi i voli del viaggio: li trovi qui come carte d\'imbarco, con gli scali.')} action={tt('Aggiungi un volo')} onAction={() => setSheet({})} />
         )
       ) : null}
       <Affianca uguali>

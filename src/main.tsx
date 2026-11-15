@@ -1,46 +1,4 @@
-import { createRoot } from 'react-dom/client'
-import { registerSW } from 'virtual:pwa-register'
-import { App } from './app'
-import { AuthProvider } from './lib/auth'
-import { pingSupabase } from './lib/supabase'
-import { initTheme } from './lib/theme'
-import { setupInvioSenzaInvio } from './lib/invio'
-import { avviaAdattaTesto } from './faraway/adattaTesto'
-import { TripProvider } from './state/trip'
-import './styles.css'
+// Prima la lingua (e il suo catalogo), poi l'app: così ogni modulo, anche le sue costanti, esce già tradotto.
+import { avviaLingua } from './i18n'
 
-// Tema chiaro/scuro (la scelta sta in Impostazioni account)
-initTheme()
-
-// Invio in un campo chiude la tastiera, non salva il modulo
-setupInvioSenzaInvio()
-
-// Service worker: l'app si apre anche senza rete e si aggiorna da sola.
-// Nell'app Android/iOS i file sono già dentro il pacchetto: nessun service worker.
-if (!__NATIVE__) registerSW({ immediate: true })
-else {
-  // App Android: gesto/tasto "indietro"; app iOS: swipe dal bordo sinistro
-  // pieghevoli: dove sta la piega (--fold-*, .fold-vertical/.fold-horizontal) e la cerniera (viewport segments) per il CSS
-  void import('@erkamyaman/capacitor-foldable').then((m) => m.installFoldablePolyfill()).catch(() => undefined)
-  void import('@capacitor/core').then(({ Capacitor }) => {
-    if (Capacitor.getPlatform() === 'ios') {
-      void import('./lib/swipeBack').then((m) => m.setupSwipeBack())
-      void import('./lib/tastiera').then((m) => m.setupTastiera())
-    }
-    else void import('./lib/nativeBack').then((m) => m.setupNativeBack())
-  })
-}
-
-// Testi su una riga che col carattere di sistema ingrandito non ci starebbero: si rimpiccioliscono (data-adatta)
-avviaAdattaTesto()
-
-// Tiene attivo il progetto Supabase (piano Free) a ogni apertura
-pingSupabase()
-
-createRoot(document.getElementById('app') as HTMLElement).render(
-  <AuthProvider>
-    <TripProvider>
-      <App />
-    </TripProvider>
-  </AuthProvider>
-)
+void avviaLingua().then(() => import('./avvio'))

@@ -24,6 +24,7 @@ import { Affianca, BarraGrande, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
 import { ViaggioSheet } from '../viaggio/ViaggioSheet'
 import { DuplicaSheet } from './DuplicaSheet'
+import { t as tt } from '../../i18n'
 
 const SCENE = { tempio: ART.tempio, mare: ART.mare, citta: ART.citta, natura: ART.natura, panorama: ART.panorama }
 const TONO = { prossimo: 'soft', incorso: 'acq', concluso: 'mut' } as const
@@ -56,9 +57,9 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
   const [duplica, setDuplica] = useState<Trip | null>(null)
   // sezioni (solo quelle che hanno viaggi; con una sola il selettore non si vede): partecipo, solo da vedere, archiviati
   const sezioni: { value: Sezione; label: string }[] = []
-  if (tutti.some((x) => !x.archivedAt && x.myRole !== 'viewer')) sezioni.push({ value: 'partecipo', label: 'Partecipo' })
-  if (tutti.some((x) => !x.archivedAt && x.myRole === 'viewer')) sezioni.push({ value: 'visualizzo', label: 'Visualizzo' })
-  if (tutti.some((x) => x.archivedAt)) sezioni.push({ value: 'archiviati', label: 'Archiviati' })
+  if (tutti.some((x) => !x.archivedAt && x.myRole !== 'viewer')) sezioni.push({ value: 'partecipo', label: tt('Partecipo') })
+  if (tutti.some((x) => !x.archivedAt && x.myRole === 'viewer')) sezioni.push({ value: 'visualizzo', label: tt('Visualizzo') })
+  if (tutti.some((x) => x.archivedAt)) sezioni.push({ value: 'archiviati', label: tt('Archiviati') })
   const [sezScelta, setSezione] = useState<Sezione>('partecipo')
   const sezione: Sezione = sezioni.some((x) => x.value === sezScelta) ? sezScelta : (sezioni[0]?.value ?? 'partecipo')
   const mostrati = sezione === 'archiviati' ? archiviati : lista.filter((x) => (sezione === 'visualizzo') === (x.myRole === 'viewer'))
@@ -74,9 +75,9 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
     setRispondendo(null)
     if (r.error) return showToast(r.error)
     setInvito(false)
-    if (!accetta) return showToast('Invito rifiutato')
+    if (!accetta) return showToast(tt('Invito rifiutato'))
     // il viaggio compare nell'elenco: lo apre chi usa l'app, quando vuole
-    showToast(`Sei dentro: «${titolo}»`)
+    showToast(tt('Sei dentro: «{titolo}»', { titolo }))
   }
 
   /** Un viaggio scelto si apre sempre dalla sua home («Oggi»), qualunque fosse l'ultima pagina vista. */
@@ -90,7 +91,7 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
   const [archiviando, inCorso] = useInCorso()
   async function archivia(trip: Trip, on: boolean) {
     const m = await inCorso(trip.id, () => t.archiveTrip(trip.id, on))
-    showToast(m ?? (on ? `«${trip.title}» archiviato` : `«${trip.title}» ripristinato`), m || !on ? undefined : { label: 'Annulla', run: () => void t.archiveTrip(trip.id, false) })
+    showToast(m ?? (on ? tt('«{title}» archiviato', { title: trip.title }) : tt('«{title}» ripristinato', { title: trip.title })), m || !on ? undefined : { label: tt('Annulla'), run: () => void t.archiveTrip(trip.id, false) })
   }
 
   function azioni(trip: Trip) {
@@ -98,11 +99,11 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
     return (
       <span className="fa-acts" style={{ margin: 0, padding: 16, borderTop: '1px solid var(--hairline)' }}>
         {trip.archivedAt ? (
-          <Pulsante size="sm" color="secondary" isLoading={archiviando === trip.id} onPress={() => void archivia(trip, false)}>Ripristina</Pulsante>
+          <Pulsante size="sm" color="secondary" isLoading={archiviando === trip.id} onPress={() => void archivia(trip, false)}>{tt('Ripristina')}</Pulsante>
         ) : (
           <>
-            <Pulsante size="sm" color="secondary" isDisabled={archiviando === trip.id} onPress={() => setDuplica(trip)}>Duplica come modello</Pulsante>
-            <Pulsante size="sm" color="secondary-soft" iconLeading="archive" isLoading={archiviando === trip.id} onPress={() => void archivia(trip, true)}>Archivia</Pulsante>
+            <Pulsante size="sm" color="secondary" isDisabled={archiviando === trip.id} onPress={() => setDuplica(trip)}>{tt('Duplica come modello')}</Pulsante>
+            <Pulsante size="sm" color="secondary-soft" iconLeading="archive" isLoading={archiviando === trip.id} onPress={() => void archivia(trip, true)}>{tt('Archivia')}</Pulsante>
           </>
         )}
       </span>
@@ -144,9 +145,9 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
 
   // il profilo sta in alto a destra: da qui non c'è «indietro» né barra delle schede, si esce scegliendo un viaggio
   const email = auth.session?.user.email ?? ''
-  const nome = me?.name || auth.profileName || (email ? email.split('@')[0].replace(/^./, (c) => c.toUpperCase()) : 'Anteprima demo')
+  const nome = me?.name || auth.profileName || (email ? email.split('@')[0].replace(/^./, (c) => c.toUpperCase()) : tt('Anteprima demo'))
   const profilo = (
-    <AriaButton className="fa-avbtn" aria-label={`Profilo di ${nome}`} onPress={() => navigate('/altro/account')}>
+    <AriaButton className="fa-avbtn" aria-label={tt('Profilo di {nome}', { nome })} onPress={() => navigate('/altro/account')}>
       <Avatar initials={initials(nome)} n={t.active && me ? discOf(t.active, me.id) : 1} large />
     </AriaButton>
   )
@@ -154,15 +155,15 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
   return (
     <Schermata
       tabs={false}
-      bar={<BarraGrande title="Viaggi" sub={viaggiText(tutti.filter((x) => !x.archivedAt).length)} actions={profilo} />}
-      fab={tutti.some((x) => !x.archivedAt) ? { label: 'Viaggio', aria: 'Crea un viaggio', onPress: () => setNuovo(true) } : null}
+      bar={<BarraGrande title={tt('Viaggi')} sub={viaggiText(tutti.filter((x) => !x.archivedAt).length)} actions={profilo} />}
+      fab={tutti.some((x) => !x.archivedAt) ? { label: tt('Viaggio'), aria: tt('Crea un viaggio'), onPress: () => setNuovo(true) } : null}
       overlay={
         <>
           {duplica ? <DuplicaSheet trip={duplica} onClose={() => setDuplica(null)} onDone={() => (setDuplica(null), onChosen?.(), navigate('/'))} /> : null}
           {nuovo ? <ViaggioSheet open onClose={() => setNuovo(false)} onDone={() => (onChosen?.(), navigate('/'))} /> : null}
-          <Foglio open={invito} title="Ho un invito" onClose={() => setInvito(false)}>
+          <Foglio open={invito} title={tt('Ho un invito')} onClose={() => setInvito(false)}>
             <div style={{ display: 'grid', gap: 16 }}>
-              <p className="fa-m" style={{ margin: 0 }}>Gli inviti arrivano qui: entra con l’indirizzo email a cui sono stati mandati e li trovi in «Inviti ricevuti», da accettare o rifiutare.</p>
+              <p className="fa-m" style={{ margin: 0 }}>{tt('Gli inviti arrivano qui: entra con l’indirizzo email a cui sono stati mandati e li trovi in «Inviti ricevuti», da accettare o rifiutare.')}</p>
               <Pulsante
                 iconLeading="refresh"
                 onPress={() => {
@@ -170,7 +171,7 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
                   setInvito(false)
                 }}
               >
-                Controlla gli inviti
+                {tt('Controlla gli inviti')}
               </Pulsante>
             </div>
           </Foglio>
@@ -180,15 +181,15 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
       fissa={
         <>
           {conRicerca ? (
-            <Campo label="Cerca un viaggio" hideLabel icon="search" type="search" value={cerca} onChange={setCerca} placeholder="Cerca un viaggio per nome o destinazione" enterKeyHint="search" />
+            <Campo label={tt('Cerca un viaggio')} hideLabel icon="search" type="search" value={cerca} onChange={setCerca} placeholder={tt('Cerca un viaggio per nome o destinazione')} enterKeyHint="search" />
           ) : null}
-          {sezioni.length > 1 ? <Segmenti label="Quali viaggi" value={sezione} options={sezioni} onChange={setSezione} /> : null}
+          {sezioni.length > 1 ? <Segmenti label={tt('Quali viaggi')} value={sezione} options={sezioni} onChange={setSezione} /> : null}
         </>
       }
     >
       {t.receivedInvites.length > 0 ? (
-        <section aria-label="Inviti ricevuti" style={{ display: 'grid', gap: 16 }}>
-          <h2 className="fa-h3" style={{ margin: 0 }}>Inviti ricevuti</h2>
+        <section aria-label={tt('Inviti ricevuti')} style={{ display: 'grid', gap: 16 }}>
+          <h2 className="fa-h3" style={{ margin: 0 }}>{tt('Inviti ricevuti')}</h2>
           {t.receivedInvites.map((i) => (
             <div key={i.id} className="fa-card xl pad" style={{ display: 'grid', gap: 8 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -196,16 +197,16 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
                 <span className="fa-h3">{i.title}</span>
               </span>
               <span className="fa-m">
-                {i.invitedBy ? `${i.invitedBy} ti ha invitato` : 'Sei stato invitato'}
-                {i.role === 'viewer' ? ' a vederlo' : ''}
+                {i.invitedBy ? tt('{invitedBy} ti ha invitato', { invitedBy: i.invitedBy }) : tt('Sei stato invitato')}
+                {i.role === 'viewer' ? tt(' a vederlo') : ''}
                 {i.startDate && i.endDate ? ` · ${formatShort(i.startDate)} – ${formatShort(i.endDate)}` : ''}
               </span>
               <span style={{ display: 'flex', gap: 8 }}>
                 <Pulsante isLoading={rispondendo === `${i.id}:si`} isDisabled={rispondendo === `${i.id}:no`} onPress={() => void rispondi(i.id, true, i.title)}>
-                  Accetta
+                  {tt('Accetta')}
                 </Pulsante>
                 <Pulsante color="secondary" isLoading={rispondendo === `${i.id}:no`} isDisabled={rispondendo === `${i.id}:si`} onPress={() => void rispondi(i.id, false, i.title)}>
-                  Rifiuta
+                  {tt('Rifiuta')}
                 </Pulsante>
               </span>
             </div>
@@ -213,18 +214,18 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
         </section>
       ) : null}
       {mostrati.length === 0 && q ? (
-        <p className="fa-m" role="status" style={{ margin: 0, textAlign: 'center' }}>Nessun viaggio corrisponde a «{cerca.trim()}».</p>
+        <p className="fa-m" role="status" style={{ margin: 0, textAlign: 'center' }}>{tt('Nessun viaggio corrisponde a «{v0}».', { v0: cerca.trim() })}</p>
       ) : null}
       {tutti.every((x) => x.archivedAt) && !q ? (
         <Vuoto
           art="vuotoViaggi"
-          title="Nessun viaggio ancora"
-          text="Quando crei o accetti un invito, i viaggi compaiono qui."
-          action="Crea un viaggio"
+          title={tt('Nessun viaggio ancora')}
+          text={tt('Quando crei o accetti un invito, i viaggi compaiono qui.')}
+          action={tt('Crea un viaggio')}
           onAction={() => setNuovo(true)}
           secondary={
             <Pulsante color="secondary" onPress={() => setInvito(true)}>
-              Ho un invito
+              {tt('Ho un invito')}
             </Pulsante>
           }
         />
@@ -232,7 +233,7 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
         <>
           <Affianca uguali>{(sezioni.length > 1 ? mostrati : lista).map(conAzioni)}</Affianca>
           <Pulsante color="tertiary" onPress={() => setInvito(true)}>
-            Ho un invito
+            {tt('Ho un invito')}
           </Pulsante>
         </>
       )}

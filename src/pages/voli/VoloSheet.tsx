@@ -22,6 +22,7 @@ import { CampoFuso } from '../../faraway/CampoFuso'
 import { ChiHaPagato } from '../../faraway/ChiHaPagato'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
+import { t as tt } from '../../i18n'
 
 interface LegDraft extends LegInput {
   key: number
@@ -97,18 +98,18 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     const err: typeof errors = { legs: {} }
-    if (!title.trim()) err.title = 'Dai un nome al volo (es. Andata).'
+    if (!title.trim()) err.title = tt('Dai un nome al volo (es. Andata).')
     const amount = parseAmount(cost)
-    if (cost.trim() && amount === null) err.cost = 'Il costo non è chiaro: scrivi per esempio 623.'
-    if (amount && paid && payers.length === 0) err.paidBy = 'Manca chi ha pagato. Scegli una persona.'
+    if (cost.trim() && amount === null) err.cost = tt('Il costo non è chiaro: scrivi per esempio 623.')
+    if (amount && paid && payers.length === 0) err.paidBy = tt('Manca chi ha pagato. Scegli una persona.')
     legs.forEach((l, i) => {
-      const n = `Tratta ${i + 1}: `
-      if (!isIata(l.from) || !isIata(l.to)) return void (err.legs[l.key] = `${n}scrivi i codici aeroporto di 3 lettere (es. MXP).`)
-      if (!isValidTimezone(l.fromTz) || !isValidTimezone(l.toTz)) return void (err.legs[l.key] = `${n}il fuso orario non è valido (es. Europe/Rome).`)
-      if (!isCompleteZoned(l.departDate, l.departTime) || !isCompleteZoned(l.arriveDate, l.arriveTime)) return void (err.legs[l.key] = `${n}inserisci data e ora di partenza e di arrivo.`)
+      const n = tt('Tratta {v0}: ', { v0: i + 1 })
+      if (!isIata(l.from) || !isIata(l.to)) return void (err.legs[l.key] = tt('{n}scrivi i codici aeroporto di 3 lettere (es. MXP).', { n }))
+      if (!isValidTimezone(l.fromTz) || !isValidTimezone(l.toTz)) return void (err.legs[l.key] = tt('{n}il fuso orario non è valido (es. Europe/Rome).', { n }))
+      if (!isCompleteZoned(l.departDate, l.departTime) || !isCompleteZoned(l.arriveDate, l.arriveTime)) return void (err.legs[l.key] = tt('{n}inserisci data e ora di partenza e di arrivo.', { n }))
       const dep = zonedToInstant(l.departDate, l.departTime, l.fromTz)
       const arr = zonedToInstant(l.arriveDate, l.arriveTime, l.toTz)
-      if (legDuration({ depart: dep, arrive: arr }) <= 0) err.legs[l.key] = `${n}l'arrivo è prima della partenza (controlla date e fusi).`
+      if (legDuration({ depart: dep, arrive: arr }) <= 0) err.legs[l.key] = tt('{n}l\'arrivo è prima della partenza (controlla date e fusi).', { n })
     })
     setErrors(err)
     if (err.title || err.cost || err.paidBy || Object.keys(err.legs).length > 0) return
@@ -126,7 +127,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
     const message = flight ? await t.updateFlight(trip.id, flight, input) : await t.createFlight(trip.id, input)
     setBusy(false)
     if (message) return setErrors({ ...err, form: message })
-    showToast(flight ? 'Volo aggiornato' : 'Volo salvato')
+    showToast(flight ? tt('Volo aggiornato') : tt('Volo salvato'))
     onClose()
   }
 
@@ -141,8 +142,8 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
   const fusoInTratta = (l: LegDraft) => (isIata(l.from) && !isValidTimezone(l.fromTz)) || (isIata(l.to) && !isValidTimezone(l.toTz))
   const campiFuso = (l: LegDraft) => (
     <div className="fa-2c">
-      <CampoFuso label="Fuso di partenza" value={l.fromTz} onChange={(v) => patchLeg(l.key, { fromTz: v, fromTzAuto: false })} usati={[trip.timezone]} />
-      <CampoFuso label="Fuso di arrivo" value={l.toTz} onChange={(v) => patchLeg(l.key, { toTz: v, toTzAuto: false })} usati={[trip.timezone]} />
+      <CampoFuso label={tt('Fuso di partenza')} value={l.fromTz} onChange={(v) => patchLeg(l.key, { fromTz: v, fromTzAuto: false })} usati={[trip.timezone]} />
+      <CampoFuso label={tt('Fuso di arrivo')} value={l.toTz} onChange={(v) => patchLeg(l.key, { toTz: v, toTzAuto: false })} usati={[trip.timezone]} />
     </div>
   )
   const rotta = (l: LegDraft) => (l.from && l.to ? `${l.from} → ${l.to}` : undefined)
@@ -152,22 +153,22 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
     <Foglio
       open={open}
       full
-      title={flight ? 'Modifica volo' : 'Nuovo volo'}
+      title={flight ? tt('Modifica volo') : tt('Nuovo volo')}
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="volo-form" isLoading={busy}>
-          {flight ? 'Salva le modifiche' : 'Salva il volo'}
+          {flight ? tt('Salva le modifiche') : tt('Salva il volo')}
         </Pulsante>
       }
     >
       <form id="volo-form" className="frm grp" onSubmit={submit} noValidate>
-        <Gruppo titolo="Volo">
-          <Campo label="Nome del volo" value={title} onChange={setTitle} placeholder="es. Andata" maxLength={60} error={errors.title} />
-          <Campo label="Compagnia" value={airline} onChange={setAirline} placeholder="Nome della compagnia" />
-          <Campo label="Codice di prenotazione" value={bookingRef} onChange={(v) => setBookingRef(v.toUpperCase())} autoComplete="off" placeholder="es. 4K7QX2" />
+        <Gruppo titolo={tt('Volo')}>
+          <Campo label={tt('Nome del volo')} value={title} onChange={setTitle} placeholder={tt('es. Andata')} maxLength={60} error={errors.title} />
+          <Campo label={tt('Compagnia')} value={airline} onChange={setAirline} placeholder={tt('Nome della compagnia')} />
+          <Campo label={tt('Codice di prenotazione')} value={bookingRef} onChange={(v) => setBookingRef(v.toUpperCase())} autoComplete="off" placeholder={tt('es. 4K7QX2')} />
         </Gruppo>
 
-        <Gruppo titolo="Tratte">
+        <Gruppo titolo={tt('Tratte')}>
           {legs.map((l, i) => {
             const ist = istanti(l)
             const next = legs[i + 1]
@@ -175,115 +176,115 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
             const scalo = ist && istNext ? durataTesto(layover(ist, istNext)) : ''
             return (
               <Fragment key={l.key}>
-                <div className="fa-tratta" role="group" aria-label={`Tratta ${i + 1}`}>
-                  <Micro titolo={`Tratta ${i + 1}`} nota={rotta(l)} />
+                <div className="fa-tratta" role="group" aria-label={tt('Tratta {v0}', { v0: i + 1 })}>
+                  <Micro titolo={tt('Tratta {v0}', { v0: i + 1 })} nota={rotta(l)} />
                   <div className="fa-2c">
-                    <Campo label="Numero del volo" value={l.flightNumber} onChange={(v) => patchLeg(l.key, { flightNumber: v.toUpperCase() })} autoComplete="off" placeholder="es. EK 92" />
-                    <Campo label="Classe" value={l.cabin} onChange={(v) => patchLeg(l.key, { cabin: v })} placeholder="es. Economy" />
+                    <Campo label={tt('Numero del volo')} value={l.flightNumber} onChange={(v) => patchLeg(l.key, { flightNumber: v.toUpperCase() })} autoComplete="off" placeholder={tt('es. EK 92')} />
+                    <Campo label={tt('Classe')} value={l.cabin} onChange={(v) => patchLeg(l.key, { cabin: v })} placeholder={tt('es. Economy')} />
                   </div>
                   <Percorso
                     livello={5}
                     durata={ist ? durataTesto(legDuration(ist)) : ''}
                     da={{
-                      titolo: 'Partenza',
+                      titolo: tt('Partenza'),
                       children: (
                         <>
-                          <Campo label="Aeroporto" icon="plane" value={l.from} onChange={(v) => setAirport(l, 'from', v)} placeholder="Sigla di 3 lettere" autoComplete="off" />
+                          <Campo label={tt('Aeroporto')} icon="plane" value={l.from} onChange={(v) => setAirport(l, 'from', v)} placeholder={tt('Sigla di 3 lettere')} autoComplete="off" />
                           <div className="dt">
-                            <Campo label="Data" type="date" icon="cal" value={l.departDate} onChange={(v) => patchLeg(l.key, { departDate: v, ...(v && l.arriveDate && l.arriveDate < v ? { arriveDate: v } : {}) })} />
-                            <Campo label="Ora" type="time" icon="clock" value={l.departTime} onChange={(v) => patchLeg(l.key, { departTime: v })} />
+                            <Campo label={tt('Data')} type="date" icon="cal" value={l.departDate} onChange={(v) => patchLeg(l.key, { departDate: v, ...(v && l.arriveDate && l.arriveDate < v ? { arriveDate: v } : {}) })} />
+                            <Campo label={tt('Ora')} type="time" icon="clock" value={l.departTime} onChange={(v) => patchLeg(l.key, { departTime: v })} />
                           </div>
                         </>
                       ),
                     }}
                     a={{
-                      titolo: 'Arrivo',
+                      titolo: tt('Arrivo'),
                       children: (
                         <>
-                          <Campo label="Aeroporto" icon="plane" value={l.to} onChange={(v) => setAirport(l, 'to', v)} placeholder="Sigla di 3 lettere" autoComplete="off" />
+                          <Campo label={tt('Aeroporto')} icon="plane" value={l.to} onChange={(v) => setAirport(l, 'to', v)} placeholder={tt('Sigla di 3 lettere')} autoComplete="off" />
                           <div className="dt">
-                            <Campo label="Data" type="date" icon="cal" value={l.arriveDate} onChange={(v) => patchLeg(l.key, { arriveDate: v })} min={l.departDate || undefined} />
-                            <Campo label="Ora" type="time" icon="clock" value={l.arriveTime} onChange={(v) => patchLeg(l.key, { arriveTime: v })} />
+                            <Campo label={tt('Data')} type="date" icon="cal" value={l.arriveDate} onChange={(v) => patchLeg(l.key, { arriveDate: v })} min={l.departDate || undefined} />
+                            <Campo label={tt('Ora')} type="time" icon="clock" value={l.arriveTime} onChange={(v) => patchLeg(l.key, { arriveTime: v })} />
                           </div>
                         </>
                       ),
                     }}
                   />
-                  <span className="fa-help" style={{ marginTop: -8 }}>Orari locali di ogni aeroporto.</span>
+                  <span className="fa-help" style={{ marginTop: -8 }}>{tt('Orari locali di ogni aeroporto.')}</span>
                   {fusoInTratta(l) ? (
                     <>
-                      <span className="fa-help">Non riconosco il fuso di questo aeroporto: sceglilo qui.</span>
+                      <span className="fa-help">{tt('Non riconosco il fuso di questo aeroporto: sceglilo qui.')}</span>
                       {campiFuso(l)}
                     </>
                   ) : null}
                   {multi ? (
                     <div className="fa-2c riempi">
                       {people.map((id) => (
-                        <Campo key={id} label={`Posto di ${nome(id)}`} value={l.seatsBy?.[id] ?? ''} onChange={(v) => patchLeg(l.key, { seatsBy: { ...l.seatsBy, [id]: v.toUpperCase() } })} maxLength={6} placeholder="es. 32A" />
+                        <Campo key={id} label={tt('Posto di {v0}', { v0: nome(id) })} value={l.seatsBy?.[id] ?? ''} onChange={(v) => patchLeg(l.key, { seatsBy: { ...l.seatsBy, [id]: v.toUpperCase() } })} maxLength={6} placeholder={tt('es. 32A')} />
                       ))}
                     </div>
                   ) : (
-                    <Campo label="Posto" value={l.seats} onChange={(v) => patchLeg(l.key, { seats: v.toUpperCase() })} maxLength={20} placeholder="es. 32A" />
+                    <Campo label={tt('Posto')} value={l.seats} onChange={(v) => patchLeg(l.key, { seats: v.toUpperCase() })} maxLength={20} placeholder={tt('es. 32A')} />
                   )}
                   {errors.legs[l.key] ? <Errore>{errors.legs[l.key]}</Errore> : null}
                   {paesiDi(trip).length > 1 && l.departDate ? (
                     <span className="fa-help">
-                      {l.arriveDate && paeseDelGiorno(trip, l.arriveDate).name !== paeseDelGiorno(trip, l.departDate).name ? `Parte in ${paeseDelGiorno(trip, l.departDate).name}, arriva in ${paeseDelGiorno(trip, l.arriveDate).name}` : `Giorno in ${paeseDelGiorno(trip, l.departDate).name}`}
+                      {l.arriveDate && paeseDelGiorno(trip, l.arriveDate).name !== paeseDelGiorno(trip, l.departDate).name ? tt('Parte in {name}, arriva in {name2}', { name: paeseDelGiorno(trip, l.departDate).name, name2: paeseDelGiorno(trip, l.arriveDate).name }) : tt('Giorno in {name}', { name: paeseDelGiorno(trip, l.departDate).name })}
                     </span>
                   ) : null}
                   {legs.length > 1 ? (
                     <Pulsante color="tertiary-destructive" size="sm" iconLeading="trash" onPress={() => setLegs(legs.filter((x) => x.key !== l.key))}>
-                      {`Rimuovi la tratta ${i + 1}`}
+                      {tt('Rimuovi la tratta {v0}', { v0: i + 1 })}
                     </Pulsante>
                   ) : null}
                 </div>
                 {next ? (
                   <div className="fa-scalo">
                     <Sv name="clock" size={16} />
-                    {`Scalo${l.to && l.to === next.from ? ` a ${l.to}` : ''}${scalo ? ` · ${scalo}` : ''}`}
+                    {tt('Scalo{v0}{v1}', { v0: l.to && l.to === next.from ? ` a ${l.to}` : '', v1: scalo ? ` · ${scalo}` : '' })}
                   </div>
                 ) : null}
               </Fragment>
             )
           })}
           <Pulsante color="secondary" iconLeading="plus" onPress={addLeg}>
-            Aggiungi una tratta
+            {tt('Aggiungi una tratta')}
           </Pulsante>
         </Gruppo>
 
-        <Gruppo titolo="Costo">
+        <Gruppo titolo={tt('Costo')}>
           <PerChi trip={trip} meId={me?.id} value={people} onChange={setWho} />
           <div className="fa-2c">
-            <Campo label="Costo" inputMode="decimal" value={cost} onChange={setCost} placeholder="es. 623" error={errors.cost} />
+            <Campo label={tt('Costo')} inputMode="decimal" value={cost} onChange={setCost} placeholder={tt('es. 623')} error={errors.cost} />
             <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, flight?.currency)} />
           </div>
           <IlCostoE value={scope} onChange={setScope} amount={amountNow} persone={people.length} currency={currency} />
-          <Interruttore label="Pagato" hint={paid ? 'Con un costo, il volo diventa una spesa.' : 'Non pagato'} isSelected={paid} onChange={setPaid} />
+          <Interruttore label={tt('Pagato')} hint={paid ? tt('Con un costo, il volo diventa una spesa.') : tt('Non pagato')} isSelected={paid} onChange={setPaid} />
           {paid && cost.trim() ? <ChiHaPagato travelers={trip.travelers} value={payers} onChange={setPayers} error={errors.paidBy} /> : null}
         </Gruppo>
 
-        <Gruppo titolo="Bagaglio e regole">
-          <Campo label="Bagaglio" value={baggage} onChange={setBaggage} placeholder="es. 1 valigia da 23 kg" />
-          <Campo label="Cambio e rimborso" textarea value={policy} onChange={setPolicy} placeholder="es. Cambio gratuito fino a 24 ore prima" />
-          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="es. Check-in online 24 ore prima" />
+        <Gruppo titolo={tt('Bagaglio e regole')}>
+          <Campo label={tt('Bagaglio')} value={baggage} onChange={setBaggage} placeholder={tt('es. 1 valigia da 23 kg')} />
+          <Campo label={tt('Cambio e rimborso')} textarea value={policy} onChange={setPolicy} placeholder={tt('es. Cambio gratuito fino a 24 ore prima')} />
+          <Campo label={tt('Note')} textarea value={notes} onChange={setNotes} placeholder={tt('es. Check-in online 24 ore prima')} />
         </Gruppo>
 
-        <AltriDettagli pieni={altri} contenuto="Terminal, gate, imbarco, fusi orari, check-in">
+        <AltriDettagli pieni={altri} contenuto={tt('Terminal, gate, imbarco, fusi orari, check-in')}>
           {legs.map((l, i) => (
-            <div key={l.key} className="fa-tratta" role="group" aria-label={`Tratta ${i + 1}`}>
-              <Micro titolo={`Tratta ${i + 1}`} nota={rotta(l)} />
+            <div key={l.key} className="fa-tratta" role="group" aria-label={tt('Tratta {v0}', { v0: i + 1 })}>
+              <Micro titolo={tt('Tratta {v0}', { v0: i + 1 })} nota={rotta(l)} />
               <div className="fa-2c">
-                <Campo label="Terminal" value={l.terminal ?? ''} onChange={(v) => patchLeg(l.key, { terminal: v })} maxLength={10} placeholder="es. T1" />
-                <Campo label="Gate" value={l.gate ?? ''} onChange={(v) => patchLeg(l.key, { gate: v.toUpperCase() })} maxLength={10} placeholder="es. B12" />
+                <Campo label={tt('Terminal')} value={l.terminal ?? ''} onChange={(v) => patchLeg(l.key, { terminal: v })} maxLength={10} placeholder={tt('es. T1')} />
+                <Campo label={tt('Gate')} value={l.gate ?? ''} onChange={(v) => patchLeg(l.key, { gate: v.toUpperCase() })} maxLength={10} placeholder={tt('es. B12')} />
               </div>
-              <Campo label="Imbarco" type="time" icon="clock" value={l.boardingTime ?? ''} onChange={(v) => patchLeg(l.key, { boardingTime: v })} />
+              <Campo label={tt('Imbarco')} type="time" icon="clock" value={l.boardingTime ?? ''} onChange={(v) => patchLeg(l.key, { boardingTime: v })} />
               {fusoInTratta(l) ? null : campiFuso(l)}
             </div>
           ))}
-          <Micro titolo="Apertura del check-in" />
+          <Micro titolo={tt('Apertura del check-in')} />
           <div className="fa-2c dt">
-            <Campo label="Data" type="date" icon="cal" value={checkin.date} onChange={(v) => setCheckin({ ...checkin, date: v })} />
-            <Campo label="Ora" type="time" icon="clock" value={checkin.time} onChange={(v) => setCheckin({ ...checkin, time: v })} />
+            <Campo label={tt('Data')} type="date" icon="cal" value={checkin.date} onChange={(v) => setCheckin({ ...checkin, date: v })} />
+            <Campo label={tt('Ora')} type="time" icon="clock" value={checkin.time} onChange={(v) => setCheckin({ ...checkin, time: v })} />
           </div>
         </AltriDettagli>
         {flight ? <DocumentiCollegati trip={trip} kind={'flight'} refId={flight.id} /> : null}

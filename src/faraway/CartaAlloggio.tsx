@@ -12,6 +12,7 @@ import { cx } from './cx'
 import { Sv } from './icons'
 import { PersoneRiga, stessePersone } from './Persone'
 import { RigaApribile } from './Righe'
+import { t } from '../i18n'
 
 export function mappaAlloggio(s: Stay): string | null {
   if (s.mapsUrl) return s.mapsUrl
@@ -51,12 +52,12 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
       <span className="hd">
         <span className="kind">
           <Ic name="i-sez-bed-gl" size={24} />
-          Alloggio · {notti(n)}
+          {t('Alloggio · {v0}', { v0: notti(n) })}
         </span>
         {lettura ? null : (
           <span className={cx('ok', !s.paid && 'td')}>
             <Sv name={s.paid ? 'check' : 'clock'} size={16} />
-            {s.paid ? 'Pagato' : 'Non pagato'}
+            {s.paid ? t('Pagato') : t('Non pagato')}
           </span>
         )}
       </span>
@@ -78,17 +79,17 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
           )}
           <div className="f3" data-adatta="celle">
             <div>
-              <span className="k">Check-in</span>
+              <span className="k">{t('Check-in')}</span>
               <b>{formatShort(s.checkIn)}</b>
               <em>{orarioCheck(s.checkInInfo, 'in') || '—'}</em>
             </div>
             <div>
-              <span className="k">Check-out</span>
+              <span className="k">{t('Check-out')}</span>
               <b>{formatShort(s.checkOut)}</b>
               <em>{orarioCheck(s.checkOutInfo, 'out') || '—'}</em>
             </div>
             <div>
-              <span className="k">Camera</span>
+              <span className="k">{t('Camera')}</span>
               <b>{cameraDi(s)}</b>
             </div>
           </div>
@@ -96,12 +97,12 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
         <div className="bot">
           <div className="fr">
             <span>
-              <span className="k">Codice di prenotazione</span>
+              <span className="k">{t('Codice di prenotazione')}</span>
               <b className="cd">{s.bookingCode || '—'}</b>
             </span>
             {href ? (
-              <Pulsante size="sm" color="secondary" iconLeading="pin" href={href} target="_blank" aria-label={`Apri ${s.name} sulla mappa`}>
-                Maps
+              <Pulsante size="sm" color="secondary" iconLeading="pin" href={href} target="_blank" aria-label={t('Apri {name} sulla mappa', { name: s.name })}>
+                {t('Maps')}
               </Pulsante>
             ) : null}
           </div>
@@ -110,19 +111,19 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
               <dl className="dl">
                 {lettura ? null : (
                   <div>
-                    <dt>Costo</dt>
-                    <dd>{s.totalCost == null ? 'Non ancora inserito' : approx != null ? `${formatMoney(s.totalCost, s.currency)} ≈ ${formatMoney(approx, trip.baseCurrency)}` : formatMoney(s.totalCost, s.currency)}</dd>
+                    <dt>{t('Costo')}</dt>
+                    <dd>{s.totalCost == null ? t('Non ancora inserito') : approx != null ? `${formatMoney(s.totalCost, s.currency)} ≈ ${formatMoney(approx, trip.baseCurrency)}` : formatMoney(s.totalCost, s.currency)}</dd>
                   </div>
                 )}
                 {paidBy && !lettura ? (
                   <div>
-                    <dt>Pagato da</dt>
+                    <dt>{t('Pagato da')}</dt>
                     <dd>{paidBy.name.split(/\s+/)[0]}</dd>
                   </div>
                 ) : null}
                 {perChi ? (
                   <div>
-                    <dt>Diviso tra</dt>
+                    <dt>{t('Diviso tra')}</dt>
                     <dd>
                       <PersoneRiga trip={trip} ids={ids} />
                     </dd>
@@ -130,13 +131,13 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
                 ) : null}
                 {s.guests ? (
                   <div>
-                    <dt>Ospiti</dt>
+                    <dt>{t('Ospiti')}</dt>
                     <dd>{s.guests}</dd>
                   </div>
                 ) : null}
                 {dormono ? (
                   <div>
-                    <dt>Dormono qui</dt>
+                    <dt>{t('Dormono qui')}</dt>
                     <dd>
                       <PersoneRiga trip={trip} ids={s.participants ?? []} />
                     </dd>
@@ -144,25 +145,25 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
                 ) : null}
                 {s.phone ? (
                   <div>
-                    <dt>Telefono</dt>
+                    <dt>{t('Telefono')}</dt>
                     <dd><a className="fa-lnk" href={`tel:${s.phone.replace(/\s+/g, '')}`}>{s.phone}</a></dd>
                   </div>
                 ) : null}
                 {s.email ? (
                   <div>
-                    <dt>Email</dt>
+                    <dt>{t('Email')}</dt>
                     <dd><a className="fa-lnk" href={`mailto:${s.email}`}>{s.email}</a></dd>
                   </div>
                 ) : null}
                 {pasti ? (
                   <div>
-                    <dt>Pasti e servizi</dt>
+                    <dt>{t('Pasti e servizi')}</dt>
                     <dd>{pasti}</dd>
                   </div>
                 ) : null}
                 {s.notes ? (
                   <div>
-                    <dt>Nota</dt>
+                    <dt>{t('Nota')}</dt>
                     <dd style={{ whiteSpace: 'pre-line' }}>{s.notes}</dd>
                   </div>
                 ) : null}
@@ -170,10 +171,10 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
               {lettura ? null : (
                 <div className="acts2">
                   <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
-                    Modifica
+                    {t('Modifica')}
                   </Pulsante>
                   <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
-                    Elimina
+                    {t('Elimina')}
                   </Pulsante>
                 </div>
               )}
@@ -189,47 +190,47 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
 /** Versione compatta per la pagina del giorno: una riga («Check-in», «Check-out» o «Si dorme qui») che si apre sui dettagli essenziali. */
 export function RigaAlloggio({ stay: s, date, open, onToggle, onEdit, onDelete, lettura }: Omit<Props, 'stay'> & { stay: Stay; date: string }) {
   const href = mappaAlloggio(s)
-  const ruolo = s.checkOut === date ? 'Check-out' : s.checkIn === date ? 'Check-in' : 'Si dorme qui'
+  const ruolo = s.checkOut === date ? 'Check-out' : s.checkIn === date ? 'Check-in' : t('Si dorme qui')
   const orario = s.checkOut === date ? orarioCheck(s.checkOutInfo, 'out') : s.checkIn === date ? orarioCheck(s.checkInInfo, 'in') : ''
   return (
     <RigaApribile icon="i-sez-bed" title={s.name} sub={[ruolo, orario || null, s.city && s.city !== s.name ? s.city : null].filter(Boolean).join(' · ')} open={open} onToggle={onToggle}>
       <dl className="fa-dlc">
         <div>
-          <dt>Soggiorno</dt>
+          <dt>{t('Soggiorno')}</dt>
           <dd>{formatShort(s.checkIn)} → {formatShort(s.checkOut)} · {notti(nightsOf(s))}</dd>
         </div>
         {s.address ? (
           <div>
-            <dt>Indirizzo</dt>
+            <dt>{t('Indirizzo')}</dt>
             <dd>{s.address}</dd>
           </div>
         ) : null}
         {s.bookingCode ? (
           <div>
-            <dt>Codice</dt>
+            <dt>{t('Codice')}</dt>
             <dd>{s.bookingCode}</dd>
           </div>
         ) : null}
         {cameraDi(s) !== '—' ? (
           <div>
-            <dt>Camera</dt>
+            <dt>{t('Camera')}</dt>
             <dd>{cameraDi(s)}</dd>
           </div>
         ) : null}
       </dl>
       <div className="fa-acts">
         {href ? (
-          <Pulsante size="sm" color="secondary" iconLeading="pin" href={href} target="_blank" aria-label={`Apri ${s.name} sulla mappa`}>
-            Maps
+          <Pulsante size="sm" color="secondary" iconLeading="pin" href={href} target="_blank" aria-label={t('Apri {name} sulla mappa', { name: s.name })}>
+            {t('Maps')}
           </Pulsante>
         ) : null}
         {lettura ? null : (
           <>
             <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
-              Modifica
+              {t('Modifica')}
             </Pulsante>
             <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
-              Elimina
+              {t('Elimina')}
             </Pulsante>
           </>
         )}

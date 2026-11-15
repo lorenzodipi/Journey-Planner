@@ -1,31 +1,32 @@
 import type { ChecklistItem, ChecklistKind } from '../types'
+import { LINGUA, t } from '../i18n'
 
 export const KINDS: ChecklistKind[] = ['todo', 'packing', 'docs']
 
 /** Modello di partenza, valido per qualunque viaggio: si modifica e si completa a piacere. */
 export const TEMPLATE: Record<ChecklistKind, string[]> = {
   todo: [
-    'Controllare le regole di ingresso e di transito (anche degli scali)',
-    'Sottoscrivere l’assicurazione di viaggio',
-    'Avvisare la banca e controllare i limiti della carta',
-    'Scaricare le mappe e i biglietti per l’uso offline',
-    'Procurarsi contanti nella valuta locale',
-    'Fare il check-in online dei voli',
+    t('Controllare le regole di ingresso e di transito (anche degli scali)'),
+    t('Sottoscrivere l’assicurazione di viaggio'),
+    t('Avvisare la banca e controllare i limiti della carta'),
+    t('Scaricare le mappe e i biglietti per l’uso offline'),
+    t('Procurarsi contanti nella valuta locale'),
+    t('Fare il check-in online dei voli'),
   ],
   packing: [
-    'Adattatore per le prese',
-    'Caricabatterie e power bank',
-    'Abbigliamento a strati',
-    'Scarpe comode già usate',
-    'Ombrello o k-way',
-    'Beauty case e medicine personali',
+    t('Adattatore per le prese'),
+    t('Caricabatterie e power bank'),
+    t('Abbigliamento a strati'),
+    t('Scarpe comode già usate'),
+    t('Ombrello o k-way'),
+    t('Beauty case e medicine personali'),
   ],
   docs: [
-    'Passaporto o carta d’identità (con validità sufficiente)',
-    'Copie digitali dei documenti',
-    'Biglietti aerei e conferme degli alloggi',
-    'Tessera sanitaria e dati dell’assicurazione',
-    'Carte di pagamento',
+    t('Passaporto o carta d’identità (con validità sufficiente)'),
+    t('Copie digitali dei documenti'),
+    t('Biglietti aerei e conferme degli alloggi'),
+    t('Tessera sanitaria e dati dell’assicurazione'),
+    t('Carte di pagamento'),
   ],
 }
 
@@ -102,7 +103,7 @@ export const categoryOf = (i: Pick<ChecklistItem, 'category' | 'kind'>): string 
 export function categoriesFor(items: Pick<ChecklistItem, 'category' | 'kind'>[]): string[] {
   const base = BASE_CATEGORIES as readonly string[]
   const custom = [...new Set(items.map(categoryOf))].filter((c) => !base.some((b) => b.toLowerCase() === c.toLowerCase()))
-  return [...base, ...custom.sort((a, b) => a.localeCompare(b, 'it'))]
+  return [...base, ...custom.sort((a, b) => a.localeCompare(b, LINGUA))]
 }
 
 export type ListaChecklist = 'all' | 'mine'

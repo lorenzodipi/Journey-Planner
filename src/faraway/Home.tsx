@@ -13,6 +13,7 @@ import { cx } from './cx'
 import { PulsanteIcona } from './base'
 import { G } from './Tappe'
 import { Wx, wxKind } from './Wx'
+import { LOCALE, t as tt } from '../i18n'
 
 /** Simbolo di Faraway (anello di dischi che diventa mongolfiera), come nel mock. */
 export function Simbolo({ style, tinta = 'var(--tinta-azzurro)' }: { style?: React.CSSProperties; tinta?: string }) {
@@ -36,8 +37,8 @@ export function Simbolo({ style, tinta = 'var(--tinta-azzurro)' }: { style?: Rea
 /** Simbolo semplice (senza contorno), come nel biglietto del conto alla rovescia e nel recap. */
 export function SimboloPiatto({ style }: { style?: React.CSSProperties }) {
   return (
-    <svg aria-label="Faraway, simbolo" role="img" viewBox="6 6 116 140" style={{ position: 'absolute', height: 'auto', pointerEvents: 'none', ...style }}>
-      <title>Faraway, simbolo</title>
+    <svg aria-label={tt('Faraway, simbolo')} role="img" viewBox="6 6 116 140" style={{ position: 'absolute', height: 'auto', pointerEvents: 'none', ...style }}>
+      <title>{tt('Faraway, simbolo')}</title>
       <path d="M52 112L59 127M76 112L69 127" fill="none" stroke="#075A99" strokeLinecap="round" strokeWidth="3" />
       <rect fill="#075A99" height="14" rx="4" width="20" x="54" y="126" />
       <path d="M47 24a17 17 0 1 0 34 0a17 17 0 1 0 -34 0ZM58.5 24a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0Z" fill="#F04C55" fillRule="evenodd" />
@@ -61,7 +62,7 @@ export function Saluto({ date, greeting, name }: { date: string; greeting: strin
           <h2>{name ? `${greeting} ${name}` : greeting}</h2>
         </div>
         {name ? (
-          <Link href="/altro/account" className="me" aria-label="Account e profilo" style={{ textDecoration: 'none' }}>
+          <Link href="/altro/account" className="me" aria-label={tt('Account e profilo')} style={{ textDecoration: 'none' }}>
             {initials(name)}
           </Link>
         ) : null}
@@ -74,7 +75,7 @@ const PLANE = 'M482.3 192c34.2 0 93.7 29 93.7 64c0 36-59.5 64-93.7 64l-116.6 0L2
 
 /** Biglietto del conto alla rovescia (Ticket cd2): giorni grandi, meta e, se c'è, il prossimo volo. */
 export function ContoAllaRovescia({ days, meta, next }: { days: number; meta: string; next?: { from: string; to: string; date: string } }) {
-  const label = days <= 0 ? `Si parte oggi${meta ? ` per ${meta}` : ''}` : `${days} ${days === 1 ? 'giorno' : 'giorni'} alla partenza${meta ? ` per ${meta}` : ''}`
+  const label = days <= 0 ? tt('Si parte oggi{v0}', { v0: meta ? tt(' per {meta}', { meta }) : '' }) : tt('{days} {v1} alla partenza{v2}', { days, v1: days === 1 ? tt('giorno') : tt('giorni'), v2: meta ? tt(' per {meta}', { meta }) : '' })
   return (
     <div className="k-Ticket">
       <div className="tk cd2">
@@ -87,20 +88,20 @@ export function ContoAllaRovescia({ days, meta, next }: { days: number; meta: st
           </div>
           <div className="cd2-in" role="text" aria-label={label}>
             <div aria-hidden="true" className="k1">
-              {days <= 0 ? 'Il giorno è arrivato' : days === 1 ? 'Alla partenza manca' : 'Alla partenza mancano'}
+              {days <= 0 ? tt('Il giorno è arrivato') : days === 1 ? tt('Alla partenza manca') : tt('Alla partenza mancano')}
             </div>
             <div aria-hidden="true" className="cdl">
               {days <= 0 ? (
                 <span className="un">
-                  <b style={{ fontSize: 40, lineHeight: '44px' }}>Si parte oggi</b>
-                  {meta ? <span>per {meta}</span> : null}
+                  <b style={{ fontSize: 40, lineHeight: '44px' }}>{tt('Si parte oggi')}</b>
+                  {meta ? <span>{tt('per {meta}', { meta })}</span> : null}
                 </span>
               ) : (
                 <>
                   <span className="num">{days}</span>
                   <span className="un">
-                    <b>{days === 1 ? 'giorno' : 'giorni'}</b>
-                    {meta ? <span>per {meta}</span> : null}
+                    <b>{days === 1 ? tt('giorno') : tt('giorni')}</b>
+                    {meta ? <span>{tt('per {meta}', { meta })}</span> : null}
                   </span>
                 </>
               )}
@@ -109,8 +110,8 @@ export function ContoAllaRovescia({ days, meta, next }: { days: number; meta: st
         </div>
         {next ? (
           <div className="b cd2-bot">
-            <div className="k1">Prossima partenza</div>
-            <div data-adatta="" className="rr3" aria-label={`Da ${next.from} a ${next.to}`}>
+            <div className="k1">{tt('Prossima partenza')}</div>
+            <div data-adatta="" className="rr3" aria-label={tt('Da {from} a {to}', { from: next.from, to: next.to })}>
               <span>{next.from}</span>
               <span className="pl3">
                 <svg aria-hidden="true" width="34" height="34" viewBox="0 0 576 512">
@@ -146,17 +147,17 @@ export function ChecklistHome({ done, total, items, rest, onToggle, onCount, onO
       <div className="k-ChecklistHome">
         <div className="card">
           <div className="hd">
-            <span className="t">Le mie cose</span>
+            <span className="t">{tt('Le mie cose')}</span>
           </div>
           <div className="em">
             <span className="eb">
               <G name="g-list" />
             </span>
-            <b>Prepara il viaggio</b>
-            <span>Segna cosa fare e cosa mettere in valigia, per tutti o solo per te.</span>
+            <b>{tt('Prepara il viaggio')}</b>
+            <span>{tt('Segna cosa fare e cosa mettere in valigia, per tutti o solo per te.')}</span>
             <button type="button" className="btn pri" style={{ marginTop: 8 }} onClick={onCreate}>
               <G name="g-plus" />
-              Crea la checklist
+              {tt('Crea la checklist')}
             </button>
           </div>
         </div>
@@ -167,7 +168,7 @@ export function ChecklistHome({ done, total, items, rest, onToggle, onCount, onO
     <div className="k-ChecklistHome">
       <div className="card">
         <div className="hd rh">
-          <span className="rg" role="progressbar" aria-label="Checklist completata" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}>
+          <span className="rg" role="progressbar" aria-label={tt('Checklist completata')} aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}>
             <svg viewBox="0 0 44 44">
               <circle cx="22" cy="22" r={r} fill="none" stroke="var(--surface-high)" strokeWidth="5" />
               <circle cx="22" cy="22" r={r} fill="none" stroke="var(--azzurro-solid)" strokeWidth="5" strokeLinecap="round" strokeDasharray={circ.toFixed(1)} strokeDashoffset={(circ * (1 - done / total)).toFixed(1)} transform="rotate(-90 22 22)" />
@@ -177,9 +178,9 @@ export function ChecklistHome({ done, total, items, rest, onToggle, onCount, onO
             </b>
           </span>
           <div>
-            <div className="t">Le mie cose</div>
+            <div className="t">{tt('Le mie cose')}</div>
             <div className="c">
-              {done} {done === 1 ? 'fatta' : 'fatte'} su {total}
+              {tt('{done} {v1} su {total}', { done, v1: done === 1 ? tt('fatta') : tt('fatte'), total })}
             </div>
           </div>
         </div>
@@ -188,14 +189,14 @@ export function ChecklistHome({ done, total, items, rest, onToggle, onCount, onO
             <span className="eb">
               <G name="g-check" />
             </span>
-            <b>Tutto pronto</b>
-            <span>Hai spuntato tutte le tue cose: buon viaggio!</span>
+            <b>{tt('Tutto pronto')}</b>
+            <span>{tt('Hai spuntato tutte le tue cose: buon viaggio!')}</span>
           </div>
         ) : (
           <ul className="l">
             {items.map((i) => (
               <li className="it" key={i.id}>
-                <button type="button" className={cx('ck', i.pezzi && i.pezzi.fatti > 0 && !i.done && 'p')} role="checkbox" aria-checked={i.done ? true : i.pezzi && i.pezzi.fatti > 0 ? 'mixed' : false} aria-label={i.pezzi ? `${i.text}, ${i.pezzi.fatti} su ${i.pezzi.totale}` : i.text} onClick={() => onToggle(i.id)}>
+                <button type="button" className={cx('ck', i.pezzi && i.pezzi.fatti > 0 && !i.done && 'p')} role="checkbox" aria-checked={i.done ? true : i.pezzi && i.pezzi.fatti > 0 ? 'mixed' : false} aria-label={i.pezzi ? tt('{text}, {fatti} su {totale}', { text: i.text, fatti: i.pezzi.fatti, totale: i.pezzi.totale }) : i.text} onClick={() => onToggle(i.id)}>
                   <b>
                     <G name="g-check" />
                   </b>
@@ -204,13 +205,13 @@ export function ChecklistHome({ done, total, items, rest, onToggle, onCount, onO
                   <span className="nr">
                     <span className="n">{i.text}</span>
                     {i.pezzi && onCount ? (
-                      <span role="group" aria-label={`Pezzi a posto: ${i.text}`} className="fa-qta qt">
-                        <PulsanteIcona icon="minus" label={`Meno: ${i.text}`} isDisabled={i.pezzi.fatti <= 0} onPress={() => onCount(i.id, (i.pezzi?.fatti ?? 0) - 1)} />
+                      <span role="group" aria-label={tt('Pezzi a posto: {text}', { text: i.text })} className="fa-qta qt">
+                        <PulsanteIcona icon="minus" label={tt('Meno: {text}', { text: i.text })} isDisabled={i.pezzi.fatti <= 0} onPress={() => onCount(i.id, (i.pezzi?.fatti ?? 0) - 1)} />
                         <b aria-live="polite">
                           {i.pezzi.fatti}/{i.pezzi.totale}
                           {i.pezzi.unita ? ` ${i.pezzi.unita}` : ''}
                         </b>
-                        <PulsanteIcona icon="plus" label={`Più: ${i.text}`} isDisabled={i.pezzi.fatti >= i.pezzi.totale} onPress={() => onCount(i.id, (i.pezzi?.fatti ?? 0) + 1)} />
+                        <PulsanteIcona icon="plus" label={tt('Più: {text}', { text: i.text })} isDisabled={i.pezzi.fatti >= i.pezzi.totale} onPress={() => onCount(i.id, (i.pezzi?.fatti ?? 0) + 1)} />
                       </span>
                     ) : null}
                   </span>
@@ -227,10 +228,10 @@ export function ChecklistHome({ done, total, items, rest, onToggle, onCount, onO
         )}
         <div className="ft">
           <button type="button" className="btn lnk" onClick={onOpen}>
-            {left === 0 ? 'Rivedi la checklist' : left === 1 ? 'Vai alla checklist' : 'Vedi tutta la checklist'}
+            {left === 0 ? tt('Rivedi la checklist') : left === 1 ? tt('Vai alla checklist') : tt('Vedi tutta la checklist')}
             {left > 1 && rest > 0 ? (
               <span className="cnt" style={{ marginLeft: 8 }}>
-                altre {rest}
+                {tt('altre {rest}', { rest })}
               </span>
             ) : null}
             <G name="g-chev" cls="r" />
@@ -271,7 +272,7 @@ export function Orologio({ here, home }: { here: { label: string; time: string; 
   return (
     <div className="k-Orologio">
       <div className="side fly" data-adatta="celle">
-        <div className="sd" role="text" aria-label={`${here.label}, ${here.time}, ${here.night ? 'notte' : 'giorno'}`}>
+        <div className="sd" role="text" aria-label={`${here.label}, ${here.time}, ${here.night ? tt('notte') : tt('giorno')}`}>
           <div aria-hidden="true" className="lb">
             <span className={cx('ph', here.night ? 'notte' : 'giorno')}>{here.night ? <MoonIc /> : <SunIc />}</span>
             <span className="nm">{here.label}</span>
@@ -289,7 +290,7 @@ export function Orologio({ here, home }: { here: { label: string; time: string; 
           </div>
           <Cifre hhmm={home.time} />
           <div aria-hidden="true" className="sb">
-            A casa
+            {tt('A casa')}
           </div>
         </div>
       </div>
@@ -317,7 +318,7 @@ const RiseIc = ({ down }: { down?: boolean }) => (
 /** Scheletro della card meteo (stessa struttura della vera) finché le previsioni non arrivano. */
 export function MeteoScheletro({ city }: { city?: string }) {
   return (
-    <div className="k-Meteo" role="status" aria-busy="true" aria-label={city ? `Meteo di ${city} in caricamento` : 'Meteo in caricamento'}>
+    <div className="k-Meteo" role="status" aria-busy="true" aria-label={city ? tt('Meteo di {city} in caricamento', { city }) : tt('Meteo in caricamento')}>
       <div className="wc det" aria-hidden="true">
         <div className="sk-top">
           <div className="sk-txt">
@@ -347,7 +348,7 @@ export function MeteoScheletro({ city }: { city?: string }) {
 export function MeteoCard({ city, t, code, night, desc, hours, sun }: { city: string; t: number; code: number; night: boolean; desc: string; hours: OraMeteo[]; sun?: { first: { k: string; v: string; down: boolean }; second: { k: string; v: string; down: boolean }; next: string; inText: string; pct: number; moon: boolean } }) {
   return (
     <div className="k-Meteo">
-      <div className="wc det" role="group" aria-label={`${city}, ${t} gradi, ${desc}`}>
+      <div className="wc det" role="group" aria-label={tt('{city}, {t} gradi, {desc}', { city, t, desc })}>
         <div className="wc-top">
           <div>
             <div className="loc">{city}</div>
@@ -359,7 +360,7 @@ export function MeteoCard({ city, t, code, night, desc, hours, sun }: { city: st
           </div>
         </div>
         <div aria-hidden="true" className="rule" />
-        <ul className="hours" role="list" tabIndex={0} aria-label="Previsione ora per ora, scorri in orizzontale">
+        <ul className="hours" role="list" tabIndex={0} aria-label={tt('Previsione ora per ora, scorri in orizzontale')}>
           {hours.map((h, i) => (
             <li key={i} className={cx('hr', h.now && 'now', h.rain && !h.now && 'rn')}>
               <span className="t">{h.label}</span>
@@ -369,7 +370,7 @@ export function MeteoCard({ city, t, code, night, desc, hours, sun }: { city: st
           ))}
         </ul>
         {sun ? (
-          <div className="sunrow" role="group" aria-label={`${sun.next} tra ${sun.inText}`}>
+          <div className="sunrow" role="group" aria-label={tt('{next} tra {inText}', { next: sun.next, inText: sun.inText })}>
             <div className="se">
               <span className="ic">
                 <RiseIc down={sun.first.down} />
@@ -381,7 +382,7 @@ export function MeteoCard({ city, t, code, night, desc, hours, sun }: { city: st
             </div>
             <div className="sm">
               <div className="nxt">
-                <span>{sun.next === 'Luce' ? 'Ore di luce' : `${sun.next} tra`}</span>
+                <span>{sun.next === 'Luce' ? tt('Ore di luce') : tt('{next} tra', { next: sun.next })}</span>
                 <b>{sun.inText}</b>
               </div>
               <div aria-hidden="true" className="tr2">
@@ -471,10 +472,10 @@ export function ValutaPiccola({ base, local, rate, baseName, localName }: { base
   const n = Number(text.replace(/\./g, '').replace(',', '.'))
   const valid = Number.isFinite(n)
   const other = valid ? (side === 'base' ? n / rate : n * rate) : 0
-  const fmt = (v: number, cur: string) => v.toLocaleString('it-IT', { maximumFractionDigits: decimalsOf(cur), minimumFractionDigits: 0 })
+  const fmt = (v: number, cur: string) => v.toLocaleString(LOCALE, { maximumFractionDigits: decimalsOf(cur), minimumFractionDigits: 0 })
   const sym = (cur: string) => {
     try {
-      return new Intl.NumberFormat('it-IT', { style: 'currency', currency: cur, currencyDisplay: 'narrowSymbol' }).formatToParts(0).find((p) => p.type === 'currency')?.value ?? cur
+      return new Intl.NumberFormat(LOCALE, { style: 'currency', currency: cur, currencyDisplay: 'narrowSymbol' }).formatToParts(0).find((p) => p.type === 'currency')?.value ?? cur
     } catch {
       return cur
     }
@@ -487,12 +488,12 @@ export function ValutaPiccola({ base, local, rate, baseName, localName }: { base
           {name} · {cur}
         </label>
         <div className="fv2">
-          <input id={`vp-${which}`} className="n" inputMode="decimal" value={text} placeholder="0" onChange={(e) => setText(e.currentTarget.value)} aria-label={`Importo in ${name}`} />
+          <input id={`vp-${which}`} className="n" inputMode="decimal" value={text} placeholder="0" onChange={(e) => setText(e.currentTarget.value)} aria-label={tt('Importo in {name}', { name })} />
           <span className="u">{sym(cur)}</span>
         </div>
       </div>
     ) : (
-      <button type="button" className="fd" onClick={() => (setText(fmt(other, cur)), setSide(which))} aria-label={`Scrivi in ${name}`}>
+      <button type="button" className="fd" onClick={() => (setText(fmt(other, cur)), setSide(which))} aria-label={tt('Scrivi in {name}', { name })}>
         <span className="fl2">
           {name} · {cur}
         </span>
@@ -532,27 +533,27 @@ export function Riepilogo({ dove, speso, currency, limit, onSetBudget, onOpenBud
           ? {
               role: 'link',
               tabIndex: 0,
-              'aria-label': `Speso ${formatMoney(speso, currency)}: apri il budget`,
+              'aria-label': tt('Speso {v0}: apri il budget', { v0: formatMoney(speso, currency) }),
               onClick: open,
               onKeyDown: (e: React.KeyboardEvent) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), open()),
             }
           : {})}
       >
         {simbolo ? <Simbolo /> : null}
-        <span className="l">Speso in {dove}</span>
+        <span className="l">{tt('Speso in {dove}', { dove })}</span>
         <span className="big">{formatMoney(speso, currency)}</span>
         {limit ? (
           <>
             <span className="c">
-              {pct}% del budget da {formatMoney(limit, currency)}
+              {tt('{pct}% del budget da {v1}', { pct, v1: formatMoney(limit, currency) })}
             </span>
-            <div className="bar" role="progressbar" aria-label="Budget speso" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, pct)}>
+            <div className="bar" role="progressbar" aria-label={tt('Budget speso')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, pct)}>
               <i style={{ width: `${Math.min(100, pct)}%` }} />
             </div>
           </>
         ) : (
           <>
-            <span className="c">Nessun budget impostato</span>
+            <span className="c">{tt('Nessun budget impostato')}</span>
             {onSetBudget ? (
               <a
                 className="lk"
@@ -562,7 +563,7 @@ export function Riepilogo({ dove, speso, currency, limit, onSetBudget, onOpenBud
                   onSetBudget()
                 }}
               >
-                Imposta un budget
+                {tt('Imposta un budget')}
               </a>
             ) : null}
           </>
@@ -583,14 +584,14 @@ export function DareRicevere({ bilancio, currency }: { bilancio: TotaliAperti | 
   return (
     <div className="two">
       <div className="card a">
-        <span className="l">Da dare</span>
+        <span className="l">{tt('Da dare')}</span>
         <span className={lungo(dare)}>{dare}</span>
-        {sconosciuto ? <span className="c2">Account non collegato</span> : null}
+        {sconosciuto ? <span className="c2">{tt('Account non collegato')}</span> : null}
       </div>
       <div className="card b">
-        <span className="l">Da ricevere</span>
+        <span className="l">{tt('Da ricevere')}</span>
         <span className={lungo(ricevere)}>{ricevere}</span>
-        {sconosciuto ? <span className="c2">Account non collegato</span> : null}
+        {sconosciuto ? <span className="c2">{tt('Account non collegato')}</span> : null}
       </div>
     </div>
   )

@@ -4,6 +4,7 @@
 import type { Trip } from '../types'
 import { expenseBase } from './budget'
 import { riassunto } from './spese'
+import { LOCALE, t } from '../i18n'
 
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
@@ -23,12 +24,12 @@ export function cercaNelViaggio(trip: Trip, q: string, max = 8): RisultatoRicerc
   const out: RisultatoRicerca[] = []
   const add = (_g: GruppoRicerca, list: RisultatoRicerca[]) => out.push(...list.slice(0, max))
 
-  add('Luoghi', trip.places.filter((p) => hit(p.name, p.nameLocal, p.city, p.category, p.address)).map((p) => ({ gruppo: 'Luoghi', id: p.id, titolo: p.name, sotto: [p.city, p.category].filter(Boolean).join(' · '), to: '/luoghi' })))
-  add('Tappe', trip.days.flatMap((d, i) => d.items.filter((it) => hit(it.title, it.note)).map((it) => ({ gruppo: 'Tappe' as const, id: it.id, titolo: it.title, sotto: `Giorno ${i + 1} · ${d.city}`, to: `/giorni/${d.id}` }))))
-  add('Prenotazioni', trip.bookings.filter((b) => hit(b.title, b.place, b.provider, b.notes)).map((b) => ({ gruppo: 'Prenotazioni', id: b.id, titolo: b.title, to: '/altro/prenotazioni' })))
-  add('Alloggi', trip.stays.filter((s) => hit(s.name, s.city, s.address)).map((s) => ({ gruppo: 'Alloggi', id: s.id, titolo: s.name, sotto: s.city, to: '/altro/alloggi' })))
-  add('Trasporti', trip.transports.filter((x) => hit(x.from, x.to, x.operator, x.notes)).map((x) => ({ gruppo: 'Trasporti', id: x.id, titolo: `${x.from} → ${x.to}`, to: '/altro/trasporti' })))
-  add('Voli', trip.flights.filter((f) => hit(f.title, f.airline)).map((f) => ({ gruppo: 'Voli', id: f.id, titolo: f.title, sotto: f.airline, to: '/altro/voli' })))
+  add('Luoghi', trip.places.filter((p) => hit(p.name, p.nameLocal, p.city, p.category, p.address)).map((p) => ({ gruppo: 'Luoghi' as const, id: p.id, titolo: p.name, sotto: [p.city, p.category].filter(Boolean).join(' · '), to: '/luoghi' })))
+  add('Tappe', trip.days.flatMap((d, i) => d.items.filter((it) => hit(it.title, it.note)).map((it) => ({ gruppo: 'Tappe' as const, id: it.id, titolo: it.title, sotto: t('Giorno {v0} · {city}', { v0: i + 1, city: d.city }), to: `/giorni/${d.id}` }))))
+  add('Prenotazioni', trip.bookings.filter((b) => hit(b.title, b.place, b.provider, b.notes)).map((b) => ({ gruppo: 'Prenotazioni' as const, id: b.id, titolo: b.title, to: '/altro/prenotazioni' })))
+  add('Alloggi', trip.stays.filter((s) => hit(s.name, s.city, s.address)).map((s) => ({ gruppo: 'Alloggi' as const, id: s.id, titolo: s.name, sotto: s.city, to: '/altro/alloggi' })))
+  add('Trasporti', trip.transports.filter((x) => hit(x.from, x.to, x.operator, x.notes)).map((x) => ({ gruppo: 'Trasporti' as const, id: x.id, titolo: `${x.from} → ${x.to}`, to: '/altro/trasporti' })))
+  add('Voli', trip.flights.filter((f) => hit(f.title, f.airline)).map((f) => ({ gruppo: 'Voli' as const, id: f.id, titolo: f.title, sotto: f.airline, to: '/altro/voli' })))
   return out
 }
 
@@ -66,16 +67,16 @@ export function riepilogoViaggio(trip: Trip): Riepilogo {
 }
 
 export function riepilogoTesto(r: Riepilogo): string[] {
-  const m = (n: number) => `${n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${r.valuta}`
+  const m = (n: number) => `${n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${r.valuta}`
   return [
     r.titolo,
     r.periodo,
     '',
-    `${r.giorni} giorni · ${r.citta.length} città · ${r.tappe} tappe`,
+    t('{giorni} giorni · {length} città · {tappe} tappe', { giorni: r.giorni, length: r.citta.length, tappe: r.tappe }),
     r.citta.join(', '),
     '',
-    `Speso in totale: ${m(r.speso)}`,
+    t('Speso in totale: {v0}', { v0: m(r.speso) }),
     ...r.perCategoria.map((c) => `  ${c.nome}: ${m(c.importo)}`),
-    ...(r.mioSaldo === null ? [] : ['', `Il mio bilancio: ${r.mioSaldo >= 0 ? 'da incassare' : 'da dare'} ${m(Math.abs(r.mioSaldo))}`]),
+    ...(r.mioSaldo === null ? [] : ['', t('Il mio bilancio: {v0} {v1}', { v0: r.mioSaldo >= 0 ? t('da incassare') : t('da dare'), v1: m(Math.abs(r.mioSaldo)) })]),
   ]
 }

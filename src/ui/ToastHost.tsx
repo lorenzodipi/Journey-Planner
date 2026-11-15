@@ -2,10 +2,11 @@
 // in fondo dove non ci sono schede, accanto alla barra laterale sugli schermi grandi (regole .fa-toasts / .fa-toast).
 import { Button, Text, UNSTABLE_Toast as Toast, UNSTABLE_ToastContent as ToastContent, UNSTABLE_ToastRegion as ToastRegion } from 'react-aria-components'
 import { codaAvvisi } from '../state/toast'
+import { t } from '../i18n'
 
 export function ToastHost() {
   return (
-    <ToastRegion queue={codaAvvisi} className="fa-toasts" aria-label="Avvisi">
+    <ToastRegion queue={codaAvvisi} className="fa-toasts" aria-label={t('Avvisi')}>
       {({ toast }) => (
         <Toast toast={toast} className="fa-toast">
           <ToastContent className="t">

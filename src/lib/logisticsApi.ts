@@ -10,6 +10,7 @@ import {
   type StayInput,
   type TransportInput,
 } from './logistics'
+import { t } from '../i18n'
 
 // Scritture e letture per alloggi, trasporti e voli.
 
@@ -50,10 +51,10 @@ export async function setStayDeleted(id: string, deleted: boolean): Promise<void
 // ---------- trasporti ----------
 
 const MIGRATION_0009 =
-  "Manca la migrazione 0009 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0009_transport_dates.sql). Senza, le date senza ora non si possono salvare."
+  t('Manca la migrazione 0009 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0009_transport_dates.sql). Senza, le date senza ora non si possono salvare.')
 const missingDateColumns = (error: { message?: string } | null) => /depart_date|arrive_date/.test(error?.message ?? '')
 
-const MIGRATION_0039 = "Per salvare più persone che hanno pagato manca la migrazione 0039 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0039_voli_trasporti_piu_paganti.sql), poi riprova."
+const MIGRATION_0039 = t('Per salvare più persone che hanno pagato manca la migrazione 0039 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0039_voli_trasporti_piu_paganti.sql), poi riprova.')
 const mancaPaganti = (e: { message?: string } | null) => (e && /payer_ids/i.test(e.message ?? '') ? new Error(MIGRATION_0039) : e)
 
 function withoutDateColumns<T extends { depart_date?: unknown; arrive_date?: unknown }>(columns: T): Omit<T, 'depart_date' | 'arrive_date'> {

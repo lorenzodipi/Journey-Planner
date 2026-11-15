@@ -1,5 +1,6 @@
 // Formato data/ora e unità (#63, SET-002/003): scelte del dispositivo, non del viaggio.
 import { useEffect, useState } from 'react'
+import { LOCALE, t } from '../i18n'
 
 export interface FormatiPrefs {
   ore: 24 | 12
@@ -64,11 +65,11 @@ export const gradi = (c: number, p: FormatiPrefs = corrente) => `${gradiNum(c, p
 export function distanza(m: number, p: FormatiPrefs = corrente): string {
   if (p.distanza === 'mi') {
     const mi = m / 1609.344
-    if (mi < 0.1) return `${Math.max(10, Math.round((m * 3.28084) / 10) * 10)} ft`
-    return `${mi.toLocaleString('it-IT', { maximumFractionDigits: 1 })} mi`
+    if (mi < 0.1) return t('{v0} ft', { v0: Math.max(10, Math.round((m * 3.28084) / 10) * 10) })
+    return `${mi.toLocaleString(LOCALE, { maximumFractionDigits: 1 })} mi`
   }
   if (m < 950) return `${Math.max(10, Math.round(m / 10) * 10)} m`
-  return `${(m / 1000).toLocaleString('it-IT', { maximumFractionDigits: 1 })} km`
+  return `${(m / 1000).toLocaleString(LOCALE, { maximumFractionDigits: 1 })} km`
 }
 
 /** Località di riferimento scelta a mano per Oggi (HOME-015), per viaggio. */

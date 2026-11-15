@@ -7,6 +7,7 @@ import { showToast } from '../state/toast'
 import { useTrips } from '../state/trips'
 import { FormError, PrimaryButton, SecondaryButton } from './Field'
 import { Card } from './PageHeader'
+import { t as tt } from '../i18n'
 
 const MAX_BYTES = 30 * 1024 * 1024
 
@@ -46,14 +47,14 @@ export function KmzImportCard() {
     setContent(null)
     setFileName(file.name)
     if (file.size > MAX_BYTES) {
-      setError('Il file è troppo grande (oltre 30 MB): non sembra una mappa esportata da Google.')
+      setError(tt('Il file è troppo grande (oltre 30 MB): non sembra una mappa esportata da Google.'))
       return
     }
     setReading(true)
     try {
       setContent(await readKmzFile(file))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Non riesco a leggere il file.')
+      setError(err instanceof Error ? err.message : tt('Non riesco a leggere il file.'))
     } finally {
       setReading(false)
     }
@@ -69,8 +70,8 @@ export function KmzImportCard() {
       setError(message)
       return
     }
-    const parts = [plan.updates.length > 0 && `${plural(plan.updates.length, 'luogo aggiornato', 'luoghi aggiornati')}`, plan.fresh.length > 0 && `${plural(plan.fresh.length, 'aggiunto', 'aggiunti')}`].filter(Boolean)
-    showToast(parts.join(' · ') || 'Nulla da importare', { label: 'Annulla', run: () => void undo().then((m) => showToast(m ?? 'Import annullato')) })
+    const parts = [plan.updates.length > 0 && `${plural(plan.updates.length, tt('luogo aggiornato'), tt('luoghi aggiornati'))}`, plan.fresh.length > 0 && `${plural(plan.fresh.length, tt('aggiunto'), tt('aggiunti'))}`].filter(Boolean)
+    showToast(parts.join(' · ') || tt('Nulla da importare'), { label: tt('Annulla'), run: () => void undo().then((m) => showToast(m ?? tt('Import annullato'))) })
     reset()
     // i luoghi senza coordinate (il file di Google non le contiene) vengono cercati subito, così compaiono sulla mappa
     // (una breve attesa: i luoghi appena importati devono essere già arrivati nello stato dell'app)
@@ -84,10 +85,9 @@ export function KmzImportCard() {
 
   return (
     <Card>
-      <h2 className="font-display text-lg font-extrabold">Importa da Google Maps</h2>
+      <h2 className="font-display text-lg font-extrabold">{tt('Importa da Google Maps')}</h2>
       <p className="mt-1 text-[13px] leading-snug text-muted">
-        Scegli il file .kmz della tua mappa (Google My Maps → ⋮ → Esporta in KML/KMZ). I luoghi che hai già ricevono il link a Google Maps,
-        quelli che mancano vengono aggiunti a «{trip.title}».
+        {tt('Scegli il file .kmz della tua mappa (Google My Maps → ⋮ → Esporta in KML/KMZ). I luoghi che hai già ricevono il link a Google Maps, quelli che mancano vengono aggiunti a «{title}».', { title: trip.title })}
       </p>
       <input
         ref={input}
@@ -97,10 +97,10 @@ export function KmzImportCard() {
         className="sr-only"
         tabIndex={-1}
         onChange={(e) => void onFile(e)}
-        aria-label="File della mappa Google"
+        aria-label={tt('File della mappa Google')}
       />
       <div className="mt-3">
-        <SecondaryButton onClick={() => input.current?.click()}>{reading ? 'Leggo il file…' : plan ? 'Scegli un altro file' : 'Scegli il file .kmz'}</SecondaryButton>
+        <SecondaryButton onClick={() => input.current?.click()}>{reading ? tt('Leggo il file…') : plan ? tt('Scegli un altro file') : tt('Scegli il file .kmz')}</SecondaryButton>
       </div>
 
       {error && (
@@ -112,22 +112,21 @@ export function KmzImportCard() {
       {plan && content && (
         <div className="mt-3 space-y-3 rounded-[20px] border border-hairline bg-bg p-4">
           <p className="text-sm text-muted">
-            <span className="font-extrabold text-ink">{fileName}</span> · {plural(content.points.length, 'luogo', 'luoghi')}
-            {content.skipped > 0 && ` (${plural(content.skipped, 'linea o area ignorata', 'linee o aree ignorate')})`}
+            <span className="font-extrabold text-ink">{fileName}</span> · {plural(content.points.length, tt('luogo'), tt('luoghi'))}
+            {content.skipped > 0 && ` (${plural(content.skipped, tt('linea o area ignorata'), tt('linee o aree ignorate'))})`}
           </p>
           <ul className="space-y-1.5 text-sm">
             <li>
-              <span className="font-extrabold">{plan.matched}</span> già nell'app
-              {plan.updates.length > 0 ? ` · ${plural(plan.updates.length, 'riceve il link', 'ricevono il link')}` : plan.matched > 0 ? ' · già a posto' : ''}
+              <span className="font-extrabold">{plan.matched}</span>{' '}{tt('già nell\'app{v0}', { v0: plan.updates.length > 0 ? ` · ${plural(plan.updates.length, tt('riceve il link'), tt('ricevono il link'))}` : plan.matched > 0 ? tt(' · già a posto') : '' })}
             </li>
             <li>
-              <span className="font-extrabold">{plan.fresh.length}</span> da aggiungere
-              {plan.newCategories.length > 0 && <span className="text-muted"> · nuove categorie: {plan.newCategories.join(', ')}</span>}
+              <span className="font-extrabold">{plan.fresh.length}</span>{' '}{tt('da aggiungere')}
+              {plan.newCategories.length > 0 && <span className="text-muted">{' '}{tt('· nuove categorie: {v0}', { v0: plan.newCategories.join(', ') })}</span>}
             </li>
           </ul>
           {plan.fresh.length > 0 && (
             <details className="text-sm">
-              <summary className="min-h-6 cursor-pointer font-extrabold text-pale">Vedi i luoghi da aggiungere</summary>
+              <summary className="min-h-6 cursor-pointer font-extrabold text-pale">{tt('Vedi i luoghi da aggiungere')}</summary>
               <ul className="mt-2 max-h-48 list-disc space-y-0.5 overflow-y-auto pl-5">
                 {plan.fresh.slice(0, 60).map((p) => (
                   <li>
@@ -135,29 +134,28 @@ export function KmzImportCard() {
                     {p.city && <span className="text-muted"> · {p.city}</span>}
                   </li>
                 ))}
-                {plan.fresh.length > 60 && <li className="list-none text-muted">…e altri {plan.fresh.length - 60}</li>}
+                {plan.fresh.length > 60 && <li className="list-none text-muted">{tt('…e altri {v0}', { v0: plan.fresh.length - 60 })}</li>}
               </ul>
             </details>
           )}
           {plan.withoutCoords > 0 && (
             <p className="text-xs leading-snug text-muted">
-              Il file non contiene le coordinate: il link è una ricerca su Google per nome e indirizzo. Dopo l'import l'app cerca da sola la posizione dei luoghi
-              senza pallino (qualche minuto, con l'avanzamento qui sotto); i pin che hai già non vengono spostati.
+              {tt('Il file non contiene le coordinate: il link è una ricerca su Google per nome e indirizzo. Dopo l\'import l\'app cerca da sola la posizione dei luoghi senza pallino (qualche minuto, con l\'avanzamento qui sotto); i pin che hai già non vengono spostati.')}
             </p>
           )}
           {plan.far.length > 0 && (
             <p className="rounded-xl border-2 border-warn px-3 py-2 text-xs leading-snug">
-              Controlla questi: nell'app sono a più di 2 km da dove li mette Google — {plan.far.map((f) => `${f.name} (${f.km} km)`).join(', ')}.
+              {tt('Controlla questi: nell\'app sono a più di 2 km da dove li mette Google — {v0}.', { v0: plan.far.map((f) => tt('{name} ({km} km)', { name: f.name, km: f.km })).join(', ') })}
             </p>
           )}
           {plan.matched > 0 && (
             <label className="flex min-h-11 items-center gap-3 text-sm">
               <input type="checkbox" checked={replaceLinks} onChange={(e) => setReplaceLinks(e.currentTarget.checked)} className="size-5 accent-[var(--accent)]" />
-              Sostituisci anche i link che i luoghi hanno già
+              {tt('Sostituisci anche i link che i luoghi hanno già')}
             </label>
           )}
           {nothing ? (
-            <p className="text-sm text-muted">Non c'è nulla da cambiare: i luoghi sono già tutti aggiornati.</p>
+            <p className="text-sm text-muted">{tt('Non c\'è nulla da cambiare: i luoghi sono già tutti aggiornati.')}</p>
           ) : (
             <form
               onSubmit={(e) => {
@@ -167,12 +165,12 @@ export function KmzImportCard() {
               className="space-y-2"
             >
               <PrimaryButton busy={busy}>
-                {busy ? 'Importo…' : `Importa${plan.fresh.length + plan.updates.length > 0 ? ` (${plan.fresh.length + plan.updates.length})` : ''}`}
+                {busy ? tt('Importo…') : tt('Importa{v0}', { v0: plan.fresh.length + plan.updates.length > 0 ? ` (${plan.fresh.length + plan.updates.length})` : '' })}
               </PrimaryButton>
-              <SecondaryButton onClick={reset}>Annulla</SecondaryButton>
+              <SecondaryButton onClick={reset}>{tt('Annulla')}</SecondaryButton>
             </form>
           )}
-          {nothing && <SecondaryButton onClick={reset}>Chiudi</SecondaryButton>}
+          {nothing && <SecondaryButton onClick={reset}>{tt('Chiudi')}</SecondaryButton>}
         </div>
       )}
     </Card>

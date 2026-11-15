@@ -1,8 +1,9 @@
 // Valuta scelta da un elenco, non scritta a mano: le valute del viaggio (`valute`) oppure, con `tutte`, tutte le valute con il nome.
 import { useId, useMemo } from 'react'
 import { currencyGroups } from '../lib/currencies'
+import { t } from '../i18n'
 
-export function CampoValuta({ value, onChange, valute = [], label = 'Valuta', tutte, hint }: { value: string; onChange: (valuta: string) => void; valute?: string[]; label?: string; /** tutte le valute del mondo, «EUR · Euro», le più usate in cima */ tutte?: boolean; hint?: string }) {
+export function CampoValuta({ value, onChange, valute = [], label = t('Valuta'), tutte, hint }: { value: string; onChange: (valuta: string) => void; valute?: string[]; label?: string; /** tutte le valute del mondo, «EUR · Euro», le più usate in cima */ tutte?: boolean; hint?: string }) {
   const id = useId()
   const gruppi = useMemo(() => (tutte ? currencyGroups(value) : []), [tutte, value])
   return (

@@ -16,6 +16,7 @@ import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
 import { VoceSheet } from './VoceSheet'
 import { useInCorso } from '../../faraway/Attesa'
+import { nomeCategoria, t as tt } from '../../i18n'
 
 const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']
 
@@ -84,16 +85,16 @@ export function ChecklistPage() {
   async function elimina(list: ChecklistItem[]) {
     if (list.length === 0) return
     const ok = await ask({
-      title: list.length === 1 ? `Eliminare «${list[0].text}»?` : `Eliminare ${list.length} voci?`,
-      message: list.some((i) => !i.private) && gruppo ? 'Le voci comuni spariscono per tutti. Puoi annullare subito dopo.' : 'Puoi annullare subito dopo.',
-      confirm: list.length === 1 ? 'Elimina la voce' : `Elimina ${list.length} voci`,
-      cancel: 'Tieni le voci',
+      title: list.length === 1 ? tt('Eliminare «{text}»?', { text: list[0].text }) : tt('Eliminare {length} voci?', { length: list.length }),
+      message: list.some((i) => !i.private) && gruppo ? tt('Le voci comuni spariscono per tutti. Puoi annullare subito dopo.') : tt('Puoi annullare subito dopo.'),
+      confirm: list.length === 1 ? tt('Elimina la voce') : tt('Elimina {length} voci', { length: list.length }),
+      cancel: tt('Tieni le voci'),
       destructive: true,
     })
     if (!ok) return
     const ids = list.map((i) => i.id)
     const m = await t.setChecklistManyDeleted(ids, true)
-    showToast(m ?? (list.length === 1 ? 'Voce eliminata' : `${list.length} voci eliminate`), m ? undefined : { label: 'Annulla', run: () => void t.setChecklistManyDeleted(ids, false) })
+    showToast(m ?? (list.length === 1 ? tt('Voce eliminata') : tt('{length} voci eliminate', { length: list.length })), m ? undefined : { label: tt('Annulla'), run: () => void t.setChecklistManyDeleted(ids, false) })
     setSelecting(false)
     setSel(new Set())
   }
@@ -101,12 +102,12 @@ export function ChecklistPage() {
   const [occ, faiOcc] = useInCorso()
   async function modello() {
     const m = await faiOcc('modello', () => t.addChecklistTemplate(trip.id))
-    showToast(m ?? 'Modello aggiunto: modifica o elimina le voci che non ti servono.')
+    showToast(m ?? tt('Modello aggiunto: modifica o elimina le voci che non ti servono.'))
   }
   async function duplica(from: Trip) {
     const m = await faiOcc(`dup:${from.id}`, () => t.duplicateChecklist(trip.id, from.id))
     setDup(false)
-    showToast(m ?? `Voci copiate da «${from.title}»`)
+    showToast(m ?? tt('Voci copiate da «{title}»', { title: from.title }))
   }
 
   const chosen = visibili.filter((i) => sel.has(i.id))
@@ -130,7 +131,7 @@ export function ChecklistPage() {
           className={cx('ck', (selecting ? picked : i.done) ? 'd' : partial ? 'p' : undefined)}
           role="checkbox"
           aria-checked={selecting ? picked : partial ? 'mixed' : i.done}
-          aria-label={selecting ? `Seleziona: ${i.text}` : `${i.done ? 'Da rifare' : multi ? 'Tutti a posto' : 'Fatto'}: ${i.text}`}
+          aria-label={selecting ? tt('Seleziona: {text}', { text: i.text }) : `${i.done ? tt('Da rifare') : multi ? tt('Tutti a posto') : tt('Fatto')}: ${i.text}`}
           disabled={!selecting && pending.has(i.id)}
           onClick={() => (selecting ? setSel((p) => (p.has(i.id) ? new Set([...p].filter((x) => x !== i.id)) : new Set(p).add(i.id))) : void toggle(i))}
         >
@@ -158,10 +159,10 @@ export function ChecklistPage() {
               {chipPrivata ? (
                 <span className="tag">
                   <Sv name="lock" size={12} className="ic" />
-                  Solo io
+                  {tt('Solo io')}
                 </span>
               ) : null}
-              {i.dueDate ? <span className="tag" style={late ? { color: 'var(--danger)' } : undefined}>entro {formatShort(i.dueDate)}</span> : null}
+              {i.dueDate ? <span className="tag" style={late ? { color: 'var(--danger)' } : undefined}>{tt('entro {v0}', { v0: formatShort(i.dueDate) })}</span> : null}
             </div>
           ) : null}
           {multi ? (
@@ -169,10 +170,10 @@ export function ChecklistPage() {
               {selecting ? (
                 <span className="cnt">{have}/{i.quantity}</span>
               ) : (
-                <span role="group" aria-label={`Pezzi a posto: ${i.text}`} className="fa-qta">
-                  <PulsanteIcona icon="minus" label={`Meno: ${i.text}`} isDisabled={pending.has(i.id) || have <= 0} onPress={() => void setCount(i, have - 1)} />
+                <span role="group" aria-label={tt('Pezzi a posto: {text}', { text: i.text })} className="fa-qta">
+                  <PulsanteIcona icon="minus" label={tt('Meno: {text}', { text: i.text })} isDisabled={pending.has(i.id) || have <= 0} onPress={() => void setCount(i, have - 1)} />
                   <b aria-live="polite">{have}/{i.quantity}</b>
-                  <PulsanteIcona icon="plus" label={`Più: ${i.text}`} isDisabled={pending.has(i.id) || have >= (i.quantity ?? 1)} onPress={() => void setCount(i, have + 1)} />
+                  <PulsanteIcona icon="plus" label={tt('Più: {text}', { text: i.text })} isDisabled={pending.has(i.id) || have >= (i.quantity ?? 1)} onPress={() => void setCount(i, have + 1)} />
                 </span>
               )}
             </div>
@@ -194,16 +195,16 @@ export function ChecklistPage() {
                   )
                 })}
               </span>
-              <span className="cnt">{s.done} di {s.total}</span>
+              <span className="cnt">{tt('{done} di {total}', { done: s.done, total: s.total })}</span>
             </div>
           ) : null}
           {i.url && !selecting ? (
             <a className="fa-lnk" href={i.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14 }}>
-              Apri il link
+              {tt('Apri il link')}
             </a>
           ) : null}
         </div>
-        {selecting ? null : <PulsanteIcona icon="pencil" label={`Modifica: ${i.text}`} onPress={() => setSheet({ item: i })} />}
+        {selecting ? null : <PulsanteIcona icon="pencil" label={tt('Modifica: {text}', { text: i.text })} onPress={() => setSheet({ item: i })} />}
       </li>
     )
   }
@@ -214,16 +215,16 @@ export function ChecklistPage() {
       bar={
         <BarraIndietro
           senzaIndietro={selecting}
-          title={selecting ? (chosen.length === 0 ? 'Tocca le voci' : chosen.length === 1 ? '1 selezionata' : `${chosen.length} selezionate`) : 'Checklist'}
+          title={selecting ? (chosen.length === 0 ? tt('Tocca le voci') : chosen.length === 1 ? '1 selezionata' : tt('{length} selezionate', { length: chosen.length })) : tt('Checklist')}
           back="/altro"
           right={
             vuota ? undefined : (
-              <PulsanteIcona className={selecting ? undefined : 'dng'} icon={selecting ? 'close' : 'trash'} label={selecting ? 'Annulla la selezione' : 'Elimina delle voci'} onPress={() => (selecting ? (setSelecting(false), setSel(new Set())) : setSelecting(true))} />
+              <PulsanteIcona className={selecting ? undefined : 'dng'} icon={selecting ? 'close' : 'trash'} label={selecting ? tt('Annulla la selezione') : tt('Elimina delle voci')} onPress={() => (selecting ? (setSelecting(false), setSel(new Set())) : setSelecting(true))} />
             )
           }
         />
       }
-      fab={vuota || selecting ? null : { label: 'Voce', aria: 'Aggiungi una voce', onPress: () => setSheet({}) }}
+      fab={vuota || selecting ? null : { label: tt('Voce'), aria: tt('Aggiungi una voce'), onPress: () => setSheet({}) }}
       // eliminando, al posto della barra delle sezioni c'è il bottone «Elimina», sempre visibile
       tabs={!selecting}
       className={selecting ? 'fa-selmode' : undefined}
@@ -231,11 +232,11 @@ export function ChecklistPage() {
       fissa={
         !vuota && v2 && gruppo && !selecting ? (
           <Segmenti
-            label="Lista"
+            label={tt('Lista')}
             value={lista}
             options={[
-              { value: 'all', label: 'Tutti' },
-              { value: 'mine', label: 'Solo mie' },
+              { value: 'all', label: tt('Tutti') },
+              { value: 'mine', label: tt('Solo mie') },
             ]}
             onChange={setLista}
           />
@@ -246,7 +247,7 @@ export function ChecklistPage() {
           {selecting ? (
             <div className="fa-selbar">
               <Pulsante color="tertiary-destructive" iconLeading="trash" isDisabled={chosen.length === 0} onPress={() => void elimina(chosen)}>
-                {chosen.length === 0 ? 'Elimina' : chosen.length === 1 ? 'Elimina 1 voce' : `Elimina ${chosen.length} voci`}
+                {chosen.length === 0 ? tt('Elimina') : chosen.length === 1 ? 'Elimina 1 voce' : tt('Elimina {length} voci', { length: chosen.length })}
               </Pulsante>
             </div>
           ) : null}
@@ -260,9 +261,9 @@ export function ChecklistPage() {
               onClose={() => setSheet(null)}
             />
           ) : null}
-          <Foglio open={dup} title="Duplica da un viaggio" onClose={() => setDup(false)}>
+          <Foglio open={dup} title={tt('Duplica da un viaggio')} onClose={() => setDup(false)}>
             <div style={{ display: 'grid', gap: 8 }}>
-              <p className="fa-m" style={{ margin: 0 }}>Copio le voci comuni e la tua lista privata, senza spunte.</p>
+              <p className="fa-m" style={{ margin: 0 }}>{tt('Copio le voci comuni e la tua lista privata, senza spunte.')}</p>
               {altri.map((x) => (
                 <Pulsante key={x.id} color="secondary" isLoading={occ === `dup:${x.id}`} onPress={() => void duplica(x)}>
                   {x.title}
@@ -276,13 +277,13 @@ export function ChecklistPage() {
     >
       {vuota ? (
         <>
-          <Vuoto title="Nessuna voce ancora" text="Aggiungi cosa fare prima di partire e cosa mettere in valigia, per tutti o solo per te." action="Aggiungi la prima voce" onAction={() => setSheet({})} />
+          <Vuoto title={tt('Nessuna voce ancora')} text={tt('Aggiungi cosa fare prima di partire e cosa mettere in valigia, per tutti o solo per te.')} action={tt('Aggiungi la prima voce')} onAction={() => setSheet({})} />
           <Pulsante color="secondary" isLoading={occ === 'modello'} onPress={() => void modello()}>
-            Parti da un modello
+            {tt('Parti da un modello')}
           </Pulsante>
           {altri.length > 0 ? (
             <Pulsante color="secondary" onPress={() => setDup(true)}>
-              Duplica da un viaggio
+              {tt('Duplica da un viaggio')}
             </Pulsante>
           ) : null}
         </>
@@ -291,33 +292,33 @@ export function ChecklistPage() {
           {!selecting ? (
             <div className="card">
               <div className="hd">
-                <span className="t">Checklist</span>
+                <span className="t">{tt('Checklist')}</span>
                 <span className="c">
-                  {mio.done} di {mio.total}
+                  {tt('{done} di {total}', { done: mio.done, total: mio.total })}
                 </span>
               </div>
-              <div className="bar" role="progressbar" aria-label="Avanzamento" aria-valuemin={0} aria-valuemax={mio.total} aria-valuenow={mio.done}>
+              <div className="bar" role="progressbar" aria-label={tt('Avanzamento')} aria-valuemin={0} aria-valuemax={mio.total} aria-valuenow={mio.done}>
                 <i style={{ width: `${mio.total ? (mio.done / mio.total) * 100 : 0}%` }} />
               </div>
             </div>
           ) : null}
           {visibili.length === 0 ? (
             <Vuoto
-              title={lista === 'mine' ? 'La tua lista è vuota' : 'Nessuna voce comune'}
-              text={lista === 'mine' ? 'Qui metti le cose solo tue: le vedi solo tu.' : 'Qui metti le cose di tutti: ognuno spunta la sua.'}
-              action="Aggiungi una voce"
+              title={lista === 'mine' ? tt('La tua lista è vuota') : tt('Nessuna voce comune')}
+              text={lista === 'mine' ? tt('Qui metti le cose solo tue: le vedi solo tu.') : tt('Qui metti le cose di tutti: ognuno spunta la sua.')}
+              action={tt('Aggiungi una voce')}
               onAction={() => setSheet({})}
             />
           ) : null}
           <Affianca>
             {/* pieghevole aperto: le categorie a righe, 1 a sinistra, 2 a destra, 3 sotto l’1… */}
               {gruppi.map((g) => (
-              <section key={g.category} className={cx('card', chiuse.has(g.category) && 'chiusa')} aria-label={g.category}>
+              <section key={g.category} className={cx('card', chiuse.has(g.category) && 'chiusa')} aria-label={nomeCategoria(g.category)}>
                 {/* titolo della categoria: tocca per aprire o chiudere; da chiusa restano titolo e «2 di 12» */}
                 <button type="button" className="grp" aria-expanded={!chiuse.has(g.category)} onClick={() => apriChiudi(g.category)}>
-                  <b>{g.category}</b>
+                  <b>{nomeCategoria(g.category)}</b>
                   <span>
-                    {g.done} di {g.items.length}
+                    {tt('{done} di {length}', { done: g.done, length: g.items.length })}
                     <Sv name="chev" size={16} className={cx('chv', !chiuse.has(g.category) && 'up')} />
                   </span>
                 </button>
@@ -327,7 +328,7 @@ export function ChecklistPage() {
           </Affianca>
           {!selecting && !vuota && altri.length > 0 ? (
             <Pulsante color="secondary" iconLeading="copy" onPress={() => setDup(true)}>
-              Duplica da un viaggio
+              {tt('Duplica da un viaggio')}
             </Pulsante>
           ) : null}
         </div>

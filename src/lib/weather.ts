@@ -1,4 +1,5 @@
 import { daysBetween } from './dates'
+import { t as tt } from '../i18n'
 
 // Previsioni da Open-Meteo (gratuito, senza chiave). Coprono circa 16 giorni da oggi:
 // prima la scheda lo dice e mostra solo la data da cui saranno disponibili.
@@ -32,18 +33,18 @@ export const FORECAST_DAYS = 16
 const FORECAST_TIMEOUT_MS = 10_000
 
 export function weatherLabel(code: number): { label: string; icon: string } {
-  if (code === 0) return { label: 'Sereno', icon: '☀️' }
-  if (code === 1) return { label: 'Quasi sereno', icon: '🌤️' }
-  if (code === 2) return { label: 'Parzialmente nuvoloso', icon: '⛅' }
-  if (code === 3) return { label: 'Coperto', icon: '☁️' }
-  if (code === 45 || code === 48) return { label: 'Nebbia', icon: '🌫️' }
-  if (code >= 51 && code <= 57) return { label: 'Pioggerella', icon: '🌦️' }
-  if (code >= 61 && code <= 67) return { label: 'Pioggia', icon: '🌧️' }
-  if (code >= 71 && code <= 77) return { label: 'Neve', icon: '🌨️' }
-  if (code >= 80 && code <= 82) return { label: 'Rovesci', icon: '🌦️' }
-  if (code === 85 || code === 86) return { label: 'Rovesci di neve', icon: '🌨️' }
-  if (code >= 95) return { label: 'Temporale', icon: '⛈️' }
-  return { label: 'Variabile', icon: '🌥️' }
+  if (code === 0) return { label: tt('Sereno'), icon: '☀️' }
+  if (code === 1) return { label: tt('Quasi sereno'), icon: '🌤️' }
+  if (code === 2) return { label: tt('Parzialmente nuvoloso'), icon: '⛅' }
+  if (code === 3) return { label: tt('Coperto'), icon: '☁️' }
+  if (code === 45 || code === 48) return { label: tt('Nebbia'), icon: '🌫️' }
+  if (code >= 51 && code <= 57) return { label: tt('Pioggerella'), icon: '🌦️' }
+  if (code >= 61 && code <= 67) return { label: tt('Pioggia'), icon: '🌧️' }
+  if (code >= 71 && code <= 77) return { label: tt('Neve'), icon: '🌨️' }
+  if (code >= 80 && code <= 82) return { label: tt('Rovesci'), icon: '🌦️' }
+  if (code === 85 || code === 86) return { label: tt('Rovesci di neve'), icon: '🌨️' }
+  if (code >= 95) return { label: tt('Temporale'), icon: '⛈️' }
+  return { label: tt('Variabile'), icon: '🌥️' }
 }
 
 interface ForecastJson {

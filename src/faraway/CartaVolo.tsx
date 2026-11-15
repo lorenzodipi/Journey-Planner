@@ -10,6 +10,7 @@ import type { Flight, FlightLeg, Trip } from '../types'
 import { Avatars, Pulsante } from './base'
 import { cx } from './cx'
 import { Sv } from './icons'
+import { t } from '../i18n'
 
 const PLANE = 'M482.3 192c34.2 0 93.7 29 93.7 64c0 36-59.5 64-93.7 64l-116.6 0L265.2 495.9c-5.7 10-16.3 16.1-27.8 16.1l-56.2 0c-10.6 0-18.3-10.2-15.4-20.4l49-171.6L112 320 68.8 377.6c-3 4-7.8 6.4-12.8 6.4l-42 0c-7.8 0-14-6.3-14-14c0-1.3 .2-2.6 .5-3.9L32 256 .5 145.9c-.4-1.3-.5-2.6-.5-3.9c0-7.8 6.3-14 14-14l42 0c5 0 9.8 2.4 12.8 6.4L112 192l102.9 0-49-171.6C162.9 10.2 170.6 0 181.2 0l56.2 0c11.5 0 22.1 6.2 27.8 16.1L365.7 192l116.6 0z'
 
@@ -40,8 +41,8 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
   const scalo = fasciaScali(r.scali)
   const people = flight.forTravelers?.length ? flight.forTravelers : trip.travelers.map((p) => p.id)
   const names = people.map((id) => trip.travelers.find((p) => p.id === id)).filter((p): p is NonNullable<typeof p> => Boolean(p))
-  const brand = flight.airline?.trim() || 'Volo'
-  const numeri = r.numeri.length > 0 ? `${flight.airline ? 'Volo ' : ''}${r.numeri.join(' · ')}` : flight.airline ? '' : flight.title
+  const brand = flight.airline?.trim() || t('Volo')
+  const numeri = r.numeri.length > 0 ? `${flight.airline ? t('Volo ') : ''}${r.numeri.join(' · ')}` : flight.airline ? '' : flight.title
   const first = flight.legs[0]
   const maps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${airportCity(first.from)} ${first.from} aeroporto${first.terminal ? ` terminal ${first.terminal}` : ''}`)}`
 
@@ -54,7 +55,7 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
             <span className="fl">{numeri}</span>
           </div>
           <div className="body">
-            <button type="button" aria-expanded={open} aria-label={`${flight.title}: da ${r.fromCity} a ${r.toCity}`} onClick={onToggle} style={{ all: 'unset', display: 'block', width: '100%', cursor: 'pointer' }}>
+            <button type="button" aria-expanded={open} aria-label={t('{title}: da {fromCity} a {toCity}', { title: flight.title, fromCity: r.fromCity, toCity: r.toCity })} onClick={onToggle} style={{ all: 'unset', display: 'block', width: '100%', cursor: 'pointer' }}>
               <div className="rt" data-adatta="">
                 <div className="pt">
                   <div className="code">{r.from}</div>
@@ -115,7 +116,7 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
               const wait = prev ? r.scali[i - 1] : null
               return (
                 <Fragment key={l.id}>
-                  {wait ? <div className="lay">Scalo a {wait.city} · {durataLunga(wait.minutes)}</div> : null}
+                  {wait ? <div className="lay">{t('Scalo a {city} · {v1}', { city: wait.city, v1: durataLunga(wait.minutes) })}</div> : null}
                   <div className="leg">
                     <div className="lh">
                       <b>
@@ -128,11 +129,11 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
                     </div>
                     <div className="grid" data-adatta="celle">
                       {[
-                        ['Terminal', l.terminal],
-                        ['Gate', l.gate],
-                        ['Posto', postiDi(l, trip, people)],
-                        ['Imbarco', l.boardingTime],
-                        ['Classe', l.cabin],
+                        [t('Terminal'), l.terminal],
+                        [t('Gate'), l.gate],
+                        [t('Posto'), postiDi(l, trip, people)],
+                        [t('Imbarco'), l.boardingTime],
+                        [t('Classe'), l.cabin],
                       ]
                         .filter(([k, v]) => (Array.isArray(v) ? v.length : v) || k !== 'Terminal')
                         .slice(0, 5)
@@ -150,32 +151,32 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
             })}
             {flight.bookingRef ? (
               <div className={cx('bc', !onCode && 'nobar')}>
-                <span className="lb">Prenotazione</span>
+                <span className="lb">{t('Prenotazione')}</span>
                 <span className="cd">{flight.bookingRef}</span>
               </div>
             ) : null}
             {flight.baggage || flight.policy ? (
               <div style={{ display: 'grid', gap: 8, marginTop: 16 }}>
-                {flight.baggage ? <span className="fa-m">Bagaglio · {flight.baggage}</span> : null}
-                {flight.policy ? <span className="fa-m">Cambio e rimborso · {flight.policy}</span> : null}
+                {flight.baggage ? <span className="fa-m">{t('Bagaglio · {baggage}', { baggage: flight.baggage })}</span> : null}
+                {flight.policy ? <span className="fa-m">{t('Cambio e rimborso · {policy}', { policy: flight.policy })}</span> : null}
               </div>
             ) : null}
             <div className="fa-acts">
               <Pulsante size="sm" color="secondary" iconLeading="pin" href={maps} target="_blank">
-                Maps
+                {t('Maps')}
               </Pulsante>
               {onCode ? (
                 <Pulsante size="sm" color="secondary" iconLeading="qr" onPress={onCode}>
-                  Codice
+                  {t('Codice')}
                 </Pulsante>
               ) : null}
               {lettura ? null : (
                 <>
                   <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={onEdit}>
-                    Modifica
+                    {t('Modifica')}
                   </Pulsante>
                   <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={onDelete}>
-                    Elimina
+                    {t('Elimina')}
                   </Pulsante>
                 </>
               )}

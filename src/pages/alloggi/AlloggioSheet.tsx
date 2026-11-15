@@ -18,6 +18,7 @@ import { CampoValuta } from '../../faraway/CampoValuta'
 import { AltriDettagli, Contatore, Gruppo, PerChi, Percorso } from '../../faraway/Moduli'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
+import { t } from '../../i18n'
 
 const Errore = ({ children }: { children: string }) => (
   <span className="fa-help bad" role="alert">
@@ -52,19 +53,19 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
     setMapsInfo('')
     const text = v.trim()
     if (!text) return
-    if (/^https?:\/\/(maps\.app\.goo\.gl|goo\.gl)\//i.test(text)) return setMapsInfo('Link corto: apri il link, copia quello completo dalla barra del browser e incollalo qui per compilare i campi.')
+    if (/^https?:\/\/(maps\.app\.goo\.gl|goo\.gl)\//i.test(text)) return setMapsInfo(t('Link corto: apri il link, copia quello completo dalla barra del browser e incollalo qui per compilare i campi.'))
     const info = parseMapsUrl(text)
     if (!info) return
     if (info.name && !name.trim()) setName(info.name)
-    if (city.trim() && address.trim()) return setMapsInfo('Link letto.')
-    setMapsInfo('Leggo l’indirizzo…')
+    if (city.trim() && address.trim()) return setMapsInfo(t('Link letto.'))
+    setMapsInfo(t('Leggo l’indirizzo…'))
     try {
       const r = await reverseGeocode(info.lat, info.lng)
       if (!city.trim() && r.city) setCity(r.city)
       if (!address.trim() && r.address) setAddress(r.address)
-      setMapsInfo(r.address || r.city ? 'Campi compilati dal link: controlla che siano giusti.' : 'Link letto, ma non trovo l’indirizzo: scrivilo a mano.')
+      setMapsInfo(r.address || r.city ? t('Campi compilati dal link: controlla che siano giusti.') : t('Link letto, ma non trovo l’indirizzo: scrivilo a mano.'))
     } catch {
-      setMapsInfo('Link letto, ma non riesco a leggere l’indirizzo ora: scrivilo a mano.')
+      setMapsInfo(t('Link letto, ma non riesco a leggere l’indirizzo ora: scrivilo a mano.'))
     }
   }
   const [checkIn, setCheckIn] = useState(s?.checkIn ?? trip.startDate)
@@ -95,15 +96,15 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     const err: typeof errors = {}
-    if (!name.trim()) err.name = 'Scrivi il nome dell’alloggio.'
-    if (!checkIn || !checkOut) err.when = 'Scegli le date di check-in e di check-out.'
-    else if (checkOut <= checkIn) err.when = 'Il check-out deve essere dopo il check-in.'
+    if (!name.trim()) err.name = t('Scrivi il nome dell’alloggio.')
+    if (!checkIn || !checkOut) err.when = t('Scegli le date di check-in e di check-out.')
+    else if (checkOut <= checkIn) err.when = t('Il check-out deve essere dopo il check-in.')
     const amount = parseAmount(cost)
-    if (cost.trim() && amount === null) err.cost = 'Il costo non è chiaro: scrivi per esempio 450,00.'
-    if (paid && amount && !paidBy) err.paidBy = 'Manca chi ha pagato. Scegli una persona.'
+    if (cost.trim() && amount === null) err.cost = t('Il costo non è chiaro: scrivi per esempio 450,00.')
+    if (paid && amount && !paidBy) err.paidBy = t('Manca chi ha pagato. Scegli una persona.')
     const ospiti = guests.trim() ? Number(guests) : null
-    if (ospiti !== null && (!Number.isInteger(ospiti) || ospiti < 1 || ospiti > 99)) err.guests = 'Scrivi quanti ospiti, per esempio 2.'
-    if (email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim())) err.email = 'L’email non è valida: controlla la chiocciola e il dominio.'
+    if (ospiti !== null && (!Number.isInteger(ospiti) || ospiti < 1 || ospiti > 99)) err.guests = t('Scrivi quanti ospiti, per esempio 2.')
+    if (email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim())) err.email = t('L’email non è valida: controlla la chiocciola e il dominio.')
     setErrors(err)
     if (Object.keys(err).length > 0) return
     const input: StayInput = {
@@ -122,7 +123,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
     const esistente = luogoEsistente(trip.places, s?.name, name)
     const luogo = luogoDaAlloggio({ name, city, address, mapsUrl }, esistente)
     if (luogo) await (esistente ? tr.updatePlace(esistente.id, trip.id, luogo) : tr.createPlace(trip.id, luogo))
-    showToast(s ? 'Alloggio aggiornato' : 'Alloggio salvato')
+    showToast(s ? t('Alloggio aggiornato') : t('Alloggio salvato'))
     onClose()
   }
 
@@ -132,90 +133,90 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
   async function incolla() {
     try {
       const v = (await navigator.clipboard.readText()).trim()
-      if (!v) return showToast('Negli appunti non c’è niente da incollare.')
+      if (!v) return showToast(t('Negli appunti non c’è niente da incollare.'))
       await leggiLink(v)
     } catch {
-      showToast('Non riesco a leggere gli appunti: incolla il link nel campo.')
+      showToast(t('Non riesco a leggere gli appunti: incolla il link nel campo.'))
     }
   }
   const ora = (label: string, v: string, set: (v: string) => void) => (
-    <Campo label={label} icon="clock" type={soloOra(v) ? 'time' : 'text'} value={v} onChange={set} hint={soloOra(v) ? undefined : 'Scritto a mano: cancellalo per scegliere un orario.'} />
+    <Campo label={label} icon="clock" type={soloOra(v) ? 'time' : 'text'} value={v} onChange={set} hint={soloOra(v) ? undefined : t('Scritto a mano: cancellalo per scegliere un orario.')} />
   )
   /** Data e ora affiancate; un orario scritto a mano («15:00–22:00») va sotto, a tutta larghezza, per leggersi intero. */
   const dataOra = (data: ReactNode, v: string, set: (v: string) => void) => (
     <div className="dt" style={soloOra(v) ? undefined : { gridTemplateColumns: 'minmax(0,1fr)' }}>
       {data}
-      {ora('Ora', v, set)}
+      {ora(t('Ora'), v, set)}
     </div>
   )
-  const aTesta = amountNow && people.length > 1 ? `: ${formatMoney(Math.round((amountNow / people.length) * 100) / 100, currency)} a testa` : ''
+  const aTesta = amountNow && people.length > 1 ? t(': {v0} a testa', { v0: formatMoney(Math.round((amountNow / people.length) * 100) / 100, currency) }) : ''
 
   return (
     <Foglio
       open={open}
       full
-      title={s ? 'Modifica alloggio' : 'Nuovo alloggio'}
+      title={s ? t('Modifica alloggio') : t('Nuovo alloggio')}
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="alloggio-form" isLoading={busy}>
-          {s ? 'Salva le modifiche' : 'Salva l’alloggio'}
+          {s ? t('Salva le modifiche') : t('Salva l’alloggio')}
         </Pulsante>
       }
     >
       <form id="alloggio-form" className="frm grp" onSubmit={submit} noValidate>
-        <Gruppo titolo="Dove">
+        <Gruppo titolo={t('Dove')}>
           <Campo
-            label="Link di Google Maps"
+            label={t('Link di Google Maps')}
             icon="link"
             type="url"
             value={mapsUrl}
             onChange={(v) => void leggiLink(v)}
-            placeholder="Incolla il link"
+            placeholder={t('Incolla il link')}
             autoComplete="off"
-            hint={mapsInfo || 'Incollalo e compilo da solo nome, città e indirizzo.'}
+            hint={mapsInfo || t('Incollalo e compilo da solo nome, città e indirizzo.')}
             trailing={
               puoiIncollare && !mapsUrl.trim() ? (
                 <button type="button" className="fa-btn soft sm" style={{ minHeight: 36, padding: '0 16px' }} onClick={() => void incolla()}>
-                  Incolla
+                  {t('Incolla')}
                 </button>
               ) : undefined
             }
           />
-          <Campo label="Nome" value={name} onChange={setName} placeholder="es. Hotel del centro" error={errors.name} />
+          <Campo label={t('Nome')} value={name} onChange={setName} placeholder={t('es. Hotel del centro')} error={errors.name} />
           <div className="fa-2c">
-            <Campo label="Città" icon="pin" value={city} onChange={setCity} placeholder="Città" />
-            <Campo label="Indirizzo" value={address} onChange={setAddress} placeholder="Via e numero" />
+            <Campo label={t('Città')} icon="pin" value={city} onChange={setCity} placeholder={t('Città')} />
+            <Campo label={t('Indirizzo')} value={address} onChange={setAddress} placeholder={t('Via e numero')} />
           </div>
         </Gruppo>
-        <Gruppo titolo="Quando">
+        <Gruppo titolo={t('Quando')}>
           <Percorso
             durata={nottiTesto(checkIn, checkOut)}
             da={{
               titolo: 'Check-in',
               children: (
-                dataOra(<Campo label="Data" type="date" icon="cal" value={checkIn} onChange={(v) => (setCheckIn(v), !checkOut || checkOut <= v ? setCheckOut('') : null)} />, inInfo, setInInfo)
+                dataOra(<Campo label={t('Data')} type="date" icon="cal" value={checkIn} onChange={(v) => (setCheckIn(v), !checkOut || checkOut <= v ? setCheckOut('') : null)} />, inInfo, setInInfo)
               ),
             }}
             a={{
               titolo: 'Check-out',
               children: (
-                dataOra(<Campo label="Data" type="date" icon="cal" value={checkOut} onChange={setCheckOut} min={checkIn || undefined} />, outInfo, setOutInfo)
+                dataOra(<Campo label={t('Data')} type="date" icon="cal" value={checkOut} onChange={setCheckOut} min={checkIn || undefined} />, outInfo, setOutInfo)
               ),
             }}
           />
           {errors.when ? <Errore>{errors.when}</Errore> : null}
         </Gruppo>
-        <Gruppo titolo="Costo">
+        <Gruppo titolo={t('Costo')}>
           <PerChi trip={trip} meId={me?.id} value={people} onChange={setWho} />
           <div className="fa-2c">
-            <Campo label="Costo" inputMode="decimal" value={cost} onChange={setCost} placeholder="es. 450,00" error={errors.cost} />
+            <Campo label={t('Costo')} inputMode="decimal" value={cost} onChange={setCost} placeholder={t('es. 450,00')} error={errors.cost} />
             <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, s?.currency)} />
           </div>
-          <span className="fa-help" style={{ marginTop: -8 }}>Per tutto il soggiorno{aTesta}.</span>
-          <Interruttore label="Pagato" hint={paid ? 'Con un costo, l’alloggio diventa una spesa.' : 'Non pagato'} isSelected={paid} onChange={setPaid} />
+          <span className="fa-help" style={{ marginTop: -8 }}>{t('Per tutto il soggiorno{aTesta}.', { aTesta })}</span>
+          <Interruttore label={t('Pagato')} hint={paid ? t('Con un costo, l’alloggio diventa una spesa.') : t('Non pagato')} isSelected={paid} onChange={setPaid} />
           {paid && cost.trim() ? (
-            <div className="fa-fld" role="group" aria-label="Pagato da">
-              Pagato da
+            <div className="fa-fld" role="group" aria-label={t('Pagato da')}>
+              {t('Pagato da')}
               <div className="fa-chips wrap">
                 {trip.travelers.map((p) => (
                   <Chip key={p.id} on={paidBy === p.id} onPress={() => setPaidBy(p.id)}>{nome(p.id)}</Chip>
@@ -225,36 +226,36 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
             </div>
           ) : null}
         </Gruppo>
-        <Gruppo titolo="Camera e contatti">
+        <Gruppo titolo={t('Camera e contatti')}>
           <div className="fa-2c">
-            <Campo label="Tipo di camera" value={roomType} onChange={setRoomType} placeholder="es. Doppia" />
-            <Campo label="Camera" value={room} onChange={setRoom} placeholder="es. 402" maxLength={10} />
+            <Campo label={t('Tipo di camera')} value={roomType} onChange={setRoomType} placeholder={t('es. Doppia')} />
+            <Campo label={t('Camera')} value={room} onChange={setRoom} placeholder={t('es. 402')} maxLength={10} />
           </div>
-          <Campo label="Codice di prenotazione" value={code} onChange={(v) => setCode(v.toUpperCase())} autoComplete="off" placeholder="es. 4K7QX2" />
-          <div className="fa-fld" role="group" aria-label="Pasti e servizi">
-            Pasti e servizi
+          <Campo label={t('Codice di prenotazione')} value={code} onChange={(v) => setCode(v.toUpperCase())} autoComplete="off" placeholder={t('es. 4K7QX2')} />
+          <div className="fa-fld" role="group" aria-label={t('Pasti e servizi')}>
+            {t('Pasti e servizi')}
             <div className="fa-chips wrap">
-              <Chip on={breakfast} onPress={() => setBreakfast(!breakfast)}>Colazione</Chip>
-              <Chip on={dinner} onPress={() => setDinner(!dinner)}>Cena</Chip>
-              <Chip on={kitchen} onPress={() => setKitchen(!kitchen)}>Cucina</Chip>
+              <Chip on={breakfast} onPress={() => setBreakfast(!breakfast)}>{t('Colazione')}</Chip>
+              <Chip on={dinner} onPress={() => setDinner(!dinner)}>{t('Cena')}</Chip>
+              <Chip on={kitchen} onPress={() => setKitchen(!kitchen)}>{t('Cucina')}</Chip>
             </div>
           </div>
-          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="es. Deposito bagagli dopo il check-out" />
+          <Campo label={t('Note')} textarea value={notes} onChange={setNotes} placeholder={t('es. Deposito bagagli dopo il check-out')} />
         </Gruppo>
-        <AltriDettagli pieni={altri} contenuto={trip.travelers.length > 1 ? 'Ospiti, telefono, email, chi dorme qui' : 'Ospiti, telefono, email'} errore={errors.email || errors.guests ? errors : undefined}>
-          <Contatore label="Ospiti" value={guests.trim() && Number.isFinite(Number(guests)) ? Number(guests) : null} onChange={(n) => setGuests(n === null ? '' : String(n))} vuoto />
+        <AltriDettagli pieni={altri} contenuto={trip.travelers.length > 1 ? t('Ospiti, telefono, email, chi dorme qui') : t('Ospiti, telefono, email')} errore={errors.email || errors.guests ? errors : undefined}>
+          <Contatore label={t('Ospiti')} value={guests.trim() && Number.isFinite(Number(guests)) ? Number(guests) : null} onChange={(n) => setGuests(n === null ? '' : String(n))} vuoto />
           {errors.guests ? <Errore>{errors.guests}</Errore> : null}
-          <Campo label="Telefono" type="tel" value={phone} onChange={setPhone} placeholder="es. +39 333 123 4567" />
-          <Campo label="Email" type="email" value={email} onChange={setEmail} placeholder="nome@esempio.it" error={errors.email} />
+          <Campo label={t('Telefono')} type="tel" value={phone} onChange={setPhone} placeholder={t('es. +39 333 123 4567')} />
+          <Campo label={t('Email')} type="email" value={email} onChange={setEmail} placeholder={t('nome@esempio.it')} error={errors.email} />
           {trip.travelers.length > 1 ? (
-            <div className="fa-fld" role="group" aria-label="Chi dorme qui">
-              Chi dorme qui
+            <div className="fa-fld" role="group" aria-label={t('Chi dorme qui')}>
+              {t('Chi dorme qui')}
               <div className="fa-chips wrap">
                 {trip.travelers.map((p) => (
                   <Chip key={p.id} on={dorme.includes(p.id)} onPress={() => setDorme(dorme.includes(p.id) ? dorme.filter((x) => x !== p.id) : [...dorme, p.id])}>{nome(p.id)}</Chip>
                 ))}
               </div>
-              <span className="fa-help">Solo informativo: non cambia la copertura delle notti.</span>
+              <span className="fa-help">{t('Solo informativo: non cambia la copertura delle notti.')}</span>
             </div>
           ) : null}
         </AltriDettagli>

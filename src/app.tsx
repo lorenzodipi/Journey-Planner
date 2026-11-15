@@ -37,6 +37,7 @@ import { EmptyState } from './ui/PageHeader'
 import { Sprite } from './ui/Sprite'
 import { loadActiveId, loadSnapshot } from './lib/cache'
 import { SchermataCaricamento, SchermataErrore } from './faraway/Rete'
+import { t as tt } from './i18n'
 
 const useHashLoc = (options?: Parameters<typeof useHashLocation>[0]): [string, typeof hashNavigate] => [useHashLocation(options)[0], navigateClean]
 useHashLoc.hrefs = (href: string) => `#${href}`
@@ -107,7 +108,7 @@ export function App() {
 
   // avvio, errore e caricamento con gli stati del design system (#25, #49)
   const saved = loadSnapshot()
-  const title = (saved?.trips.find((t) => t.id === loadActiveId()) ?? saved?.trips[0])?.title ?? 'Faraway'
+  const title = (saved?.trips.find((t) => t.id === loadActiveId()) ?? saved?.trips[0])?.title ?? tt('Faraway')
   const screen = (node: ReactNode) => (
     <Router hook={useHashLoc}>
       <Sprite />
@@ -154,7 +155,7 @@ export function App() {
       <div>
         {auth.status === 'demo' && (
           <p className="cap" style={{ textAlign: 'center', padding: 'calc(4px + env(safe-area-inset-top)) 16px 4px', background: 'var(--azzurro-soft)', color: 'var(--azzurro-ink)', fontWeight: 600 }}>
-            Anteprima demo · dati fittizi
+            {tt('Anteprima demo · dati fittizi')}
           </p>
         )}
         <Switch>
@@ -197,7 +198,7 @@ export function App() {
           <Route path="/altro/account" component={ProfiloPage} />
           <Route>
             <main className="screen legacy">
-              <EmptyState title="Pagina non trovata" text="Torna alla scheda Oggi dalla barra in basso." />
+              <EmptyState title={tt('Pagina non trovata')} text={tt('Torna alla scheda Oggi dalla barra in basso.')} />
             </main>
           </Route>
         </Switch>

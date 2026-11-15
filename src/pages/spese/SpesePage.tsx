@@ -20,6 +20,7 @@ import { Affianca, BarraGrande, Colonna, Schermata } from '../../faraway/shell'
 import { SpesaSheet } from './SpesaSheet'
 import { BilanciaSheet, RimborsiCard } from './Rimborsi'
 import { finoAl, inQuanti, intervallo } from './testi'
+import { t as tt } from '../../i18n'
 
 export function SpesePage() {
   const trip = useTrip()
@@ -52,11 +53,11 @@ export function SpesePage() {
   const left = daysBetween(today < trip.startDate ? trip.startDate : today, trip.endDate) + 1
   const second = r.solo ? (
     <DueValori
-      a={{ l: 'Al giorno', v: formatMoney(giorno.perDay, cur), c: `in ${giorno.days} ${giorno.days === 1 ? 'giorno' : 'giorni'}` }}
+      a={{ l: tt('Al giorno'), v: formatMoney(giorno.perDay, cur), c: tt('in {days} {v1}', { days: giorno.days, v1: giorno.days === 1 ? tt('giorno') : tt('giorni') }) }}
       b={
         r.limit
-          ? { l: 'Ancora da spendere', v: formatMoney(Math.max(0, round2(r.limit - r.speso)), cur), c: finoAl(trip.endDate) }
-          : { l: 'Giorni rimasti', v: String(Math.max(0, left)), c: finoAl(trip.endDate) }
+          ? { l: tt('Ancora da spendere'), v: formatMoney(Math.max(0, round2(r.limit - r.speso)), cur), c: finoAl(trip.endDate) }
+          : { l: tt('Giorni rimasti'), v: String(Math.max(0, left)), c: finoAl(trip.endDate) }
       }
     />
   ) : (
@@ -65,7 +66,7 @@ export function SpesePage() {
 
   async function onPlanned(c: RigaCategoria, planned: number | null) {
     const m = await t.setExpenseCategoryPlanned(trip.id, c.label, planned)
-    if (!m) showToast(planned === null ? `Previsto di ${c.label} calcolato dai costi` : `Previsto di ${c.label}: ${formatMoney(planned, cur)}`)
+    if (!m) showToast(planned === null ? tt('Previsto di {label} calcolato dai costi', { label: c.label }) : tt('Previsto di {label}: {v1}', { label: c.label, v1: formatMoney(planned, cur) }))
     return m
   }
   async function onRename(c: RigaCategoria, label: string) {
@@ -76,15 +77,15 @@ export function SpesePage() {
     if (c.nSpese > 0) {
       // una categoria in uso non si elimina: si archivia (resta sulle spese già fatte, non si propone più)
       const archivia = await ask({
-        title: `«${c.label}» è usata da ${c.nSpese} ${c.nSpese === 1 ? 'spesa' : 'spese'}`,
-        message: 'Non si può eliminare finché è in uso. Spostale prima in un’altra categoria, oppure archivia questa: resta sulle spese già fatte ma non si propone più.',
-        confirm: 'Archivia la categoria',
-        cancel: 'Lascia stare',
+        title: tt('«{label}» è usata da {nSpese} {v2}', { label: c.label, nSpese: c.nSpese, v2: c.nSpese === 1 ? tt('spesa') : tt('spese') }),
+        message: tt('Non si può eliminare finché è in uso. Spostale prima in un’altra categoria, oppure archivia questa: resta sulle spese già fatte ma non si propone più.'),
+        confirm: tt('Archivia la categoria'),
+        cancel: tt('Lascia stare'),
         destructive: false,
       })
       if (!archivia) return
       const m = await t.setExpenseCategoryArchived(c.id, true)
-      showToast(m ?? 'Categoria archiviata', m ? undefined : { label: 'Annulla', run: () => void t.setExpenseCategoryArchived(c.id as string, false) })
+      showToast(m ?? tt('Categoria archiviata'), m ? undefined : { label: tt('Annulla'), run: () => void t.setExpenseCategoryArchived(c.id as string, false) })
       return
     }
     // niente spese ma costi previsti (voci di budget): passano in «Altro», poi la categoria si elimina
@@ -92,35 +93,35 @@ export function SpesePage() {
     if (previsti.length > 0) {
       const nomi = previsti.map((b) => `«${b.label}»`).join(', ')
       const sposta = await ask({
-        title: `Eliminare «${c.label}»?`,
-        message: `Non ha spese, ma ha ${previsti.length === 1 ? 'un costo previsto' : `${previsti.length} costi previsti`}: ${nomi}. ${previsti.length === 1 ? 'Passa' : 'Passano'} nella categoria «Altro», così il previsto totale non cambia.`,
-        confirm: 'Sposta ed elimina',
-        cancel: 'Tieni la categoria',
+        title: tt('Eliminare «{label}»?', { label: c.label }),
+        message: tt('Non ha spese, ma ha {v0}: {nomi}. {v2} nella categoria «Altro», così il previsto totale non cambia.', { v0: previsti.length === 1 ? tt('un costo previsto') : tt('{length} costi previsti', { length: previsti.length }), nomi, v2: previsti.length === 1 ? tt('Passa') : tt('Passano') }),
+        confirm: tt('Sposta ed elimina'),
+        cancel: tt('Tieni la categoria'),
         destructive: true,
       })
       if (!sposta) return
       const m = await t.deleteExpenseCategoryMovingBudget(trip.id, c.id)
-      showToast(m ?? `Categoria eliminata, ${previsti.length === 1 ? 'il costo previsto è' : 'i costi previsti sono'} in «Altro»`)
+      showToast(m ?? tt('Categoria eliminata, {v0} in «Altro»', { v0: previsti.length === 1 ? tt('il costo previsto è') : tt('i costi previsti sono') }))
       return
     }
     const ok = await ask({
-      title: `Eliminare «${c.label}»?`,
-      message: 'Non ha spese: sparisce dalla ricevuta.',
-      confirm: 'Elimina la categoria',
-      cancel: 'Tieni la categoria',
+      title: tt('Eliminare «{label}»?', { label: c.label }),
+      message: tt('Non ha spese: sparisce dalla ricevuta.'),
+      confirm: tt('Elimina la categoria'),
+      cancel: tt('Tieni la categoria'),
       destructive: true,
     })
     if (!ok) return
     const m = await t.setExpenseCategoryDeleted(c.id, true)
-    showToast(m ?? 'Categoria eliminata', m ? undefined : { label: 'Annulla', run: () => void t.setExpenseCategoryDeleted(c.id as string, false) })
+    showToast(m ?? tt('Categoria eliminata'), m ? undefined : { label: tt('Annulla'), run: () => void t.setExpenseCategoryDeleted(c.id as string, false) })
   }
 
   return (
     <Schermata
-      bar={<BarraGrande title="Spese" sub={[trip.destination, n > 1 ? `${n} persone` : ''].filter(Boolean).join(' · ')} />}
+      bar={<BarraGrande title={tt('Spese')} sub={[trip.destination, n > 1 ? tt('{n} persone', { n }) : ''].filter(Boolean).join(' · ')} />}
       gap={16}
       fisso
-      fab={{ label: 'Spesa', aria: 'Aggiungi una spesa', onPress: () => setNuova(true) }}
+      fab={{ label: tt('Spesa'), aria: tt('Aggiungi una spesa'), onPress: () => setNuova(true) }}
       overlay={
         <>
           {nuova ? <SpesaSheet trip={trip} open onClose={() => setNuova(false)} /> : null}
@@ -149,11 +150,11 @@ export function SpesePage() {
         </Colonna>
         <Colonna lato="sinistra">
           <Pulsante color="secondary" iconTrailing="chevr" onPress={() => navigate('/spese/dettaglio')}>
-            Vedi il dettaglio delle spese
+            {tt('Vedi il dettaglio delle spese')}
           </Pulsante>
           {n > 1 ? (
             <Pulsante color="tertiary" iconTrailing="chevr" onPress={() => navigate('/spese/bilancio')}>
-              Il mio bilancio e i rimborsi
+              {tt('Il mio bilancio e i rimborsi')}
             </Pulsante>
           ) : null}
         </Colonna>

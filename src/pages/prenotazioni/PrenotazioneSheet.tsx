@@ -20,15 +20,16 @@ import { CampoValuta } from '../../faraway/CampoValuta'
 import { AltriDettagli, Contatore, Gruppo, IlCostoE, PerChi, Riquadri } from '../../faraway/Moduli'
 import { Foglio, useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
+import { t as tt } from '../../i18n'
 
 const TIPO_GLIFO: Record<BookingType, string> = {
   restaurant: 'g-sez-food', activity: 'g-sez-visit', train: 'g-tra-train', rental: 'g-tra-car', other: 'g-cat-pin',
   ticket: 'g-sez-ticket', insurance: 'g-sez-shield', esim: 'g-sez-sim', flight: 'g-tra-plane', hotel: 'g-sez-bed',
 }
 /** Nomi corti per i riquadri (tre per riga a 320 px). */
-const TIPO_BREVE: Partial<Record<BookingType, string>> = { insurance: 'Polizza', esim: 'eSIM' }
+const TIPO_BREVE: Partial<Record<BookingType, string>> = { insurance: tt('Polizza'), esim: 'eSIM' }
 /** «L’ora è»: come leggere l'orario della prenotazione. */
-const ORA_TIPI: [TimeKind, string][] = [['fixed', 'Esatta'], ['window', 'Una finestra'], ['indicative', 'Indicativa'], ['unspecified', 'Non lo so']]
+const ORA_TIPI: [TimeKind, string][] = [['fixed', tt('Esatta')], ['window', tt('Una finestra')], ['indicative', tt('Indicativa')], ['unspecified', tt('Non lo so')]]
 
 const Errore = ({ children }: { children: string }) => (
   <span className="fa-help bad" role="alert">
@@ -89,17 +90,17 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
   async function submit(e: { preventDefault(): void }, saltaAvviso = false) {
     e.preventDefault()
     const err: typeof errors = {}
-    if (!title.trim()) err.title = 'Scrivi un titolo, per esempio «Cena a Gion Karyo».'
-    if (time && !date) err.when = 'Con l’ora serve anche la data.'
-    else if (until && date && until < date) err.when = 'La fine non può essere prima dell’inizio.'
-    if (url.trim() && !safeUrl(url)) err.url = 'Il link non è valido: scrivi un indirizzo che inizia con https://'
+    if (!title.trim()) err.title = tt('Scrivi un titolo, per esempio «Cena a Gion Karyo».')
+    if (time && !date) err.when = tt('Con l’ora serve anche la data.')
+    else if (until && date && until < date) err.when = tt('La fine non può essere prima dell’inizio.')
+    if (url.trim() && !safeUrl(url)) err.url = tt('Il link non è valido: scrivi un indirizzo che inizia con https://')
     const amount = parseAmount(cost)
-    if (cost.trim() && amount === null) err.cost = 'Il costo non è chiaro: scrivi per esempio 45,00.'
-    if (amount && !paidBy) err.paidBy = 'Manca chi ha pagato. Scegli una persona.'
+    if (cost.trim() && amount === null) err.cost = tt('Il costo non è chiaro: scrivi per esempio 45,00.')
+    if (amount && !paidBy) err.paidBy = tt('Manca chi ha pagato. Scegli una persona.')
     const n = party.trim() ? Number(party) : null
-    if (n !== null && (!Number.isInteger(n) || n < 1)) err.party = 'Scrivi un numero di persone, per esempio 4.'
+    if (n !== null && (!Number.isInteger(n) || n < 1)) err.party = tt('Scrivi un numero di persone, per esempio 4.')
     if (file) err.file = checkFile(file) ?? undefined
-    if (richiedeTappa && !tappa) err.tappa = 'Scegli la tappa a cui appartiene: la prenotazione sta sempre in una tappa.'
+    if (richiedeTappa && !tappa) err.tappa = tt('Scegli la tappa a cui appartiene: la prenotazione sta sempre in una tappa.')
     setErrors(err)
     if (Object.values(err).some(Boolean)) return
     const input: BookingInput = {
@@ -118,7 +119,7 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
     let vincola = false
     const tp = tappa ? trip.days.flatMap((d) => d.items).find((i) => i.id === tappa) : undefined
     if (schema.timeLock && tp && time && timeKind === 'fixed' && tp.timeLock !== 'locked') {
-      vincola = await ask({ title: 'Vincolare l’orario della tappa?', message: `«${tp.title}» ${tp.time ? `è alle ${tp.time}` : 'non ha un orario'}. Vincolandola resta alle ${time}, la prenotazione è a ora fissa. L’orario cambia solo se confermi.`, confirm: `Vincola alle ${time}`, cancel: 'No, lascia flessibile', destructive: false })
+      vincola = await ask({ title: tt('Vincolare l’orario della tappa?'), message: tt('«{title}» {v1}. Vincolandola resta alle {time}, la prenotazione è a ora fissa. L’orario cambia solo se confermi.', { title: tp.title, v1: tp.time ? tt('è alle {time}', { time: tp.time }) : tt('non ha un orario'), time }), confirm: tt('Vincola alle {time}', { time }), cancel: tt('No, lascia flessibile'), destructive: false })
     }
     if (!(await procediConflitto())) return
     setBusy(true)
@@ -129,7 +130,7 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
     }
     setBusy(false)
     if (message) return setErrors({ form: message })
-    showToast(b ? 'Prenotazione aggiornata' : 'Prenotazione salvata')
+    showToast(b ? tt('Prenotazione aggiornata') : tt('Prenotazione salvata'))
     onClose()
   }
 
@@ -142,26 +143,26 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
     <Foglio
       open={open}
       full
-      title={b ? 'Modifica prenotazione' : 'Nuova prenotazione'}
+      title={b ? tt('Modifica prenotazione') : tt('Nuova prenotazione')}
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="prenotazione-form" isLoading={busy}>
-          {b ? 'Salva le modifiche' : 'Salva la prenotazione'}
+          {b ? tt('Salva le modifiche') : tt('Salva la prenotazione')}
         </Pulsante>
       }
     >
       <form id="prenotazione-form" className="frm grp" onSubmit={submit} noValidate>
-        <Gruppo titolo="Che cosa">
-          <Riquadri<BookingType> label="Tipo" cols={3} value={type} onChange={(x) => x && setType(x)} options={tipi.map((x) => ({ value: x, label: TIPO_BREVE[x] ?? BOOKING_LABEL[x], glifo: TIPO_GLIFO[x] }))} />
-          <Campo label="Titolo" value={title} onChange={setTitle} placeholder="es. Cena al ristorante" error={errors.title} />
+        <Gruppo titolo={tt('Che cosa')}>
+          <Riquadri<BookingType> label={tt('Tipo')} cols={3} value={type} onChange={(x) => x && setType(x)} options={tipi.map((x) => ({ value: x, label: TIPO_BREVE[x] ?? BOOKING_LABEL[x], glifo: TIPO_GLIFO[x] }))} />
+          <Campo label={tt('Titolo')} value={title} onChange={setTitle} placeholder={tt('es. Cena al ristorante')} error={errors.title} />
           <div className="fa-2c">
-            <Campo label="Luogo" icon="pin" value={place} onChange={setPlace} placeholder="Città" />
-            <Campo label="Dettaglio" value={detail} onChange={setDetail} placeholder="es. Tavolo 6" maxLength={40} />
+            <Campo label={tt('Luogo')} icon="pin" value={place} onChange={setPlace} placeholder={tt('Città')} />
+            <Campo label={tt('Dettaglio')} value={detail} onChange={setDetail} placeholder={tt('es. Tavolo 6')} maxLength={40} />
           </div>
-          <Contatore label="Persone" hint="Quante persone sono nella prenotazione" value={party.trim() && Number.isFinite(Number(party)) ? Number(party) : null} onChange={(n) => (setParty(n === null ? '' : String(n)), setErrors({ ...errors, party: undefined }))} vuoto />
+          <Contatore label={tt('Persone')} hint={tt('Quante persone sono nella prenotazione')} value={party.trim() && Number.isFinite(Number(party)) ? Number(party) : null} onChange={(n) => (setParty(n === null ? '' : String(n)), setErrors({ ...errors, party: undefined }))} vuoto />
           {errors.party ? <Errore>{errors.party}</Errore> : null}
           <Riquadri<BookingStatus>
-            label="Stato"
+            label={tt('Stato')}
             cols={3}
             value={status}
             onChange={(x) => x && setStatus(x)}
@@ -172,14 +173,14 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
             ]}
           />
         </Gruppo>
-        <Gruppo titolo="Quando">
+        <Gruppo titolo={tt('Quando')}>
           <div className="fa-2c dt">
-            <Campo label="Data" type="date" icon="cal" value={date} onChange={(v) => (setDate(v), until && until < v ? setUntil(v) : null)} />
-            <Campo label="Ora" type="time" icon="clock" value={time} onChange={setTime} />
+            <Campo label={tt('Data')} type="date" icon="cal" value={date} onChange={(v) => (setDate(v), until && until < v ? setUntil(v) : null)} />
+            <Campo label={tt('Ora')} type="time" icon="clock" value={time} onChange={setTime} />
           </div>
           {time ? (
-            <div className="fa-fld" role="group" aria-label="L’ora è">
-              L’ora è
+            <div className="fa-fld" role="group" aria-label={tt('L’ora è')}>
+              {tt('L’ora è')}
               <div className="fa-chips wrap">
                 {ORA_TIPI.map(([x, l]) => (
                   <Chip key={x} on={timeKind === x} onPress={() => setTimeKind(x)}>{l}</Chip>
@@ -187,34 +188,34 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
               </div>
             </div>
           ) : null}
-          <Interruttore label="Dura più giorni" hint={piuGiorni ? 'Scegli il giorno in cui finisce.' : 'Per un pass o un noleggio di più giorni.'} isSelected={piuGiorni} onChange={(v) => (setPiuGiorni(v), v ? null : setUntil(''))} />
-          {piuGiorni ? <Campo label="Fino al" type="date" icon="cal" value={until} onChange={setUntil} min={date || undefined} /> : null}
+          <Interruttore label={tt('Dura più giorni')} hint={piuGiorni ? tt('Scegli il giorno in cui finisce.') : tt('Per un pass o un noleggio di più giorni.')} isSelected={piuGiorni} onChange={(v) => (setPiuGiorni(v), v ? null : setUntil(''))} />
+          {piuGiorni ? <Campo label={tt('Fino al')} type="date" icon="cal" value={until} onChange={setUntil} min={date || undefined} /> : null}
           {errors.when ? <Errore>{errors.when}</Errore> : null}
           {richiedeTappa ? (
             <div className="fa-fld">
-              <label htmlFor="pr-tappa">Tappa</label>
+              <label htmlFor="pr-tappa">{tt('Tappa')}</label>
               <span className="fa-in">
                 <select id="pr-tappa" value={tappa} onChange={(e) => (setTappa(e.currentTarget.value), setErrors({ ...errors, tappa: undefined }))} aria-invalid={!!errors.tappa}>
-                  <option value="">Scegli una tappa…</option>
+                  <option value="">{tt('Scegli una tappa…')}</option>
                   {scelte.map((t) => (
-                    <option key={t.itemId} value={t.itemId}>{`${formatShort(t.date)}${t.time ? ` ${t.time}` : ''} · ${t.title}${t.stessoGiorno ? ' (stesso giorno)' : ''}`}</option>
+                    <option key={t.itemId} value={t.itemId}>{`${formatShort(t.date)}${t.time ? ` ${t.time}` : ''} · ${t.title}${t.stessoGiorno ? tt(' (stesso giorno)') : ''}`}</option>
                   ))}
                 </select>
               </span>
-              {errors.tappa ? <Errore>{errors.tappa}</Errore> : <span className="fa-help">{scelte.length === 0 ? 'Non ci sono ancora tappe: aggiungila prima nel giorno.' : 'Le prime sono le tappe dello stesso giorno o luogo.'}</span>}
+              {errors.tappa ? <Errore>{errors.tappa}</Errore> : <span className="fa-help">{scelte.length === 0 ? tt('Non ci sono ancora tappe: aggiungila prima nel giorno.') : tt('Le prime sono le tappe dello stesso giorno o luogo.')}</span>}
             </div>
           ) : null}
         </Gruppo>
-        <Gruppo titolo="Costo">
+        <Gruppo titolo={tt('Costo')}>
           <PerChi trip={trip} meId={me?.id} value={people} onChange={setWho} />
           <div className="fa-2c">
-            <Campo label="Costo" inputMode="decimal" value={cost} onChange={setCost} placeholder="es. 45,00" error={errors.cost} />
+            <Campo label={tt('Costo')} inputMode="decimal" value={cost} onChange={setCost} placeholder={tt('es. 45,00')} error={errors.cost} />
             <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, b?.currency)} />
           </div>
           <IlCostoE value={scope} onChange={setScope} amount={amountNow} persone={people.length} currency={currency} />
           {cost.trim() ? (
-            <div className="fa-fld" role="group" aria-label="Pagato da">
-              Pagato da
+            <div className="fa-fld" role="group" aria-label={tt('Pagato da')}>
+              {tt('Pagato da')}
               <div className="fa-chips wrap">
                 {trip.travelers.map((p) => (
                   <Chip key={p.id} on={paidBy === p.id} onPress={() => setPaidBy(p.id)}>{nome(p.id)}</Chip>
@@ -223,47 +224,47 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
               {errors.paidBy ? <Errore>{errors.paidBy}</Errore> : null}
             </div>
           ) : (
-            <span className="fa-help">Con un costo compare «Pagato da».</span>
+            <span className="fa-help">{tt('Con un costo compare «Pagato da».')}</span>
           )}
         </Gruppo>
-        <Gruppo titolo="Fornitore e allegato">
-          <Campo label="Fornitore" value={provider} onChange={setProvider} placeholder="Ristorante, sito o agenzia" />
-          <Campo label="Codice di prenotazione" value={code} onChange={(v) => setCode(v.toUpperCase())} autoComplete="off" placeholder="es. 4K7QX2" />
-          <Campo label="Link" type="url" icon="link" value={url} onChange={setUrl} placeholder="https://…" error={errors.url} />
+        <Gruppo titolo={tt('Fornitore e allegato')}>
+          <Campo label={tt('Fornitore')} value={provider} onChange={setProvider} placeholder={tt('Ristorante, sito o agenzia')} />
+          <Campo label={tt('Codice di prenotazione')} value={code} onChange={(v) => setCode(v.toUpperCase())} autoComplete="off" placeholder={tt('es. 4K7QX2')} />
+          <Campo label={tt('Link')} type="url" icon="link" value={url} onChange={setUrl} placeholder="https://…" error={errors.url} />
           <div className="fa-fld">
-            Allegato
+            {tt('Allegato')}
             {hasFile && !file ? (
               <div className="fa-chips wrap">
-                <span className="fa-m">C’è un file salvato.</span>
-                <Chip on={false} onPress={() => setRemoveFile(true)}>Rimuovi il file</Chip>
+                <span className="fa-m">{tt('C’è un file salvato.')}</span>
+                <Chip on={false} onPress={() => setRemoveFile(true)}>{tt('Rimuovi il file')}</Chip>
               </div>
             ) : null}
             {removeFile && !file ? (
               <span className="fa-m">
-                Il file verrà tolto al salvataggio. <button type="button" className="fa-lnk" onClick={() => setRemoveFile(false)}>Annulla</button>
+                {tt('Il file verrà tolto al salvataggio.')}{' '}<button type="button" className="fa-lnk" onClick={() => setRemoveFile(false)}>{tt('Annulla')}</button>
               </span>
             ) : null}
-            {file ? <span className="fa-m">{hasFile ? 'Sostituirà il file attuale: ' : ''}{file.name}</span> : null}
+            {file ? <span className="fa-m">{hasFile ? tt('Sostituirà il file attuale: ') : ''}{file.name}</span> : null}
             <input ref={fileRef} id="pr-file" type="file" accept="application/pdf,image/*" hidden onChange={(e) => (setFile(e.currentTarget.files?.[0] ?? null), setErrors({ ...errors, file: undefined }))} />
             <Pulsante color="secondary" iconLeading="file" onPress={() => fileRef.current?.click()}>
-              {file || hasFile ? 'Scegli un altro file' : 'Allega PDF o immagine'}
+              {file || hasFile ? tt('Scegli un altro file') : tt('Allega PDF o immagine')}
             </Pulsante>
-            {errors.file ? <Errore>{errors.file}</Errore> : <span className="fa-help">PDF o immagine, fino a 10 MB.</span>}
+            {errors.file ? <Errore>{errors.file}</Errore> : <span className="fa-help">{tt('PDF o immagine, fino a 10 MB.')}</span>}
           </div>
-          <Interruttore label="Disponibile offline" hint="Il file resta sul telefono e si apre anche senza rete." isSelected={offline} onChange={setOffline} />
-          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="es. Arrivare 15 minuti prima" />
+          <Interruttore label={tt('Disponibile offline')} hint={tt('Il file resta sul telefono e si apre anche senza rete.')} isSelected={offline} onChange={setOffline} />
+          <Campo label={tt('Note')} textarea value={notes} onChange={setNotes} placeholder={tt('es. Arrivare 15 minuti prima')} />
         </Gruppo>
-        <AltriDettagli pieni={altri} contenuto="Contatto, politica di cancellazione">
-          <Campo label="Contatto" value={contact} onChange={setContact} placeholder="Telefono o email" />
-          <Campo label="Politica di cancellazione" textarea value={policy} onChange={setPolicy} placeholder="es. Gratis fino a 24 ore prima" />
+        <AltriDettagli pieni={altri} contenuto={tt('Contatto, politica di cancellazione')}>
+          <Campo label={tt('Contatto')} value={contact} onChange={setContact} placeholder={tt('Telefono o email')} />
+          <Campo label={tt('Politica di cancellazione')} textarea value={policy} onChange={setPolicy} placeholder={tt('es. Gratis fino a 24 ore prima')} />
         </AltriDettagli>
         {errors.form ? <Errore>{errors.form}</Errore> : null}
       </form>
       {confirmNode}
       {avvisoData ? (
-        <Foglio open title="La tappa è in un altro giorno" onClose={() => setAvvisoData(null)}>
+        <Foglio open title={tt('La tappa è in un altro giorno')} onClose={() => setAvvisoData(null)}>
           <p className="fa-m" style={{ margin: 0 }}>
-            «{avvisoData[0].title}» sta nel giorno {formatShort(avvisoData[0].date)}, la prenotazione ora è del {formatShort(date)}. La tappa non si sposta da sola.
+            {tt('«{title}» sta nel giorno {v1}, la prenotazione ora è del {v2}. La tappa non si sposta da sola.', { title: avvisoData[0].title, v1: formatShort(avvisoData[0].date), v2: formatShort(date) })}
           </p>
           <Pulsante
             isDisabled={!trip.days.some((d) => d.date === date)}
@@ -274,10 +275,10 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
               void submit({ preventDefault() {} }, true)
             }}
           >
-            Aggiorna la tappa
+            {tt('Aggiorna la tappa')}
           </Pulsante>
-          <Pulsante color="secondary" onPress={() => setAvvisoData(null)}>Collega diversamente</Pulsante>
-          <Pulsante color="tertiary" onPress={() => (setAvvisoData(null), void submit({ preventDefault() {} }, true))}>Mantieni con avviso</Pulsante>
+          <Pulsante color="secondary" onPress={() => setAvvisoData(null)}>{tt('Collega diversamente')}</Pulsante>
+          <Pulsante color="tertiary" onPress={() => (setAvvisoData(null), void submit({ preventDefault() {} }, true))}>{tt('Mantieni con avviso')}</Pulsante>
         </Foglio>
       ) : null}
     {nodoConflitto}

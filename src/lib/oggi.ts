@@ -6,6 +6,7 @@ import { weatherLabel, type DayWeather, type HourWeather } from './weather'
 import { nightsOf } from './stays'
 import type { Trip } from '../types'
 import type { DaySun } from './sun'
+import { LOCALE, t as tt } from '../i18n'
 
 export type FaseViaggio = 'pre' | 'during' | 'post'
 
@@ -23,15 +24,15 @@ export const hhmmOf = (min: number) => `${pad(Math.floor(((min % 1440) + 1440) %
 export function traIl(min: number): string {
   const m = Math.max(0, Math.round(min))
   const h = Math.floor(m / 60)
-  return h > 0 ? `${h} h ${m % 60} min` : `${m} min`
+  return h > 0 ? tt('{h} h {v1} min', { h, v1: m % 60 }) : `${m} min`
 }
 
 /** Momento del giorno a casa: «di notte», «di mattina», «di pomeriggio», «di sera». */
 export function momento(hour: number): string {
-  if (hour < 6 || hour >= 22) return 'di notte'
-  if (hour < 12) return 'di mattina'
-  if (hour < 18) return 'di pomeriggio'
-  return 'di sera'
+  if (hour < 6 || hour >= 22) return tt('di notte')
+  if (hour < 12) return tt('di mattina')
+  if (hour < 18) return tt('di pomeriggio')
+  return tt('di sera')
 }
 
 export interface OraPrevista extends HourWeather {
@@ -58,8 +59,8 @@ export const notteAlle = isNight
 
 /** Descrizione: «Nuvoloso, minima 5°» (di notte «Notte limpida» col cielo sereno). */
 export function descrizione(code: number, min: number, night: boolean): string {
-  const label = night && code <= 1 ? 'Notte limpida' : weatherLabel(code).label
-  return `${label}, minima ${gradi(min)}`
+  const label = night && code <= 1 ? tt('Notte limpida') : weatherLabel(code).label
+  return tt('{label}, minima {v1}', { label, v1: gradi(min) })
 }
 
 /** Riga del sole: prima del tramonto «Tramonto tra», dopo «Alba tra» con la barra invertita. */
@@ -67,9 +68,9 @@ export function rigaSole(sun: DaySun, tomorrow: DaySun, nowMin: number) {
   if (sun.sunrise === null || sun.sunset === null) return undefined
   if (nowMin >= sun.sunrise && nowMin < sun.sunset) {
     return {
-      first: { k: 'Alba', v: hhmmOf(sun.sunrise), down: false },
-      second: { k: 'Tramonto', v: hhmmOf(sun.sunset), down: true },
-      next: 'Tramonto',
+      first: { k: tt('Alba'), v: hhmmOf(sun.sunrise), down: false },
+      second: { k: tt('Tramonto'), v: hhmmOf(sun.sunset), down: true },
+      next: tt('Tramonto'),
       inText: traIl(sun.sunset - nowMin),
       pct: Math.round(((nowMin - sun.sunrise) / (sun.sunset - sun.sunrise)) * 100),
       moon: false,
@@ -78,9 +79,9 @@ export function rigaSole(sun: DaySun, tomorrow: DaySun, nowMin: number) {
   const nextRise = nowMin < sun.sunrise ? sun.sunrise : (tomorrow.sunrise ?? sun.sunrise) + 1440
   const lastSet = nowMin < sun.sunrise ? sun.sunset - 1440 : sun.sunset
   return {
-    first: { k: 'Tramonto', v: hhmmOf(lastSet), down: true },
-    second: { k: 'Alba', v: hhmmOf(nextRise), down: false },
-    next: 'Alba',
+    first: { k: tt('Tramonto'), v: hhmmOf(lastSet), down: true },
+    second: { k: tt('Alba'), v: hhmmOf(nextRise), down: false },
+    next: tt('Alba'),
     inText: traIl(nextRise - nowMin),
     pct: Math.round(((nowMin - lastSet) / (nextRise - lastSet)) * 100),
     moon: true,
@@ -98,8 +99,8 @@ export function avvisoPioggia(hours: OraPrevista[]): { title: string; text: stri
   const from = `${pad(hours[i].h)}:00`
   const to = `${pad((hours[j].h + 1) % 24)}:00`
   return {
-    title: `Pioggia dalle ${from}`,
-    text: `${mm > 0 ? `Circa ${mm} mm` : 'Probabile'} fino alle ${to}. Porta l'ombrello.`,
+    title: tt('Pioggia dalle {from}', { from }),
+    text: tt('{v0} fino alle {to}. Porta l\'ombrello.', { v0: mm > 0 ? tt('Circa {mm} mm', { mm }) : tt('Probabile'), to }),
   }
 }
 
@@ -136,7 +137,7 @@ const oreTesto = (min: number) => {
   return m && h < 10 ? `${h} h ${m}` : `${Math.round(min / 60)} h`
 }
 const giornoBreve = (ymd: string) => {
-  const s = new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${ymd}T12:00:00Z`)).replace(/\./g, '')
+  const s = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${ymd}T12:00:00Z`)).replace(/\./g, '')
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
@@ -150,21 +151,21 @@ export function statisticheDopo(trip: Pick<Trip, 'days' | 'places' | 'startDate'
   const fatte = trip.days.flatMap((d) => d.items.filter(fatto))
   const out: StatDopo[] = []
   const pieno = [...trip.days].sort((a, b) => attive(b) - attive(a) || a.date.localeCompare(b.date))[0]
-  if (pieno && attive(pieno) >= 2) out.push({ id: 'pieno', l: 'Giorno più pieno', v: giornoBreve(pieno.date), c: `${attive(pieno)} tappe${pieno.city?.trim() ? ` a ${pieno.city.trim()}` : ''}` })
+  if (pieno && attive(pieno) >= 2) out.push({ id: 'pieno', l: tt('Giorno più pieno'), v: giornoBreve(pieno.date), c: tt('{v0} tappe{v1}', { v0: attive(pieno), v1: pieno.city?.trim() ? ` a ${pieno.city.trim()}` : '' }) })
   const minuti = fatte.reduce((s, i) => s + (i.durationMinutes ?? 0), 0)
-  if (minuti >= 60) out.push({ id: 'ore', l: 'Ore in giro', v: oreTesto(minuti), c: `in ${fatte.length} ${fatte.length === 1 ? 'tappa fatta' : 'tappe fatte'}` })
+  if (minuti >= 60) out.push({ id: 'ore', l: tt('Ore in giro'), v: oreTesto(minuti), c: tt('in {length} {v1}', { length: fatte.length, v1: fatte.length === 1 ? tt('tappa fatta') : tt('tappe fatte') }) })
   const visti = new Set(fatte.map((i) => i.placeId).filter(Boolean))
   const conta = new Map<string, number>()
   for (const p of trip.places) if ((p.status === 'done' || visti.has(p.id)) && p.category?.trim()) conta.set(p.category.trim(), (conta.get(p.category.trim()) ?? 0) + 1)
   const genere = [...conta.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]
-  if (genere && genere[1] >= 2) out.push({ id: 'genere', l: 'I più visitati', v: genere[0], c: `${genere[1]} luoghi su ${[...conta.values()].reduce((s, n) => s + n, 0)}` })
+  if (genere && genere[1] >= 2) out.push({ id: 'genere', l: tt('I più visitati'), v: genere[0], c: tt('{v0} luoghi su {v1}', { v0: genere[1], v1: [...conta.values()].reduce((s, n) => s + n, 0) }) })
   const pasti = fatte.filter((i) => i.kind === 'meal').length
-  if (pasti >= 1) out.push({ id: 'pasti', l: 'Pasti fuori', v: String(pasti), c: 'tra ristoranti e locali' })
+  if (pasti >= 1) out.push({ id: 'pasti', l: tt('Pasti fuori'), v: String(pasti), c: tt('tra ristoranti e locali') })
   const lunga = [...fatte].sort((a, b) => (b.durationMinutes ?? 0) - (a.durationMinutes ?? 0))[0]
-  if (lunga && (lunga.durationMinutes ?? 0) >= 60) out.push({ id: 'lunga', l: 'Tappa più lunga', v: oreTesto(lunga.durationMinutes as number), c: lunga.title })
+  if (lunga && (lunga.durationMinutes ?? 0) >= 60) out.push({ id: 'lunga', l: tt('Tappa più lunga'), v: oreTesto(lunga.durationMinutes as number), c: lunga.title })
   const giorni = trip.days.length || 1
-  out.push({ id: 'durata', l: 'In viaggio', v: `${giorni} ${giorni === 1 ? 'giorno' : 'giorni'}`, c: `${Math.max(0, giorni - 1)} ${giorni - 1 === 1 ? 'notte' : 'notti'} fuori casa` })
+  out.push({ id: 'durata', l: tt('In viaggio'), v: `${giorni} ${giorni === 1 ? tt('giorno') : tt('giorni')}`, c: tt('{v0} {v1} fuori casa', { v0: Math.max(0, giorni - 1), v1: giorni - 1 === 1 ? tt('notte') : tt('notti') }) })
   // sempre almeno due: l'ultima riserva è la meta
-  if (out.length < 2) out.push({ id: 'meta', l: 'Meta', v: trip.destination || 'Il viaggio', c: 'il posto che hai visto' })
+  if (out.length < 2) out.push({ id: 'meta', l: tt('Meta'), v: trip.destination || tt('Il viaggio'), c: tt('il posto che hai visto') })
   return out
 }

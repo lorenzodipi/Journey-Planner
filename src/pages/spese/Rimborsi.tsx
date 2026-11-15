@@ -16,6 +16,7 @@ import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { Rimborso, Trip } from '../../types'
 import { useInCorso } from '../../faraway/Attesa'
+import { t as tt } from '../../i18n'
 
 const first = (trip: Trip, id: string) => trip.travelers.find((p) => p.id === id)?.name.split(/\s+/)[0] ?? '—'
 
@@ -48,35 +49,35 @@ export function DichiaraSheet({ trip, toId, dovuto, onClose, expenseId }: { trip
   const [busy, setBusy] = useState(false)
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
-    if (!me) return setError('Non so chi sei in questo viaggio: collega il tuo account ai viaggiatori.')
+    if (!me) return setError(tt('Non so chi sei in questo viaggio: collega il tuo account ai viaggiatori.'))
     const n = parseAmount(text)
     const err = controllaRimborso(n, dovuto, cur)
     if (err) return setError(err)
-    if (!data) return setError('Scegli la data.')
+    if (!data) return setError(tt('Scegli la data.'))
     setBusy(true)
     const m = await t.declareSettlements(trip.id, [{ fromId: me.id, toId, amount: n as number, ...(expenseId ? { expenseId } : {}) }], cur, data)
     setBusy(false)
     if (m) return setError(m)
-    showToast(pagamentiImmediati() === false ? `Fatto: aspetto la conferma di ${first(trip, toId)}.` : 'Pagamento registrato.')
+    showToast(pagamentiImmediati() === false ? tt('Fatto: aspetto la conferma di {v0}.', { v0: first(trip, toId) }) : tt('Pagamento registrato.'))
     onClose()
   }
   return (
     <Foglio
       open
-      title="Ho pagato"
+      title={tt('Ho pagato')}
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="rimborso-form" isLoading={busy}>
-          {`Dichiara a ${first(trip, toId)}`}
+          {tt('Dichiara a {v0}', { v0: first(trip, toId) })}
         </Pulsante>
       }
     >
       <form id="rimborso-form" className="frm" onSubmit={submit} noValidate>
         <p className="fa-m" style={{ margin: 0 }}>
-          {`Devi ${formatMoney(dovuto, cur)} a ${first(trip, toId)}. Lo registro subito: ${first(trip, toId)} lo vede e, se non torna, può contestarlo.`}
+          {tt('Devi {v0} a {v1}. Lo registro subito: {v2} lo vede e, se non torna, può contestarlo.', { v0: formatMoney(dovuto, cur), v1: first(trip, toId), v2: first(trip, toId) })}
         </p>
-        <Campo label="Importo" inputMode="decimal" value={text} onChange={(v) => (setText(v), setError(''))} trailing={<span>{cur}</span>} error={error || undefined} />
-        <Campo label="Data" type="date" value={data} onChange={setData} max={tripToday(trip)} />
+        <Campo label={tt('Importo')} inputMode="decimal" value={text} onChange={(v) => (setText(v), setError(''))} trailing={<span>{cur}</span>} error={error || undefined} />
+        <Campo label={tt('Data')} type="date" value={data} onChange={setData} max={tripToday(trip)} />
       </form>
     </Foglio>
   )
@@ -104,29 +105,29 @@ export function DecidiSheet({ trip, r, onClose }: { trip: Trip; r: Rimborso; onC
       void t.balanceVersion(trip.id).then(setVersione)
       return
     }
-    showToast(accetta ? 'Rimborso confermato: i saldi sono aggiornati.' : 'Rimborso rifiutato.')
+    showToast(accetta ? tt('Rimborso confermato: i saldi sono aggiornati.') : tt('Rimborso rifiutato.'))
     onClose()
   }
   return (
     <Foglio
       open
-      title="Hai ricevuto il rimborso?"
+      title={tt('Hai ricevuto il rimborso?')}
       onClose={onClose}
       footer={
         <div style={{ display: 'grid', gap: 8 }}>
           <Pulsante isLoading={busy} isDisabled={versione === undefined} onPress={() => void decidi(true)}>
-            Conferma
+            {tt('Conferma')}
           </Pulsante>
           <Pulsante color="secondary" isDisabled={busy} onPress={() => void decidi(false)}>
-            Rifiuta
+            {tt('Rifiuta')}
           </Pulsante>
         </div>
       }
     >
       <p style={{ margin: 0, textAlign: 'center' }}>{chiRichiesta(r, trip.travelers)}</p>
-      <p className="fa-m" style={{ margin: 0, textAlign: 'center' }}>Confermando, il debito e il credito si riducono di {formatMoney(r.amount, r.currency)}.
+      <p className="fa-m" style={{ margin: 0, textAlign: 'center' }}>{tt('Confermando, il debito e il credito si riducono di {v0}.', { v0: formatMoney(r.amount, r.currency) })}
         <br />
-        Se non l'hai ricevuto, rifiuta: non cambia niente.
+        {tt('Se non l\'hai ricevuto, rifiuta: non cambia niente.')}
       </p>
       {errore ? (
         <Banner tone="cor" icon="warn">
@@ -151,8 +152,8 @@ function AvvisiNovita({ trip, solo }: { trip: Trip; /** quanti mostrarne al mass
           azioniSotto
           action={
             <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <Link href="/spese/bilancio" className="fa-btn sm" onClick={() => visto([n.key])}>Controlla</Link>
-              <Pulsante size="sm" color="secondary" onPress={() => visto([n.key])}>Ho visto</Pulsante>
+              <Link href="/spese/bilancio" className="fa-btn sm" onClick={() => visto([n.key])}>{tt('Controlla')}</Link>
+              <Pulsante size="sm" color="secondary" onPress={() => visto([n.key])}>{tt('Ho visto')}</Pulsante>
             </span>
           }
         >
@@ -182,21 +183,21 @@ export function RimborsiCard({ trip, conMie = true }: { trip: Trip; /** Le mie r
   if (dec.length === 0 && mie.length === 0 && nuovi.length === 0) return null
   async function annulla(r: Rimborso) {
     const m = await faiOcc(r.id, () => t.cancelSettlement(r.id))
-    showToast(m ?? 'Richiesta annullata')
+    showToast(m ?? tt('Richiesta annullata'))
   }
   return (
     <div style={{ display: 'grid', gap: 8 }}>
       <AvvisiNovita trip={trip} />
       {dec.map((r) => (
-        <Banner key={r.id} tone="az" icon="info" action={<Pulsante size="sm" onPress={() => setAperta(r)}>Rispondi</Pulsante>}>
+        <Banner key={r.id} tone="az" icon="info" action={<Pulsante size="sm" onPress={() => setAperta(r)}>{tt('Rispondi')}</Pulsante>}>
           {chiRichiesta(r, trip.travelers)}
           <br />
           {dataNumerica(r.paidOn)}
         </Banner>
       ))}
       {mie.map((r) => (
-        <Banner key={r.id} tone="az" icon="clock" action={<Pulsante size="sm" color="secondary" isLoading={occ === r.id} onPress={() => void annulla(r)}>Annulla</Pulsante>}>
-          Hai dichiarato {formatMoney(r.amount, r.currency)} a {first(trip, r.toId)}
+        <Banner key={r.id} tone="az" icon="clock" action={<Pulsante size="sm" color="secondary" isLoading={occ === r.id} onPress={() => void annulla(r)}>{tt('Annulla')}</Pulsante>}>
+          {tt('Hai dichiarato {v0} a {v1}', { v0: formatMoney(r.amount, r.currency), v1: first(trip, r.toId) })}
           <br />
           {STATO_RIMBORSO.in_attesa}
         </Banner>
@@ -214,7 +215,7 @@ export function RimborsiOggi({ trip }: { trip: Trip }) {
   return (
     <>
       {dec.length > 0 ? (
-        <Banner tone="az" icon="info" action={<Link href="/spese" className="fa-btn sm">Rispondi</Link>}>
+        <Banner tone="az" icon="info" action={<Link href="/spese" className="fa-btn sm">{tt('Rispondi')}</Link>}>
           {chiRichiesta(dec[0], trip.travelers)}
           {dec.length > 1 ? ` (+${dec.length - 1})` : ''}
           <br />
@@ -238,28 +239,28 @@ export function BilanciaSheet({ trip, piano, onClose }: { trip: Trip; piano: Pia
     const m = await t.declareSettlements(trip.id, piano.righe, cur, tripToday(trip))
     setBusy(false)
     if (m) return setErrore(m)
-    showToast(`Spese con ${chi} bilanciate.`)
+    showToast(tt('Spese con {chi} bilanciate.', { chi }))
     onClose()
   }
   return (
     <Foglio
       open
-      title={`Bilancia con ${chi}`}
+      title={tt('Bilancia con {chi}', { chi })}
       onClose={onClose}
       footer={
         <Pulsante isLoading={busy} onPress={() => void conferma()}>
-          Bilancia tutte le spese
+          {tt('Bilancia tutte le spese')}
         </Pulsante>
       }
     >
       <p style={{ margin: 0, textAlign: 'center' }}>
-        {piano.voci === 1 ? 'Si chiude 1 voce' : `Si chiudono ${piano.voci} voci`} tra te e {chi}.
+        {tt('{v0} tra te e {chi}.', { v0: piano.voci === 1 ? tt('Si chiude 1 voce') : tt('Si chiudono {voci} voci', { voci: piano.voci }), chi })}
       </p>
       <p className="fa-m" style={{ margin: 0, textAlign: 'center' }}>
-        {piano.compensato > 0 ? `${formatMoney(piano.compensato, cur)} si annullano tra debiti e crediti. ` : ''}
-        {piano.chiPaga === 'io' ? `Tu dai ${formatMoney(piano.daPagare, cur)} a ${chi}.` : piano.chiPaga === 'altro' ? `${chi} ti dà ${formatMoney(piano.daPagare, cur)}.` : 'Nessuno deve dare niente.'}
+        {piano.compensato > 0 ? tt('{v0} si annullano tra debiti e crediti. ', { v0: formatMoney(piano.compensato, cur) }) : ''}
+        {piano.chiPaga === 'io' ? tt('Tu dai {v0} a {chi}.', { v0: formatMoney(piano.daPagare, cur), chi }) : piano.chiPaga === 'altro' ? tt('{chi} ti dà {v1}.', { chi, v1: formatMoney(piano.daPagare, cur) }) : tt('Nessuno deve dare niente.')}
         <br />
-        {`${chi} lo vede subito e, se non torna, può contestarlo.`}
+        {tt('{chi} lo vede subito e, se non torna, può contestarlo.', { chi })}
       </p>
       {errore ? (
         <Banner tone="cor" icon="warn">

@@ -16,6 +16,7 @@ import { CATEGORIE_BASE, catKey } from '../../lib/ricevuta'
 import { tripToday } from '../../lib/today'
 import type { ExpenseInput } from '../../lib/moneyData'
 import type { DocKind, Documento, Expense, Trip, Visibilita } from '../../types'
+import { LOCALE, nomeCategoria, t as tt } from '../../i18n'
 
 /** Costo (facoltativo) di un documento: diventa una spesa collegata, nella categoria scelta. */
 export interface CostoDoc {
@@ -47,12 +48,12 @@ export const spesaDelDocumento = (trip: Trip, docId: string) => trip.expenses.fi
 export function spesaDaCosto(trip: Trip, c: CostoDoc, nome: string, docId: string, esistente?: Expense): { input: ExpenseInput } | { errore: string } | null {
   if (!c.importo.trim()) return null
   const amount = parseAmount(c.importo)
-  if (amount === null || !(amount > 0)) return { errore: "L'importo non è chiaro: scrivi per esempio 45,90." }
-  if (!c.paidBy) return { errore: 'Manca chi ha pagato. Scegli una persona.' }
+  if (amount === null || !(amount > 0)) return { errore: tt('L\'importo non è chiaro: scrivi per esempio 45,90.') }
+  if (!c.paidBy) return { errore: tt('Manca chi ha pagato. Scegli una persona.') }
   const rate = c.valuta === trip.baseCurrency ? 1 : rateFor(trip, c.valuta)
   if (!rate)
     return {
-      errore: `Manca il cambio di ${c.valuta}: impostalo in Altro › Cambio valuta.`,
+      errore: tt('Manca il cambio di {valuta}: impostalo in Altro › Cambio valuta.', { valuta: c.valuta }),
     }
   return {
     input: {
@@ -81,12 +82,12 @@ export function CostoDocumento({ trip, value, onChange }: { trip: Trip; value: C
   const categorie = ['Voli', 'Alloggi', 'Trasporti', 'Cibo', 'Attività', ...personali, 'Altro']
   const set = (p: Partial<CostoDoc>) => onChange({ ...value, ...p })
   return (
-    <div className="fa-fld" role="group" aria-label="Costo del documento" style={{ gap: 16 }}>
-      <Campo label="Costo (facoltativo)" value={value.importo} onChange={(v) => set({ importo: v })} inputMode="decimal" placeholder="es. 45,90" hint="Se lo scrivi, diventa una spesa del viaggio." />
+    <div className="fa-fld" role="group" aria-label={tt('Costo del documento')} style={{ gap: 16 }}>
+      <Campo label={tt('Costo (facoltativo)')} value={value.importo} onChange={(v) => set({ importo: v })} inputMode="decimal" placeholder={tt('es. 45,90')} hint={tt('Se lo scrivi, diventa una spesa del viaggio.')} />
       {value.importo.trim() ? (
         <>
-          <div className="fa-fld" role="group" aria-label="Valuta">
-            Valuta
+          <div className="fa-fld" role="group" aria-label={tt('Valuta')}>
+            {tt('Valuta')}
             <div className="fa-chips">
               {tripCurrencies(trip, value.valuta).map((c) => (
                 <Chip key={c} on={value.valuta === c} onPress={() => set({ valuta: c })}>
@@ -95,18 +96,18 @@ export function CostoDocumento({ trip, value, onChange }: { trip: Trip; value: C
               ))}
             </div>
           </div>
-          <div className="fa-fld" role="group" aria-label="Categoria">
-            Categoria
+          <div className="fa-fld" role="group" aria-label={tt('Categoria')}>
+            {tt('Categoria')}
             <div className="fa-chips wrap">
               {categorie.map((c) => (
                 <Chip key={c} on={catKey(value.categoria) === catKey(c)} onPress={() => set({ categoria: c })}>
-                  {c}
+                  {nomeCategoria(c)}
                 </Chip>
               ))}
             </div>
           </div>
-          <div className="fa-fld" role="group" aria-label="Pagato da">
-            Pagato da
+          <div className="fa-fld" role="group" aria-label={tt('Pagato da')}>
+            {tt('Pagato da')}
             <div className="fa-chips wrap">
               {trip.travelers.map((p) => (
                 <Chip key={p.id} on={value.paidBy === p.id} onPress={() => set({ paidBy: p.id })}>
@@ -129,18 +130,18 @@ export function ScegliVisibilita({ trip, vis, access, onChange }: { trip: Trip; 
   const errore = controllaVisibilita(vis, access)
   return (
     <div className="fa-fld">
-      Chi lo può vedere
+      {tt('Chi lo può vedere')}
       <Segmenti<Visibilita>
-        label="Chi lo può vedere"
+        label={tt('Chi lo può vedere')}
         value={vis}
         onChange={(v) => onChange(v, v === 'selected' ? access : [])}
         options={VIS.map((v) => ({
           value: v,
-          label: v === 'selected' ? 'Selezionati' : VIS_LABEL[v],
+          label: v === 'selected' ? tt('Selezionati') : VIS_LABEL[v],
         }))}
       />
       {vis === 'selected' ? (
-        <div className="fa-chips wrap" role="group" aria-label="Persone">
+        <div className="fa-chips wrap" role="group" aria-label={tt('Persone')}>
           {trip.travelers.map((p) => (
             <Chip key={p.id} on={access.includes(p.id)} onPress={() => onChange(vis, access.includes(p.id) ? access.filter((x) => x !== p.id) : [...access, p.id])}>
               {first(trip, p.id)}
@@ -155,7 +156,7 @@ export function ScegliVisibilita({ trip, vis, access, onChange }: { trip: Trip; 
         </span>
       ) : (
         <span className="fa-help">
-          {vis === 'all' ? 'Tutti i partecipanti del viaggio.' : vis === 'private' ? 'Solo tu: gli altri non lo vedono né negli elenchi né nei download.' : 'Chi lo ha caricato lo vede sempre.'}
+          {vis === 'all' ? tt('Tutti i partecipanti del viaggio.') : vis === 'private' ? tt('Solo tu: gli altri non lo vedono né negli elenchi né nei download.') : tt('Chi lo ha caricato lo vede sempre.')}
         </span>
       )}
     </div>
@@ -183,7 +184,7 @@ export function NuovoDocumentoSheet({ trip, link, passeggeri, onClose }: { trip:
   }
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
-    if (!file) return setError('Scegli un file: una foto o un PDF.')
+    if (!file) return setError(tt('Scegli un file: una foto o un PDF.'))
     const bad = checkFile(file) || controllaVisibilita(vis, access)
     if (bad) return setError(bad)
     const docId = crypto.randomUUID()
@@ -205,18 +206,18 @@ export function NuovoDocumentoSheet({ trip, link, passeggeri, onClose }: { trip:
     }
     const ms = spesa && 'input' in spesa ? await t.createExpense(trip.id, spesa.input) : null
     setBusy(false)
-    showToast(ms ? `Documento caricato, ma il costo no: ${/source_kind|check/i.test(ms) ? 'serve la migrazione 0040 del database.' : ms}` : spesa ? 'Documento e spesa salvati' : 'Documento caricato')
+    showToast(ms ? tt('Documento caricato, ma il costo no: {v0}', { v0: /source_kind|check/i.test(ms) ? tt('serve la migrazione 0040 del database.') : ms }) : spesa ? tt('Documento e spesa salvati') : tt('Documento caricato'))
     onClose()
   }
   return (
     <Foglio
       open
       full
-      title="Nuovo documento"
+      title={tt('Nuovo documento')}
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="doc-form" isLoading={busy} isDisabled={!online}>
-          {'Salva il documento'}
+          {tt('Salva il documento')}
         </Pulsante>
       }
     >
@@ -234,14 +235,14 @@ export function NuovoDocumentoSheet({ trip, link, passeggeri, onClose }: { trip:
           }}
         />
         <div className="fa-fld">
-          File
+          {tt('File')}
           <Pulsante color="secondary" iconLeading="file" onPress={() => input.current?.click()}>
-            {file ? <span className="ell">{file.name}</span> : 'Scegli foto o PDF'}
+            {file ? <span className="ell">{file.name}</span> : tt('Scegli foto o PDF')}
           </Pulsante>
         </div>
-        <Campo label="Nome" value={nome} onChange={setNome} placeholder="es. Assicurazione di viaggio" maxLength={120} />
-        <div className="fa-fld" role="group" aria-label="Tipo di documento">
-          Che documento è
+        <Campo label={tt('Nome')} value={nome} onChange={setNome} placeholder={tt('es. Assicurazione di viaggio')} maxLength={120} />
+        <div className="fa-fld" role="group" aria-label={tt('Tipo di documento')}>
+          {tt('Che documento è')}
           <div className="fa-chips wrap">
             {(Object.keys(TIPO_LABEL) as TipoCarico[]).map((x) => (
               <Chip key={x} on={tipo === x} onPress={() => scegliTipo(x)}>
@@ -252,7 +253,7 @@ export function NuovoDocumentoSheet({ trip, link, passeggeri, onClose }: { trip:
         </div>
         <CostoDocumento trip={trip} value={costo} onChange={setCosto} />
         <ScegliVisibilita trip={trip} vis={vis} access={access} onChange={(v, a) => (setVis(v), setAccess(a))} />
-        {!online ? <span className="fa-help">Sei offline: carica il documento quando c’è rete.</span> : null}
+        {!online ? <span className="fa-help">{tt('Sei offline: carica il documento quando c’è rete.')}</span> : null}
         {error ? (
           <span className="fa-help bad" role="alert">
             <Sv name="err" size={16} />
@@ -299,10 +300,10 @@ export function DocumentoDettaglio({ trip, doc, onClose }: { trip: Trip; doc: Do
       if (err) return showToast(err)
       if (allarga(doc, { visibility: vis, access })) {
         const ok = await ask({
-          title: 'Allargare la visibilità?',
-          message: `«${doc.name}» lo vedranno anche ${vis === 'all' ? 'tutti i partecipanti' : 'le persone aggiunte'}. Puoi restringere di nuovo in qualsiasi momento.`,
-          confirm: 'Sì, allarga',
-          cancel: 'Lascia com’è',
+          title: tt('Allargare la visibilità?'),
+          message: tt('«{name}» lo vedranno anche {v1}. Puoi restringere di nuovo in qualsiasi momento.', { name: doc.name, v1: vis === 'all' ? tt('tutti i partecipanti') : tt('le persone aggiunte') }),
+          confirm: tt('Sì, allarga'),
+          cancel: tt('Lascia com’è'),
           destructive: false,
         })
         if (!ok) return
@@ -318,23 +319,23 @@ export function DocumentoDettaglio({ trip, doc, onClose }: { trip: Trip; doc: Do
       else if (spesa) m = await t.setExpenseDeleted(spesa.id, true)
     }
     setBusy(false)
-    if (m) return showToast(/source_kind|check/i.test(m) ? 'Serve la migrazione 0040 del database.' : m)
-    showToast('Documento salvato')
+    if (m) return showToast(/source_kind|check/i.test(m) ? tt('Serve la migrazione 0040 del database.') : m)
+    showToast(tt('Documento salvato'))
     onClose()
   }
   async function elimina() {
     const ok = await ask({
-      title: 'Eliminare il documento?',
-      message: `«${doc.name}» sparisce per tutti, anche dai punti a cui è collegato.`,
-      confirm: 'Elimina',
-      cancel: 'Tienilo',
+      title: tt('Eliminare il documento?'),
+      message: tt('«{name}» sparisce per tutti, anche dai punti a cui è collegato.', { name: doc.name }),
+      confirm: tt('Elimina'),
+      cancel: tt('Tienilo'),
       destructive: true,
     })
     if (!ok) return
     if (spesa) await t.setExpenseDeleted(spesa.id, true)
     const m = await t.deleteDocument(doc.id, doc.path)
     if (m) return showToast(m)
-    showToast('Documento eliminato')
+    showToast(tt('Documento eliminato'))
     onClose()
   }
   async function toggleOffline(on: boolean) {
@@ -350,16 +351,16 @@ export function DocumentoDettaglio({ trip, doc, onClose }: { trip: Trip; doc: Do
       onClose={onClose}
       footer={
         <Pulsante isDisabled={!cambiata && !costoCambiato} isLoading={busy} onPress={() => void salva()}>
-          Salva
+          {tt('Salva')}
         </Pulsante>
       }
     >
       <div style={{ display: 'grid', gap: 'var(--gap-campi)' }}>
-        {!img && !imgFallita && anteprimaImmagine(doc) ? <span className="fa-sk" role="status" aria-busy="true" aria-label="Anteprima in caricamento" style={{ height: 200, borderRadius: 12 }} /> : null}
+        {!img && !imgFallita && anteprimaImmagine(doc) ? <span className="fa-sk" role="status" aria-busy="true" aria-label={tt('Anteprima in caricamento')} style={{ height: 200, borderRadius: 12 }} /> : null}
         {img ? (
           <img
             src={img}
-            alt={`Anteprima di ${doc.name}`}
+            alt={tt('Anteprima di {name}', { name: doc.name })}
             style={{
               width: '100%',
               maxHeight: 240,
@@ -369,24 +370,24 @@ export function DocumentoDettaglio({ trip, doc, onClose }: { trip: Trip; doc: Do
           />
         ) : null}
         <p className="fa-m" style={{ margin: 0 }}>
-          {[doc.mime?.split('/')[1]?.toUpperCase(), dimensione(doc.size), `caricato il ${new Date(doc.createdAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' }).replace(/\./g, '')}`]
+          {[doc.mime?.split('/')[1]?.toUpperCase(), dimensione(doc.size), tt('caricato il {v0}', { v0: new Date(doc.createdAt).toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' }).replace(/\./g, '') })]
             .filter(Boolean)
             .join(' · ')}
         </p>
         <Pulsante iconLeading="file" onPress={() => void openBookingFile(doc.path).catch((e: Error) => showToast(e.message))}>
-          Apri
+          {tt('Apri')}
         </Pulsante>
-        <Interruttore label="Disponibile offline" isSelected={offline} onChange={(v) => void toggleOffline(v)} />
+        <Interruttore label={tt('Disponibile offline')} isSelected={offline} onChange={(v) => void toggleOffline(v)} />
         <CostoDocumento trip={trip} value={costo} onChange={setCosto} />
         {mio ? (
           <>
             <ScegliVisibilita trip={trip} vis={vis} access={access} onChange={(v, a) => (setVis(v), setAccess(a))} />
             <Pulsante color="tertiary-destructive" iconLeading="trash" onPress={() => void elimina()}>
-              Elimina il documento
+              {tt('Elimina il documento')}
             </Pulsante>
           </>
         ) : (
-          <span className="fa-help">Solo chi l’ha caricato può cambiarne la visibilità.</span>
+          <span className="fa-help">{tt('Solo chi l’ha caricato può cambiarne la visibilità.')}</span>
         )}
       </div>
       {confirmNode}

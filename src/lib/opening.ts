@@ -1,6 +1,7 @@
 // Orari strutturati dei luoghi (#33): per ogni giorno della settimana le fasce di apertura,
 // i giorni chiusi e una nota libera. Il vecchio testo `opening_hours` resta come ripiego.
 import { parseYmd } from './dates'
+import { elenco, t as tt } from '../i18n'
 
 export interface Fascia {
   from: string // "HH:MM"
@@ -14,13 +15,13 @@ export interface OpeningSpec {
 }
 
 export const WEEKDAYS: { n: 1 | 2 | 3 | 4 | 5 | 6 | 7; short: string; long: string }[] = [
-  { n: 1, short: 'Lun', long: 'lunedì' },
-  { n: 2, short: 'Mar', long: 'martedì' },
-  { n: 3, short: 'Mer', long: 'mercoledì' },
-  { n: 4, short: 'Gio', long: 'giovedì' },
-  { n: 5, short: 'Ven', long: 'venerdì' },
-  { n: 6, short: 'Sab', long: 'sabato' },
-  { n: 7, short: 'Dom', long: 'domenica' },
+  { n: 1, short: tt('Lun'), long: tt('lunedì') },
+  { n: 2, short: tt('Mar'), long: tt('martedì') },
+  { n: 3, short: tt('Mer'), long: tt('mercoledì') },
+  { n: 4, short: tt('Gio'), long: tt('giovedì') },
+  { n: 5, short: tt('Ven'), long: tt('venerdì') },
+  { n: 6, short: tt('Sab'), long: tt('sabato') },
+  { n: 7, short: tt('Dom'), long: tt('domenica') },
 ]
 
 const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5))
@@ -49,19 +50,19 @@ export const isoWeekday = (ymd: string): 1 | 2 | 3 | 4 | 5 | 6 | 7 => (((parseYm
 export function openingFor(spec: OpeningSpec | undefined, ymd: string, atMin: number): { text: string; closed: boolean } | null {
   if (!spec || Object.keys(spec.w).length === 0) return null
   const fasce = (spec.w[isoWeekday(ymd)] ?? []).slice().sort((a, b) => a.from.localeCompare(b.from))
-  if (fasce.length === 0) return { text: 'Chiuso oggi', closed: true }
+  if (fasce.length === 0) return { text: tt('Chiuso oggi'), closed: true }
   for (const f of fasce) {
     const a = toMin(f.from)
     let b = toMin(f.to)
     if (b <= a) b += 1440 // aperto oltre la mezzanotte
-    if (atMin >= a && atMin < b) return { text: `Aperto fino alle ${f.to}`, closed: false }
-    if (atMin < a) return { text: `Apre alle ${f.from}`, closed: false }
+    if (atMin >= a && atMin < b) return { text: tt('Aperto fino alle {to}', { to: f.to }), closed: false }
+    if (atMin < a) return { text: tt('Apre alle {from}', { from: f.from }), closed: false }
   }
-  return { text: "Chiuso a quest'ora", closed: true }
+  return { text: tt('Chiuso a quest\'ora'), closed: true }
 }
 
 const sameFasce = (a: Fascia[] | undefined, b: Fascia[] | undefined) => JSON.stringify(a ?? []) === JSON.stringify(b ?? [])
-const fasceText = (f: Fascia[]) => f.map((x) => `${x.from}–${x.to}`).join(' e ')
+const fasceText = (f: Fascia[]) => elenco(f.map((x) => `${x.from}–${x.to}`))
 
 /** «Gio–Mar · 11:30–15:00 e 17:30–21:00 · Chiuso il mercoledì» (gruppi di giorni consecutivi con gli stessi orari). */
 export function formatOpening(spec: OpeningSpec | undefined): string | null {
@@ -88,8 +89,8 @@ export function openingParts(spec: OpeningSpec | undefined): { main: string; sub
     if (last && consecutive && sameFasce(last.f, f)) last.days.push(d)
     else groups.push({ days: [d], f })
   }
-  const main = groups.map((g) => `${g.days.length === 7 ? 'Tutti i giorni' : g.days.length > 1 ? `${g.days[0].short}–${g.days[g.days.length - 1].short}` : g.days[0].short} · ${fasceText(g.f)}`).join('; ')
+  const main = groups.map((g) => `${g.days.length === 7 ? tt('Tutti i giorni') : g.days.length > 1 ? `${g.days[0].short}–${g.days[g.days.length - 1].short}` : g.days[0].short} · ${fasceText(g.f)}`).join('; ')
   const closed = WEEKDAYS.filter((d) => !(spec.w[d.n]?.length))
-  const sub = [closed.length > 0 && closed.length < 7 ? `Chiuso ${closed.length === 1 ? `il ${closed[0].long}` : closed.map((d) => d.long).join(', ')}` : null, spec.note ?? null].filter(Boolean).join(' · ')
+  const sub = [closed.length > 0 && closed.length < 7 ? tt('Chiuso {v0}', { v0: closed.length === 1 ? tt('il {long}', { long: closed[0].long }) : closed.map((d) => d.long).join(', ') }) : null, spec.note ?? null].filter(Boolean).join(' · ')
   return { main, sub: sub || null }
 }

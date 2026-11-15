@@ -27,6 +27,7 @@ import { MAX_DURATION_MIN } from './duration'
 import { cleanRates } from './money'
 import { DEFAULT_CENTER } from './tripForm'
 import { enumerateDates } from './tripDays'
+import { t as tt } from '../i18n'
 
 // Ripristino da un file esportato dall'app. Due passaggi, entrambi funzioni pure:
 //   1. `parseExport` legge il file, controlla ogni campo e scarta (con un avviso) ciò che il
@@ -117,12 +118,12 @@ const MAX_DAYS = 400
 /** Pulisce un viaggio letto dal file. Restituisce il messaggio d'errore se non è recuperabile. */
 function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
   const title = optStr(raw.title)
-  if (!title) return 'manca il titolo'
+  if (!title) return tt('manca il titolo')
   const startDate = ymd(raw.startDate)
   const endDate = ymd(raw.endDate)
-  if (!startDate || !endDate) return 'le date di inizio e fine non sono valide'
-  if (endDate < startDate) return 'la data di fine è prima di quella di inizio'
-  if (enumerateDates(startDate, endDate, MAX_DAYS).length === 0) return `il viaggio supera i ${MAX_DAYS} giorni`
+  if (!startDate || !endDate) return tt('le date di inizio e fine non sono valide')
+  if (endDate < startDate) return tt('la data di fine è prima di quella di inizio')
+  if (enumerateDates(startDate, endDate, MAX_DAYS).length === 0) return tt('il viaggio supera i {MAX_DAYS} giorni', { MAX_DAYS })
 
   let seq = 0
   const used = new Set<string>()
@@ -132,12 +133,12 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
     return id
   }
   const skip = (what: string, n: number) => {
-    if (n > 0) warnings.push(`Scartati perché incompleti o non validi (${what}): ${n}`)
+    if (n > 0) warnings.push(tt('Scartati perché incompleti o non validi ({what}): {n}', { what, n }))
   }
 
   let timezone = str(raw.timezone, 'UTC')
   if (!validZone(timezone)) {
-    warnings.push(`Fuso orario «${timezone}» non valido: usato UTC`)
+    warnings.push(tt('Fuso orario «{timezone}» non valido: usato UTC', { timezone }))
     timezone = 'UTC'
   }
   const baseCurrency = currency(raw.baseCurrency, 'EUR')
@@ -244,7 +245,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
   }
   days.sort((a, b) => a.date.localeCompare(b.date))
   skip('tappe', badItems)
-  if (orphanItems > 0) warnings.push(`${orphanItems} tappe collegate a luoghi che non esistono più nel file: restano senza luogo`)
+  if (orphanItems > 0) warnings.push(tt('{orphanItems} tappe collegate a luoghi che non esistono più nel file: restano senza luogo', { orphanItems }))
   const dayIds = new Set(days.map((d) => d.id))
 
   // alloggi
@@ -348,7 +349,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
       }
     })
   skip('voli', rawFlights.length - flights.length)
-  skip('tratte di volo', badLegs)
+  skip(tt('tratte di volo'), badLegs)
 
   // budget
   const rawBudget = list(raw.budget).slice(0, MAX_ROWS)
@@ -372,7 +373,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
         shares,
       }
     })
-  skip('voci di budget', rawBudget.length - budget.length)
+  skip(tt('voci di budget'), rawBudget.length - budget.length)
 
   // spese
   const rawExpenses = list(raw.expenses).slice(0, MAX_ROWS)
@@ -429,7 +430,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
         position: num(c.position) ?? (i + 1) * 1000,
       }
     })
-  skip('voci della checklist', rawChecklist.length - checklist.length)
+  skip(tt('voci della checklist'), rawChecklist.length - checklist.length)
 
   // prenotazioni: gli allegati PDF non fanno parte del file
   let files = 0
@@ -452,7 +453,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
       }
     })
   skip('prenotazioni', rawBookings.length - bookings.length)
-  if (files > 0) warnings.push(`${files} ${files === 1 ? 'allegato PDF non è incluso' : 'allegati PDF non sono inclusi'} nel file: vanno caricati di nuovo`)
+  if (files > 0) warnings.push(tt('{files} {v1} nel file: vanno caricati di nuovo', { files, v1: files === 1 ? tt('allegato PDF non è incluso') : tt('allegati PDF non sono inclusi') }))
 
   return {
     id: idOf(raw.id),
@@ -491,26 +492,26 @@ export function parseExport(text: string): ParseOutcome {
   try {
     data = JSON.parse(text)
   } catch {
-    return { ok: false, error: 'Il file non è un JSON valido.' }
+    return { ok: false, error: tt('Il file non è un JSON valido.') }
   }
   if (!isObj(data) || data.format !== EXPORT_FORMAT) {
-    return { ok: false, error: 'Questo non è un file esportato da Faraway.' }
+    return { ok: false, error: tt('Questo non è un file esportato da Faraway.') }
   }
   if (typeof data.version !== 'number' || data.version > EXPORT_VERSION) {
-    return { ok: false, error: "Il file è stato creato da una versione più recente dell'app: aggiorna l'app e riprova." }
+    return { ok: false, error: tt('Il file è stato creato da una versione più recente dell\'app: aggiorna l\'app e riprova.') }
   }
   const rawTrips = list(data.trips)
-  if (rawTrips.length === 0) return { ok: false, error: 'Il file non contiene viaggi.' }
+  if (rawTrips.length === 0) return { ok: false, error: tt('Il file non contiene viaggi.') }
 
   const trips: RestorableTrip[] = []
   const skipped: { title: string; reason: string }[] = []
   for (const raw of rawTrips) {
     const warnings: string[] = []
     const trip = cleanTrip(raw, warnings)
-    if (typeof trip === 'string') skipped.push({ title: optStr(raw.title) ?? 'Senza titolo', reason: trip })
+    if (typeof trip === 'string') skipped.push({ title: optStr(raw.title) ?? tt('Senza titolo'), reason: trip })
     else trips.push({ trip, warnings })
   }
-  if (trips.length === 0) return { ok: false, error: `Nessun viaggio ripristinabile: ${skipped[0]?.reason ?? 'dati non validi'}.` }
+  if (trips.length === 0) return { ok: false, error: tt('Nessun viaggio ripristinabile: {v0}.', { v0: skipped[0]?.reason ?? tt('dati non validi') }) }
   return { ok: true, trips, skipped }
 }
 

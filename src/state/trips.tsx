@@ -30,6 +30,7 @@ import type { FlightInput, StayInput, TransportInput } from '../lib/logistics'
 import type { InvitedInput, ItemInput, PlaceInput, TravelerInput, TripInput, TripPeople } from '../lib/tripApi'
 import type { Booking, BudgetItem, DocKind, Visibilita, ChecklistItem, Expense, Flight, ItemStatus, MezzoTratto, PlacePref, PlaceStatus, ReceivedInvite, Trip, Stay, TicketCode, TicketKind } from '../types'
 import { schema } from '../lib/schema'
+import { t as tt } from '../i18n'
 
 export type TripsStatus = 'loading' | 'ready' | 'error'
 
@@ -224,7 +225,7 @@ function checkOps(trip: Trip, item: ChecklistItem, check: { done: boolean; quant
   return [{ k: 'update', table: 'checklist_items', id: item.id, patch: legacy }]
 }
 
-const DEMO_MESSAGE = 'Anteprima demo: collega Supabase per salvare le modifiche.'
+const DEMO_MESSAGE = tt('Anteprima demo: collega Supabase per salvare le modifiche.')
 const demoResult: Result = Promise.resolve(DEMO_MESSAGE)
 
 const TripsContext = createContext<TripsValue | null>(null)
@@ -409,7 +410,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
             return res.sent.includes(e.id) ? { ...e, sent: true } : e
           }),
         )
-        if (res.failed.length) showToast(`${res.failed.length === 1 ? 'Una modifica è stata rifiutata' : `${res.failed.length} modifiche sono state rifiutate`} dal server: controlla l'avviso in alto.`)
+        if (res.failed.length) showToast(tt('{v0} dal server: controlla l\'avviso in alto.', { v0: res.failed.length === 1 ? tt('Una modifica è stata rifiutata') : tt('{length} modifiche sono state rifiutate', { length: res.failed.length }) }))
       }
       // si ricarica una volta sola, a coda svuotata, e solo i gruppi di dati toccati dalle modifiche inviate
       const more = !stopped && queueRef.current.some((e) => !e.error && !e.sent)
@@ -576,7 +577,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         ),
         ['places', 'categories', 'items'], // rinominare un luogo può aggiornare anche il titolo delle sue tappe
       ),
-    setPlaceStatus: (id, status) => queued('Stato del luogo', [{ k: 'update', table: 'places', id, patch: { status } }], { t: 'place.status', id, status }),
+    setPlaceStatus: (id, status) => queued(tt('Stato del luogo'), [{ k: 'update', table: 'places', id, patch: { status } }], { t: 'place.status', id, status }),
     setPlaceDeleted: (id, deleted) => run(() => api.setPlaceDeleted(id, deleted), ['places']),
     setPlacesDeleted: (ids, deleted) => (ids.length === 0 ? Promise.resolve(null) : run(() => api.setPlacesDeleted(ids, deleted), ['places'])),
     getTrip: (id) => tripsRef.current.find((t) => t.id === id),
@@ -609,7 +610,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       const index = items.findIndex((i) => i.id === itemId)
       const to = index + step
       if (index === -1 || to < 0 || to >= items.length) return null
-      if (!canSwap(items[index], items[to])) return "Queste due tappe hanno orari diversi: l'ordine segue l'orario. Cambia l'orario per spostarle."
+      if (!canSwap(items[index], items[to])) return tt('Queste due tappe hanno orari diversi: l\'ordine segue l\'orario. Cambia l\'orario per spostarle.')
       const next = items.slice()
       ;[next[index], next[to]] = [next[to], next[index]]
       // si rinumera tutto il giorno: le posizioni salvate tornano uguali all'ordine che si vede
@@ -627,31 +628,31 @@ export function TripProvider({ children }: { children: ReactNode }) {
       const at = new Date().toISOString()
       const patch = schema.itemStatus ? { status, status_changed_at: at, done: status === 'done' } : { done: status === 'done' }
       if (!schema.itemStatus && status !== 'done' && status !== 'todo') return Promise.resolve(api.MIGRATION_0017)
-      const err = await queued('Stato della tappa', [{ k: 'update', table: 'day_items', id, patch }], { t: 'item.status', id, status, at })
+      const err = await queued(tt('Stato della tappa'), [{ k: 'update', table: 'day_items', id, patch }], { t: 'item.status', id, status, at })
       if (err || status !== 'done') return err
       // la tappa fatta segna il luogo collegato come «Visitato»
       const trip = trips.find((t) => t.id === tripId)
       const item = trip?.days.flatMap((d) => d.items).find((i) => i.id === id)
       const place = item?.placeId ? trip?.places.find((p) => p.id === item.placeId) : undefined
-      if (place && place.status !== 'done') return queued('Stato del luogo', [{ k: 'update', table: 'places', id: place.id, patch: { status: 'done' } }], { t: 'place.status', id: place.id, status: 'done' })
+      if (place && place.status !== 'done') return queued(tt('Stato del luogo'), [{ k: 'update', table: 'places', id: place.id, patch: { status: 'done' } }], { t: 'place.status', id: place.id, status: 'done' })
       return null
     },
     moveItemToDay: (tripId, id, toDayId, postpone) => {
       const trip = trips.find((t) => t.id === tripId)
       const from = trip?.days.find((d) => d.items.some((i) => i.id === id))
       const to = trip?.days.find((d) => d.id === toDayId)
-      if (!trip || !from || !to) return Promise.resolve('Giorno non trovato.')
+      if (!trip || !from || !to) return Promise.resolve(tt('Giorno non trovato.'))
       const position = positionForNew(to.items.map((i, k) => ({ ...i, position: i.position ?? (k + 1) * 1000 })))
       return run(() => api.moveItemToDay(id, toDayId, position, postpone ? from.id : undefined), ['items'])
     },
     saveItemCost: (tripId, itemId, cost) => {
       const trip = trips.find((t) => t.id === tripId)
-      if (!trip) return Promise.resolve('Viaggio non trovato.')
+      if (!trip) return Promise.resolve(tt('Viaggio non trovato.'))
       const day = trip.days.find((d) => d.items.some((i) => i.id === itemId))
       const item = day?.items.find((i) => i.id === itemId)
-      if (!day || !item) return Promise.resolve('Tappa non trovata.')
+      if (!day || !item) return Promise.resolve(tt('Tappa non trovata.'))
       const linked = trip.expenses.find((e) => e.source?.kind === 'day_item' && e.source.id === itemId)
-      if (!cost) return linked ? queued('Spesa', [{ k: 'update', table: 'expenses', id: linked.id, patch: deletedPatch(true) }], { t: 'expense.deleted', id: linked.id, deleted: true }) : Promise.resolve(null)
+      if (!cost) return linked ? queued(tt('Spesa'), [{ k: 'update', table: 'expenses', id: linked.id, patch: deletedPatch(true) }], { t: 'expense.deleted', id: linked.id, deleted: true }) : Promise.resolve(null)
       if (!schema.itemStatus) return Promise.resolve(api.MIGRATION_0017)
       const input: ExpenseInput = {
         label: item.title,
@@ -672,7 +673,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     setItemLock: (id, lock, source) => run(() => api.setItemLock(id, lock, source, auth.session?.user.id), ['items']),
     setItemArrive: (id, mode, minutes) => run(() => api.setItemArrive(id, mode, minutes), ['items']),
     setItemParticipants: (id, participants) => run(() => api.setItemParticipants(id, participants), ['items']),
-    setItemDone: (id, done) => queued('Tappa fatta', [{ k: 'update', table: 'day_items', id, patch: { done } }], { t: 'item.done', id, done }),
+    setItemDone: (id, done) => queued(tt('Tappa fatta'), [{ k: 'update', table: 'day_items', id, patch: { done } }], { t: 'item.done', id, done }),
     setItemDeleted: (id, deleted) => run(() => api.setItemDeleted(id, deleted), ['items']),
     createStay: (tripId, input) => run(() => logistics.createStay(tripId, input), ['logistics']),
     updateStay: (id, input, old) => run(() => logistics.updateStay(id, input, old), ['logistics']),
@@ -719,18 +720,18 @@ export function TripProvider({ children }: { children: ReactNode }) {
     setBudgetItemDeleted: (id, deleted) => run(() => money.setBudgetItemDeleted(id, deleted), ['money']),
     createExpense: (tripId, input) => {
       const trip = trips.find((x) => x.id === tripId)
-      if (!trip) return Promise.resolve('Viaggio non trovato.')
+      if (!trip) return Promise.resolve(tt('Viaggio non trovato.'))
       const e = expenseEntry(trip, input)
       return queued(e.label, e.ops, e.local)
     },
     updateExpense: (tripId, expense, input) => {
       const trip = trips.find((x) => x.id === tripId)
-      if (!trip) return Promise.resolve('Viaggio non trovato.')
+      if (!trip) return Promise.resolve(tt('Viaggio non trovato.'))
       const e = expenseEntry(trip, input, expense)
       return queued(e.label, e.ops, e.local)
     },
     setExpenseDeleted: (id, deleted) =>
-      queued('Spesa', [{ k: 'update', table: 'expenses', id, patch: deletedPatch(deleted) }], { t: 'expense.deleted', id, deleted }),
+      queued(tt('Spesa'), [{ k: 'update', table: 'expenses', id, patch: deletedPatch(deleted) }], { t: 'expense.deleted', id, deleted }),
     setFxRate: (tripId, rate) => run(() => money.setTripFxRate(tripId, rate), ['trips']),
     setFxRates: (tripId, rate, extra) => run(() => money.setTripFxRates(tripId, rate, extra), ['trips']),
     createChecklistItem: (tripId, input) => {
@@ -742,7 +743,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     updateChecklistItem: (id, input) => {
       const trip = trips.find((x) => x.checklist.some((c) => c.id === id))
       const existing = trip?.checklist.find((c) => c.id === id)
-      if (!trip || !existing) return Promise.resolve('Voce non trovata.')
+      if (!trip || !existing) return Promise.resolve(tt('Voce non trovata.'))
       const e = checklistEntry(trip.id, input, existing.position, existing)
       return queued(e.label, e.ops, e.local)
     },
@@ -750,27 +751,27 @@ export function TripProvider({ children }: { children: ReactNode }) {
       const trip = trips.find((x) => x.checklist.some((c) => c.id === id))
       const item = trip?.checklist.find((c) => c.id === id)
       const ops: Op[] = trip && item ? checkOps(trip, item, { done, quantity_done: done ? ((item.quantity ?? 1) > 1 ? item.quantity : null) : null }, { done }) : [{ k: 'update', table: 'checklist_items', id, patch: { done } }]
-      return queued('Checklist', ops, { t: 'checklist.done', id, done })
+      return queued(tt('Checklist'), ops, { t: 'checklist.done', id, done })
     },
     setChecklistCount: (id, count) => {
       const trip = trips.find((x) => x.checklist.some((c) => c.id === id))
       const item = trip?.checklist.find((c) => c.id === id)
-      if (!trip || !item) return Promise.resolve('Voce non trovata.')
+      if (!trip || !item) return Promise.resolve(tt('Voce non trovata.'))
       const c = countChange(item, count)
-      return queued('Checklist', checkOps(trip, item, { done: c.done, quantity_done: c.patch.quantity_done }, c.patch), { t: 'checklist.count', id, count: c.count, done: c.done })
+      return queued(tt('Checklist'), checkOps(trip, item, { done: c.done, quantity_done: c.patch.quantity_done }, c.patch), { t: 'checklist.count', id, count: c.count, done: c.done })
     },
     duplicateChecklist: (tripId, fromTripId) => {
       const from = trips.find((x) => x.id === fromTripId)
       const to = trips.find((x) => x.id === tripId)
-      if (!from || !to) return Promise.resolve('Viaggio non trovato.')
+      if (!from || !to) return Promise.resolve(tt('Viaggio non trovato.'))
       return run(() => planning.duplicateChecklist(tripId, from.checklist, to.checklist, to.checklistV2 ? auth.session?.user.id : undefined, !!to.checklistV2), ['planning'])
     },
     setChecklistDeleted: (id, deleted) =>
-      queued('Checklist', [{ k: 'update', table: 'checklist_items', id, patch: deletedPatch(deleted) }], { t: 'checklist.deleted', id, deleted }),
+      queued(tt('Checklist'), [{ k: 'update', table: 'checklist_items', id, patch: deletedPatch(deleted) }], { t: 'checklist.deleted', id, deleted }),
     setChecklistManyDeleted: (ids, deleted) =>
       ids.length === 0
         ? Promise.resolve(null)
-        : queued('Checklist', [{ k: 'updateMany', table: 'checklist_items', ids, patch: deletedPatch(deleted) }], { t: 'checklist.deletedMany', ids, deleted }),
+        : queued(tt('Checklist'), [{ k: 'updateMany', table: 'checklist_items', ids, patch: deletedPatch(deleted) }], { t: 'checklist.deletedMany', ids, deleted }),
     addChecklistTemplate: (tripId) => run(() => planning.addChecklistTemplate(tripId, trips.find((x) => x.id === tripId)?.checklist ?? []), ['planning']),
     setBookingItems: (tripId, bookingId, itemIds) => run(() => planning.setBookingItems(tripId, bookingId, itemIds), ['planning']),
     createBooking: (tripId, input) => run(() => planning.createBooking(tripId, input, trips.find((x) => x.id === tripId)?.timezone ?? 'UTC'), ['planning']),

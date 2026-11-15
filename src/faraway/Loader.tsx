@@ -1,5 +1,6 @@
+import { t } from '../i18n'
 // Caricamento vero: un anello che gira (niente frasi tipo «Sto caricando»). Con `reduced motion` resta un anello fermo a metà.
-export function Loader({ size = 24, label = 'Caricamento in corso', className }: { size?: number; label?: string; className?: string }) {
+export function Loader({ size = 24, label = t('Caricamento in corso'), className }: { size?: number; label?: string; className?: string }) {
   return (
     <span className={`fa-spin${className ? ` ${className}` : ''}`} role="status" aria-label={label} style={{ width: size, height: size }}>
       <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">

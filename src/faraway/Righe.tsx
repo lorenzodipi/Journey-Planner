@@ -5,6 +5,7 @@ import { useCallback, useId, useState } from 'react'
 import { Ic } from '../ui/Sprite'
 import { cx } from './cx'
 import { Sv, type SvName } from './icons'
+import { t } from '../i18n'
 
 /** Quale elemento della lista è aperto (uno solo). «Indietro» non lo richiude: torna alla pagina precedente. */
 export function useUnaAperta<T extends string = string>(initial: T | null = null) {
@@ -72,7 +73,7 @@ export function Azioni({ children }: { children: ReactNode }) {
   return <div className="acts">{children}</div>
 }
 
-export function AzioneModifica({ onPress, label = 'Modifica' }: { onPress: () => void; label?: string }) {
+export function AzioneModifica({ onPress, label = t('Modifica') }: { onPress: () => void; label?: string }) {
   return (
     <button type="button" className="fa-btn sm out" onClick={onPress}>
       <Sv name="pencil" size={18} />
@@ -81,7 +82,7 @@ export function AzioneModifica({ onPress, label = 'Modifica' }: { onPress: () =>
   )
 }
 
-export function AzioneElimina({ onPress, label = 'Elimina' }: { onPress: () => void; label?: string }) {
+export function AzioneElimina({ onPress, label = t('Elimina') }: { onPress: () => void; label?: string }) {
   return (
     <button type="button" className="fa-btn sm del" style={{ color: 'var(--danger)' }} onClick={onPress}>
       <Sv name="trash" size={18} />

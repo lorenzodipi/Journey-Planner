@@ -1,5 +1,6 @@
 import type { Category, Place, PlaceStatus, Trip } from '../types'
 import { categoryIcon, type PinIcon } from '../lib/categoryIcon'
+import { t } from '../i18n'
 
 export const STATUS_STYLE: Record<PlaceStatus, string> = {
   idea: 'border-pale text-pale',
@@ -8,7 +9,7 @@ export const STATUS_STYLE: Record<PlaceStatus, string> = {
   skipped: 'border-line text-muted',
 }
 
-export const SUGGESTED_CATEGORIES = ['Tempio', 'Cibo', 'Natura', 'Shopping', 'Quartiere', 'Museo', 'Panorama', 'Cultura', 'Supermercato', 'Benzinaio', 'Treno']
+export const SUGGESTED_CATEGORIES = [t('Tempio'), t('Cibo'), t('Natura'), t('Shopping'), t('Quartiere'), t('Museo'), t('Panorama'), t('Cultura'), t('Supermercato'), t('Benzinaio'), t('Treno')]
 
 export const NO_CATEGORY_COLOR = '#9fb0c8'
 /** Un colore preferito per ogni tipo di categoria, tutti diversi e leggibili sul blu notte. */

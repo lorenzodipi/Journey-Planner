@@ -7,6 +7,7 @@ import { useOnline } from '../state/online'
 import { ART } from '../ui/art'
 import { Banner, Campo, PulsanteIcona, Pulsante } from '../faraway/base'
 import { Affianca, Colonna, Schermata } from '../faraway/shell'
+import { t } from '../i18n'
 
 export function Login() {
   const auth = useAuth()
@@ -40,10 +41,10 @@ export function Login() {
         <Affianca>
           <Colonna lato="sinistra">
             <div style={{ display: 'grid', gap: 8 }}>
-              <img className="logo lt" src={ART.lockup} alt="Faraway" width="232" height="58" />
-              <img className="logo dk" src={ART.lockupReverse} alt="Faraway" width="232" height="58" />
-              <h1 className="fa-h2" style={{ margin: '32px 0 0' }}>Bentornato</h1>
-              <p className="fa-lead" style={{ margin: 0, color: 'var(--ink-muted)' }}>Accedi per ritrovare i tuoi viaggi.</p>
+              <img className="logo lt" src={ART.lockup} alt={t('Faraway')} width="232" height="58" />
+              <img className="logo dk" src={ART.lockupReverse} alt={t('Faraway')} width="232" height="58" />
+              <h1 className="fa-h2" style={{ margin: '32px 0 0' }}>{t('Bentornato')}</h1>
+              <p className="fa-lead" style={{ margin: 0, color: 'var(--ink-muted)' }}>{t('Accedi per ritrovare i tuoi viaggi.')}</p>
             </div>
           </Colonna>
           <Colonna lato="destra">
@@ -55,36 +56,36 @@ export function Login() {
               ) : null}
               {!online ? (
                 <Banner tone="az" icon="wifi">
-                  Sei offline: per entrare serve la rete.
+                  {t('Sei offline: per entrare serve la rete.')}
                 </Banner>
               ) : null}
 
               <div style={{ display: 'grid', gap: 16 }}>
                 <Campo
-                  label="Email"
+                  label={t('Email')}
                   type="email"
                   inputMode="email"
                   autoComplete="username"
-                  placeholder="nome@esempio.it"
+                  placeholder={t('nome@esempio.it')}
                   value={email}
                   onChange={(v) => (setEmail(v), setError(null))}
                   error={erroreMail}
                   onBlur={() => email && setToccata(true)}
                 />
                 <Campo
-                  label="Password"
+                  label={t('Password')}
                   type={show ? 'text' : 'password'}
                   autoComplete="current-password"
                   hint="Almeno 8 caratteri"
                   value={password}
                   onChange={(v) => (setPassword(v), setError(null))}
-                  trailing={<PulsanteIcona icon={show ? 'eye' : 'eyeoff'} label={show ? 'Nascondi la password' : 'Mostra la password'} pressed={show} onPress={() => setShow(!show)} />}
+                  trailing={<PulsanteIcona icon={show ? 'eye' : 'eyeoff'} label={show ? t('Nascondi la password') : t('Mostra la password')} pressed={show} onPress={() => setShow(!show)} />}
                 />
               </div>
 
               <div style={{ display: 'grid', gap: 16 }}>
                 <Pulsante type="submit" isLoading={busy} isDisabled={!online || !email || !password}>
-                  Accedi
+                  {t('Accedi')}
                 </Pulsante>
               </div>
             </div>

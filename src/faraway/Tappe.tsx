@@ -18,6 +18,7 @@ import { Sv } from './icons'
 import { discOf, initials } from '../state/me'
 import type { Day, DayItem, Expense, ItemStatus, Place, Trip } from '../types'
 import { cx } from './cx'
+import { t, tc } from '../i18n'
 
 /** Glifo dello sprite senza dimensioni (le mette il CSS del componente). */
 export const G = ({ name, cls }: { name: string; cls?: string }) => (
@@ -26,7 +27,7 @@ export const G = ({ name, cls }: { name: string; cls?: string }) => (
   </svg>
 )
 
-const PARTS = ['', 'da solo', 'in due', 'in tre', 'in quattro', 'in cinque', 'in sei', 'in sette', 'in otto']
+const PARTS = ['', t('da solo'), t('in due'), t('in tre'), t('in quattro'), t('in cinque'), t('in sei'), t('in sette'), t('in otto')]
 
 export interface TappeCtx {
   isToday: boolean
@@ -85,7 +86,7 @@ function metaOf(trip: Trip, item: DayItem): string {
   const who = item.participants?.length ?? 0
   const where = place && place.name.trim().toLowerCase() !== item.title.trim().toLowerCase() ? place.name : item.note?.split('\n')[0] || place?.city || ''
   const from = item.postponedFromDayId ? trip.days.findIndex((d) => d.id === item.postponedFromDayId) : -1
-  return [from >= 0 ? `Rimandata dal Giorno ${from + 1}` : null, where, who > 1 ? PARTS[who] ?? `in ${who}` : null, dur ? durata(dur) : null].filter(Boolean).join(' · ')
+  return [from >= 0 ? t('Rimandata dal Giorno {v0}', { v0: from + 1 }) : null, where, who > 1 ? PARTS[who] ?? t('in {who}', { who }) : null, dur ? durata(dur) : null].filter(Boolean).join(' · ')
 }
 
 function Pill({ item, f, ctx }: { item: DayItem; f: Fase; ctx: TappeCtx }) {
@@ -94,7 +95,7 @@ function Pill({ item, f, ctx }: { item: DayItem; f: Fase; ctx: TappeCtx }) {
     return (
       <span className="st">
         <G name="g-check" />
-        Fatta
+        {t('Fatta')}
       </span>
     )
   if (st === 'skipped' || st === 'cancelled')
@@ -108,12 +109,12 @@ function Pill({ item, f, ctx }: { item: DayItem; f: Fase; ctx: TappeCtx }) {
     return (
       <span className="st" style={{ color: 'var(--danger)' }}>
         <G name="g-clock" />
-        In ritardo
+        {t('In ritardo')}
       </span>
     )
-  if (f === 'now') return <span className="now">Ora</span>
-  if (forseInRitardo(item, ctx)) return <span className="next">In ritardo?</span>
-  if (f === 'past') return <span className="next">Da fare</span>
+  if (f === 'now') return <span className="now">{tc('Ora', 'adesso')}</span>
+  if (forseInRitardo(item, ctx)) return <span className="next">{t('In ritardo?')}</span>
+  if (f === 'past') return <span className="next">{t('Da fare')}</span>
   return null
 }
 
@@ -122,9 +123,9 @@ function StatoMenu({ item, onPick, disabled }: { item: DayItem; onPick: (s: Item
   const cur = statoOf(statusOf(item))
   return (
     <MenuScelta<ItemStatus>
-      label="Stato della tappa"
-      titolo="Stato della tappa"
-      nota="Nuovi stati si aggiungono al registro e compaiono qui; la lista scorre dopo sei voci."
+      label={t('Stato della tappa')}
+      titolo={t('Stato della tappa')}
+      nota={t('Nuovi stati si aggiungono al registro e compaiono qui; la lista scorre dopo sei voci.')}
       value={cur.value}
       onChange={(v) => {
         if (v !== cur.value) onPick(v)
@@ -138,7 +139,7 @@ function StatoMenu({ item, onPick, disabled }: { item: DayItem; onPick: (s: Item
             <G name={cur.icon} />
           </span>
           <span className="sx">
-            <span className="sl">Stato</span>
+            <span className="sl">{t('Stato')}</span>
             <b className="sn">{cur.label}</b>
           </span>
           <span className="sc">
@@ -182,7 +183,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
   const [annuncio, setAnnuncio] = useState('')
   const { trascinata, inizia, tasto, spostamento } = useTrascinaTappe(listRef, items.length, (from, to) => {
     onReorder?.(items[from], to)
-    setAnnuncio(`${items[from].title}: posizione ${to + 1} di ${items.length}`)
+    setAnnuncio(t('{title}: posizione {v1} di {length}', { title: items[from].title, v1: to + 1, length: items.length }))
   })
   const sum = riepilogo(items, ctx)
   const payer = new Map(trip.travelers.map((p) => [p.id, p.name]))
@@ -200,9 +201,9 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
         <div className="prog">
           <div className="pl">
             <b>{sum.line}</b>
-            {sum.next ? <span>Prossima: {sum.next}</span> : null}
+            {sum.next ? <span>{t('Prossima: {next}', { next: sum.next })}</span> : null}
           </div>
-          <div className="pb" role="progressbar" aria-label="Tappe chiuse" aria-valuemin={0} aria-valuemax={sum.total} aria-valuenow={sum.closed}>
+          <div className="pb" role="progressbar" aria-label={t('Tappe chiuse')} aria-valuemin={0} aria-valuemax={sum.total} aria-valuenow={sum.closed}>
             <i style={{ width: `${sum.total ? (sum.closed / sum.total) * 100 : 0}%` }} />
           </div>
         </div>
@@ -238,7 +239,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                 <li className={cx('seg', prevF !== 'done' && prevF !== 'skip' && 'after')} style={stile}>
                   <span className="rail" />
                   {onSeg && !readOnly ? (
-                    <button type="button" className="sg tap" aria-label={`Da ${items[idx - 1].title} a ${item.title}: ${seg.text.charAt(0).toLowerCase()}${seg.text.slice(1).replace(' · ', ', ')}. Cambia il mezzo`} onClick={() => onSeg(item)}>
+                    <button type="button" className="sg tap" aria-label={t('Da {title} a {title2}: {v2}{v3}. Cambia il mezzo', { title: items[idx - 1].title, title2: item.title, v2: seg.text.charAt(0).toLowerCase(), v3: seg.text.slice(1).replace(' · ', ', ') })} onClick={() => onSeg(item)}>
                       <G name={seg.icon} />
                       {seg.text}
                       <G name="g-chev" cls="chv" />
@@ -282,7 +283,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                       {meteoDi?.(item) ? <div className="m">{meteoDi(item)}</div> : null}
                       {item.time && item.timeLock ? (
                         <div className="m" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          {item.timeLock === 'locked' ? 'Orario vincolato' : 'Orario flessibile'}
+                          {item.timeLock === 'locked' ? t('Orario vincolato') : t('Orario flessibile')}
                         </div>
                       ) : null}
                     </div>
@@ -308,7 +309,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                     <button
                       type="button"
                       className="gl grip"
-                      aria-label={`Sposta «${item.title}» nell'elenco: trascina, oppure usa le frecce su e giù`}
+                      aria-label={t('Sposta «{title}» nell\'elenco: trascina, oppure usa le frecce su e giù', { title: item.title })}
                       onPointerDown={(e) => inizia(e, idx)}
                       onKeyDown={(e) => tasto(e, idx)}
                     >
@@ -345,9 +346,9 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                           sub={hereText}
                           action={
                             place ? (
-                              <a aria-label={`Apri ${place.name} su Maps`} className="btn mp" href={mapsLinkFor(place)} target="_blank" rel="noopener noreferrer">
+                              <a aria-label={t('Apri {name} su Maps', { name: place.name })} className="btn mp" href={mapsLinkFor(place)} target="_blank" rel="noopener noreferrer">
                                 <G name="g-pinout" />
-                                Maps
+                                {t('Maps')}
                               </a>
                             ) : null
                           }
@@ -357,7 +358,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                         <Riga
                           icon="g-budget"
                           main={formatMoney(exp.amount, exp.currency)}
-                          sub={[exp.paidBy ? `Pagato da ${payer.get(exp.paidBy) ?? '—'}` : null, people.length > 1 ? `${formatMoney(round2(exp.amount / people.length), exp.currency)} a testa` : null, exp.notes].filter(Boolean).join(' · ')}
+                          sub={[exp.paidBy ? t('Pagato da {v0}', { v0: payer.get(exp.paidBy) ?? '—' }) : null, people.length > 1 ? t('{v0} a testa', { v0: formatMoney(round2(exp.amount / people.length), exp.currency) }) : null, exp.notes].filter(Boolean).join(' · ')}
                         />
                       ) : null}
                       {readOnly ? null : (
@@ -365,13 +366,13 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                           <StatoMenu item={item} onPick={(s) => onStatus(item, s)} />
                           <div className="fa-acts">
                             <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => onEdit(item)}>
-                              Modifica
+                              {t('Modifica')}
                             </Pulsante>
                             <Pulsante size="sm" color="secondary" iconLeading="move" onPress={() => onMove(item)}>
-                              Sposta
+                              {t('Sposta')}
                             </Pulsante>
                             <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={() => onDelete(item)}>
-                              Elimina
+                              {t('Elimina')}
                             </Pulsante>
                           </div>
                         </>

@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 // Fusi orari IANA per i selettori: prima quelli più usati in viaggio, poi tutti gli altri.
 
 export const allTimezones: string[] = (() => {
@@ -42,8 +43,8 @@ export function fusiRaggruppati(...usati: string[]): { gruppo: string; zone: { v
   const aree = new Map<string, { value: string; label: string }[]>()
   for (const z of allTimezones) {
     if (visti.has(z)) continue
-    const area = z.includes('/') ? z.split('/')[0] : 'Altri'
+    const area = z.includes('/') ? z.split('/')[0] : t('Altri')
     aree.set(area, [...(aree.get(area) ?? []), voce(z)])
   }
-  return [{ gruppo: 'Usati più spesso', zone: top }, ...[...aree.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([gruppo, zone]) => ({ gruppo, zone }))]
+  return [{ gruppo: t('Usati più spesso'), zone: top }, ...[...aree.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([gruppo, zone]) => ({ gruppo, zone }))]
 }

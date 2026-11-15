@@ -4,6 +4,7 @@ import { apriSelettore } from '../../lib/picker'
 import { WEEKDAYS, type Fascia, type OpeningSpec } from '../../lib/opening'
 import { Campo } from '../../faraway/base'
 import { Sv } from '../../faraway/icons'
+import { t } from '../../i18n'
 
 type Day = 1 | 2 | 3 | 4 | 5 | 6 | 7
 
@@ -13,11 +14,11 @@ export function OrariEditor({ value, onChange, legacyText }: { value: OpeningSpe
   if (!value) {
     return (
       <div className="fa-fld">
-        Orari di apertura
-        {legacyText ? <span className="fa-help">Scritti finora: {legacyText}</span> : null}
+        {t('Orari di apertura')}
+        {legacyText ? <span className="fa-help">{t('Scritti finora: {legacyText}', { legacyText })}</span> : null}
         <button type="button" className="fa-btn out" style={{ minHeight: 44, fontSize: 14 }} onClick={() => onChange(structuredClone(START))}>
           <Sv name="clock" size={20} />
-          Aggiungi gli orari
+          {t('Aggiungi gli orari')}
         </button>
       </div>
     )
@@ -30,11 +31,11 @@ export function OrariEditor({ value, onChange, legacyText }: { value: OpeningSpe
     onChange({ ...value, w })
   }
   return (
-    <div className="fa-fld" role="group" aria-label="Orari di apertura">
+    <div className="fa-fld" role="group" aria-label={t('Orari di apertura')}>
       <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        Orari di apertura
+        {t('Orari di apertura')}
         <button type="button" className="fa-lnk" style={{ fontSize: 13 }} onClick={() => onChange(null)}>
-          Togli gli orari
+          {t('Togli gli orari')}
         </button>
       </span>
       <div className="fa-list fa-orari">
@@ -44,28 +45,28 @@ export function OrariEditor({ value, onChange, legacyText }: { value: OpeningSpe
             <div key={d.n} className="od" role="group" aria-label={d.long}>
               <span className="dn">{d.short}</span>
               <div className="fs">
-                {f.length === 0 ? <span className="cl">Chiuso</span> : null}
+                {f.length === 0 ? <span className="cl">{t('Chiuso')}</span> : null}
                 {f.map((x, i) => (
                   <span key={i} className="f">
-                    <input type="time" onClick={(e) => apriSelettore(e.currentTarget)} aria-label={`${d.long}, apre alle`} value={x.from} onChange={(e) => setDay(d.n, f.map((y, j) => (j === i ? { ...y, from: e.currentTarget.value } : y)))} />
+                    <input type="time" onClick={(e) => apriSelettore(e.currentTarget)} aria-label={t('{long}, apre alle', { long: d.long })} value={x.from} onChange={(e) => setDay(d.n, f.map((y, j) => (j === i ? { ...y, from: e.currentTarget.value } : y)))} />
                     <span aria-hidden="true">–</span>
-                    <input type="time" onClick={(e) => apriSelettore(e.currentTarget)} aria-label={`${d.long}, chiude alle`} value={x.to} onChange={(e) => setDay(d.n, f.map((y, j) => (j === i ? { ...y, to: e.currentTarget.value } : y)))} />
-                    <button type="button" className="fa-ib" style={{ background: 'none', width: 36, height: 36 }} aria-label={`Togli la fascia ${x.from}–${x.to} di ${d.long}`} onClick={() => setDay(d.n, f.filter((_, j) => j !== i))}>
+                    <input type="time" onClick={(e) => apriSelettore(e.currentTarget)} aria-label={t('{long}, chiude alle', { long: d.long })} value={x.to} onChange={(e) => setDay(d.n, f.map((y, j) => (j === i ? { ...y, to: e.currentTarget.value } : y)))} />
+                    <button type="button" className="fa-ib" style={{ background: 'none', width: 36, height: 36 }} aria-label={t('Togli la fascia {from}–{to} di {long}', { from: x.from, to: x.to, long: d.long })} onClick={() => setDay(d.n, f.filter((_, j) => j !== i))}>
                       <Sv name="close" size={18} />
                     </button>
                   </span>
                 ))}
                 <span className="ac">
                   <button type="button" onClick={() => setDay(d.n, [...f, f.length === 0 ? { from: '09:00', to: '18:00' } : { from: '17:00', to: '21:00' }])}>
-                    {f.length === 0 ? 'Aperto' : '+ Fascia'}
+                    {f.length === 0 ? t('Aperto') : '+ Fascia'}
                   </button>
                   {f.length > 0 ? (
                     <button type="button" onClick={() => setDay(d.n, [])}>
-                      Chiuso
+                      {t('Chiuso')}
                     </button>
                   ) : null}
                   <button type="button" onClick={() => copyAll(d.n)}>
-                    Copia su tutti i giorni
+                    {t('Copia su tutti i giorni')}
                   </button>
                 </span>
               </div>
@@ -73,7 +74,7 @@ export function OrariEditor({ value, onChange, legacyText }: { value: OpeningSpe
           )
         })}
       </div>
-      <Campo label="Nota sugli orari" value={value.note ?? ''} onChange={(v) => onChange({ ...value, note: v || undefined })} placeholder="es. Ultimo ingresso alle 16:30" maxLength={120} />
+      <Campo label={t('Nota sugli orari')} value={value.note ?? ''} onChange={(v) => onChange({ ...value, note: v || undefined })} placeholder={t('es. Ultimo ingresso alle 16:30')} maxLength={120} />
     </div>
   )
 }

@@ -3,6 +3,7 @@
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem'
 import { Share } from '@capacitor/share'
 import { FileOpener } from '@capacitor-community/file-opener'
+import { t } from '../i18n'
 
 const FOLDER = 'booking-files'
 
@@ -96,7 +97,7 @@ export async function openFile(blob: Blob, fileName: string): Promise<void> {
 /** Foglio di condivisione: da lì si salva in File/Drive o si invia il file. */
 export async function shareTextFile(fileName: string, content: string): Promise<void> {
   const uri = await writeTemp(fileName, content, true)
-  await Share.share({ title: fileName, url: uri, dialogTitle: 'Salva o invia il file' })
+  await Share.share({ title: fileName, url: uri, dialogTitle: t('Salva o invia il file') })
 }
 
 /** Pulizia dei file temporanei (aperture e condivisioni precedenti). */

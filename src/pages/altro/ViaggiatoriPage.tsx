@@ -16,6 +16,7 @@ import { Sv } from '../../faraway/icons'
 import { Azioni, KV, RigaApribile, useUnaAperta } from '../../faraway/Righe'
 import { Affianca, BarraIndietro, Colonna, Schermata } from '../../faraway/shell'
 import { useInCorso } from '../../faraway/Attesa'
+import { t as tt } from '../../i18n'
 
 const TONO = { inviato: 'soft', accettato: 'acq', rifiutato: 'mut', scaduto: 'cor' } as const
 
@@ -59,7 +60,7 @@ export function ViaggiatoriPage() {
     if (m) return setError(m)
     setInvita(false)
     setEmail('')
-    showToast('Invito inviato: la persona lo trova in Viaggi, in «Inviti ricevuti»')
+    showToast(tt('Invito inviato: la persona lo trova in Viaggi, in «Inviti ricevuti»'))
   }
 
   const [occ, faiOcc] = useInCorso()
@@ -67,15 +68,15 @@ export function ViaggiatoriPage() {
     const p = trip.travelers.find((x) => x.id === id)
     if (!p) return
     const ok = await ask({
-      title: `Togliere ${p.name} dal viaggio?`,
-      message: p.userId ? 'Perde l’accesso al viaggio. Le spese già divise con lei o con lui restano nei conti.' : 'Non è più tra i viaggiatori. Le spese già divise con lei o con lui restano nei conti.',
-      confirm: 'Rimuovi dal viaggio',
-      cancel: 'Tieni la persona',
+      title: tt('Togliere {name} dal viaggio?', { name: p.name }),
+      message: p.userId ? tt('Perde l’accesso al viaggio. Le spese già divise con lei o con lui restano nei conti.') : tt('Non è più tra i viaggiatori. Le spese già divise con lei o con lui restano nei conti.'),
+      confirm: tt('Rimuovi dal viaggio'),
+      cancel: tt('Tieni la persona'),
       destructive: true,
     })
     if (!ok) return
     const m = await faiOcc(`rimuovi:${p.id}`, () => t.removeMember(trip.id, p.userId, p.id))
-    showToast(m ?? `${p.name} non è più nel viaggio`)
+    showToast(m ?? tt('{name} non è più nel viaggio', { name: p.name }))
   }
 
   async function salvaNome() {
@@ -89,69 +90,68 @@ export function ViaggiatoriPage() {
   }
 
   async function promuovi(userId: string, nome: string) {
-    const ok = await ask({ title: `Rendere ${nome} partecipante?`, message: 'Entra nel viaggio come viaggiatore: vede e modifica tutto, anche spese e checklist.', confirm: 'Rendi partecipante', cancel: 'Lascia visualizzatore', destructive: false })
+    const ok = await ask({ title: tt('Rendere {nome} partecipante?', { nome }), message: tt('Entra nel viaggio come viaggiatore: vede e modifica tutto, anche spese e checklist.'), confirm: tt('Rendi partecipante'), cancel: tt('Lascia visualizzatore'), destructive: false })
     if (!ok) return
     const m = await faiOcc(`promuovi:${userId}`, () => t.promoteViewer(trip.id, userId))
-    showToast(m ?? `${nome} ora è un partecipante`)
+    showToast(m ?? tt('{nome} ora è un partecipante', { nome }))
   }
 
   async function togliVisualizzatore(userId: string, nome: string) {
-    const ok = await ask({ title: `Togliere ${nome}?`, message: 'Non vede più il viaggio.', confirm: 'Togli dal viaggio', cancel: 'Lascialo', destructive: true })
+    const ok = await ask({ title: tt('Togliere {nome}?', { nome }), message: tt('Non vede più il viaggio.'), confirm: tt('Togli dal viaggio'), cancel: tt('Lascialo'), destructive: true })
     if (!ok) return
     const m = await faiOcc(`togli:${userId}`, () => t.removeViewer(trip.id, userId))
-    showToast(m ?? `${nome} non vede più il viaggio`)
+    showToast(m ?? tt('{nome} non vede più il viaggio', { nome }))
   }
 
   async function annulla(id: string, mail: string) {
     const m = await faiOcc(`invito:${id}`, () => t.cancelInvite(id))
-    showToast(m ?? `Invito a ${mail} annullato`)
+    showToast(m ?? tt('Invito a {mail} annullato', { mail }))
   }
 
   return (
     <Schermata
-      bar={<BarraIndietro title="Viaggiatori" back="/altro" />}
-      fab={puoiInvitare ? { label: 'Persona', aria: 'Invita una persona', onPress: () => setInvita(true) } : null}
+      bar={<BarraIndietro title={tt('Viaggiatori')} back="/altro" />}
+      fab={puoiInvitare ? { label: tt('Persona'), aria: tt('Invita una persona'), onPress: () => setInvita(true) } : null}
       overlay={
         <>
           <Foglio
             open={invita}
-            title="Invita una persona"
+            title={tt('Invita una persona')}
             onClose={() => (setInvita(false), setError(null))}
             footer={
               <Pulsante isLoading={busy} onPress={() => void invia()}>
-                Invia l’invito
+                {tt('Invia l’invito')}
               </Pulsante>
             }
           >
             <div style={{ display: 'grid', gap: 16 }}>
-              <Campo label="Email" type="email" inputMode="email" icon="mail" value={email} onChange={(v) => (setEmail(v), setError(null))} error={error ?? undefined} placeholder="nome@esempio.it" autoFocus />
+              <Campo label={tt('Email')} type="email" inputMode="email" icon="mail" value={email} onChange={(v) => (setEmail(v), setError(null))} error={error ?? undefined} placeholder={tt('nome@esempio.it')} autoFocus />
               {creatore && conVisualizzatori ? (
-                <Segmenti label="Come entra" value={ruolo} options={[{ value: 'editor', label: 'Partecipante' }, { value: 'viewer', label: 'Visualizzatore' }]} onChange={setRuolo} />
+                <Segmenti label={tt('Come entra')} value={ruolo} options={[{ value: 'editor', label: tt('Partecipante') }, { value: 'viewer', label: tt('Visualizzatore') }]} onChange={setRuolo} />
               ) : null}
               <p className="fa-m" style={{ margin: 0 }}>
-                {ruoloInvito === 'viewer'
-                  ? 'Chi accetta vede oggi, i giorni, alloggi, voli e trasporti, ma non li modifica. Non vede spese, budget, luoghi, prenotazioni, documenti e checklist, e non entra nei conti.'
-                  : 'Chi accetta entra come partecipante e può modificare il viaggio.'}{' '}
-                L’invito vale 7 giorni. La persona lo trova dentro l’app, in Viaggi, appena entra con questo indirizzo: non mandiamo email.
+                {tt('{v0}{v1}L’invito vale 7 giorni. La persona lo trova dentro l’app, in Viaggi, appena entra con questo indirizzo: non mandiamo email.', { v0: ruoloInvito === 'viewer'
+                  ? tt('Chi accetta vede oggi, i giorni, alloggi, voli e trasporti, ma non li modifica. Non vede spese, budget, luoghi, prenotazioni, documenti e checklist, e non entra nei conti.')
+                  : tt('Chi accetta entra come partecipante e può modificare il viaggio.'), v1: ' ' })}
               </p>
             </div>
           </Foglio>
-          <Foglio open={collega !== null} title="Collega a un account" onClose={() => setCollega(null)}>
+          <Foglio open={collega !== null} title={tt('Collega a un account')} onClose={() => setCollega(null)}>
             <div className="legacy">
               {collega ? <LinkAccount onSubmit={(mail) => t.linkTraveler(collega, mail)} onDone={() => setCollega(null)} /> : null}
             </div>
           </Foglio>
           <Foglio
             open={rinomina !== null}
-            title="Nome della persona"
+            title={tt('Nome della persona')}
             onClose={() => setRinomina(null)}
             footer={
               <Pulsante isDisabled={!rinomina?.nome.trim()} onPress={() => void salvaNome()}>
-                Salva il nome
+                {tt('Salva il nome')}
               </Pulsante>
             }
           >
-            {rinomina ? <Campo label="Nome" value={rinomina.nome} onChange={(v) => setRinomina({ ...rinomina, nome: v })} maxLength={40} autoFocus /> : null}
+            {rinomina ? <Campo label={tt('Nome')} value={rinomina.nome} onChange={(v) => setRinomina({ ...rinomina, nome: v })} maxLength={40} autoFocus /> : null}
           </Foglio>
           {confirmNode}
         </>
@@ -160,7 +160,7 @@ export function ViaggiatoriPage() {
       <Affianca>
         <Colonna lato="sinistra">
       {lettura ? (
-        <Banner tone="az" icon="info">Vedi questo viaggio come visualizzatore: puoi seguirlo, ma non modificarlo.</Banner>
+        <Banner tone="az" icon="info">{tt('Vedi questo viaggio come visualizzatore: puoi seguirlo, ma non modificarlo.')}</Banner>
       ) : null}
       <p className="fa-m" style={{ margin: 0 }}>{riepilogoPartecipanti(trip)}</p>
       <div className="fa-list">
@@ -171,30 +171,30 @@ export function ViaggiatoriPage() {
             <RigaApribile
               key={p.id}
               icon={<Avatar initials={initials(p.name)} n={discOf(trip, p.id)} large />}
-              title={`${p.name}${sono ? ' (tu)' : ''}`}
-              sub={p.email ?? (p.userId ? undefined : 'Senza account · da collegare')}
+              title={`${p.name}${sono ? tt(' (tu)') : ''}`}
+              sub={p.email ?? (p.userId ? undefined : tt('Senza account · da collegare'))}
               open={open.isOpen(p.id)}
               onToggle={() => open.toggle(p.id)}
             >
-              <KV icon="user" title={ruoloTesto(p)} sub={p.role === 'owner' ? 'Ha creato il viaggio: invita e toglie le persone, elimina il viaggio' : 'Può modificare il viaggio'} />
+              <KV icon="user" title={ruoloTesto(p)} sub={p.role === 'owner' ? tt('Ha creato il viaggio: invita e toglie le persone, elimina il viaggio') : tt('Può modificare il viaggio')} />
               {!lettura && (creatore || sono) ? (
                 <Azioni>
                   <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => setRinomina({ id: p.id, nome: p.name })}>
-                    Cambia nome
+                    {tt('Cambia nome')}
                   </Pulsante>
                 </Azioni>
               ) : null}
               {creatore && !p.userId ? (
                 <Azioni>
                   <Pulsante size="sm" color="secondary" iconLeading="link" onPress={() => setCollega(p.id)}>
-                    Collega a un account
+                    {tt('Collega a un account')}
                   </Pulsante>
                 </Azioni>
               ) : null}
               {puoiRimuovere ? (
                 <Azioni>
                   <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" isLoading={occ === `rimuovi:${p.id}`} onPress={() => void rimuovi(p.id)}>
-                    Rimuovi dal viaggio
+                    {tt('Rimuovi dal viaggio')}
                   </Pulsante>
                 </Azioni>
               ) : null}
@@ -207,29 +207,29 @@ export function ViaggiatoriPage() {
         <Colonna lato="destra">
       {trip.viewers?.length ? (
         <>
-          <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Visualizzatori</h2>
+          <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>{tt('Visualizzatori')}</h2>
           <div className="fa-list">
             {trip.viewers.map((v) => {
-              const nome = v.email ? v.email.split('@')[0] : 'Visualizzatore'
+              const nome = v.email ? v.email.split('@')[0] : tt('Visualizzatore')
               const io = v.userId === uid
               return (
                 <RigaApribile
                   key={v.userId}
                   className="invito"
                   icon={<Sv name="eye" size={22} />}
-                  title={`${v.email ?? 'Visualizzatore'}${io ? ' (tu)' : ''}`}
-                  sub="Vede il viaggio, non lo modifica"
+                  title={`${v.email ?? tt('Visualizzatore')}${io ? tt(' (tu)') : ''}`}
+                  sub={tt('Vede il viaggio, non lo modifica')}
                   open={open.isOpen(`v:${v.userId}`)}
                   onToggle={() => open.toggle(`v:${v.userId}`)}
                 >
-                  <KV icon="user" title="Visualizzatore" sub="Non è tra i viaggiatori: niente spese, checklist, luoghi, prenotazioni e documenti" />
+                  <KV icon="user" title={tt('Visualizzatore')} sub={tt('Non è tra i viaggiatori: niente spese, checklist, luoghi, prenotazioni e documenti')} />
                   {lettura ? null : (
                     <Azioni>
                       <Pulsante size="sm" color="secondary" iconLeading="user" isLoading={occ === `promuovi:${v.userId}`} onPress={() => void promuovi(v.userId, nome)}>
-                        Rendi partecipante
+                        {tt('Rendi partecipante')}
                       </Pulsante>
                       <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" isLoading={occ === `togli:${v.userId}`} onPress={() => void togliVisualizzatore(v.userId, nome)}>
-                        Togli
+                        {tt('Togli')}
                       </Pulsante>
                     </Azioni>
                   )}
@@ -241,7 +241,7 @@ export function ViaggiatoriPage() {
       ) : null}
       {inviti.length > 0 && !lettura ? (
         <>
-          <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>Inviti</h2>
+          <h2 className="fa-h3" style={{ margin: '8px 0 0' }}>{tt('Inviti')}</h2>
           <div className="fa-list">
             {inviti.map((i) => (
               <RigaApribile
@@ -253,17 +253,17 @@ export function ViaggiatoriPage() {
                 sub={
                   <span className="inv-sub">
                     <Pillola tone={TONO[i.stato]}>{STATO_INVITO[i.stato]}</Pillola>
-                    {[i.role === 'viewer' ? 'Visualizzatore' : null, i.stato === 'inviato' ? scadenzaTesto(i.expiresAt) : null].filter(Boolean).join(' · ')}
+                    {[i.role === 'viewer' ? tt('Visualizzatore') : null, i.stato === 'inviato' ? scadenzaTesto(i.expiresAt) : null].filter(Boolean).join(' · ')}
                   </span>
                 }
                 open={open.isOpen(i.id)}
                 onToggle={() => open.toggle(i.id)}
               >
-                <KV icon="info" title={i.stato === 'inviato' ? 'Aspetta la risposta' : i.stato === 'rifiutato' ? 'Ha rifiutato l’invito' : 'L’invito è scaduto'} sub={i.stato === 'inviato' ? 'La persona deve accettare per vedere il viaggio' : creatore ? 'Puoi invitarla di nuovo' : undefined} />
+                <KV icon="info" title={i.stato === 'inviato' ? tt('Aspetta la risposta') : i.stato === 'rifiutato' ? tt('Ha rifiutato l’invito') : tt('L’invito è scaduto')} sub={i.stato === 'inviato' ? tt('La persona deve accettare per vedere il viaggio') : creatore ? tt('Puoi invitarla di nuovo') : undefined} />
                 {creatore || (partecipante && i.role === 'viewer') ? (
                   <Azioni>
                     <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" isLoading={occ === `invito:${i.id}`} onPress={() => void annulla(i.id, i.email)}>
-                      {i.stato === 'inviato' ? 'Annulla l’invito' : 'Togli dall’elenco'}
+                      {i.stato === 'inviato' ? tt('Annulla l’invito') : tt('Togli dall’elenco')}
                     </Pulsante>
                   </Azioni>
                 ) : null}

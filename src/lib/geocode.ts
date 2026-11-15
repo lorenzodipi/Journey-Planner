@@ -1,3 +1,4 @@
+import { LINGUA } from '../i18n'
 // Ricerca luoghi con OpenStreetMap (Nominatim). Regole d'uso del servizio pubblico:
 // al massimo 1 richiesta al secondo, solo su azione esplicita dell'utente (niente
 // autocompletamento a ogni tasto) e con il Referer del sito, che il browser invia da solo.
@@ -84,7 +85,7 @@ export function searchPlaces(query: string, near?: { lat: number; lng: number })
       limit: '6',
       addressdetails: '1',
       namedetails: '1',
-      'accept-language': 'it',
+      'accept-language': LINGUA,
     })
     if (near) {
       // preferisce (senza obbligare) i risultati vicini alla destinazione del viaggio
@@ -132,7 +133,7 @@ export function reverseGeocode(lat: number, lng: number): Promise<{ address: str
     const wait = lastCall + GAP_MS - Date.now()
     if (wait > 0) await new Promise((r) => setTimeout(r, wait))
     lastCall = Date.now()
-    const params = new URLSearchParams({ lat: String(lat), lon: String(lng), format: 'jsonv2', addressdetails: '1', zoom: '18', 'accept-language': 'it' })
+    const params = new URLSearchParams({ lat: String(lat), lon: String(lng), format: 'jsonv2', addressdetails: '1', zoom: '18', 'accept-language': LINGUA })
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`, { headers: { Accept: 'application/json' } })
       if (!res.ok) throw new Error(`Indirizzo non disponibile (${res.status})`)

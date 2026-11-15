@@ -1,4 +1,5 @@
 import { currencyName } from './money'
+import { t } from '../i18n'
 
 // Tutte le valute per i selettori: quelle che conosce il motore del telefono, altrimenti un elenco ISO 4217 di riserva.
 
@@ -39,7 +40,7 @@ export function currencyGroups(...extra: string[]): GruppoValute[] {
   const prime = Array.from(new Set([...valide(extra).filter((c) => !COMMON_CURRENCIES.includes(c)), ...COMMON_CURRENCIES]))
   const altre = Array.from(new Set(valide(allCurrencies()))).filter((c) => !prime.includes(c)).sort()
   return [
-    { gruppo: 'Più usate', valute: prime.map(voce) },
-    { gruppo: 'Tutte le valute', valute: altre.map(voce) },
+    { gruppo: t('Più usate'), valute: prime.map(voce) },
+    { gruppo: t('Tutte le valute'), valute: altre.map(voce) },
   ]
 }

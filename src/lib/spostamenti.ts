@@ -2,6 +2,7 @@
 // «A piedi») e una soglia sotto cui si va a piedi; ogni spostamento può avere un mezzo scelto a mano e la durata vera.
 // Ordine: mezzo scelto a mano → trasporto del giorno che copre il tratto → a piedi se breve → mezzo del viaggio.
 import type { DayItem, MezzoTratto, MezzoViaggio, TransportMode, Trip } from '../types'
+import { t as tt } from '../i18n'
 
 export type { MezzoTratto, MezzoViaggio }
 /** Il mezzo di un tratto: uno preciso, un trasporto del giorno, o «con i mezzi» generico. */
@@ -18,16 +19,16 @@ export const DETOUR = 1.3
 const KMH: Record<MezzoEffettivo, number> = { walk: 5, transit: 25, metro: 25, bus: 18, train: 45, taxi: 30, car: 45, ferry: 25, plane: 500, other: 25 }
 
 const TESTO: Record<MezzoEffettivo, string> = {
-  walk: 'A piedi',
-  transit: 'Con i mezzi',
-  metro: 'In metro',
-  bus: 'In autobus',
-  train: 'In treno',
-  taxi: 'In taxi',
-  car: 'In auto',
-  ferry: 'In traghetto',
-  plane: 'In aereo',
-  other: 'Con i mezzi',
+  walk: tt('A piedi'),
+  transit: tt('Con i mezzi'),
+  metro: tt('In metro'),
+  bus: tt('In autobus'),
+  train: tt('In treno'),
+  taxi: tt('In taxi'),
+  car: tt('In auto'),
+  ferry: tt('In traghetto'),
+  plane: tt('In aereo'),
+  other: tt('Con i mezzi'),
 }
 /** «a piedi», «in auto»…: per le frasi («8 min a piedi da qui»). */
 export const testoMezzo = (m: MezzoEffettivo) => TESTO[m].toLowerCase()
@@ -48,7 +49,7 @@ const GLIFO: Record<MezzoEffettivo, string> = {
 export const glifoMezzo = (m: MezzoEffettivo) => GLIFO[m]
 
 /** Nome del riquadro nel foglio dello spostamento. */
-export const NOME_MEZZO: Record<MezzoTratto, string> = { walk: 'A piedi', metro: 'Metro', bus: 'Autobus', train: 'Treno', taxi: 'Taxi', car: 'Auto' }
+export const NOME_MEZZO: Record<MezzoTratto, string> = { walk: tt('A piedi'), metro: tt('Metro'), bus: tt('Autobus'), train: tt('Treno'), taxi: tt('Taxi'), car: tt('Auto') }
 
 export interface Impostazioni {
   mezzo: MezzoViaggio
@@ -117,12 +118,12 @@ export function spostamento(lineaAriaM: number, o: { scelto?: MezzoTratto | null
 
 /** «a piedi», «in auto», «tra autobus e a piedi», «tra metro, autobus e a piedi». */
 export function comeCiSiMuove(modi: MezzoEffettivo[]): string {
-  const nomi = [...new Set(modi.map((m) => (m === 'walk' ? 'a piedi' : m === 'transit' || m === 'other' ? 'mezzi pubblici' : TESTO[m].replace(/^In /, '').toLowerCase())))]
+  const nomi = [...new Set(modi.map((m) => (m === 'walk' ? tt('a piedi') : m === 'transit' || m === 'other' ? tt('mezzi pubblici') : TESTO[m].replace(/^In /, '').toLowerCase())))]
   if (nomi.length === 0) return ''
-  if (nomi.length === 1) return nomi[0] === 'a piedi' ? 'a piedi' : nomi[0] === 'mezzi pubblici' ? 'con i mezzi' : TESTO[modi[0]].toLowerCase()
+  if (nomi.length === 1) return nomi[0] === 'a piedi' ? tt('a piedi') : nomi[0] === 'mezzi pubblici' ? tt('con i mezzi') : TESTO[modi[0]].toLowerCase()
   // a piedi per ultimo, come si dice
   const ord = [...nomi.filter((n) => n !== 'a piedi'), ...nomi.filter((n) => n === 'a piedi')]
-  return `tra ${ord.slice(0, -1).join(', ')} e ${ord[ord.length - 1]}`
+  return tt('tra {v0} e {v1}', { v0: ord.slice(0, -1).join(', '), v1: ord[ord.length - 1] })
 }
 
 /** Modo di Google Maps per un insieme di tratti. */
@@ -137,9 +138,9 @@ export function mezzoSuggerito(trip: Pick<Trip, 'destination' | 'bookings' | 'tr
   const paesi = [{ chiave: trip.destination, nome: trip.destination }, ...(trip.countries ?? []).flatMap((c) => [{ chiave: c.name, nome: c.name }, { chiave: c.country, nome: c.name }])]
   const senzaMetro = paesi.find((p) => SENZA_METRO.has((p.chiave ?? '').trim().toLowerCase()))?.nome?.trim()
   const auto = trip.bookings.some((b) => b.type === 'rental') || trip.transports.some((t) => t.mode === 'car')
-  if (auto && senzaMetro) return { mezzo: 'car', perche: `In ${senzaMetro} non c’è la metro e c’è un’auto tra le prenotazioni.` }
-  if (auto) return { mezzo: 'car', perche: 'C’è un’auto tra le prenotazioni.' }
-  if (senzaMetro) return { mezzo: 'car', perche: `In ${senzaMetro} non c’è la metro.` }
+  if (auto && senzaMetro) return { mezzo: 'car', perche: tt('In {senzaMetro} non c’è la metro e c’è un’auto tra le prenotazioni.', { senzaMetro }) }
+  if (auto) return { mezzo: 'car', perche: tt('C’è un’auto tra le prenotazioni.') }
+  if (senzaMetro) return { mezzo: 'car', perche: tt('In {senzaMetro} non c’è la metro.', { senzaMetro }) }
   return null
 }
 /** Paesi senza metropolitana, dove fuori città ci si muove quasi solo in auto (nomi e codici ISO). */

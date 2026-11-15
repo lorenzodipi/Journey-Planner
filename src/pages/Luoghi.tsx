@@ -29,15 +29,16 @@ import { SpostaSheet } from './giorno/SpostaSheet'
 import { FiltriSheet } from './luoghi/FiltriSheet'
 import { LuogoSheet } from './luoghi/LuogoSheet'
 import { TrovaPosizioni } from './luoghi/TrovaPosizioni'
+import { t as tt } from '../i18n'
 
 type Vista = 'elenco' | 'mappa'
 type MapViewComponent = typeof import('../ui/MapView').MapView
 
 const VUOTO_STATO: Record<PlaceStatus, { title: string; text: string }> = {
-  idea: { title: 'Nessun luogo da visitare', text: 'Qui trovi i luoghi salvati che non sono ancora in un giorno.' },
-  planned: { title: 'Nessun luogo in programma', text: 'Quando aggiungi un luogo a un giorno lo trovi qui.' },
-  done: { title: 'Nessun luogo visitato', text: 'Quando segni come fatta una tappa, il suo luogo arriva qui.' },
-  skipped: { title: 'Nessun luogo scartato', text: 'Quando scarti un luogo lo trovi qui, senza che finisca nel programma.' },
+  idea: { title: tt('Nessun luogo da visitare'), text: tt('Qui trovi i luoghi salvati che non sono ancora in un giorno.') },
+  planned: { title: tt('Nessun luogo in programma'), text: tt('Quando aggiungi un luogo a un giorno lo trovi qui.') },
+  done: { title: tt('Nessun luogo visitato'), text: tt('Quando segni come fatta una tappa, il suo luogo arriva qui.') },
+  skipped: { title: tt('Nessun luogo scartato'), text: tt('Quando scarti un luogo lo trovi qui, senza che finisca nel programma.') },
 }
 
 const n = (k: number, one: string, many: string) => `${k} ${k === 1 ? one : many}`
@@ -48,14 +49,14 @@ function RigaFiltri({ filters, onChange, onOpen }: { filters: PlaceFilters; onCh
   const only = filters.statuses.length === 1 ? filters.statuses[0] : null
   return (
     <div className="fa-frow">
-      <button type="button" className={cx('fa-fbtn', active > 0 && 'on')} aria-label={active > 0 ? `Apri i filtri, ${active} attivi` : 'Apri i filtri'} onClick={onOpen}>
+      <button type="button" className={cx('fa-fbtn', active > 0 && 'on')} aria-label={active > 0 ? tt('Apri i filtri, {active} attivi', { active }) : tt('Apri i filtri')} onClick={onOpen}>
         <Sv name="filter" size={18} />
-        Filtri
+        {tt('Filtri')}
         {active > 0 ? <b>{active}</b> : null}
       </button>
-      <div className="fa-chips scroll" role="group" aria-label="Stato">
+      <div className="fa-chips scroll" role="group" aria-label={tt('Stato')}>
         <Chip on={filters.statuses.length === 0} onPress={() => onChange({ ...filters, statuses: [] })}>
-          Tutti
+          {tt('Tutti')}
         </Chip>
         {STATI_LUOGO.map((s) => (
           <Chip key={s} on={only === s} onPress={() => onChange({ ...filters, statuses: only === s ? [] : [s] })}>
@@ -78,7 +79,7 @@ function useAzioniLuogo(trip: Trip) {
     const index = trip.days.findIndex((d) => d.id === dayId)
     const message = await t.createItem(trip.id, dayId, { title: place.name, kind: 'visit', startTime: '', endTime: '', notes: '', placeId: place.id })
     if (message) showToast(message)
-    else showToast(`Aggiunto al Giorno ${index + 1}`)
+    else showToast(tt('Aggiunto al Giorno {v0}', { v0: index + 1 }))
   }
 
   async function remove(list: Place[]): Promise<boolean> {
@@ -86,10 +87,10 @@ function useAzioniLuogo(trip: Trip) {
     const used = list.filter((p) => tappaDelLuogo(trip, p.id)).length
     const one = list.length === 1
     const ok = await ask({
-      title: one ? `Eliminare «${list[0].name}»?` : `Eliminare ${list.length} luoghi?`,
-      message: conDipendenze(used > 0 ? `${one ? 'Resta nelle tappe dei giorni' : 'Le tappe dei giorni restano'}, ma senza il luogo collegato. Puoi annullare subito dopo.` : 'Puoi annullare subito dopo.', one ? dipendenze(trip, 'luogo', list[0].id) : []),
-      confirm: one ? 'Elimina il luogo' : `Elimina ${list.length} luoghi`,
-      cancel: one ? 'Tieni il luogo' : 'Tieni i luoghi',
+      title: one ? tt('Eliminare «{name}»?', { name: list[0].name }) : tt('Eliminare {length} luoghi?', { length: list.length }),
+      message: conDipendenze(used > 0 ? tt('{v0}, ma senza il luogo collegato. Puoi annullare subito dopo.', { v0: one ? tt('Resta nelle tappe dei giorni') : tt('Le tappe dei giorni restano') }) : tt('Puoi annullare subito dopo.'), one ? dipendenze(trip, 'luogo', list[0].id) : []),
+      confirm: one ? tt('Elimina il luogo') : tt('Elimina {length} luoghi', { length: list.length }),
+      cancel: one ? tt('Tieni il luogo') : tt('Tieni i luoghi'),
       destructive: true,
     })
     if (!ok) return false
@@ -99,7 +100,7 @@ function useAzioniLuogo(trip: Trip) {
       showToast(message)
       return false
     }
-    showToast(one ? 'Luogo eliminato' : `${list.length} luoghi eliminati`, { label: 'Annulla', run: () => void t.setPlacesDeleted(ids, false) })
+    showToast(one ? tt('Luogo eliminato') : tt('{length} luoghi eliminati', { length: list.length }), { label: tt('Annulla'), run: () => void t.setPlacesDeleted(ids, false) })
     return true
   }
 
@@ -113,12 +114,12 @@ function useAzioniLuogo(trip: Trip) {
           trip={trip}
           current={trip.days[tappa.dayIndex]}
           open
-          title="Sposta in un altro giorno"
+          title={tt('Sposta in un altro giorno')}
           preferCity={move.place.city}
           onClose={() => setMove(null)}
           onMove={async (dayId) => {
             const m = await t.moveItemToDay(trip.id, tappa.item.id, dayId)
-            if (!m) showToast(`Spostato al Giorno ${trip.days.findIndex((d) => d.id === dayId) + 1}`)
+            if (!m) showToast(tt('Spostato al Giorno {v0}', { v0: trip.days.findIndex((d) => d.id === dayId) + 1 }))
             return m
           }}
         />
@@ -148,14 +149,14 @@ export function Luoghi() {
 }
 
 function sottotitolo(places: Place[]): string {
-  if (places.length === 0) return 'Nessun luogo'
+  if (places.length === 0) return tt('Nessun luogo')
   const cities = new Set(places.map((p) => p.city.trim().toLowerCase()).filter(Boolean)).size
-  return [n(places.length, 'luogo', 'luoghi'), cities > 0 ? n(cities, 'città', 'città') : ''].filter(Boolean).join(' · ')
+  return [n(places.length, tt('luogo'), tt('luoghi')), cities > 0 ? n(cities, tt('città'), tt('città')) : ''].filter(Boolean).join(' · ')
 }
 
 /** Ricerca nei luoghi, sotto la barra: si apre con «Cerca». */
 function CampoCerca({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return <Campo label="Cerca nei tuoi luoghi" hideLabel icon="search" type="search" value={value} onChange={onChange} placeholder="Nome, città o categoria" autoFocus enterKeyHint="search" />
+  return <Campo label={tt('Cerca nei tuoi luoghi')} hideLabel icon="search" type="search" value={value} onChange={onChange} placeholder={tt('Nome, città o categoria')} autoFocus enterKeyHint="search" />
 }
 
 /* ------------------------------------------------------------------ Elenco */
@@ -231,25 +232,25 @@ function Elenco({ setVista, conMappa }: { setVista: (v: Vista) => void; conMappa
 
   const bar = selecting ? (
     <BarraGrande
-      title={chosen.length === 0 ? 'Tocca i luoghi' : n(chosen.length, 'selezionato', 'selezionati')}
-      sub="Scegli i luoghi da eliminare"
+      title={chosen.length === 0 ? tt('Tocca i luoghi') : n(chosen.length, tt('selezionato'), tt('selezionati'))}
+      sub={tt('Scegli i luoghi da eliminare')}
       actions={
         <button type="button" className="fa-btn soft sm" onClick={stopSelecting}>
-          Annulla
+          {tt('Annulla')}
         </button>
       }
     />
   ) : (
     <BarraGrande
-      title="Luoghi"
+      title={tt('Luoghi')}
       sub={sottotitolo(trip.places)}
       actions={
         empty ? (
-          <PulsanteIcona icon={searchOpen ? 'close' : 'search'} label={searchOpen ? 'Chiudi la ricerca' : 'Cerca un luogo'} expanded={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />
+          <PulsanteIcona icon={searchOpen ? 'close' : 'search'} label={searchOpen ? tt('Chiudi la ricerca') : tt('Cerca un luogo')} expanded={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />
         ) : (
           <>
-            <PulsanteIcona icon={searchOpen ? 'close' : 'search'} label={searchOpen ? 'Chiudi la ricerca' : 'Cerca un luogo'} expanded={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />
-            <PulsanteIcona className="dng" icon="trash" label="Elimina dei luoghi" onPress={() => startSelecting()} />
+            <PulsanteIcona icon={searchOpen ? 'close' : 'search'} label={searchOpen ? tt('Chiudi la ricerca') : tt('Cerca un luogo')} expanded={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />
+            <PulsanteIcona className="dng" icon="trash" label={tt('Elimina dei luoghi')} onPress={() => startSelecting()} />
           </>
         )
       }
@@ -260,7 +261,7 @@ function Elenco({ setVista, conMappa }: { setVista: (v: Vista) => void; conMappa
     <Schermata
       bar={bar}
       tabs={!selecting}
-      fab={empty || selecting ? null : { label: 'Luogo', aria: 'Aggiungi un luogo', onPress: az.create }}
+      fab={empty || selecting ? null : { label: tt('Luogo'), aria: tt('Aggiungi un luogo'), onPress: az.create }}
       className={cx(selecting && 'fa-selmode', conMappa && 'fa-lmappa')}
       fisso
       fissa={
@@ -269,11 +270,11 @@ function Elenco({ setVista, conMappa }: { setVista: (v: Vista) => void; conMappa
             {searchOpen ? <CampoCerca value={text} onChange={setText} /> : null}
             {conMappa ? null : (
             <Segmenti
-              label="Vista"
+              label={tt('Vista')}
               value="elenco"
               options={[
-                { value: 'elenco', label: 'Elenco' },
-                { value: 'mappa', label: 'Mappa' },
+                { value: 'elenco', label: tt('Elenco') },
+                { value: 'mappa', label: tt('Mappa') },
               ]}
               onChange={(v) => setVista(v as Vista)}
             />
@@ -287,7 +288,7 @@ function Elenco({ setVista, conMappa }: { setVista: (v: Vista) => void; conMappa
           {selecting ? (
             <div className="fa-selbar">
               <Pulsante color="tertiary-destructive" iconLeading="trash" isDisabled={chosen.length === 0} onPress={() => void az.remove(chosen.map(original)).then((ok) => ok && stopSelecting())}>
-                {chosen.length === 0 ? 'Elimina' : chosen.length === 1 ? 'Elimina 1 luogo' : `Elimina ${chosen.length} luoghi`}
+                {chosen.length === 0 ? tt('Elimina') : chosen.length === 1 ? 'Elimina 1 luogo' : tt('Elimina {length} luoghi', { length: chosen.length })}
               </Pulsante>
             </div>
           ) : null}
@@ -311,15 +312,15 @@ function Elenco({ setVista, conMappa }: { setVista: (v: Vista) => void; conMappa
       }
     >
       {empty ? (
-        <Vuoto art="vuotoLuoghi" title="Nessun luogo salvato" text="Salva qui ristoranti, templi e viste da non perdere. Poi li metti nei giorni che vuoi." action="Aggiungi un luogo" onAction={az.create} />
+        <Vuoto art="vuotoLuoghi" title={tt('Nessun luogo salvato')} text={tt('Salva qui ristoranti, templi e viste da non perdere. Poi li metti nei giorni che vuoi.')} action={tt('Aggiungi un luogo')} onAction={az.create} />
       ) : (
         <>
           {selecting ? null : <TrovaPosizioni />}
           {visible.length === 0 ? (
             only ? (
-              <VuotoFiltro title={VUOTO_STATO[only].title} text={VUOTO_STATO[only].text} action="Mostra tutti i luoghi" onAction={() => setFilters(EMPTY_FILTERS)} />
+              <VuotoFiltro title={VUOTO_STATO[only].title} text={VUOTO_STATO[only].text} action={tt('Mostra tutti i luoghi')} onAction={() => setFilters(EMPTY_FILTERS)} />
             ) : (
-              <VuotoFiltro title="Nessun luogo con questi filtri" text={text ? 'Nessun luogo ha questo nome: prova a scriverlo in un altro modo.' : 'Prova a togliere qualche filtro.'} action="Mostra tutti i luoghi" onAction={() => (setFilters(EMPTY_FILTERS), setText(''))} />
+              <VuotoFiltro title={tt('Nessun luogo con questi filtri')} text={text ? tt('Nessun luogo ha questo nome: prova a scriverlo in un altro modo.') : tt('Prova a togliere qualche filtro.')} action={tt('Mostra tutti i luoghi')} onAction={() => (setFilters(EMPTY_FILTERS), setText(''))} />
             )
           ) : null}
           {selecting && visible.length > 0 ? (
@@ -333,18 +334,18 @@ function Elenco({ setVista, conMappa }: { setVista: (v: Vista) => void; conMappa
               <span className={cx('fa-cbx', chosen.length > 0 && 'on')} aria-hidden="true">
                 {allSelected ? <Sv name="check" size={16} /> : chosen.length > 0 ? <Sv name="minus" size={16} /> : null}
               </span>
-              <span className="t">{allSelected ? 'Deseleziona tutti' : 'Seleziona tutti'}</span>
+              <span className="t">{allSelected ? tt('Deseleziona tutti') : tt('Seleziona tutti')}</span>
               <span className="fa-c">
-                {chosen.length} su {visible.length}
+                {tt('{length} su {length2}', { length: chosen.length, length2: visible.length })}
               </span>
             </button>
           ) : null}
           {groups.map((g) => (
-            <section key={g.key} aria-label={g.title || 'Luoghi'} style={{ display: 'grid', gap: 8 }}>
+            <section key={g.key} aria-label={g.title || tt('Luoghi')} style={{ display: 'grid', gap: 8 }}>
               {g.title ? (
                 <div className="fa-sech">
                   <h2 className="fa-h3">{g.title}</h2>
-                  <span className="fa-c">{n(g.places.length, 'luogo', 'luoghi')}</span>
+                  <span className="fa-c">{n(g.places.length, tt('luogo'), tt('luoghi'))}</span>
                 </div>
               ) : null}
               <div className="k-Luoghi">
@@ -376,10 +377,10 @@ function Elenco({ setVista, conMappa }: { setVista: (v: Vista) => void; conMappa
       )}
       {archiviati.length > 0 ? (
         <button type="button" className="fa-lnk" style={{ justifySelf: 'start' }} onClick={() => setArchOpen(true)}>
-          Archiviati ({archiviati.length})
+          {tt('Archiviati ({length})', { length: archiviati.length })}
         </button>
       ) : null}
-      <Foglio open={archOpen} title="Luoghi archiviati" onClose={() => setArchOpen(false)}>
+      <Foglio open={archOpen} title={tt('Luoghi archiviati')} onClose={() => setArchOpen(false)}>
         <ul className="fa-list">
           {archiviati.map((p) => (
             <li key={p.id} className="fa-row" style={{ minHeight: 52, gridTemplateColumns: 'minmax(0,1fr) auto' }}>
@@ -392,11 +393,11 @@ function Elenco({ setVista, conMappa }: { setVista: (v: Vista) => void; conMappa
                 color="secondary"
                 onPress={async () => {
                   const m = await t.archivePlace(p.id, false)
-                  showToast(m ?? `«${p.name}» ripristinato`)
+                  showToast(m ?? tt('«{name}» ripristinato', { name: p.name }))
                   if (!m && archiviati.length === 1) setArchOpen(false)
                 }}
               >
-                Ripristina
+                {tt('Ripristina')}
               </Pulsante>
             </li>
           ))}
@@ -416,7 +417,7 @@ function FotoLuogo({ trip, place }: { trip: Trip; place: Place }) {
   return (
     <span className="fa-foto">
       <Ic name={discOfPlace(place)} size={44} />
-      {url && bad !== url ? <img src={url} alt={`Foto di ${place.name}`} decoding="async" referrerPolicy="no-referrer" onError={() => setBad(url)} /> : null}
+      {url && bad !== url ? <img src={url} alt={tt('Foto di {name}', { name: place.name })} decoding="async" referrerPolicy="no-referrer" onError={() => setBad(url)} /> : null}
     </span>
   )
 }
@@ -426,11 +427,10 @@ function CreditoFoto({ trip, place }: { trip: Trip; place: Place }) {
   if (photo.status !== 'ready') return null
   return (
     <p className="fa-c" style={{ marginTop: 16 }}>
-      Foto:{' '}
+      {tt('Foto:{v0}', { v0: ' ' })}
       <a href={photo.photo.page} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>
-        Wikimedia Commons
-      </a>{' '}
-      (da «{photo.photo.title}»)
+        {tt('Wikimedia Commons')}
+      </a>{tt('{v0}(da «{title}»)', { v0: ' ', title: photo.photo.title })}
     </p>
   )
 }
@@ -466,20 +466,20 @@ function MappaAccanto({ places, selectedId, onSelect, onIngrandisci }: { places:
   )
 
   return (
-    <aside ref={box} className="fa-lmap" aria-label="Mappa">
+    <aside ref={box} className="fa-lmap" aria-label={tt('Mappa')}>
       <div className="fa-map">
         {View ? (
           <View pins={pins} center={trip.center} selectedId={selectedId} onSelect={onSelect} bare cluster onCluster={(ids) => api.current?.zoomTo(ids)} apiRef={api} />
         ) : (
           <p className="fa-m fa-mapmsg" role="status">
-            {loadError ? 'Non riesco a caricare la mappa: serve la connessione la prima volta.' : <Loader size={32} label="Caricamento della mappa" />}
+            {loadError ? tt('Non riesco a caricare la mappa: serve la connessione la prima volta.') : <Loader size={32} label={tt('Caricamento della mappa')} />}
           </p>
         )}
         <div className="fa-mapctl">
-          <button type="button" className="fa-ib" aria-label="Ingrandisci la mappa" onClick={onIngrandisci}>
+          <button type="button" className="fa-ib" aria-label={tt('Ingrandisci la mappa')} onClick={onIngrandisci}>
             <Sv name="espandi" size={22} />
           </button>
-          <button type="button" className="fa-ib" aria-label="La mia posizione" onClick={() => api.current?.locate()}>
+          <button type="button" className="fa-ib" aria-label={tt('La mia posizione')} onClick={() => api.current?.locate()}>
             <Sv name="pin" size={22} />
           </button>
         </div>
@@ -584,13 +584,13 @@ function Mappa({ setVista, grande }: { setVista: (v: Vista) => void; grande?: bo
     <Schermata
       bare
       className={cx('fa-mapmode', grande && 'fa-mapgrande')}
-      bar={<BarraGrande title="Luoghi" sub={sottotitolo(trip.places)} actions={<PulsanteIcona icon={searchOpen ? 'close' : 'search'} label={searchOpen ? 'Chiudi la ricerca' : 'Cerca un luogo'} expanded={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />} />}
+      bar={<BarraGrande title={tt('Luoghi')} sub={sottotitolo(trip.places)} actions={<PulsanteIcona icon={searchOpen ? 'close' : 'search'} label={searchOpen ? tt('Chiudi la ricerca') : tt('Cerca un luogo')} expanded={searchOpen} onPress={() => (setSearchOpen(!searchOpen), setText(''))} />} />}
       overlay={
         <>
           {fabHidden ? null : (
-            <button type="button" className="fa-fab" aria-label="Aggiungi un luogo" onClick={az.create} style={showCard ? { bottom: `calc(64px + env(safe-area-inset-bottom, 0px) + ${Math.round(cardH) + 24}px)` } : undefined}>
+            <button type="button" className="fa-fab" aria-label={tt('Aggiungi un luogo')} onClick={az.create} style={showCard ? { bottom: `calc(64px + env(safe-area-inset-bottom, 0px) + ${Math.round(cardH) + 24}px)` } : undefined}>
               <Sv name="plus" size={24} />
-              Luogo
+              {tt('Luogo')}
             </button>
           )}
           {filtriOpen ? <FiltriSheet trip={trip} places={places} open filters={filters} onApply={(f) => (setFilters(f), select(null), setNoPosDismissed(''))} onClose={() => setFiltriOpen(false)} /> : null}
@@ -603,7 +603,7 @@ function Mappa({ setVista, grande }: { setVista: (v: Vista) => void; grande?: bo
           <div style={{ position: 'relative', display: 'grid', gap: 8 }}>
             <CampoCerca value={text} onChange={setText} />
             {results.length > 0 ? (
-              <ul className="fa-list fa-mapres" aria-label="Luoghi trovati">
+              <ul className="fa-list fa-mapres" aria-label={tt('Luoghi trovati')}>
                 {results.map((p) => (
                   <li key={p.id}>
                     <button type="button" className="fa-row" onClick={() => pickFromSearch(p)}>
@@ -613,7 +613,7 @@ function Mappa({ setVista, grande }: { setVista: (v: Vista) => void; grande?: bo
                           {p.name}
                         </span>
                         <span className="s" style={{ display: 'block' }}>
-                          {[p.city, p.lat == null ? 'Senza posizione' : STATO_LUOGO[p.status].label].filter(Boolean).join(' · ')}
+                          {[p.city, p.lat == null ? tt('Senza posizione') : STATO_LUOGO[p.status].label].filter(Boolean).join(' · ')}
                         </span>
                       </span>
                       <span className="end" />
@@ -622,17 +622,17 @@ function Mappa({ setVista, grande }: { setVista: (v: Vista) => void; grande?: bo
                 ))}
               </ul>
             ) : q ? (
-              <span className="fa-help">Nessun luogo con questo nome.</span>
+              <span className="fa-help">{tt('Nessun luogo con questo nome.')}</span>
             ) : null}
           </div>
         ) : null}
         {grande ? null : (
           <Segmenti
-            label="Vista"
+            label={tt('Vista')}
             value="mappa"
             options={[
-              { value: 'elenco', label: 'Elenco' },
-              { value: 'mappa', label: 'Mappa' },
+              { value: 'elenco', label: tt('Elenco') },
+              { value: 'mappa', label: tt('Mappa') },
             ]}
             onChange={(v) => setVista(v as Vista)}
           />
@@ -644,16 +644,16 @@ function Mappa({ setVista, grande }: { setVista: (v: Vista) => void; grande?: bo
           <View pins={pins} center={trip.center} selectedId={selectedId} onSelect={select} bare cluster onCluster={(ids) => (setSelectedId(null), setNoPos(null), setClusterIds(ids))} apiRef={api} />
         ) : (
           <p className="fa-m fa-mapmsg" role="status">
-            {loadError ? 'Non riesco a caricare la mappa: serve la connessione la prima volta.' : <Loader size={32} label="Caricamento della mappa" />}
+            {loadError ? tt('Non riesco a caricare la mappa: serve la connessione la prima volta.') : <Loader size={32} label={tt('Caricamento della mappa')} />}
           </p>
         )}
         <div className="fa-mapctl">
           {grande ? (
-            <button type="button" className="fa-ib" aria-label="Riduci la mappa" onClick={() => setVista('elenco')}>
+            <button type="button" className="fa-ib" aria-label={tt('Riduci la mappa')} onClick={() => setVista('elenco')}>
               <Sv name="riduci" size={22} />
             </button>
           ) : null}
-          <button type="button" className="fa-ib" aria-label="La mia posizione" onClick={() => api.current?.locate()}>
+          <button type="button" className="fa-ib" aria-label={tt('La mia posizione')} onClick={() => api.current?.locate()}>
             <Sv name="pin" size={22} />
           </button>
         </div>
@@ -679,9 +679,9 @@ function Mappa({ setVista, grande }: { setVista: (v: Vista) => void; grande?: bo
             ) : clusterIds ? (
               <div className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }}>
                 <div className="fa-sech" style={{ padding: '16px 16px 8px' }}>
-                  <h2 className="fa-h3">{n(clusterIds.length, 'luogo qui', 'luoghi qui')}</h2>
+                  <h2 className="fa-h3">{n(clusterIds.length, tt('luogo qui'), tt('luoghi qui'))}</h2>
                   <button type="button" className="fa-lnk" onClick={() => (api.current?.zoomTo(clusterIds), setClusterIds(null))}>
-                    Ingrandisci
+                    {tt('Ingrandisci')}
                   </button>
                 </div>
                 {clusterIds.map((id) => {
@@ -713,25 +713,25 @@ function Mappa({ setVista, grande }: { setVista: (v: Vista) => void; grande?: bo
                   <Ic name="i-nav-no-pin" size={44} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="fa-b">{np.name}</div>
-                    <div className="fa-m">Non ha una posizione sulla mappa</div>
+                    <div className="fa-m">{tt('Non ha una posizione sulla mappa')}</div>
                   </div>
                   {nopos.ids.length > 1 ? (
                     <span className="fa-npnav">
-                      <button type="button" className="fa-ib" aria-label="Luogo precedente" disabled={nopos.i === 0} onClick={() => setNoPos({ ...nopos, i: nopos.i - 1 })}>
+                      <button type="button" className="fa-ib" aria-label={tt('Luogo precedente')} disabled={nopos.i === 0} onClick={() => setNoPos({ ...nopos, i: nopos.i - 1 })}>
                         <Sv name="back" size={20} />
                       </button>
                       <span className="fa-c">
-                        {nopos.i + 1} di {nopos.ids.length}
+                        {tt('{v0} di {length}', { v0: nopos.i + 1, length: nopos.ids.length })}
                       </span>
-                      <button type="button" className="fa-ib" aria-label="Luogo seguente" disabled={nopos.i >= nopos.ids.length - 1} onClick={() => setNoPos({ ...nopos, i: nopos.i + 1 })}>
+                      <button type="button" className="fa-ib" aria-label={tt('Luogo seguente')} disabled={nopos.i >= nopos.ids.length - 1} onClick={() => setNoPos({ ...nopos, i: nopos.i + 1 })}>
                         <Sv name="chevr" size={20} />
                       </button>
                     </span>
                   ) : null}
                 </div>
-                <p className="fa-m">Aggiungi l’indirizzo e lo vedi qui, con la strada per arrivarci.</p>
+                <p className="fa-m">{tt('Aggiungi l’indirizzo e lo vedi qui, con la strada per arrivarci.')}</p>
                 <button type="button" className="fa-btn out" style={{ minHeight: 44, fontSize: 14 }} onClick={() => az.edit(np, true)}>
-                  Aggiungi la posizione
+                  {tt('Aggiungi la posizione')}
                 </button>
               </div>
             ) : null}
@@ -740,16 +740,16 @@ function Mappa({ setVista, grande }: { setVista: (v: Vista) => void; grande?: bo
         {trip.places.length === 0 ? (
           <div className="fa-mapcard">
             <div className="fa-card xl pad" style={{ display: 'grid', gap: 8, justifyItems: 'start' }}>
-              <h2 className="fa-h3">Nessun luogo salvato</h2>
-              <p className="fa-m">Salva qui ristoranti, templi e viste da non perdere. Poi li metti nei giorni che vuoi.</p>
+              <h2 className="fa-h3">{tt('Nessun luogo salvato')}</h2>
+              <p className="fa-m">{tt('Salva qui ristoranti, templi e viste da non perdere. Poi li metti nei giorni che vuoi.')}</p>
             </div>
           </div>
         ) : visible.length === 0 ? (
           <div className="fa-mapcard">
             {filters.statuses.length === 1 && countActive(filters) === 1 ? (
-              <VuotoFiltro title={VUOTO_STATO[filters.statuses[0]].title} text={VUOTO_STATO[filters.statuses[0]].text} action="Mostra tutti i luoghi" onAction={() => setFilters(EMPTY_FILTERS)} />
+              <VuotoFiltro title={VUOTO_STATO[filters.statuses[0]].title} text={VUOTO_STATO[filters.statuses[0]].text} action={tt('Mostra tutti i luoghi')} onAction={() => setFilters(EMPTY_FILTERS)} />
             ) : (
-              <VuotoFiltro title="Nessun luogo con questi filtri" text="Prova a togliere qualche filtro." action="Mostra tutti i luoghi" onAction={() => setFilters(EMPTY_FILTERS)} />
+              <VuotoFiltro title={tt('Nessun luogo con questi filtri')} text={tt('Prova a togliere qualche filtro.')} action={tt('Mostra tutti i luoghi')} onAction={() => setFilters(EMPTY_FILTERS)} />
             )}
           </div>
         ) : null}

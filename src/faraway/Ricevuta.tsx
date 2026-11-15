@@ -8,6 +8,7 @@ import type { Trip } from '../types'
 import { Ic } from '../ui/Sprite'
 import { Campo, Pulsante } from './base'
 import { cx } from './cx'
+import { nomeCategoria, t as tt } from '../i18n'
 
 const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']
 const segno = (n: number, cur: string) => `${n > 0.004 ? '+' : n < -0.004 ? '−' : ''}${formatMoney(Math.abs(n), cur)}`
@@ -33,7 +34,7 @@ function RigaCat({ c, cur, open, onToggle, onPlanned, onRename, onDelete }: { c:
 
   async function save() {
     const n = planned.trim() ? parseAmount(planned) : null
-    if (planned.trim() && (n === null || n < 0)) return setError('Il previsto non è chiaro: scrivi un importo, per esempio 600.')
+    if (planned.trim() && (n === null || n < 0)) return setError(tt('Il previsto non è chiaro: scrivi un importo, per esempio 600.'))
     setBusy(true)
     let m: string | null = null
     if (c.personale && label.trim() && label.trim() !== c.label) m = await onRename(c, label.trim())
@@ -49,7 +50,7 @@ function RigaCat({ c, cur, open, onToggle, onPlanned, onRename, onDelete }: { c:
         <Ic name={c.icon} size={32} />
         <div>
           <div className="ln">
-            <span className="l">{c.label}</span>
+            <span className="l">{nomeCategoria(c.label)}</span>
             <span className="d" />
             <span className="v">{formatMoney(c.spent, cur)}</span>
           </div>
@@ -59,28 +60,28 @@ function RigaCat({ c, cur, open, onToggle, onPlanned, onRename, onDelete }: { c:
       </button>
       {open ? (
         <div className="fa-rcat-ed">
-          {c.personale ? <Campo label="Nome della categoria" value={label} onChange={setLabel} maxLength={40} /> : null}
+          {c.personale ? <Campo label={tt('Nome della categoria')} value={label} onChange={setLabel} maxLength={40} /> : null}
           <Campo
-            label="Previsto"
+            label={tt('Previsto')}
             icon="bag"
             inputMode="decimal"
             value={planned}
             onChange={setPlanned}
-            placeholder={`Per esempio ${formatMoney(c.planned || 100, cur)}`}
-            hint={c.plannedSet ? undefined : c.planned > 0 ? `Senza una cifra conta ${formatMoney(c.planned, cur)}, calcolato dai costi inseriti.` : 'Quanto pensi di spendere per questa categoria.'}
+            placeholder={tt('Per esempio {v0}', { v0: formatMoney(c.planned || 100, cur) })}
+            hint={c.plannedSet ? undefined : c.planned > 0 ? tt('Senza una cifra conta {v0}, calcolato dai costi inseriti.', { v0: formatMoney(c.planned, cur) }) : tt('Quanto pensi di spendere per questa categoria.')}
             error={error}
           />
           <div className="acts">
             <Pulsante size="sm" iconLeading="save" onPress={() => void save()} isLoading={busy}>
-              Salva
+              {tt('Salva')}
             </Pulsante>
             {c.personale && c.id ? (
               <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={() => void onDelete(c)}>
-                Elimina
+                {tt('Elimina')}
               </Pulsante>
             ) : (
               <Pulsante size="sm" color="secondary" onPress={onToggle}>
-                Annulla
+                {tt('Annulla')}
               </Pulsante>
             )}
           </div>
@@ -98,14 +99,14 @@ export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilan
   const nome = (id: string) => trip.travelers.find((t) => t.id === id)?.name.split(/\s+/)[0] ?? '—'
   return (
     <div className="k-Ricevuta">
-      <div className="rc" role="group" aria-label="Ricevuta del riepilogo spese">
+      <div className="rc" role="group" aria-label={tt('Ricevuta del riepilogo spese')}>
         <div className="rb">
           <div className="rh">
-            <span className="br">Faraway</span>
-            <span className="t">Riepilogo spese</span>
+            <span className="br">{tt('Faraway')}</span>
+            <span className="t">{tt('Riepilogo spese')}</span>
             <span className="s">{sub}</span>
           </div>
-          <div className="sc">Per categoria</div>
+          <div className="sc">{tt('Per categoria')}</div>
           <div className="cats">
             {dati.categorie.map((c) => (
               <RigaCat key={`${c.key}:${c.planned}:${c.label}`} c={c} cur={cur} open={open === c.key} onToggle={() => setOpen(open === c.key ? null : c.key)} onPlanned={onPlanned} onRename={onRename} onDelete={onDelete} />
@@ -113,31 +114,31 @@ export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilan
           </div>
           <div className="tot">
             <div className="ln m">
-              <span className="l">Previsto</span>
+              <span className="l">{tt('Previsto')}</span>
               <span className="d" />
               <span className="v">{formatMoney(dati.previsto, cur)}</span>
             </div>
             <div className="ln m">
-              <span className="l">Già pagato</span>
+              <span className="l">{tt('Già pagato')}</span>
               <span className="d" />
               <span className="v">{formatMoney(dati.pagato, cur)}</span>
             </div>
             {mio ? (
               <div className="ln m">
-                <span className="l">La tua quota</span>
+                <span className="l">{tt('La tua quota')}</span>
                 <span className="d" />
                 <span className="v">{formatMoney(mio.quota, cur)}</span>
               </div>
             ) : null}
             <div className="ln b">
-              <span className="l">Da pagare</span>
+              <span className="l">{tt('Da pagare')}</span>
               <span className="d" />
               <span className="v">{formatMoney(dati.daPagare, cur)}</span>
             </div>
           </div>
           {gruppo ? (
             <div className="per">
-              <div className="sc">Saldo a persona</div>
+              <div className="sc">{tt('Saldo a persona')}</div>
               {dati.persone.map((p) => {
                 const t = trip.travelers.find((x) => x.id === p.travelerId)
                 const tone = p.net > 0.004 ? 'pos' : p.net < -0.004 ? 'neg' : 'zero'
@@ -157,17 +158,17 @@ export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilan
           ) : null}
           {gruppo && dati.transfers.length > 0 ? (
             <div className="pr">
-              <div className="sc">Per pareggiare</div>
+              <div className="sc">{tt('Per pareggiare')}</div>
               {dati.transfers.map((x, i) => {
                 const altro = bilancia ? (x.from === bilancia.me ? x.to : x.to === bilancia.me ? x.from : null) : null
                 return (
                   <div key={i} className="t">
                     <span>
-                      {nome(x.from)} deve {formatMoney(x.amount, cur)} a <b>{nome(x.to)}</b>
+                      {tt('{v0} deve {v1} a', { v0: nome(x.from), v1: formatMoney(x.amount, cur) })}{' '}<b>{nome(x.to)}</b>
                     </span>
                     {bilancia && altro && bilancia.con.has(altro) ? (
-                      <button type="button" className="bil" aria-label={`Bilancia tutte le spese con ${nome(altro)}`} onClick={() => bilancia.onPress(altro)}>
-                        Bilancia tutte le spese
+                      <button type="button" className="bil" aria-label={tt('Bilancia tutte le spese con {v0}', { v0: nome(altro) })} onClick={() => bilancia.onPress(altro)}>
+                        {tt('Bilancia tutte le spese')}
                       </button>
                     ) : null}
                   </div>
@@ -175,7 +176,7 @@ export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilan
               })}
             </div>
           ) : null}
-          {dati.unconverted.length > 0 ? <div className="ft">Senza cambio, non contate nei totali: {dati.unconverted.join(', ')}</div> : null}
+          {dati.unconverted.length > 0 ? <div className="ft">{tt('Senza cambio, non contate nei totali: {v0}', { v0: dati.unconverted.join(', ') })}</div> : null}
         </div>
         <div className="rz" />
       </div>

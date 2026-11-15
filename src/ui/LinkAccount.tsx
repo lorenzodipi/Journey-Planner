@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { FormError, PrimaryButton, TextField } from './Field'
+import { t } from '../i18n'
 
 interface Props {
   onSubmit: (email: string) => Promise<string | null>
@@ -14,7 +15,7 @@ export function LinkAccount({ onSubmit, onDone }: Props) {
 
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError('Scrivi un indirizzo email valido.')
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError(t('Scrivi un indirizzo email valido.'))
     setBusy(true)
     setError(null)
     const message = await onSubmit(email.trim().toLowerCase())
@@ -25,13 +26,13 @@ export function LinkAccount({ onSubmit, onDone }: Props) {
 
   return (
     <form className="space-y-3 rounded-[20px] border border-hairline p-4" onSubmit={submit} noValidate>
-      <h3 className="font-extrabold">Collega a un account</h3>
+      <h3 className="font-extrabold">{t('Collega a un account')}</h3>
       <p className="text-sm text-muted">
-        Questa persona non ha ancora un account collegato. Scrivi la sua email: le spese e le voci già assegnate restano com'è.
+        {t('Questa persona non ha ancora un account collegato. Scrivi la sua email: le spese e le voci già assegnate restano com\'è.')}
       </p>
-      <TextField label="Email del suo account" value={email} onChange={setEmail} autoComplete="off" />
+      <TextField label={t('Email del suo account')} value={email} onChange={setEmail} autoComplete="off" />
       <FormError message={error} />
-      <PrimaryButton busy={busy}>{busy ? 'Collego…' : 'Collega account'}</PrimaryButton>
+      <PrimaryButton busy={busy}>{busy ? t('Collego…') : t('Collega account')}</PrimaryButton>
     </form>
   )
 }

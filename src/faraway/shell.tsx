@@ -13,6 +13,7 @@ import { PillolaOffline, StatoRete } from './Rete'
 import { useNovitaRimborsi, useRichiesteDaDecidere } from '../pages/spese/Rimborsi'
 import { useTrips } from '../state/trip'
 import { paginaPermessa, soloLettura } from '../lib/ruolo'
+import { t as tt, tc, tv } from '../i18n'
 
 const TABS = [
   { href: '/', label: 'Oggi' },
@@ -41,7 +42,7 @@ export function BarraSchede() {
   const richieste = useRichiesteDaDecidere(attivo).length + useNovitaRimborsi(attivo).nuovi.length
   const schede = soloLettura(attivo) ? TABS.filter((t) => paginaPermessa(t.href, attivo)) : TABS
   return (
-    <nav className={cx('fa-tabs', schede.length === 3 && 'tre')} aria-label="Sezioni">
+    <nav className={cx('fa-tabs', schede.length === 3 && 'tre')} aria-label={tt('Sezioni')}>
       {schede.map((t) => {
         const on = t.label === active
         return (
@@ -50,9 +51,9 @@ export function BarraSchede() {
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 {TAB_PATHS[t.label]}
               </svg>
-              {t.label === 'Spese' && richieste > 0 ? <span className="fa-tbn" role="img" aria-label={`${richieste} richieste di rimborso da confermare`}>{richieste}</span> : null}
+              {t.label === 'Spese' && richieste > 0 ? <span className="fa-tbn" role="img" aria-label={tt('{richieste} richieste di rimborso da confermare', { richieste })}>{richieste}</span> : null}
             </span>
-            <span className="tl" data-adatta="">{t.label}</span>
+            <span className="tl" data-adatta="">{t.label === 'Altro' ? tc('Altro', 'scheda') : tv(t.label)}</span>
           </Link>
         )
       })}
@@ -157,7 +158,7 @@ export function BarraIndietro({ title, back, right, senzaIndietro }: { title: Re
   return (
     <div className="fa-bar">
       <div className="tp back">
-        {senzaIndietro ? <span aria-hidden="true" style={{ minWidth: 44 }} /> : <PulsanteIcona icon="back" label="Indietro" onPress={goBack} />}
+        {senzaIndietro ? <span aria-hidden="true" style={{ minWidth: 44 }} /> : <PulsanteIcona icon="back" label={tt('Indietro')} onPress={goBack} />}
         <h1 className="mid" data-adatta="" data-adatta-min="0.75">{title}</h1>
         <span style={{ display: 'flex', gap: 8, minWidth: 44, justifyContent: 'flex-end' }}>{right}</span>
       </div>
@@ -168,7 +169,7 @@ export function BarraIndietro({ title, back, right, senzaIndietro }: { title: Re
 /** Pulsante volante «+ Cosa» in basso a destra: testo bianco in chiaro e in scuro. */
 export function Fab({ label, onPress, aria }: { label: string; onPress: () => void; aria?: string }) {
   return (
-    <button type="button" className="fa-fab" onClick={onPress} aria-label={aria ?? `Aggiungi ${label.toLowerCase()}`}>
+    <button type="button" className="fa-fab" onClick={onPress} aria-label={aria ?? tt('Aggiungi {v0}', { v0: label.toLowerCase() })}>
       <Sv name="plus" size={24} />
       {label}
     </button>

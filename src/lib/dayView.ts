@@ -3,6 +3,7 @@
 import { dateInZone } from './flights'
 import { eventsForDay, type DayEvent } from './today'
 import type { Booking, ChecklistItem, Day, Expense, Stay, Trip } from '../types'
+import { t as tt } from '../i18n'
 
 /** Voli, check-in/out e trasporti del giorno; i trasporti senza orario vengono dopo quelli con l'orario. */
 export function dayMovements(trip: Pick<Trip, 'timezone' | 'flights' | 'stays' | 'transports'>, day: Pick<Day, 'id' | 'date'>): DayEvent[] {
@@ -13,11 +14,11 @@ export function dayMovements(trip: Pick<Trip, 'timezone' | 'flights' | 'stays' |
       at: `${day.date}T23:30:00.000Z`,
       time: '',
       title: `${t.from} → ${t.to}`,
-      sub: t.refCode ? `Codice ${t.refCode}` : 'Orario da definire',
+      sub: t.refCode ? tt('Codice {refCode}', { refCode: t.refCode }) : tt('Orario da definire'),
       kind: 'transport' as const,
       ref: { type: 'transport' as const, id: t.id },
       mode: t.mode,
-      flag: t.bought ? { text: 'Biglietto acquistato', ok: true } : { text: 'Biglietto non acquistato', ok: false },
+      flag: t.bought ? { text: tt('Biglietto acquistato'), ok: true } : { text: tt('Biglietto non acquistato'), ok: false },
     }))
   return [...events, ...untimed]
 }

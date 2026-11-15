@@ -9,6 +9,7 @@ Queste pagine dicono che cosa è l'app e come si lavora: per chi scrive codice, 
 | [03-modali-e-moduli.md](03-modali-e-moduli.md) | Fogli dal basso, modali al centro, moduli: struttura, gruppi, campi, testi |
 | [04-accessibilita.md](04-accessibilita.md) | Le regole WCAG 2.2 AA applicate all'app, con i controlli da fare |
 | [05-css-e-stile.md](05-css-e-stile.md) | Token, temi chiaro e scuro, spaziature, tipografia, componenti, cosa non scrivere nel CSS |
+| [06-lingue.md](06-lingue.md) | Italiano e inglese: come si scrive un testo con `t()`, cosa non si traduce, come si aggiunge una lingua |
 
 Il riferimento visivo è il design system «Faraway Definitivo» (artifact su claude.ai). Se una regola qui e il design system non coincidono, vale l'app com'è oggi: si aggiorna il design system, non il contrario.
 

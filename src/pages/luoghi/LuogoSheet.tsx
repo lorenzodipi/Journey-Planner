@@ -27,6 +27,7 @@ import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { OrariEditor } from './OrariEditor'
 import { useInCorso } from '../../faraway/Attesa'
+import { nomeCategoria, t as tt } from '../../i18n'
 
 type PinPickerComponent = typeof import('../../ui/MapView').PinPicker
 
@@ -39,13 +40,13 @@ const toNumber = (text: string): number | null => {
 
 const ALTRA = '__altra__'
 /** Scelte rapide di «Quanto ci si ferma», in minuti. */
-const DURATE: [number, string][] = [[30, '30 min'], [60, '1 h'], [90, '1 h 30'], [120, '2 h'], [180, '3 h'], [240, 'Mezza giornata']]
+const DURATE: [number, string][] = [[30, '30 min'], [60, '1 h'], [90, '1 h 30'], [120, '2 h'], [180, '3 h'], [240, tt('Mezza giornata')]]
 
 // «In programma» non si sceglie: si mette da solo quando il luogo è in una tappa
 const SCELTE: { value: PlaceStatus; label: string; icona: 'pin' | 'check' | 'close' }[] = [
-  { value: 'idea', label: 'Da visitare', icona: 'pin' },
-  { value: 'done', label: 'Visitato', icona: 'check' },
-  { value: 'skipped', label: 'Scartato', icona: 'close' },
+  { value: 'idea', label: tt('Da visitare'), icona: 'pin' },
+  { value: 'done', label: tt('Visitato'), icona: 'check' },
+  { value: 'skipped', label: tt('Scartato'), icona: 'close' },
 ]
 
 interface Props {
@@ -130,7 +131,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
     if (!place) return
     const m = await faiOcc('archivia', () => t.archivePlace(place.id, true))
     if (m) return showToast(m)
-    showToast(`«${place.name}» archiviato`, { label: 'Annulla', run: () => void t.archivePlace(place.id, false) })
+    showToast(tt('«{name}» archiviato', { name: place.name }), { label: tt('Annulla'), run: () => void t.archivePlace(place.id, false) })
     onClose()
   }
 
@@ -142,7 +143,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
       setResults(await searchPlaces(query, trip.center))
     } catch (e) {
       setResults(null)
-      setSearchError(e instanceof Error ? e.message : 'Ricerca non riuscita. Controlla la connessione.')
+      setSearchError(e instanceof Error ? e.message : tt('Ricerca non riuscita. Controlla la connessione.'))
     } finally {
       setSearching(false)
     }
@@ -167,35 +168,35 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
       setLat(String(info.lat))
       setLng(String(info.lng))
       if (!name.trim() && info.name) setName(info.name)
-      setLinkHint({ ok: true, text: 'Posizione letta dal link' })
+      setLinkHint({ ok: true, text: tt('Posizione letta dal link') })
       // città e indirizzo dalle coordinate (solo i campi ancora vuoti)
       if (!city.trim() || !address.trim()) {
         reverseGeocode(info.lat, info.lng)
           .then((r) => {
             if (!city.trim() && r.city) setCity(r.city)
             if (!address.trim() && r.address) setAddress(r.address)
-            if (r.city || r.address) setLinkHint({ ok: true, text: 'Posizione, città e indirizzo letti dal link: controlla che siano giusti.' })
+            if (r.city || r.address) setLinkHint({ ok: true, text: tt('Posizione, città e indirizzo letti dal link: controlla che siano giusti.') })
           })
           .catch(() => undefined)
       }
     } else {
-      setLinkHint({ ok: false, text: 'Non trovo la posizione in questo link. I link corti (maps.app.goo.gl) non si leggono: aprilo e incolla quello lungo dalla barra del browser, oppure cerca il luogo qui sopra.' })
+      setLinkHint({ ok: false, text: tt('Non trovo la posizione in questo link. I link corti (maps.app.goo.gl) non si leggono: aprilo e incolla quello lungo dalla barra del browser, oppure cerca il luogo qui sopra.') })
     }
   }
 
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     setTentativi((n) => n + 1)
-    if (!name.trim()) return setError('Scrivi il nome del luogo.')
+    if (!name.trim()) return setError(tt('Scrivi il nome del luogo.'))
     const latN = toNumber(lat)
     const lngN = toNumber(lng)
-    if (Number.isNaN(latN) || Number.isNaN(lngN)) return setError('Latitudine e longitudine devono essere numeri, per esempio 35,0116.')
-    if ((latN === null) !== (lngN === null)) return setError('Scrivi sia la latitudine sia la longitudine, oppure nessuna delle due.')
-    if (latN !== null && (Math.abs(latN) > 90 || Math.abs(lngN as number) > 180)) return setError('Le coordinate sono fuori dalla mappa: controlla i numeri.')
+    if (Number.isNaN(latN) || Number.isNaN(lngN)) return setError(tt('Latitudine e longitudine devono essere numeri, per esempio 35,0116.'))
+    if ((latN === null) !== (lngN === null)) return setError(tt('Scrivi sia la latitudine sia la longitudine, oppure nessuna delle due.'))
+    if (latN !== null && (Math.abs(latN) > 90 || Math.abs(lngN as number) > 180)) return setError(tt('Le coordinate sono fuori dalla mappa: controlla i numeri.'))
     const visitN = parseDuration(visit)
-    if (Number.isNaN(visitN)) return setError('La durata non è chiara: scrivi per esempio 45min o 1h 30min.')
+    if (Number.isNaN(visitN)) return setError(tt('La durata non è chiara: scrivi per esempio 45min o 1h 30min.'))
     const bad = spec && Object.values(spec.w).some((f) => f?.some((x) => !x.from || !x.to))
-    if (bad) return setError('In un giorno manca l’ora di apertura o di chiusura.')
+    if (bad) return setError(tt('In un giorno manca l’ora di apertura o di chiusura.'))
     const cleaned = spec ? (cleanSpec(spec) ?? null) : null
 
     if (!(await procediConflitto())) return
@@ -235,24 +236,24 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
     <Foglio
       open={open}
       full
-      title={editing ? 'Modifica luogo' : 'Nuovo luogo'}
+      title={editing ? tt('Modifica luogo') : tt('Nuovo luogo')}
       onClose={onClose}
       footer={
         <Pulsante type="submit" form="luogo-form" isLoading={busy}>
-          {editing ? 'Salva le modifiche' : 'Aggiungi il luogo'}
+          {editing ? tt('Salva le modifiche') : tt('Aggiungi il luogo')}
         </Pulsante>
       }
     >
       <form id="luogo-form" className="frm grp" onSubmit={submit} noValidate style={{ overflow: 'visible' }}>
-        <Gruppo titolo="Trova il luogo">
+        <Gruppo titolo={tt('Trova il luogo')}>
           <div style={{ display: 'grid', gap: 8 }}>
             <Campo
-              label="Cerca su OpenStreetMap"
+              label={tt('Cerca su OpenStreetMap')}
               icon="search"
               type="search"
               value={query}
               onChange={setQuery}
-              placeholder="Nome o indirizzo"
+              placeholder={tt('Nome o indirizzo')}
               enterKeyHint="search"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -262,7 +263,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
               }}
               trailing={
                 <button type="button" className="fa-btn soft sm" style={{ minHeight: 36, padding: '0 16px' }} disabled={searching || !query.trim()} onClick={() => void search()}>
-                  {searching ? <Loader size={16} label="Ricerca in corso" /> : 'Cerca'}
+                  {searching ? <Loader size={16} label={tt('Ricerca in corso')} /> : tt('Cerca')}
                 </button>
               }
             />
@@ -272,9 +273,9 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
                 {searchError}
               </span>
             ) : null}
-            {results && results.length === 0 ? <span className="fa-help">Nessun risultato: prova con un altro nome o aggiungi la città.</span> : null}
+            {results && results.length === 0 ? <span className="fa-help">{tt('Nessun risultato: prova con un altro nome o aggiungi la città.')}</span> : null}
             {results && results.length > 0 ? (
-              <ul className="fa-list" aria-label="Risultati">
+              <ul className="fa-list" aria-label={tt('Risultati')}>
                 {results.map((r, i) => (
                   <li key={i}>
                     <button type="button" className="fa-row" style={{ minHeight: 52, gridTemplateColumns: '20px minmax(0,1fr) auto', width: '100%' }} onClick={() => pick(r)}>
@@ -295,29 +296,29 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
             ) : null}
           </div>
           <Campo
-            label="Oppure incolla un link di Google Maps"
+            label={tt('Oppure incolla un link di Google Maps')}
             icon="link"
             value={mapsUrl}
             onChange={onLink}
-            placeholder="es. google.com/maps/…"
+            placeholder={tt('es. google.com/maps/…')}
             autoComplete="off"
             positive={linkHint?.ok ? linkHint.text : undefined}
-            hint={linkHint ? (linkHint.ok ? undefined : linkHint.text) : 'Compilo da solo nome, città, indirizzo e posizione.'}
+            hint={linkHint ? (linkHint.ok ? undefined : linkHint.text) : tt('Compilo da solo nome, città, indirizzo e posizione.')}
           />
         </Gruppo>
 
-        <Gruppo titolo="Il luogo">
-          <Campo label="Nome" value={name} onChange={setName} maxLength={120} placeholder="es. Mercato centrale" />
+        <Gruppo titolo={tt('Il luogo')}>
+          <Campo label={tt('Nome')} value={name} onChange={setName} maxLength={120} placeholder={tt('es. Mercato centrale')} />
           {doppioni.length > 0 ? (
             <span className="fa-help" role="status">
               <Sv name="warn" size={16} />
-              {testoDoppione(name.trim(), doppioni[0])}. Puoi salvare lo stesso.
+              {tt('{v0}. Puoi salvare lo stesso.', { v0: testoDoppione(name.trim(), doppioni[0]) })}
             </span>
           ) : null}
-          <Campo label="Nome nella lingua del posto" value={nameLocal} onChange={setNameLocal} maxLength={120} hint="Da mostrare a un tassista" placeholder="Copialo da Google Maps" />
-          <Campo label="Città" icon="pin" value={city} onChange={setCity} autoComplete="off" placeholder="Città" />
+          <Campo label={tt('Nome nella lingua del posto')} value={nameLocal} onChange={setNameLocal} maxLength={120} hint={tt('Da mostrare a un tassista')} placeholder={tt('Copialo da Google Maps')} />
+          <Campo label={tt('Città')} icon="pin" value={city} onChange={setCity} autoComplete="off" placeholder={tt('Città')} />
           <Riquadri<string>
-            label="Categoria"
+            label={tt('Categoria')}
             cols={4}
             value={catScelta}
             deselezionabile
@@ -326,30 +327,30 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
               setOtherCat(false)
               setCategory(v)
             }}
-            options={[...catOpzioni.map((c) => ({ value: c, label: c, glifo: glifoCategoria(c) })), { value: ALTRA, label: 'Altra…', glifo: 'g-plus' }]}
+            options={[...catOpzioni.map((c) => ({ value: c, label: nomeCategoria(c), glifo: glifoCategoria(c) })), { value: ALTRA, label: tt('Altra…'), glifo: 'g-plus' }]}
           >
-            {otherCat ? <Campo label="Nuova categoria" hideLabel value={category} onChange={setCategory} placeholder="es. Terme" maxLength={40} autoFocus /> : null}
+            {otherCat ? <Campo label={tt('Nuova categoria')} hideLabel value={category} onChange={setCategory} placeholder={tt('es. Terme')} maxLength={40} autoFocus /> : null}
             {otherCat ? <SceltaIcona value={icona ?? iconaDalNome(category)} onChange={setIcona} /> : null}
           </Riquadri>
-          <Riquadri<PlaceStatus> label="Stato" cols={3} value={status} onChange={(v) => v && setStatus(v)} options={SCELTE}>
-            <span className="fa-help">«In programma» si mette da solo quando il luogo è in una tappa.</span>
+          <Riquadri<PlaceStatus> label={tt('Stato')} cols={3} value={status} onChange={(v) => v && setStatus(v)} options={SCELTE}>
+            <span className="fa-help">{tt('«In programma» si mette da solo quando il luogo è in una tappa.')}</span>
           </Riquadri>
-          <Campo label="Sito web" icon="link" type="url" inputMode="url" value={website} onChange={setWebsite} placeholder="https://…" autoComplete="off" />
+          <Campo label={tt('Sito web')} icon="link" type="url" inputMode="url" value={website} onChange={setWebsite} placeholder="https://…" autoComplete="off" />
         </Gruppo>
 
-        <Gruppo titolo="La visita">
+        <Gruppo titolo={tt('La visita')}>
           {place ? (
-            <div className="fa-fld" role="group" aria-label="La mia preferenza">
-              La mia preferenza
+            <div className="fa-fld" role="group" aria-label={tt('La mia preferenza')}>
+              {tt('La mia preferenza')}
               <div className="fa-chips wrap">
-                <Chip on={pref === 'must'} onPress={() => void scegliPref('must')}>Da non perdere</Chip>
-                <Chip on={pref === 'if_time'} onPress={() => void scegliPref('if_time')}>Se c’è tempo</Chip>
+                <Chip on={pref === 'must'} onPress={() => void scegliPref('must')}>{tt('Da non perdere')}</Chip>
+                <Chip on={pref === 'if_time'} onPress={() => void scegliPref('if_time')}>{tt('Se c’è tempo')}</Chip>
               </div>
-              <span className="fa-help">La vedi solo tu, gli altri non la vedono.</span>
+              <span className="fa-help">{tt('La vedi solo tu, gli altri non la vedono.')}</span>
             </div>
           ) : null}
-          <div className="fa-fld" role="group" aria-label="Quanto ci si ferma">
-            Quanto ci si ferma
+          <div className="fa-fld" role="group" aria-label={tt('Quanto ci si ferma')}>
+            {tt('Quanto ci si ferma')}
             <div className="fa-chips wrap">
               {DURATE.map(([m, l]) => (
                 <Chip key={m} on={rapida === m} onPress={() => (setAltraDurata(false), setVisit(rapida === m ? '' : formatDuration(m)))}>
@@ -357,18 +358,18 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
                 </Chip>
               ))}
               <Chip on={altraDurata || (rapida === null && !!visit.trim())} onPress={() => setAltraDurata(true)}>
-                Altro…
+                {tt('Altro…')}
               </Chip>
             </div>
           </div>
-          {altraDurata || (rapida === null && !!visit.trim()) ? <CampoDurata label="Durata" value={visit} onChange={setVisit} placeholder="es. 1h 15min" /> : null}
+          {altraDurata || (rapida === null && !!visit.trim()) ? <CampoDurata label={tt('Durata')} value={visit} onChange={setVisit} placeholder={tt('es. 1h 15min')} /> : null}
           <OrariEditor value={spec} onChange={setSpec} legacyText={place?.openingHours} />
-          <Campo label="Note" textarea value={notes} onChange={setNotes} placeholder="es. Meglio andarci al mattino presto" />
+          <Campo label={tt('Note')} textarea value={notes} onChange={setNotes} placeholder={tt('es. Meglio andarci al mattino presto')} />
         </Gruppo>
 
         <div ref={posRef} style={{ scrollMarginTop: 16, display: 'grid' }}>
-          <Gruppo titolo="Posizione">
-            <Campo label="Indirizzo" icon="pin" value={address} onChange={setAddress} placeholder="Via e numero" />
+          <Gruppo titolo={tt('Posizione')}>
+            <Campo label={tt('Indirizzo')} icon="pin" value={address} onChange={setAddress} placeholder={tt('Via e numero')} />
             {showMap ? (
               <div style={{ display: 'grid', gap: 8 }}>
                 {Picker ? (
@@ -384,24 +385,24 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
                     />
                   </div>
                 ) : (
-                  <Loader size={24} label="Caricamento della mappa" />
+                  <Loader size={24} label={tt('Caricamento della mappa')} />
                 )}
-                <span className="fa-help">Trascina il pin o tocca la mappa per correggere la posizione.</span>
+                <span className="fa-help">{tt('Trascina il pin o tocca la mappa per correggere la posizione.')}</span>
               </div>
             ) : (
               <button type="button" className="fa-btn out" style={{ minHeight: 44, fontSize: 14 }} onClick={() => setShowMap(true)}>
                 <Sv name="pin" size={20} />
-                Aggiusta il pin sulla mappa
+                {tt('Aggiusta il pin sulla mappa')}
               </button>
             )}
           </Gruppo>
         </div>
 
         {visite.length > 0 || prenotazioni.length > 0 ? (
-          <Gruppo titolo="Nel viaggio">
+          <Gruppo titolo={tt('Nel viaggio')}>
             {visite.length > 0 ? (
-              <div className="fa-fld" role="group" aria-label="Visite">
-                Visite
+              <div className="fa-fld" role="group" aria-label={tt('Visite')}>
+                {tt('Visite')}
                 <ul className="fa-list">
                   {visite.map((v) => (
                     <li key={v.itemId} className="fa-row" style={{ minHeight: 44, gridTemplateColumns: 'minmax(0,1fr) auto' }}>
@@ -413,8 +414,8 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
               </div>
             ) : null}
             {prenotazioni.length > 0 ? (
-              <div className="fa-fld" role="group" aria-label="Prenotazioni">
-                Prenotazioni
+              <div className="fa-fld" role="group" aria-label={tt('Prenotazioni')}>
+                {tt('Prenotazioni')}
                 <ul className="fa-list">
                   {prenotazioni.map((b) => (
                     <li key={b.id} className="fa-row" style={{ minHeight: 44, gridTemplateColumns: 'minmax(0,1fr)' }}>
@@ -427,15 +428,15 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
           </Gruppo>
         ) : null}
 
-        <AltriDettagli pieni={compilati([lat, lng])} contenuto="Latitudine e longitudine" errore={erroreCoord ? tentativi : undefined} apriSeCompilati={false}>
+        <AltriDettagli pieni={compilati([lat, lng])} contenuto={tt('Latitudine e longitudine')} errore={erroreCoord ? tentativi : undefined} apriSeCompilati={false}>
           <div className="fa-2c">
-            <Campo label="Latitudine" inputMode="decimal" value={lat} onChange={setLat} autoComplete="off" placeholder="es. 34,9671" />
-            <Campo label="Longitudine" inputMode="decimal" value={lng} onChange={setLng} autoComplete="off" placeholder="es. 135,7727" />
+            <Campo label={tt('Latitudine')} inputMode="decimal" value={lat} onChange={setLat} autoComplete="off" placeholder={tt('es. 34,9671')} />
+            <Campo label={tt('Longitudine')} inputMode="decimal" value={lng} onChange={setLng} autoComplete="off" placeholder={tt('es. 135,7727')} />
           </div>
         </AltriDettagli>
         {place ? (
           <Pulsante color="tertiary" iconLeading="archive" isLoading={occ === 'archivia'} onPress={() => void archivia()}>
-            Archivia il luogo
+            {tt('Archivia il luogo')}
           </Pulsante>
         ) : null}
         {error ? (

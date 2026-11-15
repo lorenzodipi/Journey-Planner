@@ -10,6 +10,7 @@ import { BOOKING_BUDGET_CATEGORY } from './bookingMeta'
 import { categoryIcon } from './categoryIcon'
 import { formatMoney, round2 } from './money'
 import type { SpesaVista } from './spese'
+import { LINGUA, t as tt } from '../i18n'
 
 export const CATEGORIE_BASE = [
   { label: 'Voli', icon: 'i-cat-airport' },
@@ -118,16 +119,16 @@ export function statoBudget(c: Pick<RigaCategoria, 'spent' | 'planned' | 'unpaid
   return c.spent > 0 && oltre === 0 && c.unpaid === 0 && c.voci.paid === c.voci.tot ? 'paid' : 'ok'
 }
 
-const pagat = (n: number, masc: boolean) => (n === 1 ? (masc ? 'pagato' : 'pagata') : masc ? 'pagati' : 'pagate')
+const pagat = (n: number, masc: boolean) => (n === 1 ? (masc ? tt('pagato') : tt('pagata')) : masc ? tt('pagati') : tt('pagate'))
 
 /** Prima riga sotto il nome: quante spese e quante pagate. Il previsto sta sulla riga sotto (`previstoTesto`). */
 function sottotitolo(c: Omit<RigaCategoria, 'sub' | 'previstoTesto'>): string {
-  if (c.spent === 0 && c.voci.tot === 0) return c.planned > 0 ? 'Ancora vuota' : 'Ancora vuota · registra una spesa'
+  if (c.spent === 0 && c.voci.tot === 0) return c.planned > 0 ? tt('Ancora vuota') : tt('Ancora vuota · registra una spesa')
   const masc = c.key === 'alloggi' || c.key === 'trasporti'
   const parts: string[] = []
-  if (c.key === 'alloggi' && c.voci.tot > 0) parts.push(`${c.voci.tot} ${c.voci.tot === 1 ? 'soggiorno' : 'soggiorni'}`)
-  else if (c.nSpese > 0 && (c.voci.tot === 0 || c.key === 'voli')) parts.push(`${c.nSpese} ${c.nSpese === 1 ? 'spesa' : 'spese'}`)
-  if (c.voci.tot > 0) parts.push(`${c.voci.paid} di ${c.voci.tot} ${pagat(c.voci.tot, masc)}`)
+  if (c.key === 'alloggi' && c.voci.tot > 0) parts.push(`${c.voci.tot} ${c.voci.tot === 1 ? tt('soggiorno') : tt('soggiorni')}`)
+  else if (c.nSpese > 0 && (c.voci.tot === 0 || c.key === 'voli')) parts.push(`${c.nSpese} ${c.nSpese === 1 ? tt('spesa') : tt('spese')}`)
+  if (c.voci.tot > 0) parts.push(tt('{paid} di {tot} {v2}', { paid: c.voci.paid, tot: c.voci.tot, v2: pagat(c.voci.tot, masc) }))
   return parts.join(' · ')
 }
 
@@ -189,8 +190,8 @@ export function ricevuta(
   }
   const categorie = [...map.values()]
     .filter((c) => (c.key === 'altro' ? c.spent > 0 || c.voci.tot > 0 || c.plannedSet : true))
-    .sort((a, b) => order(a) - order(b) || a.label.localeCompare(b.label, 'it'))
-    .map((c) => ({ ...c, sub: sottotitolo(c), previstoTesto: c.planned > 0 ? `Previsto ${formatMoney(c.planned, trip.baseCurrency)}` : '' }))
+    .sort((a, b) => order(a) - order(b) || a.label.localeCompare(b.label, LINGUA))
+    .map((c) => ({ ...c, sub: sottotitolo(c), previstoTesto: c.planned > 0 ? tt('Previsto {v0}', { v0: formatMoney(c.planned, trip.baseCurrency) }) : '' }))
 
   const summary = summarizeExpenses(spese, trip.travelers, fx, rimborsiValidi(trip).settled)
   summary.unconverted.forEach((u) => unconverted.add(u))

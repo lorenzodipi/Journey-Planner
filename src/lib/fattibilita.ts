@@ -4,6 +4,7 @@ import type { Day, Flight, Stay, Transport, Trip } from '../types'
 import { dateInZone, formatInZone } from './flights'
 import { dayStays } from './dayView'
 import { endMin, toMin } from './tappa'
+import { t as tt } from '../i18n'
 
 export const MARGINI_RAPIDI = [10, 15, 30]
 
@@ -55,22 +56,22 @@ export function verificaGiorno(o: { voci: VoceGiorno[]; spostamento: (aId: strin
   const conOra = o.voci.filter((v) => v.start !== null).sort((a, b) => (a.start as number) - (b.start as number))
   for (const v of conOra) {
     if (v.end === null) continue
-    for (const m of o.mezzi) if ((v.start as number) < m.end && m.start < v.end) out.sovrapposizioni.push({ id: v.id, testo: `${v.title}: si sovrappone a ${m.label}` })
+    for (const m of o.mezzi) if ((v.start as number) < m.end && m.start < v.end) out.sovrapposizioni.push({ id: v.id, testo: tt('{title}: si sovrappone a {label}', { title: v.title, label: m.label }) })
   }
   for (let i = 0; i < conOra.length - 1; i++) {
     const a = conOra[i]
     const b = conOra[i + 1]
     if (a.end === null) {
-      out.nonVerificate.push({ id: a.id, testo: `Fattibilità non verificata: manca la durata di ${a.title}` })
+      out.nonVerificate.push({ id: a.id, testo: tt('Fattibilità non verificata: manca la durata di {title}', { title: a.title }) })
       continue
     }
     const hai = (b.start as number) - a.end
     if (hai < 0) {
-      out.sovrapposizioni.push({ id: b.id, testo: `${b.title}: si sovrappone a ${a.title}` })
+      out.sovrapposizioni.push({ id: b.id, testo: tt('{title}: si sovrappone a {title2}', { title: b.title, title2: a.title }) })
       continue
     }
     const serve = (o.spostamento(a.id, b.id) ?? 0) + o.margine
-    if (serve > hai) out.conflitti.push({ daId: a.id, aId: b.id, testo: `Tra ${a.title} e ${b.title} servono ${serve} min, ne hai ${hai}` })
+    if (serve > hai) out.conflitti.push({ daId: a.id, aId: b.id, testo: tt('Tra {title} e {title2} servono {serve} min, ne hai {hai}', { title: a.title, title2: b.title, serve, hai }) })
   }
   return out
 }

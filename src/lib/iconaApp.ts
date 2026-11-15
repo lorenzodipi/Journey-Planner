@@ -1,3 +1,4 @@
+import { t } from '../i18n'
 // Icona dell'app scelta in Impostazioni (solo app Android/iOS). Le icone sono dichiarate nei progetti nativi:
 // Android = un <activity-alias> per icona (AndroidManifest.xml), iOS = un set per nome nell'asset catalog
 // (ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES). Per aggiungerne una: genera le immagini con
@@ -8,9 +9,9 @@ export type IconaId = 'chiara' | 'scura' | 'blu'
 
 /** `nativo` è il nome dell'alias/set; `null` = icona di partenza (su Android l'alias «IconaChiara»). */
 export const ICONE: { id: IconaId; nome: string; nativo: string | null }[] = [
-  { id: 'chiara', nome: 'Chiara', nativo: null },
-  { id: 'scura', nome: 'Scura', nativo: 'IconaScura' },
-  { id: 'blu', nome: 'Blu', nativo: 'IconaBlu' },
+  { id: 'chiara', nome: t('Chiara'), nativo: null },
+  { id: 'scura', nome: t('Scura'), nativo: 'IconaScura' },
+  { id: 'blu', nome: t('Blu'), nativo: 'IconaBlu' },
 ]
 
 /** L'icona che corrisponde al nome restituito dal sistema (`null` o sconosciuto = quella di partenza). */

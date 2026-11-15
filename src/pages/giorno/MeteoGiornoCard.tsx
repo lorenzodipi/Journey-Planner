@@ -9,6 +9,7 @@ import { dateAddDays } from '../../lib/dates'
 import { tripToday } from '../../lib/today'
 import { cityCenters, useCityForecastsStato } from '../../state/cityForecast'
 import type { Day, Trip } from '../../types'
+import { t as tt, tc } from '../../i18n'
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const hhmm = (min: number) => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`
@@ -56,7 +57,7 @@ export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Pick<Day, 'dat
         const rigaSole_ = oggi
           ? rigaSole(sole, domani, nowMin)
           : sole.sunrise !== null && sole.sunset !== null
-            ? { first: { k: 'Alba', v: hhmm(sole.sunrise), down: false }, second: { k: 'Tramonto', v: hhmm(sole.sunset), down: true }, next: 'Luce', inText: `${Math.floor((luce ?? 0) / 60)} h ${(luce ?? 0) % 60} min`, pct: 50, moon: false }
+            ? { first: { k: tt('Alba'), v: hhmm(sole.sunrise), down: false }, second: { k: tt('Tramonto'), v: hhmm(sole.sunset), down: true }, next: tt('Luce'), inText: tt('{v0} h {v1} min', { v0: Math.floor((luce ?? 0) / 60), v1: (luce ?? 0) % 60 }), pct: 50, moon: false }
             : undefined
         const card = (
           <MeteoCard
@@ -66,12 +67,12 @@ export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Pick<Day, 'dat
             code={primo.code}
             night={notte}
             desc={descrizione(primo.code, g.min, notte)}
-            hours={ore.map((h, i) => ({ label: oggi && i === 0 ? 'Ora' : `${pad(h.h)}:00`, t: h.t, code: h.code, night: notteAlle(h.h, sole), rain: (h.rain ?? 0) >= 50 || (h.mm ?? 0) >= 0.5, now: oggi && i === 0 }))}
+            hours={ore.map((h, i) => ({ label: oggi && i === 0 ? tc('Ora', 'adesso') : `${pad(h.h)}:00`, t: h.t, code: h.code, night: notteAlle(h.h, sole), rain: (h.rain ?? 0) >= 50 || (h.mm ?? 0) >= 0.5, now: oggi && i === 0 }))}
             sun={rigaSole_}
           />
         )
         return multi ? (
-          <div key={c} className="fa-meteo-slide" role="group" aria-roledescription="slide" aria-label={`${c}, ${idx + 1} di ${citta.length}`}>
+          <div key={c} className="fa-meteo-slide" role="group" aria-roledescription="slide" aria-label={tt('{c}, {v1} di {length}', { c, v1: idx + 1, length: citta.length })}>
             {card}
           </div>
         ) : (
@@ -82,8 +83,8 @@ export function MeteoGiornoCard({ trip, day }: { trip: Trip; day: Pick<Day, 'dat
   )
   if (!multi) return cards
   return (
-    <section aria-label="Meteo del giorno per città" aria-roledescription="carosello">
-      <div ref={riga} className="fa-meteo-slider" tabIndex={0} role="group" aria-label="Scorri in orizzontale per cambiare città">
+    <section aria-label={tt('Meteo del giorno per città')} aria-roledescription="carosello">
+      <div ref={riga} className="fa-meteo-slider" tabIndex={0} role="group" aria-label={tt('Scorri in orizzontale per cambiare città')}>
         {cards}
       </div>
     </section>

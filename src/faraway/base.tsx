@@ -8,6 +8,7 @@ import { cx } from './cx'
 import { apriSelettore } from '../lib/picker'
 import { Loader } from './Loader'
 import { Sv, type SvName } from './icons'
+import { t } from '../i18n'
 
 /* ---------------------------------------------------------------- Pulsante (Button) */
 
@@ -48,7 +49,7 @@ export function Pulsante({ children, color = 'primary', size = 'md', iconLeading
   const cls = cx('fa-btn', COLOR_CLASS[color], size === 'sm' && 'sm', !children && 'ico', (isDisabled || isLoading) && 'dis', className)
   const body = (
     <>
-      {isLoading ? <Loader size={20} label="Operazione in corso" /> : iconLeading ? icon(iconLeading) : null}
+      {isLoading ? <Loader size={20} label={t('Operazione in corso')} /> : iconLeading ? icon(iconLeading) : null}
       {children}
       {iconTrailing ? icon(iconTrailing) : null}
     </>
@@ -162,25 +163,25 @@ interface InputProps {
 export function segnaposto(label: string, type: string, textarea: boolean): string {
   const l = label.toLowerCase()
   // date e orari mostrano il formato, uguale a come apparirà il valore (anche con l'etichetta «Data» o «Ora»)
-  if (type === 'date') return 'gg/mm/aaaa'
+  if (type === 'date') return t('gg/mm/aaaa')
   if (type === 'time') return 'hh:mm'
-  if (/codice/.test(l)) return 'es. AB12CD'
-  if (/terminal/.test(l)) return 'es. T1'
-  if (/gate/.test(l)) return 'es. B12'
-  if (/^posto\b/.test(l)) return 'es. 14A'
-  if (/binario/.test(l)) return 'es. 5'
-  if (/bagaglio/.test(l)) return 'es. 1 bagaglio da 23 kg'
-  if (/cambio|rimborso/.test(l)) return 'es. Cambio gratuito fino a 24 ore prima'
-  if (/indirizzo/.test(l)) return 'Via e numero'
-  if (/latitudine/.test(l)) return 'Latitudine'
-  if (/longitudine/.test(l)) return 'Longitudine'
+  if (/codice/.test(l)) return t('es. AB12CD')
+  if (/terminal/.test(l)) return t('es. T1')
+  if (/gate/.test(l)) return t('es. B12')
+  if (/^posto\b/.test(l)) return t('es. 14A')
+  if (/binario/.test(l)) return t('es. 5')
+  if (/bagaglio/.test(l)) return t('es. 1 bagaglio da 23 kg')
+  if (/cambio|rimborso/.test(l)) return t('es. Cambio gratuito fino a 24 ore prima')
+  if (/indirizzo/.test(l)) return t('Via e numero')
+  if (/latitudine/.test(l)) return t('Latitudine')
+  if (/longitudine/.test(l)) return t('Longitudine')
   if (/importo|prezzo|costo/.test(l)) return '0,00'
-  if (/e-?mail/.test(l) || type === 'email') return 'nome@esempio.it'
-  if (type === 'password') return 'La tua password'
-  if (/password/.test(l)) return 'La tua password'
-  if (/nome/.test(l)) return 'Scrivi il nome'
-  if (/nota|note|descrizione/.test(l)) return textarea ? 'Scrivi qui' : 'Scrivi una nota'
-  return textarea ? 'Scrivi qui' : 'Scrivi qui'
+  if (/e-?mail/.test(l) || type === 'email') return t('nome@esempio.it')
+  if (type === 'password') return t('La tua password')
+  if (/password/.test(l)) return t('La tua password')
+  if (/nome/.test(l)) return t('Scrivi il nome')
+  if (/nota|note|descrizione/.test(l)) return textarea ? t('Scrivi qui') : t('Scrivi una nota')
+  return textarea ? t('Scrivi qui') : t('Scrivi qui')
 }
 
 /** Campo del design system: 56px, etichetta sopra, aiuto o errore sotto. */

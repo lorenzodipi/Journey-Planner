@@ -1,3 +1,4 @@
+import { LINGUA, LOCALE } from '../i18n'
 // Regole dei soldi, replicate dal foglio Google ma calcolate, mai digitate:
 //  - "per_person": ognuno paga `amount`
 //  - "total": `amount` è il totale, da dividere tra i viaggiatori
@@ -61,7 +62,7 @@ export function parseRate(text: string): number | null {
 /** Importo con simbolo di valuta; lo yen non ha decimali. */
 export function formatMoney(amount: number, currency: string): string {
   try {
-    return new Intl.NumberFormat('it-IT', { style: 'currency', currency }).format(amount)
+    return new Intl.NumberFormat(LOCALE, { style: 'currency', currency }).format(amount)
   } catch {
     return `${amount.toFixed(2)} ${currency}`
   }
@@ -70,7 +71,7 @@ export function formatMoney(amount: number, currency: string): string {
 /** Simbolo della valuta (€, ¥, $…); se non lo conosce, il codice. */
 export function currencySymbol(currency: string): string {
   try {
-    return new Intl.NumberFormat('it-IT', { style: 'currency', currency, currencyDisplay: 'narrowSymbol' }).formatToParts(0).find((p) => p.type === 'currency')?.value ?? currency
+    return new Intl.NumberFormat(LOCALE, { style: 'currency', currency, currencyDisplay: 'narrowSymbol' }).formatToParts(0).find((p) => p.type === 'currency')?.value ?? currency
   } catch {
     return currency
   }
@@ -136,7 +137,7 @@ export function tripCurrencies(trip: { baseCurrency: string; localCurrency?: str
 /** Nome esteso della valuta in italiano ("euro", "yen giapponese"); se non lo conosce, niente. */
 export function currencyName(currency: string): string | undefined {
   try {
-    return new Intl.DisplayNames('it', { type: 'currency' }).of(currency) ?? undefined
+    return new Intl.DisplayNames(LINGUA, { type: 'currency' }).of(currency) ?? undefined
   } catch {
     return undefined
   }

@@ -6,6 +6,7 @@ import { showToast } from '../state/toast'
 import { useTrips } from '../state/trips'
 import { FormError, PrimaryButton, TextField } from './Field'
 import { Card } from './PageHeader'
+import { t as tt } from '../i18n'
 
 const MAX_BYTES = 20 * 1024 * 1024
 
@@ -14,16 +15,16 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 function summaryLine(trip: RestorableTrip['trip']): string {
   const s = summarizeTrip(trip)
   return [
-    plural(s.days, 'giorno', 'giorni'),
-    s.items && plural(s.items, 'tappa', 'tappe'),
-    s.places && plural(s.places, 'luogo', 'luoghi'),
-    s.stays && plural(s.stays, 'alloggio', 'alloggi'),
-    s.transports && plural(s.transports, 'trasporto', 'trasporti'),
-    s.flights && plural(s.flights, 'volo', 'voli'),
-    s.budget && plural(s.budget, 'voce di budget', 'voci di budget'),
-    s.expenses && plural(s.expenses, 'spesa', 'spese'),
-    s.checklist && plural(s.checklist, 'voce in checklist', 'voci in checklist'),
-    s.bookings && plural(s.bookings, 'prenotazione', 'prenotazioni'),
+    plural(s.days, tt('giorno'), tt('giorni')),
+    s.items && plural(s.items, tt('tappa'), tt('tappe')),
+    s.places && plural(s.places, tt('luogo'), tt('luoghi')),
+    s.stays && plural(s.stays, tt('alloggio'), tt('alloggi')),
+    s.transports && plural(s.transports, tt('trasporto'), tt('trasporti')),
+    s.flights && plural(s.flights, tt('volo'), tt('voli')),
+    s.budget && plural(s.budget, tt('voce di budget'), tt('voci di budget')),
+    s.expenses && plural(s.expenses, tt('spesa'), tt('spese')),
+    s.checklist && plural(s.checklist, tt('voce in checklist'), tt('voci in checklist')),
+    s.bookings && plural(s.bookings, tt('prenotazione'), tt('prenotazioni')),
   ]
     .filter(Boolean)
     .join(' · ')
@@ -47,7 +48,7 @@ function Candidate({ item, defaultTitle, onDone }: { item: RestorableTrip; defau
       setError(message)
       return
     }
-    showToast(`Viaggio «${title.trim() || trip.title}» ripristinato`)
+    showToast(tt('Viaggio «{v0}» ripristinato', { v0: title.trim() || trip.title }))
     onDone()
   }
 
@@ -64,7 +65,7 @@ function Candidate({ item, defaultTitle, onDone }: { item: RestorableTrip; defau
       {warnings.length > 0 && (
         <details className="rounded-2xl border-2 border-warn px-4 py-3 text-sm">
           <summary className="min-h-6 cursor-pointer font-extrabold text-warn">
-            {warnings.length === 1 ? '1 avviso' : `${warnings.length} avvisi`}
+            {warnings.length === 1 ? '1 avviso' : tt('{length} avvisi', { length: warnings.length })}
           </summary>
           <ul className="mt-2 list-disc space-y-1 pl-5">
             {warnings.map((w) => (
@@ -73,9 +74,9 @@ function Candidate({ item, defaultTitle, onDone }: { item: RestorableTrip; defau
           </ul>
         </details>
       )}
-      <TextField label="Nome del nuovo viaggio" value={title} onChange={setTitle} maxLength={80} required />
+      <TextField label={tt('Nome del nuovo viaggio')} value={title} onChange={setTitle} maxLength={80} required />
       <FormError message={error} />
-      <PrimaryButton busy={busy}>{busy ? 'Ripristino in corso…' : 'Crea il viaggio'}</PrimaryButton>
+      <PrimaryButton busy={busy}>{busy ? tt('Ripristino in corso…') : tt('Crea il viaggio')}</PrimaryButton>
     </form>
   )
 }
@@ -95,34 +96,34 @@ export function RestoreCard() {
     if (!file) return
     setFileName(file.name)
     if (file.size > MAX_BYTES) {
-      setOutcome({ ok: false, error: 'Il file è troppo grande (oltre 20 MB): non sembra un\'esportazione di Faraway.' })
+      setOutcome({ ok: false, error: tt('Il file è troppo grande (oltre 20 MB): non sembra un\'esportazione di Faraway.') })
       return
     }
     setReading(true)
     try {
       setOutcome(parseExport(await file.text()))
     } catch {
-      setOutcome({ ok: false, error: 'Non riesco a leggere il file.' })
+      setOutcome({ ok: false, error: tt('Non riesco a leggere il file.') })
     } finally {
       setReading(false)
     }
   }
 
   const taken = new Set(t.trips.map((x) => x.title.trim().toLowerCase()))
-  const suggest = (title: string) => (taken.has(title.trim().toLowerCase()) ? `${title} (ripristino)` : title)
+  const suggest = (title: string) => (taken.has(title.trim().toLowerCase()) ? tt('{title} (ripristino)', { title }) : title)
 
   return (
     <Card>
-      <h2 className="h-sm">Ripristina da file</h2>
+      <h2 className="h-sm">{tt('Ripristina da file')}</h2>
       <p className="b-sm muted" style={{ marginTop: '4px' }}>
-        Riporta i viaggi da un file esportato: i viaggi vengono ricreati, quelli che hai già non vengono toccati.
+        {tt('Riporta i viaggi da un file esportato: i viaggi vengono ricreati, quelli che hai già non vengono toccati.')}
       </p>
       <p className="cap muted" style={{ marginTop: '4px' }}>
-        Nel file non ci sono gli allegati (PDF) né gli account: i viaggiatori tornano senza account e si collegano da Altro → Viaggiatori.
+        {tt('Nel file non ci sono gli allegati (PDF) né gli account: i viaggiatori tornano senza account e si collegano da Altro → Viaggiatori.')}
       </p>
-      <input ref={input} type="file" accept=".json,application/json" className="sr-only" tabIndex={-1} onChange={(e) => void onFile(e)} aria-label="File di esportazione" />
+      <input ref={input} type="file" accept=".json,application/json" className="sr-only" tabIndex={-1} onChange={(e) => void onFile(e)} aria-label={tt('File di esportazione')} />
       <button type="button" className="btn soft block" style={{ marginTop: '12px' }} onClick={() => input.current?.click()}>
-        {reading ? 'Leggo il file…' : outcome ? 'Scegli un altro file' : 'Scegli il file'}
+        {reading ? tt('Leggo il file…') : outcome ? tt('Scegli un altro file') : tt('Scegli il file')}
       </button>
 
       {outcome && !outcome.ok && (
@@ -136,14 +137,14 @@ export function RestoreCard() {
           <p className="text-sm text-muted">
             {fileName && <span className="font-extrabold text-ink">{fileName}</span>}
             {fileName && ' · '}
-            {outcome.trips.length === 1 ? '1 viaggio nel file' : `${outcome.trips.length} viaggi nel file`}
+            {outcome.trips.length === 1 ? tt('1 viaggio nel file') : tt('{length} viaggi nel file', { length: outcome.trips.length })}
           </p>
           {outcome.trips.map((item) => (
             <Candidate key={item.trip.id} item={item} defaultTitle={suggest(item.trip.title)} onDone={() => setOutcome(null)} />
           ))}
           {outcome.skipped.map((s) => (
             <p className="rounded-2xl border-2 border-warn px-4 py-3 text-sm">
-              <span className="font-extrabold">{s.title}</span> non si può ripristinare: {s.reason}.
+              <span className="font-extrabold">{s.title}</span>{' '}{tt('non si può ripristinare: {reason}.', { reason: s.reason })}
             </p>
           ))}
         </div>

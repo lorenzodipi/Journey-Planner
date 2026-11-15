@@ -2,11 +2,12 @@
 // Tutto in centesimi interi, così le somme tornano sempre al centesimo; il resto va al primo beneficiario.
 import type { Expense, ExpensePayer, ExpenseShare, SplitMode } from '../types'
 import { formatMoney, round2 } from './money'
+import { LOCALE, t } from '../i18n'
 
 const cents = (n: number) => Math.round(n * 100)
 const euro = (c: number) => c / 100
 
-export const SPLIT_LABEL: Record<SplitMode, string> = { equal: 'Parti uguali', percent: 'Percentuali', fixed: 'Importi fissi' }
+export const SPLIT_LABEL: Record<SplitMode, string> = { equal: t('Parti uguali'), percent: t('Percentuali'), fixed: t('Importi fissi') }
 
 export interface Check {
   ok: boolean
@@ -21,15 +22,15 @@ const OK: Check = { ok: true, message: '', missing: 0 }
 /** I versamenti devono sommare esattamente l'importo, senza negativi né doppioni. */
 export function checkPayers(total: number, payers: readonly ExpensePayer[], currency: string): Check {
   if (payers.length === 0) return OK
-  if (payers.some((p) => !(p.amount >= 0))) return { ok: false, message: 'Un versamento non può essere negativo.', missing: 0 }
+  if (payers.some((p) => !(p.amount >= 0))) return { ok: false, message: t('Un versamento non può essere negativo.'), missing: 0 }
   const ids = payers.map((p) => p.travelerId)
-  if (new Set(ids).size !== ids.length) return { ok: false, message: 'Una persona può comparire una sola volta tra chi ha pagato.', missing: 0 }
+  if (new Set(ids).size !== ids.length) return { ok: false, message: t('Una persona può comparire una sola volta tra chi ha pagato.'), missing: 0 }
   const diff = cents(total) - payers.reduce((n, p) => n + cents(p.amount), 0)
   if (diff === 0) return OK
   return {
     ok: false,
     missing: euro(diff),
-    message: diff > 0 ? `Mancano ${formatMoney(euro(diff), currency)} ai versamenti` : `I versamenti superano di ${formatMoney(euro(-diff), currency)}`,
+    message: diff > 0 ? t('Mancano {v0} ai versamenti', { v0: formatMoney(euro(diff), currency) }) : t('I versamenti superano di {v0}', { v0: formatMoney(euro(-diff), currency) }),
   }
 }
 
@@ -42,25 +43,25 @@ export function checkPercents(shares: readonly Pick<ExpenseShare, 'percent'>[]):
   return {
     ok: false,
     missing: diff / 100,
-    message: diff > 0 ? `Le quote fanno ${points(sum)}%: mancano ${points(diff)} punti` : `Le quote fanno ${points(sum)}%: ${points(-diff)} punti in più`,
+    message: diff > 0 ? t('Le quote fanno {v0}%: mancano {v1} punti', { v0: points(sum), v1: points(diff) }) : t('Le quote fanno {v0}%: {v1} punti in più', { v0: points(sum), v1: points(-diff) }),
   }
 }
 
 /** Gli importi fissi devono sommare esattamente il totale. */
 export function checkFixed(total: number, shares: readonly Pick<ExpenseShare, 'amount'>[], currency: string): Check {
-  if (shares.some((s) => !((s.amount ?? 0) >= 0))) return { ok: false, message: 'Un importo non può essere negativo.', missing: 0 }
+  if (shares.some((s) => !((s.amount ?? 0) >= 0))) return { ok: false, message: t('Un importo non può essere negativo.'), missing: 0 }
   const diff = cents(total) - shares.reduce((n, s) => n + cents(s.amount ?? 0), 0)
   if (diff === 0) return OK
   return {
     ok: false,
     missing: euro(diff),
-    message: diff > 0 ? `Mancano ${formatMoney(euro(diff), currency)} agli importi` : `Gli importi superano di ${formatMoney(euro(-diff), currency)}`,
+    message: diff > 0 ? t('Mancano {v0} agli importi', { v0: formatMoney(euro(diff), currency) }) : t('Gli importi superano di {v0}', { v0: formatMoney(euro(-diff), currency) }),
   }
 }
 
 /** Controllo della divisione scelta. Parti uguali: basta una persona. */
 export function checkSplit(mode: SplitMode, total: number, shares: readonly ExpenseShare[], currency: string): Check {
-  if (shares.length === 0) return { ok: false, message: 'Scegli almeno una persona tra cui dividere.', missing: 0 }
+  if (shares.length === 0) return { ok: false, message: t('Scegli almeno una persona tra cui dividere.'), missing: 0 }
   if (mode === 'percent') return checkPercents(shares)
   if (mode === 'fixed') return checkFixed(total, shares, currency)
   return OK
@@ -131,12 +132,12 @@ export function expenseBalance(
 }
 
 /** Traccia del cambio: «BCE · 30 ott 09:10», «Scritto a mano da Anna · 30 ott 09:10» o «Cambio del viaggio». */
-export function fxTrace(e: Pick<Expense, 'fxRate' | 'fxSource' | 'fxAt' | 'fxManual'>, setBy: string | undefined, locale = 'it-IT'): string {
+export function fxTrace(e: Pick<Expense, 'fxRate' | 'fxSource' | 'fxAt' | 'fxManual'>, setBy: string | undefined, locale = LOCALE): string {
   if (!e.fxRate) return ''
   const when = e.fxAt
     ? new Date(e.fxAt).toLocaleString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).replace(',', '')
     : ''
-  const who = e.fxManual ? `Scritto a mano${setBy ? ` da ${setBy}` : ''}` : e.fxSource || 'Cambio del viaggio'
+  const who = e.fxManual ? t('Scritto a mano{v0}', { v0: setBy ? t(' da {setBy}', { setBy }) : '' }) : e.fxSource || t('Cambio del viaggio')
   return when ? `${who} · ${when}` : who
 }
 

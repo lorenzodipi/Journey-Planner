@@ -2,6 +2,7 @@
 import { categoriaDi } from './ricevuta'
 import { parseAmount } from './money'
 import type { DebitoSpesa } from './debitiSpese'
+import { LINGUA } from '../i18n'
 
 export type StatoFiltro = 'tutti' | 'aperti' | 'attesa' | 'pagati'
 export type OrdinePer = 'predefinito' | 'data' | 'importo' | 'categoria' | 'persona'
@@ -55,7 +56,7 @@ export function filtraBilancio(righe: readonly DebitoSpesa[], f: FiltriBilancio)
 
 export function ordinaBilancio(righe: readonly DebitoSpesa[], o: Ordine, nome: (id: string) => string): DebitoSpesa[] {
   if (o.per === 'predefinito') return [...righe]
-  const testo = (a: string, b: string) => a.localeCompare(b, 'it', { sensitivity: 'base' })
+  const testo = (a: string, b: string) => a.localeCompare(b, LINGUA, { sensitivity: 'base' })
   const confronta = (a: DebitoSpesa, b: DebitoSpesa) => {
     switch (o.per) {
       case 'data':

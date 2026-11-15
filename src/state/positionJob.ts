@@ -6,6 +6,7 @@ import { findPositions, type Searchable, type Searcher } from '../lib/findPositi
 import { searchPlaces } from '../lib/geocode'
 import type { Trip } from '../types'
 import { showToast } from './toast'
+import { t } from '../i18n'
 
 export interface PositionJob {
   tripId: string
@@ -69,9 +70,9 @@ export async function startPositionJob(host: JobHost, tripId: string, search: Se
     save: (batch) => host.setPlacePositions(tripId, batch),
   })
   set({ tripId, running: false, total: todo.length, done: result.found + result.notFound.length, found: result.found, current: '', notFound: result.notFound, error: result.error })
-  if (result.error) showToast('Ricerca delle posizioni interrotta')
+  if (result.error) showToast(t('Ricerca delle posizioni interrotta'))
   else if (!result.stopped) {
-    showToast(result.notFound.length === 0 ? `Trovata la posizione di tutti i ${result.found} luoghi` : `Posizione trovata per ${result.found} luoghi su ${todo.length}`)
+    showToast(result.notFound.length === 0 ? t('Trovata la posizione di tutti i {found} luoghi', { found: result.found }) : t('Posizione trovata per {found} luoghi su {length}', { found: result.found, length: todo.length }))
   }
 }
 

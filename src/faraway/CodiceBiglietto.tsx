@@ -14,6 +14,7 @@ import { soloLettura } from '../lib/ruolo'
 import { cx } from './cx'
 import { Foglio } from './Foglio'
 import { Sv } from './icons'
+import { t } from '../i18n'
 
 interface Props {
   trip: Trip
@@ -85,7 +86,7 @@ export function CodiceBiglietto({ trip, kind, refId, title, when, detail, travel
     const old = codes.find((c) => c.travelerId === who) ?? (people.length <= 1 ? codes[0] : undefined)
     const m = await tr.saveTicketCode(trip.id, kind, refId, who ?? null, file, old)
     setBusy(false)
-    showToast(m ?? 'Codice salvato sul telefono')
+    showToast(m ?? t('Codice salvato sul telefono'))
   }
 
   const pickFile = () => input.current?.click()
@@ -96,31 +97,31 @@ export function CodiceBiglietto({ trip, kind, refId, title, when, detail, travel
     <Foglio
       open={open}
       full
-      title="Codice del biglietto"
+      title={t('Codice del biglietto')}
       onClose={onClose}
       footer={
         lettura ? (
-          <Pulsante onPress={onClose}>Chiudi</Pulsante>
+          <Pulsante onPress={onClose}>{t('Chiudi')}</Pulsante>
         ) : code ? (
           <div style={{ display: 'grid', gap: 8 }}>
             <Pulsante color="secondary" iconLeading="refresh" isLoading={busy} onPress={pickFile}>
-              Cambia codice
+              {t('Cambia codice')}
             </Pulsante>
-            <Pulsante onPress={onClose}>Chiudi</Pulsante>
+            <Pulsante onPress={onClose}>{t('Chiudi')}</Pulsante>
           </div>
         ) : (
           <div style={{ display: 'grid', gap: 8 }}>
             <Pulsante iconLeading="plus" isLoading={busy} onPress={pickFile}>
-              Aggiungi un codice
+              {t('Aggiungi un codice')}
             </Pulsante>
             <Pulsante color="secondary" onPress={onClose}>
-              Chiudi
+              {t('Chiudi')}
             </Pulsante>
           </div>
         )
       }
     >
-      <input ref={input} type="file" accept="image/*" hidden aria-label="Foto o screenshot del codice" onChange={(e) => (void pick(e.currentTarget.files?.[0]), (e.currentTarget.value = ''))} />
+      <input ref={input} type="file" accept="image/*" hidden aria-label={t('Foto o screenshot del codice')} onChange={(e) => (void pick(e.currentTarget.files?.[0]), (e.currentTarget.value = ''))} />
       <div style={{ display: 'grid', gap: 16, justifyItems: 'center', textAlign: 'center' }}>
         <div>
           <h2 className="fa-h3" style={{ margin: 0 }}>{title}</h2>
@@ -130,7 +131,7 @@ export function CodiceBiglietto({ trip, kind, refId, title, when, detail, travel
           <div className="fa-chips scroll" role="group" aria-label={nBiglietti(people.length)} style={{ justifySelf: 'stretch', justifyContent: 'center' }}>
             <span className="fa-m" style={{ alignSelf: 'center' }}>{nBiglietti(people.length)}</span>
             {people.map((p) => (
-              <button key={p.id} type="button" className={cx('fa-av', `r${discOf(trip, p.id)}`)} aria-label={`${p.name}${codicePer(codes, p.id) ? '' : ', senza codice'}`} aria-pressed={who === p.id} onClick={() => setWho(p.id)}
+              <button key={p.id} type="button" className={cx('fa-av', `r${discOf(trip, p.id)}`)} aria-label={`${p.name}${codicePer(codes, p.id) ? '' : t(', senza codice')}`} aria-pressed={who === p.id} onClick={() => setWho(p.id)}
                 style={{ width: 40, height: 40, border: who === p.id ? '3px solid var(--primary)' : '3px solid transparent', opacity: who === p.id || codicePer(codes, p.id) ? 1 : 0.5, cursor: 'pointer' }}>
                 {initials(p.name)}
               </button>
@@ -140,16 +141,16 @@ export function CodiceBiglietto({ trip, kind, refId, title, when, detail, travel
         {code ? (
           <>
             <div style={{ background: '#fff', borderRadius: 16, padding: 16, width: '100%', maxWidth: 360, aspectRatio: '1 / 1', display: 'grid', placeItems: 'center' }}>
-              {src ? <img src={src} alt={`Codice del biglietto${person ? ` di ${person.name}` : ''}`} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} /> : failed ? <p role="alert" className="fa-m" style={{ color: '#444' }}>{failed}</p> : <span className="fa-m" style={{ color: '#444' }}>Sto aprendo il codice…</span>}
+              {src ? <img src={src} alt={t('Codice del biglietto{v0}', { v0: person ? t(' di {name}', { name: person.name }) : '' })} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} /> : failed ? <p role="alert" className="fa-m" style={{ color: '#444' }}>{failed}</p> : <span className="fa-m" style={{ color: '#444' }}>{t('Sto aprendo il codice…')}</span>}
             </div>
             <p className="fa-b" style={{ margin: 0 }}>{[person?.name, detail].filter(Boolean).join(' · ')}</p>
-            <p className="fa-m" style={{ margin: 0 }}>Avvicina il codice allo scanner.{LUMINOSITA_SUPPORTATA ? ' La luminosità sale al massimo finché resta aperto.' : ''}</p>
+            <p className="fa-m" style={{ margin: 0 }}>{t('Avvicina il codice allo scanner.{v0}', { v0: LUMINOSITA_SUPPORTATA ? t(' La luminosità sale al massimo finché resta aperto.') : '' })}</p>
           </>
         ) : (
           <div style={{ display: 'grid', gap: 8, justifyItems: 'center', padding: '24px 0' }}>
             <Sv name="qr" size={40} />
-            <h3 className="fa-h3" style={{ margin: 0 }}>{multi && person ? `Nessun codice per ${person.name.split(/\s+/)[0]}` : 'Nessun codice associato'}</h3>
-            {lettura ? null : <p className="fa-m" style={{ margin: 0, maxWidth: 300 }}>Aggiungi il QR o il codice a barre del biglietto per averlo sempre a portata di mano, anche senza rete.</p>}
+            <h3 className="fa-h3" style={{ margin: 0 }}>{multi && person ? t('Nessun codice per {v0}', { v0: person.name.split(/\s+/)[0] }) : t('Nessun codice associato')}</h3>
+            {lettura ? null : <p className="fa-m" style={{ margin: 0, maxWidth: 300 }}>{t('Aggiungi il QR o il codice a barre del biglietto per averlo sempre a portata di mano, anche senza rete.')}</p>}
           </div>
         )}
       </div>
