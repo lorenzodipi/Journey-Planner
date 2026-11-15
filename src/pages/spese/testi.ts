@@ -5,12 +5,6 @@ import type { Traveler, Trip } from '../../types'
 
 const PARTS = ['', 'da solo', 'in due', 'in tre', 'in quattro', 'in cinque', 'in sei', 'in sette', 'in otto', 'in nove', 'in dieci']
 export const inQuanti = (n: number) => PARTS[n] ?? `in ${n}`
-const NUM = ['', 'una', 'due', 'tre', 'quattro', 'cinque', 'sei', 'sette', 'otto', 'nove', 'dieci']
-
-/** «Spese divise tra tutte e quattro le persone del viaggio.» */
-export function tutteLePersone(n: number): string {
-  return n === 2 ? 'Spese divise tra tutte e due le persone del viaggio.' : n <= 10 ? `Spese divise tra tutte e ${NUM[n]} le persone del viaggio.` : `Spese divise tra tutte le ${n} persone del viaggio.`
-}
 
 const nome = (travelers: readonly Traveler[], id: string) => travelers.find((t) => t.id === id)?.name.split(/\s+/)[0] ?? 'qualcuno'
 const elenco = (names: string[]) => (names.length <= 1 ? names.join('') : `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`)

@@ -227,6 +227,20 @@ export function ChecklistPage() {
       // eliminando, al posto della barra delle sezioni c'è il bottone «Elimina», sempre visibile
       tabs={!selecting}
       className={selecting ? 'fa-selmode' : undefined}
+      // «Tutti | Solo mie» sta nella testa con il titolo
+      fissa={
+        !vuota && v2 && gruppo && !selecting ? (
+          <Segmenti
+            label="Lista"
+            value={lista}
+            options={[
+              { value: 'all', label: 'Tutti' },
+              { value: 'mine', label: 'Solo mie' },
+            ]}
+            onChange={setLista}
+          />
+        ) : null
+      }
       overlay={
         <>
           {selecting ? (
@@ -283,17 +297,6 @@ export function ChecklistPage() {
         </>
       ) : (
         <div className="k-Checklist" style={{ display: 'grid', gap: 16 }}>
-          {v2 && gruppo && !selecting ? (
-            <Segmenti
-              label="Lista"
-              value={lista}
-              options={[
-                { value: 'all', label: 'Tutti' },
-                { value: 'mine', label: 'Solo mie' },
-              ]}
-              onChange={setLista}
-            />
-          ) : null}
           {!selecting ? (
             <div className="card">
               <div className="hd">

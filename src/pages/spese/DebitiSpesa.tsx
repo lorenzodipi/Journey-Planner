@@ -24,7 +24,7 @@ import type { Trip } from '../../types'
 import { DecidiSheet, DichiaraSheet } from './Rimborsi'
 import { SpesaSheet } from './SpesaSheet'
 import { sorgente, testoVerso } from './testi'
-import { Affianca } from '../../faraway/shell'
+import { Affianca, InTesta } from '../../faraway/shell'
 
 
 function Stato({ d }: { d: DebitoSpesa }) {
@@ -107,7 +107,10 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
   ]
   return (
     <>
-      <FiltriBilancio righe={tutte} nome={nome} cur={cur} filtri={filtri} onFiltri={setFiltri} ordine={ordine} onOrdine={setOrdine} mostrate={righe.length} />
+      {/* i filtri stanno nella testa della pagina, con il titolo */}
+      <InTesta>
+        <FiltriBilancio righe={tutte} nome={nome} cur={cur} filtri={filtri} onFiltri={setFiltri} ordine={ordine} onOrdine={setOrdine} mostrate={righe.length} />
+      </InTesta>
       {filtrate && righe.length === 0 ? (
         <VuotoFiltro title="Nessuna voce trovata" text="Prova con altri filtri." action="Azzera i filtri" onAction={() => (setFiltri(FILTRI_VUOTI), setOrdine(ORDINE_BASE))} />
       ) : null}

@@ -1,7 +1,8 @@
 // Struttura delle schermate Faraway: barra in alto (grande o con «indietro»), contenuto,
 // barra delle schede (BarraSchede) e pulsante volante «+ …» (FAB), come nel mock.
 import type { CSSProperties, ReactNode } from 'react'
-import { Children, useEffect, useRef, useState } from 'react'
+import { Children, createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useLocation } from 'wouter'
 import { cx } from './cx'
 import { tornaSu } from '../lib/indietro'
@@ -189,9 +190,10 @@ interface ScreenProps {
   bare?: boolean
   /** Banner delle modifiche in coda in cima e «Sei offline» in fondo (#49); `pill: false` senza la pillola. */
   rete?: boolean | { pill: false }
-  /** Barra (e `fissa`) sempre visibile in cima: solo il resto scorre. Per le pagine principali. */
+  /** Testa (barra e `fissa`) in cima che si nasconde scorrendo giù e ricompare risalendo. È così in ogni pagina con una
+   *  barra; `fisso={false}` la lascia scorrere via con il resto. */
   fisso?: boolean
-  /** Contenuto che resta fermo sotto la barra insieme a lei (ricerca, scelta della vista, filtri). Richiede `fisso`. */
+  /** Contenuto che sta nella testa sotto la barra (ricerca, scelta della vista, filtri). Da un componente figlio si usa `<InTesta>`. */
   fissa?: ReactNode
   /** Pagina dentro un pannello di un'altra (Giorno accanto a Giorni): niente schede e non tocca lo stato della pagina. */
   incastrata?: boolean
@@ -203,7 +205,7 @@ interface ScreenProps {
  * aperto resta visibile. Dice anche quando il contenuto sta scorrendo sotto di lei (per il filo sottile in fondo) e tiene
  * in `--head-h` la sua altezza, così `scrollIntoView` e i salti ai punti della pagina non finiscono nascosti dietro.
  */
-function useTestaFissa(attiva: boolean) {
+function useTestaFissa(attiva: boolean, incastrata: boolean) {
   const testa = useRef<HTMLDivElement>(null)
   const sentinella = useRef<HTMLDivElement>(null)
   const [scorre, setScorre] = useState(false)
@@ -216,7 +218,8 @@ function useTestaFissa(attiva: boolean) {
   }, [attiva])
   useEffect(() => {
     const el = testa.current
-    if (!attiva || !el) return
+    // la pagina dentro un pannello non tocca l'altezza della testa della pagina che la contiene
+    if (!attiva || !el || incastrata) return
     const root = document.documentElement
     const misura = () => root.style.setProperty('--head-h', `${Math.round(el.getBoundingClientRect().height)}px`)
     misura()
@@ -226,7 +229,7 @@ function useTestaFissa(attiva: boolean) {
       ro.disconnect()
       root.style.removeProperty('--head-h')
     }
-  }, [attiva])
+  }, [attiva, incastrata])
   useEffect(() => {
     const el = testa.current
     if (!attiva || !el) return
@@ -270,11 +273,26 @@ function useTestaFissa(attiva: boolean) {
   return { testa, sentinella, scorre, nascosta }
 }
 
+const PostoTesta = createContext<{ posto: HTMLDivElement | null } | null>(null)
+
+/**
+ * Porta i figli nella testa della pagina, sotto la barra (es. i filtri del bilancio, che nascono dentro un elenco):
+ * così si nascondono e ricompaiono con lei. Senza testa (pagina senza barra) restano dove sono.
+ */
+export function InTesta({ children }: { children: ReactNode }) {
+  const ctx = useContext(PostoTesta)
+  if (!ctx) return <>{children}</>
+  return ctx.posto ? createPortal(children, ctx.posto) : null
+}
+
 /** Una schermata dell'app: la «cornice del telefono» del mock è la pagina intera. */
 export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, overlay, className, bare, rete = true, fisso, fissa, incastrata }: ScreenProps) {
   const main = useRef<HTMLElement>(null)
-  const fissata = !!fisso && !bare
-  const { testa, sentinella, scorre, nascosta } = useTestaFissa(fissata)
+  const fissata = !bare && (fisso ?? !!bar)
+  const { testa, sentinella, scorre, nascosta } = useTestaFissa(fissata, !!incastrata)
+  // posto nella testa per i controlli che vengono da un figlio (<InTesta>); la riga vuota non si vede (CSS, .fa-posto)
+  const [posto, setPosto] = useState<HTMLDivElement | null>(null)
+  const testaCtx = useMemo(() => (fissata ? { posto } : null), [fissata, posto])
   useVaiAllErrore(main)
   useEffect(() => {
     if (incastrata) return
@@ -291,7 +309,10 @@ export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, ove
           <div ref={testa} className="fa-head" data-scrolled={scorre || undefined} data-nascosta={nascosta || undefined}>
             <div className="fa-top" />
             {bar}
-            {fissa ? <div className="fa-fissa">{fissa}</div> : null}
+            <div className="fa-fissa">
+              {fissa}
+              <div ref={setPosto} className="fa-posto" />
+            </div>
           </div>
         </>
       ) : (
@@ -300,15 +321,17 @@ export function Schermata({ bar, children, tabs = true, fab, gap, mainStyle, ove
           {bar}
         </>
       )}
-      {bare ? (
-        children
-      ) : (
-        <main ref={main} className="fa-main" style={{ ...(gap ? { gap } : null), ...mainStyle }}>
-          {rete ? <StatoRete /> : null}
-          {children}
-          {rete === true ? <PillolaOffline /> : null}
-        </main>
-      )}
+      <PostoTesta.Provider value={testaCtx}>
+        {bare ? (
+          children
+        ) : (
+          <main ref={main} className="fa-main" style={{ ...(gap ? { gap } : null), ...mainStyle }}>
+            {rete ? <StatoRete /> : null}
+            {children}
+            {rete === true ? <PillolaOffline /> : null}
+          </main>
+        )}
+      </PostoTesta.Provider>
       {tabs ? <BarraSchede /> : null}
       {fab ? <Fab {...fab} /> : null}
       {overlay}

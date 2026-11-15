@@ -176,6 +176,15 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
           </Foglio>
         </>
       }
+      // ricerca e «Quali viaggi» nella testa: si nascondono e tornano con la barra
+      fissa={
+        <>
+          {conRicerca ? (
+            <Campo label="Cerca un viaggio" hideLabel icon="search" type="search" value={cerca} onChange={setCerca} placeholder="Cerca un viaggio per nome o destinazione" enterKeyHint="search" />
+          ) : null}
+          {sezioni.length > 1 ? <Segmenti label="Quali viaggi" value={sezione} options={sezioni} onChange={setSezione} /> : null}
+        </>
+      }
     >
       {t.receivedInvites.length > 0 ? (
         <section aria-label="Inviti ricevuti" style={{ display: 'grid', gap: 16 }}>
@@ -203,10 +212,6 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
           ))}
         </section>
       ) : null}
-      {conRicerca ? (
-        <Campo label="Cerca un viaggio" hideLabel icon="search" type="search" value={cerca} onChange={setCerca} placeholder="Cerca un viaggio per nome o destinazione" enterKeyHint="search" />
-      ) : null}
-      {sezioni.length > 1 ? <Segmenti label="Quali viaggi" value={sezione} options={sezioni} onChange={setSezione} /> : null}
       {mostrati.length === 0 && q ? (
         <p className="fa-m" role="status" style={{ margin: 0, textAlign: 'center' }}>Nessun viaggio corrisponde a «{cerca.trim()}».</p>
       ) : null}

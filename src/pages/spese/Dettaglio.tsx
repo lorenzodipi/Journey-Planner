@@ -24,7 +24,7 @@ import { useUnaAperta } from '../../faraway/Righe'
 import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { VuotoFiltro } from '../../faraway/Stati'
 import { SpesaSheet } from './SpesaSheet'
-import { giornoSpese, inQuanti, pagataDa, rigaSpesa, sorgente, tutteLePersone } from './testi'
+import { giornoSpese, inQuanti, pagataDa, rigaSpesa, sorgente } from './testi'
 
 type Vista = 'tutti' | 'mie'
 
@@ -108,6 +108,42 @@ export function Dettaglio() {
         />
       }
       fab={{ label: 'Spesa', aria: 'Aggiungi una spesa', onPress: () => setSheet({}) }}
+      // nella testa: ricerca, «Di tutti | Mie» e filtri, così si nascondono e tornano con la barra
+      fissa={
+        <>
+          {searchOpen ? <Campo label="Cerca una spesa" hideLabel icon="search" type="search" value={text} onChange={setText} placeholder="Nome o categoria" autoFocus /> : null}
+          {gruppo ? (
+            <Segmenti
+              label="Spese"
+              value={vista}
+              options={[
+                { value: 'tutti', label: 'Di tutti' },
+                { value: 'mie', label: 'Mie' },
+              ]}
+              onChange={(v) => (setVista(v), setCat(null), open.setOpen(null))}
+            />
+          ) : null}
+          {inVista.length > 0 ? (
+            <div className="fa-chips scroll" role="group" aria-label="Filtri">
+              <Chip on={!!date} icon={<Sv name="cal" size={18} />} label={date ? `Date: ${testoDate}. Cambia le date` : 'Filtra per data'} onPress={() => setCalendario(true)}>
+                {date ? testoDate : null}
+              </Chip>
+              {cats.length > 1 ? (
+                <>
+                  <Chip on={!cat} onPress={() => setCat(null)}>
+                    Tutte
+                  </Chip>
+                  {cats.map((c) => (
+                    <Chip key={c} on={cat !== null && catKey(cat) === catKey(c)} onPress={() => setCat(c)}>
+                      {c}
+                    </Chip>
+                  ))}
+                </>
+              ) : null}
+            </div>
+          ) : null}
+        </>
+      }
       overlay={
         <>
           {sheet ? <SpesaSheet key={sheet.expense?.id ?? 'new'} trip={trip} expense={sheet.expense} open onClose={() => setSheet(null)} /> : null}
@@ -134,42 +170,7 @@ export function Dettaglio() {
         </>
       }
     >
-      {searchOpen ? <Campo label="Cerca una spesa" hideLabel icon="search" type="search" value={text} onChange={setText} placeholder="Nome o categoria" autoFocus /> : null}
-      {gruppo ? (
-        <>
-          <Segmenti
-            label="Spese"
-            value={vista}
-            options={[
-              { value: 'tutti', label: 'Di tutti' },
-              { value: 'mie', label: 'Mie' },
-            ]}
-            onChange={(v) => (setVista(v), setCat(null), open.setOpen(null))}
-          />
-          <p className="fa-m" style={{ margin: 0 }}>
-            {vista === 'tutti' ? tutteLePersone(trip.travelers.length) : 'Spese pagate da te o divise con te e solo alcune persone.'}
-          </p>
-        </>
-      ) : null}
-      {inVista.length > 0 ? (
-        <div className="fa-chips scroll" role="group" aria-label="Filtri">
-          <Chip on={!!date} icon={<Sv name="cal" size={18} />} label={date ? `Date: ${testoDate}. Cambia le date` : 'Filtra per data'} onPress={() => setCalendario(true)}>
-            {date ? testoDate : null}
-          </Chip>
-          {cats.length > 1 ? (
-            <>
-              <Chip on={!cat} onPress={() => setCat(null)}>
-                Tutte
-              </Chip>
-              {cats.map((c) => (
-                <Chip key={c} on={cat !== null && catKey(cat) === catKey(c)} onPress={() => setCat(c)}>
-                  {c}
-                </Chip>
-              ))}
-            </>
-          ) : null}
-        </div>
-      ) : null}
+      {gruppo && vista === 'mie' ? <p className="fa-m" style={{ margin: 0 }}>Spese pagate da te o divise con te e solo alcune persone.</p> : null}
       {shown.length === 0 ? (
         inVista.length === 0 ? (
           <VuotoFiltro

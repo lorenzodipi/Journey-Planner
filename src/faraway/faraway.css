@@ -20,7 +20,7 @@
 .fa-top{height:max(env(safe-area-inset-top,0px),24px);flex:none}
 /* testa fissa delle pagine principali: la barra (e ricerca/vista/filtri) resta in cima, scorre solo il resto */
 .fa-sent{height:1px;margin-bottom:-1px;flex:none;pointer-events:none}
-.fa-head{position:sticky;top:0;z-index:30;flex:none;background:var(--canvas);transition:box-shadow 150ms ease-out,transform 450ms cubic-bezier(0.22,1,0.36,1)}
+.fa-head{position:sticky;top:0;z-index:30;flex:none;display:flex;flex-direction:column;background:var(--canvas);transition:box-shadow 150ms ease-out,transform 450ms cubic-bezier(0.22,1,0.36,1)}
 .fa-head[data-scrolled]{box-shadow:0 1px 0 var(--hairline)}
 /* scorrendo verso il basso la testa esce tutta verso l'alto, tornando un po' su rientra piano (shell.tsx, useTestaFissa).
    Esce più svelta di come rientra. Sotto l'orologio resta una fascia del colore della pagina (.fa-orologio), così le card
@@ -29,6 +29,10 @@
 .fa-orologio{position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);z-index:31;background:var(--canvas);pointer-events:none}
 .fa-fissa{padding:8px 16px;display:grid;gap:16px;min-width:0}
 .fa-fissa>*{min-width:0}
+/* i controlli portati nella testa da un figlio (InTesta) stanno nella stessa griglia degli altri; senza controlli la riga non c'è */
+.fa-posto{display:contents}
+.fa-fissa:has(>.fa-posto:first-child:empty){display:none}
+.fa-posto>*{min-width:0}
 .fa-bar+.fa-fissa{padding-top:0}
 html{scroll-padding-top:var(--head-h,0px)}
 /* telefoni bassi (es. 667 px): la testa fissa non deve mangiare metà schermo, quindi niente sottotitolo e meno aria tra i controlli */

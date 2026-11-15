@@ -111,24 +111,27 @@ export function PrenotazioniPage() {
           {confirmNode}
         </>
       }
-    >
-      {trip.bookings.length > 0 ? (
-        <>
-          <Campo label="Cerca" hideLabel icon="search" value={arch.q} onChange={(q) => setArch({ ...arch, q })} placeholder="Cerca titolo, luogo, codice" />
-          <div className="fa-frow">
-            <button type="button" className={cx('fa-fbtn', attivi > 0 && 'on')} aria-label={attivi > 0 ? `Apri i filtri, ${attivi} attivi` : 'Apri i filtri'} onClick={() => setFiltriOpen(true)}>
-              <Sv name="filter" size={18} />
-              Filtri
-              {attivi > 0 ? <b>{attivi}</b> : null}
-            </button>
-            <div className="fa-chips scroll" role="group" aria-label="Tipo di prenotazione">
-              {FILTRI.map((f) => (
-                <Chip key={f.v} on={filtro === f.v} onPress={() => (setFiltro(f.v), open.setOpen(null))}>{f.l}</Chip>
-              ))}
+      // ricerca e filtri nella testa: si nascondono e tornano con la barra
+      fissa={
+        trip.bookings.length > 0 ? (
+          <>
+            <Campo label="Cerca" hideLabel icon="search" value={arch.q} onChange={(q) => setArch({ ...arch, q })} placeholder="Cerca titolo, luogo, codice" />
+            <div className="fa-frow">
+              <button type="button" className={cx('fa-fbtn', attivi > 0 && 'on')} aria-label={attivi > 0 ? `Apri i filtri, ${attivi} attivi` : 'Apri i filtri'} onClick={() => setFiltriOpen(true)}>
+                <Sv name="filter" size={18} />
+                Filtri
+                {attivi > 0 ? <b>{attivi}</b> : null}
+              </button>
+              <div className="fa-chips scroll" role="group" aria-label="Tipo di prenotazione">
+                {FILTRI.map((f) => (
+                  <Chip key={f.v} on={filtro === f.v} onPress={() => (setFiltro(f.v), open.setOpen(null))}>{f.l}</Chip>
+                ))}
+              </div>
             </div>
-          </div>
-        </>
-      ) : null}
+          </>
+        ) : null
+      }
+    >
       {trip.bookings.length === 0 ? (
         <Vuoto title="Nessuna prenotazione" text="Ristoranti, treni, noleggi e attività con codice, link e biglietto sempre a portata di mano." action="Aggiungi una prenotazione" onAction={() => setSheet({})} />
       ) : shown.length === 0 ? (
