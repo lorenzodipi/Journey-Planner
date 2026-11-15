@@ -715,3 +715,7 @@ dialog.fa-mod:focus{outline:none}
 .fa-infod{outline:none;display:grid;gap:8px;font:400 15px/22px var(--font-sans);color:var(--ink)}
 .fa-infod p{margin:0}
 .fa-infod b{font-weight:600}
+/* Il toast è largo quanto il suo testo (con «Annulla» se c'è), al centro; un testo lungo va a capo dentro la larghezza massima */
+.fa-toasts{justify-items:center}
+.fa-toast{width:fit-content;max-width:100%;box-sizing:border-box}
+.fa-toast:not(:has(.a)){padding-right:16px}
