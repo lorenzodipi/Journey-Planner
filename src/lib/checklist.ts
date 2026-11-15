@@ -106,6 +106,26 @@ export function categoriesFor(items: Pick<ChecklistItem, 'category' | 'kind'>[])
   return [...base, ...custom.sort((a, b) => a.localeCompare(b, LINGUA))]
 }
 
+/** Una delle cinque categorie dell'app (senza badare alle maiuscole): non si rinomina e non si elimina. */
+export const isCategoriaFissa = (category: string): boolean => BASE_CATEGORIES.some((b) => b.toLowerCase() === category.trim().toLowerCase())
+
+export type NuovoNomeCategoria = { ok: true; nome: string; unisce: boolean } | { ok: false }
+
+/**
+ * Il nome scelto per rinominare una categoria.
+ * - Spazi in più tolti; vuoto → non va.
+ * - Se esiste già un'altra categoria con quel nome (anche scritta con le maiuscole diverse, comprese le cinque dell'app)
+ *   le voci si uniscono a quella, con la sua grafia: `unisce`.
+ * - Cambiare solo le maiuscole del proprio nome («make-up» → «Make-up») è una rinomina normale.
+ */
+export function nuovoNomeCategoria(scritto: string, corrente: string, categorie: readonly string[]): NuovoNomeCategoria {
+  const nome = scritto.replace(/\s+/g, ' ').trim()
+  if (!nome) return { ok: false }
+  const chiave = nome.toLowerCase()
+  const altra = categorie.find((c) => c.toLowerCase() === chiave && c.toLowerCase() !== corrente.trim().toLowerCase())
+  return altra ? { ok: true, nome: altra, unisce: true } : { ok: true, nome, unisce: false }
+}
+
 export type ListaChecklist = 'all' | 'mine'
 
 /** «Tutti» = lista comune; «Solo mie» = la mia lista privata. */

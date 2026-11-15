@@ -44,6 +44,10 @@ function apply(trips: Trip[], l: Local): Trip[] {
       const gone = new Set(l.ids)
       return patchTrip(trips, null, (t) => ({ ...t, checklist: t.checklist.filter((c) => !gone.has(c.id)) }))
     }
+    case 'checklist.category': {
+      const here = new Set(l.ids)
+      return patchTrip(trips, null, (t) => ({ ...t, checklist: t.checklist.map((c) => (here.has(c.id) ? { ...c, category: l.category, kind: l.kind } : c)) }))
+    }
     case 'item.done':
       return patchTrip(trips, null, (t) => ({
         ...t,

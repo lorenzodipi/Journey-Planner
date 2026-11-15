@@ -188,3 +188,25 @@ describe('checklist personale (#41)', () => {
     expect(ck.spunteDi(mk('a', 'Valigia'), 2)).toEqual({ done: 0, total: 2 })
   })
 })
+
+describe('rinominare e togliere le categorie', () => {
+  const tutte = ['Documenti', 'Valigia', 'Salute', 'Tecnologia', 'Altro', 'Make-up', 'Regali']
+  it('le cinque dell’app sono fisse, anche scritte con le maiuscole diverse', () => {
+    expect(ck.isCategoriaFissa('Valigia')).toBe(true)
+    expect(ck.isCategoriaFissa(' salute ')).toBe(true)
+    expect(ck.isCategoriaFissa('Make-up')).toBe(false)
+  })
+  it('un nome nuovo si accetta, senza spazi in più', () => {
+    expect(ck.nuovoNomeCategoria('  Make   up  ', 'Mak-up', tutte)).toEqual({ ok: true, nome: 'Make up', unisce: false })
+  })
+  it('vuoto non va', () => {
+    expect(ck.nuovoNomeCategoria('   ', 'Make-up', tutte)).toEqual({ ok: false })
+  })
+  it('un nome già esistente unisce le voci, con la grafia di quella che c’è', () => {
+    expect(ck.nuovoNomeCategoria('regali', 'Mak-up', tutte)).toEqual({ ok: true, nome: 'Regali', unisce: true })
+    expect(ck.nuovoNomeCategoria('VALIGIA', 'Mak-up', tutte)).toEqual({ ok: true, nome: 'Valigia', unisce: true })
+  })
+  it('cambiare solo le maiuscole del proprio nome non è un’unione', () => {
+    expect(ck.nuovoNomeCategoria('make-up', 'Make-up', tutte)).toEqual({ ok: true, nome: 'make-up', unisce: false })
+  })
+})

@@ -2087,5 +2087,15 @@
  "È il nome che trovi già scritto quando crei un viaggio. In ogni viaggio puoi cambiarlo.": "It's the name you'll find already filled in when you create a trip. You can change it in each trip.",
  "È quanto pensate di spendere": "It's how much you plan to spend",
  "è alle {time}": "is at {time}",
- "…e altri {v0}": "…and {v0} more"
+ "…e altri {v0}": "…and {v0} more",
+ "Azioni sulla categoria {label}": "Actions for the category {label}",
+ "Modifica la categoria": "Edit category",
+ "es. Nome della categoria": "e.g. Category name",
+ "Esiste già «{label}»: le voci si uniscono a quella.": "«{label}» already exists: the items will be merged into it.",
+ "Il nome cambia per tutti i viaggiatori.": "The name changes for all travellers.",
+ "Categoria rinominata": "Category renamed",
+ "Eliminare la categoria «{label}»?": "Delete the category «{label}»?",
+ "Il cambio vale per tutti i viaggiatori.": "The change applies to all travellers.",
+ "La voce non viene eliminata: passa in «Altro».": "The item is not deleted: it moves to «Other».",
+ "Le {n} voci non vengono eliminate: passano in «Altro».": "The {n} items are not deleted: they move to «Other»."
 }

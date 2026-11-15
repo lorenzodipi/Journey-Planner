@@ -2,19 +2,20 @@
 // avanzamento mio, sezioni per categoria, avatar con «2 di 4», apertura in linea, «Seleziona» e «Duplica da un viaggio».
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useSearch } from 'wouter'
-import { doneCount, inLista, mioAvanzamento, sezioni, spunteDi, type ListaChecklist } from '../../lib/checklist'
+import { categoriesFor, categoryOf, doneCount, inLista, isCategoriaFissa, mioAvanzamento, sezioni, spunteDi, type ListaChecklist, type SezioneChecklist } from '../../lib/checklist'
 import { formatShort } from '../../lib/dates'
 import { discOf, initials } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrip, useTrips } from '../../state/trip'
 import type { ChecklistItem, Trip } from '../../types'
-import { Pulsante, PulsanteIcona, Segmenti } from '../../faraway/base'
+import { MenuAzioni, Pulsante, PulsanteIcona, Segmenti } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
 import { Foglio, useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { Vuoto } from '../../faraway/Stati'
 import { VoceSheet } from './VoceSheet'
+import { CategoriaSheet } from './CategoriaSheet'
 import { useInCorso } from '../../faraway/Attesa'
 import { nomeCategoria, t as tt } from '../../i18n'
 
@@ -35,6 +36,7 @@ export function ChecklistPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [dup, setDup] = useState(false)
   const [pending, setPending] = useState<Set<string>>(new Set())
+  const [catSheet, setCatSheet] = useState<SezioneChecklist | null>(null)
   const [selecting, setSelecting] = useState(false)
   const [sel, setSel] = useState<Set<string>>(new Set())
   const gruppo = trip.travelers.length > 1
@@ -51,11 +53,10 @@ export function ChecklistPage() {
       return new Set()
     }
   })
-  function apriChiudi(categoria: string) {
+  function cambiaChiuse(modifica: (insieme: Set<string>) => void) {
     setChiuse((prima) => {
       const dopo = new Set(prima)
-      if (dopo.has(categoria)) dopo.delete(categoria)
-      else dopo.add(categoria)
+      modifica(dopo)
       try {
         localStorage.setItem(chiaveChiuse, JSON.stringify([...dopo]))
       } catch {
@@ -64,6 +65,7 @@ export function ChecklistPage() {
       return dopo
     })
   }
+  const apriChiudi = (categoria: string) => cambiaChiuse((c) => (c.has(categoria) ? c.delete(categoria) : c.add(categoria)))
   // le voci «Scegli» che non mi riguardano non contano nel mio avanzamento
   const mio = mioAvanzamento(trip.checklist.filter((i) => !i.forTravelers || !trip.myTravelerId || i.forTravelers.includes(trip.myTravelerId)))
   const altri = t.trips.filter((x) => x.id !== trip.id && x.checklist.length > 0)
@@ -97,6 +99,40 @@ export function ChecklistPage() {
     showToast(m ?? (list.length === 1 ? tt('Voce eliminata') : tt('{length} voci eliminate', { length: list.length })), m ? undefined : { label: tt('Annulla'), run: () => void t.setChecklistManyDeleted(ids, false) })
     setSelecting(false)
     setSel(new Set())
+  }
+
+  /** Cambia la categoria a queste voci. Il messaggio in basso ha «Annulla», che rimette a ognuna la categoria di prima. Ritorna l'errore, se c'è. */
+  async function cambiaCategoria(voci: ChecklistItem[], nuova: string, messaggio: string): Promise<string | null> {
+    const prima = new Map<string, string[]>()
+    for (const v of voci) prima.set(categoryOf(v), [...(prima.get(categoryOf(v)) ?? []), v.id])
+    const errore = await t.setChecklistCategory(voci.map((v) => v.id), nuova)
+    if (!errore) showToast(messaggio, { label: tt('Annulla'), run: () => prima.forEach((ids, c) => void t.setChecklistCategory(ids, c)) })
+    return errore
+  }
+  async function rinominaCategoria(g: SezioneChecklist, nome: string): Promise<string | null> {
+    const errore = await cambiaCategoria(g.items, nome, tt('Categoria rinominata'))
+    if (errore) return errore
+    // la categoria chiusa resta chiusa col nome nuovo
+    cambiaChiuse((c) => (c.delete(g.category) ? c.add(nome) : c))
+    setCatSheet(null)
+    return null
+  }
+  async function eliminaCategoria(g: SezioneChecklist) {
+    const ok = await ask({
+      title: tt('Eliminare la categoria «{label}»?', { label: g.category }),
+      message: [
+        g.items.length === 1 ? tt('La voce non viene eliminata: passa in «Altro».') : tt('Le {n} voci non vengono eliminate: passano in «Altro».', { n: g.items.length }),
+        gruppo && g.items.some((i) => !i.private) ? tt('Il cambio vale per tutti i viaggiatori.') : '',
+        tt('Puoi annullare subito dopo.'),
+      ].filter(Boolean).join(' '),
+      confirm: tt('Elimina la categoria'),
+      cancel: tt('Tieni la categoria'),
+      destructive: true,
+    })
+    if (!ok) return
+    const errore = await cambiaCategoria(g.items, 'Altro', tt('Categoria eliminata'))
+    if (errore) showToast(errore)
+    else cambiaChiuse((c) => void c.delete(g.category))
   }
 
   const [occ, faiOcc] = useInCorso()
@@ -261,6 +297,16 @@ export function ChecklistPage() {
               onClose={() => setSheet(null)}
             />
           ) : null}
+          {catSheet ? (
+            <CategoriaSheet
+              key={catSheet.category}
+              categoria={catSheet.category}
+              esistenti={categoriesFor(trip.checklist)}
+              perTutti={gruppo && catSheet.items.some((i) => !i.private)}
+              onClose={() => setCatSheet(null)}
+              onSalva={(nome) => rinominaCategoria(catSheet, nome)}
+            />
+          ) : null}
           <Foglio open={dup} title={tt('Duplica da un viaggio')} onClose={() => setDup(false)}>
             <div style={{ display: 'grid', gap: 8 }}>
               <p className="fa-m" style={{ margin: 0 }}>{tt('Copio le voci comuni e la tua lista privata, senza spunte.')}</p>
@@ -315,13 +361,27 @@ export function ChecklistPage() {
               {gruppi.map((g) => (
               <section key={g.category} className={cx('card', chiuse.has(g.category) && 'chiusa')} aria-label={nomeCategoria(g.category)}>
                 {/* titolo della categoria: tocca per aprire o chiudere; da chiusa restano titolo e «2 di 12» */}
-                <button type="button" className="grp" aria-expanded={!chiuse.has(g.category)} onClick={() => apriChiudi(g.category)}>
-                  <b>{nomeCategoria(g.category)}</b>
-                  <span>
-                    {tt('{done} di {length}', { done: g.done, length: g.items.length })}
-                    <Sv name="chev" size={16} className={cx('chv', !chiuse.has(g.category) && 'up')} />
-                  </span>
-                </button>
+                {/* le categorie create a mano hanno il menu ⋯ (Modifica, Elimina) sopra la freccia; le cinque dell'app no */}
+                <div className={cx('grph', !isCategoriaFissa(g.category) && !selecting && 'perso')}>
+                  <button type="button" className="grp" aria-expanded={!chiuse.has(g.category)} onClick={() => apriChiudi(g.category)}>
+                    <b>{nomeCategoria(g.category)}</b>
+                    <span>
+                      {tt('{done} di {length}', { done: g.done, length: g.items.length })}
+                      <Sv name="chev" size={16} className={cx('chv', !chiuse.has(g.category) && 'up')} />
+                    </span>
+                  </button>
+                  {isCategoriaFissa(g.category) || selecting ? null : (
+                    <span className="gdots">
+                      <MenuAzioni
+                        label={tt('Azioni sulla categoria {label}', { label: g.category })}
+                        azioni={[
+                          { id: 'modifica', label: tt('Modifica'), onPress: () => setCatSheet(g) },
+                          { id: 'elimina', label: tt('Elimina'), onPress: () => void eliminaCategoria(g) },
+                        ]}
+                      />
+                    </span>
+                  )}
+                </div>
                 {chiuse.has(g.category) ? null : <ul className="l">{g.items.map((i) => riga(i))}</ul>}
               </section>
             ))}

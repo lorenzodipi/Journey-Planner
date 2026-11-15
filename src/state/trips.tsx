@@ -9,7 +9,7 @@ import { loadActiveId, loadSnapshot, saveActiveId, saveSnapshot } from '../lib/c
 import { cancellaDatiLocali } from '../lib/datiLocali'
 import { flushQueue, loadQueue, saveQueue, type Entry, type Local, type Op } from '../lib/outbox'
 import { execOp } from '../lib/outboxExec'
-import { countChange } from '../lib/checklist'
+import { countChange, kindOfCategory } from '../lib/checklist'
 import { applyQueue, checklistEntry, deletedPatch, expenseEntry } from '../lib/outboxLocal'
 import { showToast } from './toast'
 import { planMove } from '../lib/dragOrder'
@@ -178,6 +178,8 @@ interface TripsValue {
   setChecklistDeleted: (id: string, deleted: boolean) => Result
   /** Più voci insieme: una sola richiesta. */
   setChecklistManyDeleted: (ids: string[], deleted: boolean) => Result
+  /** Cambia la categoria a tutte queste voci in una volta (rinomina, unione, «Altro» quando se ne toglie una). */
+  setChecklistCategory: (ids: string[], category: string) => Result
   addChecklistTemplate: (tripId: string) => Result
   /** Copia le voci comuni e la mia lista privata di un altro viaggio, senza spunte (LIST-009). */
   duplicateChecklist: (tripId: string, fromTripId: string) => Result
@@ -772,6 +774,11 @@ export function TripProvider({ children }: { children: ReactNode }) {
       ids.length === 0
         ? Promise.resolve(null)
         : queued(tt('Checklist'), [{ k: 'updateMany', table: 'checklist_items', ids, patch: deletedPatch(deleted) }], { t: 'checklist.deletedMany', ids, deleted }),
+    setChecklistCategory: (ids, category) => {
+      if (ids.length === 0) return Promise.resolve(null)
+      const kind = kindOfCategory(category)
+      return queued(tt('Checklist'), [{ k: 'updateMany', table: 'checklist_items', ids, patch: { category, kind } }], { t: 'checklist.category', ids, category, kind })
+    },
     addChecklistTemplate: (tripId) => run(() => planning.addChecklistTemplate(tripId, trips.find((x) => x.id === tripId)?.checklist ?? []), ['planning']),
     setBookingItems: (tripId, bookingId, itemIds) => run(() => planning.setBookingItems(tripId, bookingId, itemIds), ['planning']),
     createBooking: (tripId, input) => run(() => planning.createBooking(tripId, input, trips.find((x) => x.id === tripId)?.timezone ?? 'UTC'), ['planning']),

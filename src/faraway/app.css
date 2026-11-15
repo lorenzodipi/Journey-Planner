@@ -151,6 +151,11 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-orari .cl{font:400 15px/40px var(--font-sans);color:var(--ink-muted)}
 .fa-orari .ac{display:flex;flex-wrap:wrap;gap:0 8px;margin-left:-8px}
 .fa-orari .ac button{min-height:36px;padding:0 8px;border:0;background:none;color:var(--azzurro-ink);font:600 13px/18px var(--font-sans);cursor:pointer}
+/* solo iOS: il testo di un campo ora resta in alto se il box è più alto della riga (come in styles.css), quindi l'altezza di 40 px la danno il bordo e il padding e non height; Android e computer restano com'erano */
+@supports (-webkit-touch-callout:none){
+.fa-orari .f input{height:auto;min-height:0;padding-block:calc((40px - 3px - 20px) / 2)}
+.fa-orari .f input::-webkit-date-and-time-value{min-height:20px;line-height:20px;text-align:left}
+}
 .k-Luoghi .tg svg.d{width:44px;height:44px}
 .fa-phone .fa-pinclu{color:var(--on-azzurro-solid)}
 .fa-foto{position:relative;width:44px;height:44px;border-radius:50%;overflow:hidden;flex:none;display:block}
@@ -700,6 +705,13 @@ dialog.fa-mod:focus{outline:none}
 .k-Checklist .grp .chv.up{transform:rotate(180deg)}
 .k-Checklist .card.chiusa button.grp{padding-bottom:var(--space-md)}
 @media (prefers-reduced-motion:reduce){.k-Checklist .grp .chv{transition:none}}
+/* categoria creata a mano: il menu ⋯ sta in una colonna con la freccia (⋯ sopra, freccia sotto, stesso asse); le cinque dell'app restano com'erano */
+.k-Checklist .grph{position:relative}
+.k-Checklist .grph.perso button.grp{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(44px,auto) auto;align-items:center;justify-content:stretch}
+.k-Checklist .grph.perso button.grp>b{padding-right:calc(44px - var(--space-lg) + 2px);overflow-wrap:anywhere}
+.k-Checklist .grph.perso button.grp>span{justify-self:end;min-height:24px}
+.k-Checklist .gdots{position:absolute;top:var(--space-md);right:calc(var(--space-lg) - 14px);width:44px;height:44px;display:grid;place-items:center}
+.k-Checklist .gdots .fa-dots{width:44px;height:44px;margin:0}
 /* card a biglietto chiusa con solo la testa (prenotazioni, documenti): stesso spazio sopra e sotto */
 :is(.k-Ticket,.k-TicketOrizzontale,.k-TicketTrasporti) .tk.tv>.a:last-child>.hdl:last-child{padding-bottom:var(--space-lg)}
 
