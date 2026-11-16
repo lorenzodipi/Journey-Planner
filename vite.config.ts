@@ -2,8 +2,9 @@ import { defineConfig } from 'vitest/config'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// GitHub Pages serve il sito sotto /Journey-Planner/
-const webBase = '/Journey-Planner/'
+// Percorso del sito sul web. GitHub Pages lo serve sotto /Journey-Planner/ (valore di riserva);
+// su un dominio proprio (Cloudflare) sta alla radice: si imposta la variabile VITE_BASE = / nella build.
+const webBase = process.env.VITE_BASE?.trim() || '/Journey-Planner/'
 
 // `vite build --mode native` prepara i file per l'app Android/iOS (Capacitor):
 // percorsi relativi, nessun service worker (i file stanno già dentro l'app).

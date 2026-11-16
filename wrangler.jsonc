@@ -1,0 +1,10 @@
+{
+  // Cloudflare (Workers Builds): pubblica la cartella dist costruita da `npm run build`.
+  // «name» deve essere uguale al nome del progetto creato su Cloudflare.
+  "name": "faraway-travel",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}

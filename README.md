@@ -60,6 +60,10 @@ Per far vedere un viaggio a un altro utente (il proprietario del viaggio esegue)
 select add_member_by_email('<id-del-viaggio>', 'email@esempio.it', 'editor');
 ```
 
+## Pubblicare su Cloudflare (dominio proprio)
+
+Il sito si può servire anche da Cloudflare, alla radice di un dominio. Il percorso base si sceglie con la variabile di build `VITE_BASE`: senza, resta `/Journey-Planner/` (GitHub Pages); con `VITE_BASE=/` il sito sta alla radice. `wrangler.jsonc` dice a Cloudflare di pubblicare la cartella `dist`. Impostazioni del progetto: comando di build `npm run build`, comando di deploy `npx wrangler deploy`, comando di anteprima `npx wrangler versions upload`, variabili `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_BASE=/`, `NODE_VERSION=22`. Su Supabase (Authentication → URL Configuration) vanno aggiornati «Site URL» e gli URL di reindirizzamento. L'app Android e iOS non cambia (percorsi relativi).
+
 ## Pubblicare su GitHub Pages
 
 1. **Settings → Pages → Build and deployment → Source: GitHub Actions**.
