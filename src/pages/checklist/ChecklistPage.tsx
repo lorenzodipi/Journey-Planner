@@ -381,8 +381,9 @@ export function ChecklistPage() {
           ) : cercando && trovate.length === 0 ? (
             <p className="fa-m" role="status" style={{ margin: 0, textAlign: 'center' }}>{tt('Nessuna voce corrisponde a «{v0}».', { v0: ricerca.trim() })}</p>
           ) : null}
-          <Affianca>
-            {/* pieghevole aperto: le categorie a righe, 1 a sinistra, 2 a destra, 3 sotto l’1… */}
+          {/* da 840 px due colonne indipendenti (come Impostazioni): niente righe in comune, quindi niente vuoti sotto una card più corta.
+              La divisione guarda quante voci ha ogni categoria, non se è aperta o chiusa: aprendo e chiudendo le card non cambiano colonna. */}
+          <Affianca pesi={gruppi.map((g) => g.items.length + 1)}>
               {gruppi.map((g) => (
               <section key={g.category} className={cx('card', chiusa(g.category) && 'chiusa')} aria-label={nomeCategoria(g.category)}>
                 {/* titolo della categoria: tocca per aprire o chiudere; da chiusa restano titolo e «2 di 12» */}
