@@ -3,7 +3,7 @@ import type { ChecklistItem } from '../types'
 import { checklistEntry } from './outboxLocal'
 import { checklistColumns, mapChecklist } from './planningData'
 import * as ck from './checklist'
-import { countChange, doneCount, parseQuantity, progress, TEMPLATE, templateToAdd, visibleItems } from './checklist'
+import { cercaVoci, countChange, doneCount, parseQuantity, progress, TEMPLATE, templateToAdd, visibleItems } from './checklist'
 
 const item = (over: Partial<ChecklistItem>): ChecklistItem => ({ id: 'x', kind: 'todo', text: 't', done: false, position: 1000, ...over })
 
@@ -209,4 +209,18 @@ describe('rinominare e togliere le categorie', () => {
   it('cambiare solo le maiuscole del proprio nome non è un’unione', () => {
     expect(ck.nuovoNomeCategoria('make-up', 'Make-up', tutte)).toEqual({ ok: true, nome: 'make-up', unisce: false })
   })
+})
+
+describe('cercaVoci', () => {
+  const voci = [
+    { text: 'Passaporto', description: undefined, category: 'Documenti', kind: 'docs' as const },
+    { text: 'Crema solare', description: 'protezione alta', category: 'Make-up', kind: 'todo' as const },
+    { text: 'Caricabatterie', description: undefined, category: 'Tecnologia', kind: 'todo' as const },
+  ]
+  it('vuota = tutte', () => expect(cercaVoci(voci, '  ')).toHaveLength(3))
+  it('nel testo, senza maiuscole', () => expect(cercaVoci(voci, 'PASS').map((v) => v.text)).toEqual(['Passaporto']))
+  it('nella descrizione', () => expect(cercaVoci(voci, 'protez').map((v) => v.text)).toEqual(['Crema solare']))
+  it('nella categoria', () => expect(cercaVoci(voci, 'tecno').map((v) => v.text)).toEqual(['Caricabatterie']))
+  it('senza accenti', () => expect(cercaVoci([{ ...voci[0], text: 'Caffè' }], 'caffe')).toHaveLength(1))
+  it('nel nome tradotto della categoria', () => expect(cercaVoci(voci, 'documents', (c) => (c === 'Documenti' ? 'Documents' : c))).toHaveLength(1))
 })

@@ -2097,5 +2097,8 @@
  "Eliminare la categoria «{label}»?": "Delete the category «{label}»?",
  "Il cambio vale per tutti i viaggiatori.": "The change applies to all travellers.",
  "La voce non viene eliminata: passa in «Altro».": "The item is not deleted: it moves to «Other».",
- "Le {n} voci non vengono eliminate: passano in «Altro».": "The {n} items are not deleted: they move to «Other»."
+ "Le {n} voci non vengono eliminate: passano in «Altro».": "The {n} items are not deleted: they move to «Other».",
+ "Cerca nelle voci": "Search the items",
+ "Voce, nota o categoria": "Item, note or category",
+ "Nessuna voce corrisponde a «{v0}».": "No item matches «{v0}»."
 }

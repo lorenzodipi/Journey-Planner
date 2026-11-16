@@ -126,6 +126,18 @@ export function nuovoNomeCategoria(scritto: string, corrente: string, categorie:
   return altra ? { ok: true, nome: altra, unisce: true } : { ok: true, nome, unisce: false }
 }
 
+const senzaAccenti = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+/**
+ * Ricerca nella checklist: voci il cui testo, la descrizione o la categoria (anche col nome tradotto) contengono
+ * la ricerca, senza badare a maiuscole e accenti. Ricerca vuota = tutte.
+ */
+export function cercaVoci<T extends Pick<ChecklistItem, 'text' | 'description' | 'category' | 'kind'>>(items: T[], ricerca: string, nomeCat: (c: string) => string = (c) => c): T[] {
+  const k = senzaAccenti(ricerca.trim())
+  if (!k) return items
+  return items.filter((i) => [i.text, i.description, categoryOf(i), nomeCat(categoryOf(i))].some((c) => c && senzaAccenti(c).includes(k)))
+}
+
 export type ListaChecklist = 'all' | 'mine'
 
 /** «Tutti» = lista comune; «Solo mie» = la mia lista privata. */

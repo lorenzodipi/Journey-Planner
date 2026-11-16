@@ -2,13 +2,13 @@
 // avanzamento mio, sezioni per categoria, avatar con «2 di 4», apertura in linea, «Seleziona» e «Duplica da un viaggio».
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useSearch } from 'wouter'
-import { categoriesFor, categoryOf, doneCount, inLista, isCategoriaFissa, mioAvanzamento, sezioni, spunteDi, type ListaChecklist, type SezioneChecklist } from '../../lib/checklist'
+import { categoriesFor, categoryOf, cercaVoci, doneCount, inLista, isCategoriaFissa, mioAvanzamento, sezioni, spunteDi, type ListaChecklist, type SezioneChecklist } from '../../lib/checklist'
 import { formatShort } from '../../lib/dates'
 import { discOf, initials } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrip, useTrips } from '../../state/trip'
 import type { ChecklistItem, Trip } from '../../types'
-import { MenuAzioni, Pulsante, PulsanteIcona, Segmenti } from '../../faraway/base'
+import { Campo, MenuAzioni, Pulsante, PulsanteIcona, Segmenti } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
 import { Foglio, useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
@@ -43,7 +43,13 @@ export function ChecklistPage() {
 
   // da soli non c'è differenza tra lista comune e privata: si vede tutto in una lista sola
   const visibili = useMemo(() => (v2 && gruppo ? trip.checklist.filter((i) => inLista(i, lista)) : trip.checklist), [trip.checklist, lista, v2, gruppo])
-  const gruppi = useMemo(() => sezioni(visibili), [visibili])
+  // ricerca (lente nella barra): filtra le voci per testo, descrizione o categoria; mentre si cerca le categorie restano aperte
+  const [cercaAperta, setCercaAperta] = useState(false)
+  const [ricerca, setRicerca] = useState('')
+  const cercando = cercaAperta && ricerca.trim() !== ''
+  const trovate = useMemo(() => (cercando ? cercaVoci(visibili, ricerca, nomeCategoria) : visibili), [visibili, ricerca, cercando])
+  const gruppi = useMemo(() => sezioni(trovate), [trovate])
+  const chiusa = (categoria: string) => !cercando && chiuse.has(categoria)
   // categorie chiuse (si apre e chiude toccando il titolo): restano chiuse anche riaprendo la pagina, per questo viaggio
   const chiaveChiuse = `jp.checklist.chiuse.${trip.id}`
   const [chiuse, setChiuse] = useState<Set<string>>(() => {
@@ -146,7 +152,7 @@ export function ChecklistPage() {
     showToast(m ?? tt('Voci copiate da «{title}»', { title: from.title }))
   }
 
-  const chosen = visibili.filter((i) => sel.has(i.id))
+  const chosen = trovate.filter((i) => sel.has(i.id))
   const today = new Date().toISOString().slice(0, 10)
 
   function riga(i: ChecklistItem) {
@@ -255,7 +261,10 @@ export function ChecklistPage() {
           back="/altro"
           right={
             vuota ? undefined : (
-              <PulsanteIcona className={selecting ? undefined : 'dng'} icon={selecting ? 'close' : 'trash'} label={selecting ? tt('Annulla la selezione') : tt('Elimina delle voci')} onPress={() => (selecting ? (setSelecting(false), setSel(new Set())) : setSelecting(true))} />
+              <>
+                {selecting ? null : <PulsanteIcona icon="search" label={tt('Cerca nelle voci')} pressed={cercaAperta} onPress={() => (setCercaAperta(!cercaAperta), setRicerca(''))} />}
+                <PulsanteIcona className={selecting ? undefined : 'dng'} icon={selecting ? 'close' : 'trash'} label={selecting ? tt('Annulla la selezione') : tt('Elimina delle voci')} onPress={() => (selecting ? (setSelecting(false), setSel(new Set())) : setSelecting(true))} />
+              </>
             )
           }
         />
@@ -266,7 +275,10 @@ export function ChecklistPage() {
       className={selecting ? 'fa-selmode' : undefined}
       // «Tutti | Solo mie» sta nella testa con il titolo
       fissa={
-        !vuota && v2 && gruppo && !selecting ? (
+        !vuota && (cercaAperta || (v2 && gruppo && !selecting)) ? (
+          <>
+            {cercaAperta ? <Campo label={tt('Cerca nelle voci')} hideLabel icon="search" type="search" value={ricerca} onChange={setRicerca} placeholder={tt('Voce, nota o categoria')} enterKeyHint="search" autoFocus /> : null}
+            {v2 && gruppo && !selecting ? (
           <Segmenti
             label={tt('Lista')}
             value={lista}
@@ -276,6 +288,8 @@ export function ChecklistPage() {
             ]}
             onChange={setLista}
           />
+            ) : null}
+          </>
         ) : null
       }
       overlay={
@@ -364,25 +378,27 @@ export function ChecklistPage() {
               action={tt('Aggiungi una voce')}
               onAction={() => setSheet({})}
             />
+          ) : cercando && trovate.length === 0 ? (
+            <p className="fa-m" role="status" style={{ margin: 0, textAlign: 'center' }}>{tt('Nessuna voce corrisponde a «{v0}».', { v0: ricerca.trim() })}</p>
           ) : null}
           <Affianca>
             {/* pieghevole aperto: le categorie a righe, 1 a sinistra, 2 a destra, 3 sotto l’1… */}
               {gruppi.map((g) => (
-              <section key={g.category} className={cx('card', chiuse.has(g.category) && 'chiusa')} aria-label={nomeCategoria(g.category)}>
+              <section key={g.category} className={cx('card', chiusa(g.category) && 'chiusa')} aria-label={nomeCategoria(g.category)}>
                 {/* titolo della categoria: tocca per aprire o chiudere; da chiusa restano titolo e «2 di 12» */}
                 {isCategoriaFissa(g.category) || selecting ? (
-                  <button type="button" className="grp" aria-expanded={!chiuse.has(g.category)} onClick={() => apriChiudi(g.category)}>
+                  <button type="button" className="grp" aria-expanded={!chiusa(g.category)} onClick={() => apriChiudi(g.category)}>
                     <b>{nomeCategoria(g.category)}</b>
                     <span>
                       {tt('{done} di {length}', { done: g.done, length: g.items.length })}
-                      <Sv name="chev" size={16} className={cx('chv', !chiuse.has(g.category) && 'up')} />
+                      <Sv name="chev" size={16} className={cx('chv', !chiusa(g.category) && 'up')} />
                     </span>
                   </button>
                 ) : (
                   // categoria creata a mano: il menu ⋯ (Modifica, Elimina) sulla stessa riga, prima di «0 di 2» e della freccia.
                   // Il ⋯ non può stare dentro il pulsante che apre e chiude: il pulsante è il titolo e la sua area (::after) copre tutta la riga.
                   <div className="grp gp">
-                    <button type="button" className="gtog" aria-expanded={!chiuse.has(g.category)} onClick={() => apriChiudi(g.category)}>
+                    <button type="button" className="gtog" aria-expanded={!chiusa(g.category)} onClick={() => apriChiudi(g.category)}>
                       <b>{nomeCategoria(g.category)}</b>
                       <span className="sr-only">{tt('{done} di {length}', { done: g.done, length: g.items.length })}</span>
                     </button>
@@ -397,11 +413,11 @@ export function ChecklistPage() {
                         />
                       </span>
                       <span aria-hidden="true">{tt('{done} di {length}', { done: g.done, length: g.items.length })}</span>
-                      <Sv name="chev" size={16} className={cx('chv', !chiuse.has(g.category) && 'up')} />
+                      <Sv name="chev" size={16} className={cx('chv', !chiusa(g.category) && 'up')} />
                     </span>
                   </div>
                 )}
-                {chiuse.has(g.category) ? null : <ul className="l">{g.items.map((i) => riga(i))}</ul>}
+                {chiusa(g.category) ? null : <ul className="l">{g.items.map((i) => riga(i))}</ul>}
               </section>
             ))}
           </Affianca>
