@@ -262,7 +262,7 @@ export function ChecklistPage() {
           right={
             vuota ? undefined : (
               <>
-                {selecting ? null : <PulsanteIcona icon="search" label={tt('Cerca nelle voci')} pressed={cercaAperta} onPress={() => (setCercaAperta(!cercaAperta), setRicerca(''))} />}
+                {selecting ? null : <PulsanteIcona icon={cercaAperta ? 'close' : 'search'} label={cercaAperta ? tt('Chiudi la ricerca') : tt('Cerca nelle voci')} expanded={cercaAperta} onPress={() => (setCercaAperta(!cercaAperta), setRicerca(''))} />}
                 <PulsanteIcona className={selecting ? undefined : 'dng'} icon={selecting ? 'close' : 'trash'} label={selecting ? tt('Annulla la selezione') : tt('Elimina delle voci')} onPress={() => (selecting ? (setSelecting(false), setSel(new Set())) : setSelecting(true))} />
               </>
             )
