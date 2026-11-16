@@ -331,6 +331,8 @@ html:has(dialog[open]){overflow:hidden}
 /* trasporti: «Pagato» sopra e la freccia sotto, allineati a destra */
 .k-TicketOrizzontale .tv .hdl .dx{display:grid;justify-items:end;gap:8px;flex:none}
 .k-Checklist .it .tx{display:grid;gap:8px;min-width:0}
+/* «Apri il link» allineato al testo della voce: senza il rientro a sinistra di .fa-lnk, largo quanto la scritta */
+.k-Checklist .it .tx>.fa-lnk{padding-left:0;justify-self:start}
 .fa-ib.dng{background:color-mix(in srgb,var(--danger) 10%,var(--surface-card));border:1.5px solid var(--danger);color:var(--danger);box-sizing:border-box}
 
 /* bottone di eliminazione da solo: largo come gli altri (nelle righe di azioni resta flessibile) */

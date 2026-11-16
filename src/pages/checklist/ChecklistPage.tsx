@@ -207,6 +207,12 @@ export function ChecklistPage() {
               {i.dueDate ? <span className="tag" style={late ? { color: 'var(--danger)' } : undefined}>{tt('entro {v0}', { v0: formatShort(i.dueDate) })}</span> : null}
             </div>
           ) : null}
+          {/* il link subito sotto titolo, nota e scadenza, prima dei pezzi e delle persone */}
+          {i.url && !selecting ? (
+            <a className="fa-lnk" href={i.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14 }}>
+              {tt('Apri il link')}
+            </a>
+          ) : null}
           {multi ? (
             <div className="mt">
               {selecting ? (
@@ -239,11 +245,6 @@ export function ChecklistPage() {
               </span>
               <span className="cnt">{tt('{done} di {total}', { done: s.done, total: s.total })}</span>
             </div>
-          ) : null}
-          {i.url && !selecting ? (
-            <a className="fa-lnk" href={i.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14 }}>
-              {tt('Apri il link')}
-            </a>
           ) : null}
         </div>
         {selecting ? null : <PulsanteIcona icon="pencil" label={tt('Modifica: {text}', { text: i.text })} onPress={() => setSheet({ item: i })} />}

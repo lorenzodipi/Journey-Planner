@@ -20,7 +20,7 @@ interface Props {
   onPlanned: (c: RigaCategoria, planned: number | null) => Promise<string | null>
   onRename: (c: RigaCategoria, label: string) => Promise<string | null>
   onDelete: (c: RigaCategoria) => Promise<void>
-  /** «Bilancia tutte le spese» accanto alle righe di «Per pareggiare» che mi riguardano: `con` = le persone per cui c'è qualcosa da chiudere */
+  /** «Bilancia» accanto alle righe di «Per pareggiare» che mi riguardano: `con` = le persone per cui c'è qualcosa da chiudere */
   bilancia?: { me: string; con: ReadonlySet<string>; onPress: (otherId: string) => void }
   /** chi usa l'app: sotto «Già pagato» compare «La tua quota» (la sua parte delle spese, a prescindere da chi ha pagato) */
   io?: string
@@ -168,7 +168,7 @@ export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilan
                     </span>
                     {bilancia && altro && bilancia.con.has(altro) ? (
                       <button type="button" className="bil" aria-label={tt('Bilancia tutte le spese con {v0}', { v0: nome(altro) })} onClick={() => bilancia.onPress(altro)}>
-                        {tt('Bilancia tutte le spese')}
+                        {tt('Bilancia')}
                       </button>
                     ) : null}
                   </div>
