@@ -124,11 +124,13 @@ export interface TicketCodeRow {
   ref_id: string
   traveler_id: string | null
   file_path: string
+  /** dalla migrazione 0051 */
+  leg?: number | null
 }
 
 export function mapTicketCodes(rows: TicketCodeRow[] | undefined, tripId: string): TicketCode[] | undefined {
   const mine = (rows ?? []).filter((r) => r.trip_id === tripId)
-  return mine.length ? mine.map((r) => ({ id: r.id, kind: r.kind, refId: r.ref_id, travelerId: r.traveler_id ?? undefined, filePath: r.file_path })) : undefined
+  return mine.length ? mine.map((r) => ({ id: r.id, kind: r.kind, refId: r.ref_id, travelerId: r.traveler_id ?? undefined, filePath: r.file_path, ...(r.leg ? { leg: r.leg } : {}) })) : undefined
 }
 
 export function mapBookings(rows: BookingRow[], tripId: string): Booking[] {

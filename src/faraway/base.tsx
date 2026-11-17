@@ -285,12 +285,20 @@ export function Avatar({ initials, n = 1, large, label }: { initials: string; n?
   )
 }
 
-export function Avatars({ people, ring = true, label }: { people: { initials: string; n: number }[]; ring?: boolean; label?: string }) {
+/** `max`: oltre questo numero di pallini se ne mostrano `max - 1` e un ultimo «+N» con quanti restano. */
+export function Avatars({ people, ring = true, label, max }: { people: { initials: string; n: number }[]; ring?: boolean; label?: string; max?: number }) {
+  const troppi = max !== undefined && people.length > max
+  const visti = troppi ? people.slice(0, max - 1) : people
   return (
     <span className={cx('fa-avs', ring && 'anello')} role={label ? 'img' : undefined} aria-label={label}>
-      {people.map((p, i) => (
+      {visti.map((p, i) => (
         <Avatar key={i} initials={p.initials} n={p.n} />
       ))}
+      {troppi ? (
+        <span className="fa-av piu" aria-hidden="true">
+          +{people.length - visti.length}
+        </span>
+      ) : null}
     </span>
   )
 }

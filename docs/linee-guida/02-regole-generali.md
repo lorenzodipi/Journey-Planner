@@ -76,6 +76,16 @@
 - Ordine: scelta a mano → trasporto del giorno che copre il tratto → a piedi se breve → mezzo del viaggio. La logica sta in `src/lib/spostamenti.ts`.
 - Sulla mappa a piedi e in auto (o taxi) si va lungo le strade (OSRM, profili `foot` e `car`); con i mezzi e i trasporti del giorno in linea d'aria tratteggiata.
 
+## Voli: la carta d'imbarco
+
+- **Carta chiusa**: codici, orari, durata, scali e, in basso, chi vola e la freccia. La data non c'è: è già nel titolo del gruppo («Andata · sab 21 nov»). Con più di quattro persone si vedono tre pallini e un «+N».
+- **Carta aperta** (`CartaVolo`, logica in `src/lib/cartaImbarco.ts`): una carta per persona e per tratta. In alto la scelta della tratta (solo con scalo) e della persona: due persone con il nome, tre con nomi corti in piccolo, oltre solo le iniziali (il nome resta nell'`aria-label`). Se un nome non ci sta si passa alle iniziali (o ai codici degli aeroporti per le tratte); se nemmeno così ci sta, il selettore scorre al suo interno con una sfumatura dal lato da scorrere. Un pallino corallo segna chi ha il check-in da fare.
+- **Stato**, ricavato senza chiedere niente: dopo l'arrivo «Atterrato», in volo «In volo», con la carta d'imbarco salvata «Check-in fatto», con l'apertura del check-in ancora da venire «Check-in da ven 20», altrimenti «Check-in da fare». «Si sceglie al check-in» e «apre alle 11:30» solo se manca il posto e il check-in non è aperto. Un check-in fatto senza carta caricata non si distingue da uno da fare.
+- **Codice**: l'immagine salvata in un riquadro bianco; toccandola si apre a schermo intero (`CodiceBiglietto`). Senza codice e con il check-in da fare, il riquadro tratteggiato «Aggiungi la carta d'imbarco» accetta foto, screenshot o PDF (del PDF si salva la prima pagina come immagine, `src/lib/pdfImmagine.ts`). Dopo il volo niente codice né riquadro.
+- **Voli con scalo** (0051): un codice vale per una tratta (`ticket_codes.leg`, il numero d'ordine `seq`, perché modificando il volo le tratte cambiano id) o, senza tratta, per tutte. Sulla seconda tratta senza codice suo: «Aggiungi la carta d'imbarco» o «Usa quella della prima tratta» (il codice passa a valere per tutte). Prima della migrazione un codice vale sempre per tutte.
+- **Griglia** Terminal · Gate · Imbarco · Chiusura (`flight_legs.gate_close`, 0051), «—» se manca; senza gate, prima della partenza, la nota «Il gate compare di solito un'ora prima della partenza.». Il riquadro dello scalo sta solo sulla tratta prima dello scalo.
+- **Sotto**: «Bagaglio e tariffa» e «Note» solo se c'è qualcosa, il codice di prenotazione con «Copia», il biglietto della persona scelta (costo a persona, o totale diviso per i passeggeri), «Maps» (aeroporto di partenza della tratta, non dopo la partenza) e «Apri il PDF» (primo documento collegato al volo), in fondo «Modifica il volo» a sinistra ed «Elimina» a destra. Il visualizzatore non vede il riquadro per caricare, né Modifica ed Elimina.
+
 ## Riepilogo dopo il viaggio
 
 - Sotto il totale ci sono **sempre due blocchi**, mai uno solo con un buco accanto.

@@ -231,6 +231,8 @@ export interface FlightLeg {
   gate?: string
   /** ora locale dell'imbarco, «HH:MM» */
   boardingTime?: string
+  /** ora locale della chiusura del gate, «HH:MM» (migrazione 0051) */
+  gateClose?: string
   /** posto di ciascun passeggero (id viaggiatore → «14A») */
   seatsBy?: Record<string, string>
 }
@@ -480,6 +482,8 @@ export interface TicketCode {
   travelerId?: string
   /** Nel bucket privato «bookings». */
   filePath: string
+  /** Voli con scalo (migrazione 0051): tratta a cui vale (`seq`, 1 = prima). Assente = vale per tutte. */
+  leg?: number
 }
 
 /** Un paese del viaggio (#35): fuso, valuta e cambio valgono per i giorni dell'intervallo. */

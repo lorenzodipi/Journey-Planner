@@ -397,17 +397,12 @@ html{scroll-padding-top:var(--head-h,0px)}
 
 .k-Ticket .v-top.closed{border-radius:var(--radius-xl);-webkit-mask:none;mask:none}
 .k-Ticket .v-top.closed::after{display:none}
-.k-Ticket .pax .dt{display:inline-flex;align-items:center;gap:8px}
+.k-Ticket .pax .dt{display:inline-flex;align-items:center;gap:8px;margin-left:auto}
 .k-Ticket .tgl{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--azzurro-soft);color:var(--azzurro-ink);transition:transform .2s}
 .k-Ticket .tgl.up{transform:rotate(180deg)}
 .k-Ticket .stop{display:flex;align-items:center;gap:8px;margin-top:16px;padding:8px 16px;border-radius:12px;background:var(--corallo-soft);color:var(--corallo-ink);font:400 13px/18px var(--font-sans)}
 .k-Ticket .stop b{font-weight:600}
 .k-Ticket .stop svg{flex:none}
-.k-Ticket .leg{display:grid;gap:8px}
-.k-Ticket .lh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.k-Ticket .lh b{font:600 15px/20px var(--font-sans);color:var(--ink)}
-.k-Ticket .lh span{font:400 13px/18px var(--font-sans);color:var(--ink-muted)}
-.k-Ticket .lay{display:flex;align-items:center;justify-content:center;gap:8px;margin:16px 0;padding:8px 0;border-top:2px dashed var(--border-strong);border-bottom:2px dashed var(--border-strong);font:600 13px/18px var(--font-sans);color:var(--corallo-ink)}
 .k-Ticket .tk+.tk,.k-Ticket+.k-Ticket{margin-top:0}
 
 /* ---- Biglietto ---- */
@@ -1763,15 +1758,13 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-Ticket .mid .hole{width:12px;height:12px;border-radius:50%;border:3px solid var(--corallo);box-sizing:border-box;flex:none}
 .k-Ticket .mid .pl{width:28px;height:28px;border-radius:50%;background:var(--azzurro-soft);display:grid;place-items:center;flex:none}
 .k-Ticket .dur{position:absolute;left:0;right:0;top:46px;text-align:center;font:400 13px/18px var(--font-sans);color:var(--ink-muted)}
-.k-Ticket .pax{display:flex;justify-content:space-between;margin-top:var(--space-xl);padding-top:var(--space-md);border-top:1px solid var(--hairline);font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
+.k-Ticket .pax{display:flex;flex-wrap:wrap;gap:var(--space-sm);justify-content:space-between;margin-top:var(--space-xl);padding-top:var(--space-md);border-top:1px solid var(--hairline);font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
 .k-Ticket .pax b{color:var(--ink);font-weight:600}
 .k-Ticket .b{padding:var(--space-xl)}
 .k-Ticket .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-md)}
 .k-Ticket .k{font:500 12px/16px var(--font-sans);color:var(--ink-muted);letter-spacing:.02em}
 .k-Ticket .v{font:600 16px/22px var(--font-sans)}
 .k-Ticket .s{font:400 13px/18px var(--font-sans);color:var(--ink-muted)}
-.k-Ticket .bc{margin-top:var(--space-lg);color:var(--ink);display:grid;gap:8px;justify-items:center}
-.k-Ticket .bc svg{width:100%}
 .k-Ticket .cd{font:600 13px/18px var(--font-sans);letter-spacing:.3em;color:var(--ink-muted)}
 .k-Ticket .cd2-top{overflow:hidden}
 .k-Ticket .cd2-top .bar{position:absolute;left:0;right:0;top:0;height:8px;display:flex}

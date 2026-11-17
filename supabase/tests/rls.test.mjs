@@ -925,6 +925,22 @@ await asUser(null, 'postgres')
   await asUser(A)
 }
 
+// carta d'imbarco (0051): chiusura del gate per tratta, codice per tratta (null = tutte)
+{
+  await asUser(null, 'postgres')
+  await runMigration('0051_carta_imbarco.sql')
+  await runMigration('0051_carta_imbarco.sql') // si può rilanciare
+  const tr = (await db.query(`select id from trips limit 1`)).rows[0].id
+  const fl = (await db.query(`insert into flights (trip_id,title) values ($1,'Con scalo') returning id`, [tr])).rows[0].id
+  await db.query(`insert into flight_legs (trip_id,flight_id,seq,from_airport,to_airport,depart_at,arrive_at,from_tz,to_tz,boarding_time,gate_close) values ($1,$2,1,'FCO','IST','2026-11-21T09:30:00Z','2026-11-21T12:20:00Z','Europe/Rome','Europe/Istanbul','10:50','11:20')`, [tr, fl])
+  check('0051 la chiusura del gate si salva', (await db.query(`select gate_close from flight_legs where flight_id=$1`, [fl])).rows[0].gate_close === '11:20')
+  await throws('0051 la chiusura vuole «HH:MM»', () => db.query(`update flight_legs set gate_close='11.20' where flight_id=$1`, [fl]))
+  await db.query(`insert into ticket_codes (trip_id,kind,ref_id,file_path,leg) values ($1,'flight',$2,'x/qr1.png',1), ($1,'flight',$2,'x/qr.png',null)`, [tr, fl])
+  check('0051 un codice per tratta e uno per tutte', (await db.query(`select leg from ticket_codes where ref_id=$1 order by leg nulls last`, [fl])).rows.map((r) => r.leg).join(',') === '1,')
+  await throws('0051 la tratta parte da 1', () => db.query(`insert into ticket_codes (trip_id,kind,ref_id,file_path,leg) values ($1,'flight',$2,'x/qr0.png',0)`, [tr, fl]))
+  await asUser(A)
+}
+
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione
 await asUser(null, 'service_role')
 const svcTrip = (await db.query(`select id from trips limit 1`)).rows

@@ -660,7 +660,7 @@ dialog.fa-mod:focus{outline:none}
 /* pulsanti: se il testo non ci sta va a capo dentro il pulsante (adattaTesto.ts); qui non superano la riga */
 .acts2 .fa-btn,.fa-acts .fa-btn{max-width:100%}
 /* righe a due elementi (titolo e pillola, codice e «Maps», «Prenotazione» e codice): il secondo va sotto se non ci stanno */
-.fa-stay .hd,.fa-stay .fr,.k-Ticket .bc.nobar,.k-Ticket .hd{flex-wrap:wrap}
+.fa-stay .hd,.fa-stay .fr,.k-Ticket .hd{flex-wrap:wrap}
 .fa-stay .hd .kind,.fa-stay .fr>:first-child{flex:1 1 0;min-width:min-content}
 
 /* tappa: il titolo non si stringe sotto qualche parola accanto a ora e «In ritardo?», che se serve vanno sotto */
@@ -737,3 +737,87 @@ dialog.fa-mod:focus{outline:none}
 .fa-toasts{justify-items:center}
 .fa-toast{width:fit-content;max-width:100%;box-sizing:border-box}
 .fa-toast:not(:has(.a)){padding-right:16px}
+
+/* Carta d'imbarco per persona (CartaVolo aperta, mock «Carta d'imbarco per persona»): misure legate alla carta, non alla finestra */
+/* chiusa, con tante persone e il testo grande: gli avatar vanno a capo invece di uscire dalla carta */
+.k-Ticket .pax .fa-avs{flex-wrap:wrap;row-gap:4px;max-width:100%}
+.fa-av.piu{background:var(--surface-high);color:var(--ink)}
+.k-Ticket .b.ci{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-lg);container-type:inline-size}
+.k-Ticket .ci-seg{background:var(--surface-soft);border-radius:var(--radius-full);padding:4px;min-width:0}
+.k-Ticket .ci-seg.tratte{border-radius:12px}
+.k-Ticket .ci-segin{display:flex;gap:4px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;scroll-padding-inline:32px}
+.k-Ticket .ci-segin::-webkit-scrollbar{display:none}
+.k-Ticket .ci-segin.dx{-webkit-mask:linear-gradient(90deg,#000 calc(100% - 40px),#0000);mask:linear-gradient(90deg,#000 calc(100% - 40px),#0000)}
+.k-Ticket .ci-segin.sx{-webkit-mask:linear-gradient(90deg,#0000,#000 40px);mask:linear-gradient(90deg,#0000,#000 40px)}
+.k-Ticket .ci-segin.sx.dx{-webkit-mask:linear-gradient(90deg,#0000,#000 40px,#000 calc(100% - 40px),#0000);mask:linear-gradient(90deg,#0000,#000 40px,#000 calc(100% - 40px),#0000)}
+.k-Ticket .ci-opz{flex:1 1 0;min-width:0;min-height:44px;box-sizing:border-box;padding:4px 8px;border-radius:var(--radius-full);display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 15px/20px var(--font-sans);color:var(--ink);cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;outline:none}
+.k-Ticket .ci-opz.on{background:var(--surface-card);box-shadow:0 1px 2px rgba(25,21,16,.15)}
+[data-theme="dark"] .k-Ticket .ci-opz.on{background:var(--surface-high);box-shadow:none}
+.k-Ticket .ci-opz[data-focus-visible]{outline:3px solid var(--focus);outline-offset:-3px}
+.k-Ticket .ci-opz .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.k-Ticket .ci-seg.tratte .ci-opz{border-radius:8px;font-size:14px;line-height:18px;text-align:center}
+.k-Ticket .ci-seg.tratte .ci-opz .nm{white-space:normal;overflow-wrap:normal}
+.k-Ticket .ci-seg.tratte .ci-opz .nc{white-space:nowrap}
+.k-Ticket .ci-seg.tratte:not(.stretto) .ci-opz .nm+.nc,.k-Ticket .ci-seg.stretto .nm{display:none}
+.k-Ticket .ci-seg.tratte.stretto .ci-opz{flex:1 0 auto}
+.k-Ticket .ci-seg.persone.stretto .ci-opz{flex:1 0 44px;padding:4px}
+.k-Ticket .ci-seg.persone.stretto .ci-av .fa-av{font-size:11px;width:calc(30em / 11);height:calc(30em / 11)}
+.k-Ticket .ci-av{position:relative;display:inline-grid;flex:none}
+.k-Ticket .ci-av .fa-av{font-size:10px;width:calc(24em / 10);height:calc(24em / 10)}
+.k-Ticket .ci-todo{position:absolute;right:-3px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--corallo);border:2px solid var(--surface-soft)}
+.k-Ticket .ci-opz.on .ci-todo{border-color:var(--surface-card)}
+[data-theme="dark"] .k-Ticket .ci-opz.on .ci-todo{border-color:var(--surface-high)}
+.k-Ticket .ci-seg.tre .ci-opz{font-size:13px;gap:4px;padding:4px}
+.k-Ticket .ci-seg.iniziali .ci-opz{flex:1 0 44px;padding:4px}
+.k-Ticket .ci-seg.iniziali .nm{display:none}
+.k-Ticket .ci-seg.iniziali .ci-av .fa-av{font-size:11px;width:calc(30em / 11);height:calc(30em / 11)}
+/* tre persone in una carta stretta: solo le iniziali, come da quattro in su */
+@container (max-width:300px){
+  .k-Ticket .ci-seg.tre .ci-opz{flex:1 0 44px}
+  .k-Ticket .ci-seg.tre .nm{display:none}
+  .k-Ticket .ci-seg.tre .ci-av .fa-av{font-size:11px;width:calc(30em / 11);height:calc(30em / 11)}
+}
+.k-Ticket .ci-posto{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:var(--space-sm) var(--space-lg)}
+.k-Ticket .ci-p{display:grid;flex:1 1 auto;min-width:0}
+.k-Ticket .ci-num{font:600 56px/56px var(--font-sans);letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+.k-Ticket .ci-num.vuoto{color:var(--ink-muted)}
+.k-Ticket .ci-p .s{margin-top:4px}
+.k-Ticket .ci-st{display:grid;justify-items:end;gap:4px;margin-left:auto;text-align:right}
+.k-Ticket .ci-pill{display:inline-flex;align-items:center;gap:8px;min-height:24px;box-sizing:border-box;padding:4px 12px;border-radius:var(--radius-full);font:600 13px/16px var(--font-sans);white-space:nowrap}
+.k-Ticket .ci-pill svg{flex:none}
+.k-Ticket .ci-pill.ok{background:var(--acqua-soft);color:var(--acqua-ink);border:0}
+.k-Ticket .ci-pill.warn{background:var(--corallo-soft);color:var(--corallo-ink)}
+.k-Ticket .ci-pill.neu{background:var(--surface-high);color:var(--ink)}
+[data-theme="dark"] .k-Ticket .ci-pill.ok{background:var(--acqua-soft);color:var(--acqua-ink);border:0}
+.k-Ticket .ci-cod{display:grid;justify-items:center;gap:var(--space-sm)}
+.k-Ticket .ci-qr{all:unset;box-sizing:border-box;display:grid;place-items:center;max-width:100%;min-width:min(200px,100%);min-height:200px;padding:var(--space-lg);border-radius:16px;background:#FFFFFF;border:1px solid var(--hairline);cursor:zoom-in}
+.k-Ticket .ci-qr:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.k-Ticket .ci-qr img{display:block;max-width:100%;max-height:240px;object-fit:contain}
+.k-Ticket .ci-qr .s{color:#56524B;text-align:center}
+.k-Ticket .ci-cod>.s{margin:0;text-align:center}
+.k-Ticket .ci-cta{display:grid;gap:var(--space-md);padding:var(--space-lg);border:1.5px dashed var(--border-strong);border-radius:16px}
+.k-Ticket .ci-ctat{display:grid;gap:4px}
+.k-Ticket .ci-cta .fa-btn{width:100%;padding:0 16px}
+.k-Ticket .ci-ctat b{font:600 14px/20px var(--font-sans);color:var(--ink)}
+.k-Ticket .ci-nota{margin:var(--space-sm) 0 0}
+.k-Ticket .ci-scalo{display:grid;gap:4px;padding:var(--space-md) var(--space-lg);border-radius:12px;background:var(--corallo-soft);color:var(--ink);font:400 13px/18px var(--font-sans)}
+.k-Ticket .ci-scalo b{font:600 15px/20px var(--font-sans);color:var(--corallo-ink)}
+.k-Ticket .ci-hr{margin:0;border:0;border-top:1px solid var(--hairline)}
+.k-Ticket .ci-sez{display:grid;gap:var(--space-sm)}
+.k-Ticket .ci-sec{margin:0;font:600 13px/18px var(--font-sans);color:var(--ink-muted)}
+.k-Ticket .ci-row{display:flex;align-items:flex-start;gap:var(--space-md);font:400 14px/20px var(--font-sans);color:var(--ink);overflow-wrap:anywhere}
+.k-Ticket .ci-row svg{flex:none;color:var(--ink-muted)}
+.k-Ticket .ci-row span{min-width:0}
+.k-Ticket .ci-note{margin:0;font:400 14px/20px var(--font-sans);color:var(--ink);white-space:pre-line;overflow-wrap:anywhere}
+.k-Ticket .ci-box{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--space-sm);padding:var(--space-md) var(--space-lg);border-radius:12px;background:var(--surface-soft)}
+.k-Ticket .ci-pnr{display:grid;flex:1 1 0;min-width:min-content}
+.k-Ticket .ci-pnr .v{letter-spacing:.12em;overflow-wrap:anywhere}
+.k-Ticket .ci-box .fa-lnk{display:inline-flex;align-items:center;gap:8px;margin-right:-8px}
+.k-Ticket .ci-prezzo{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:var(--space-sm);font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
+.k-Ticket .ci-prezzo b{font:600 16px/22px var(--font-sans);color:var(--ink);font-variant-numeric:tabular-nums}
+.k-Ticket .ci-btns{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-md)}
+.k-Ticket .ci-btns.n2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.k-Ticket .ci-btns .fa-btn{width:100%}
+@container (max-width:280px){.k-Ticket .ci-btns.n2{grid-template-columns:minmax(0,1fr)}}
+.k-Ticket .ci-fine{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--space-sm);margin:0 -8px -8px}
+.k-Ticket .ci-fine .fa-lnk.dng{color:var(--danger)}

@@ -126,18 +126,30 @@ export async function setBookingDeleted(id: string, deleted: boolean): Promise<v
 
 const MIGRATION_0023 = t('Manca la migrazione 0023 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0023_ticket_codes.sql). Senza, i codici dei biglietti non si possono salvare.')
 
-/** Salva (o sostituisce) l'immagine del codice di una voce per un passeggero; la copia resta sempre sul telefono. */
-export async function saveTicketCode(tripId: string, kind: TicketKind, refId: string, travelerId: string | null, file: File, old?: TicketCode): Promise<void> {
+/** Manca la colonna `leg` (migrazione 0051): il codice si salva lo stesso e vale per tutte le tratte. */
+const senzaColonnaTratta = (e: { message: string }) => /\bleg\b/.test(e.message) && /schema cache|column|does not exist/i.test(e.message)
+
+/** Salva (o sostituisce) l'immagine del codice di una voce per un passeggero; la copia resta sempre sul telefono.
+ *  `leg`: tratta del volo a cui vale (0051); senza, vale per tutte. */
+export async function saveTicketCode(tripId: string, kind: TicketKind, refId: string, travelerId: string | null, file: File, old?: TicketCode, leg?: number): Promise<void> {
   const db = client()
   const filePath = await uploadBookingFile(tripId, file)
   const row = { file_path: filePath }
-  const res = old ? await db.from('ticket_codes').update(row).eq('id', old.id) : await db.from('ticket_codes').insert({ trip_id: tripId, kind, ref_id: refId, traveler_id: travelerId, ...row })
+  const nuovo: Record<string, unknown> = { trip_id: tripId, kind, ref_id: refId, traveler_id: travelerId, ...row }
+  let res = old ? await db.from('ticket_codes').update(row).eq('id', old.id) : await db.from('ticket_codes').insert(leg ? { ...nuovo, leg } : nuovo)
+  if (res.error && !old && leg && senzaColonnaTratta(res.error)) res = await db.from('ticket_codes').insert(nuovo)
   if (res.error) {
     await removeBookingFile(filePath).catch(() => undefined)
     throw /ticket_codes|schema cache|does not exist/i.test(res.error.message) ? new Error(MIGRATION_0023) : res.error
   }
   await cacheBookingFile(filePath).catch(() => undefined)
   if (old) await removeBookingFile(old.filePath).catch(() => undefined)
+}
+
+/** «Usa quella della prima tratta»: il codice di una tratta vale per tutte (`leg` null). */
+export async function setTicketCodeLeg(code: TicketCode, leg: number | null): Promise<void> {
+  const { error } = await client().from('ticket_codes').update({ leg }).eq('id', code.id)
+  if (error) throw error
 }
 
 export async function removeTicketCode(code: TicketCode): Promise<void> {

@@ -30,22 +30,24 @@ interface Props {
   travelerIds?: string[]
   /** Passeggero da mostrare per primo. */
   start?: string
+  /** Voli con scalo: tratta (`seq`) di cui mostrare il codice; i codici nuovi valgono per quella tratta. */
+  leg?: number
   /** Apre subito la scelta del file (da «Aggiungi un codice» fuori dalla vista). */
   open: boolean
   onClose: () => void
 }
 
-export function CodiceBiglietto({ trip, kind, refId, title, when, detail, travelerIds, start, open, onClose }: Props) {
+export function CodiceBiglietto({ trip, kind, refId, title, when, detail, travelerIds, start, leg, open, onClose }: Props) {
   const tr = useTrips()
   const people = trip.travelers.filter((p) => !travelerIds?.length || travelerIds.includes(p.id))
   const codes = codiciDi(trip, kind, refId)
-  const first = start ?? people.find((p) => codicePer(codes, p.id))?.id ?? people[0]?.id
+  const first = start ?? people.find((p) => codicePer(codes, p.id, leg))?.id ?? people[0]?.id
   const [who, setWho] = useState(first)
   const [src, setSrc] = useState<string | null>(null)
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const input = useRef<HTMLInputElement>(null)
-  const code = codicePer(codes, who)
+  const code = codicePer(codes, who, leg)
   const person = trip.travelers.find((p) => p.id === who)
   const path = code?.filePath
 
@@ -83,8 +85,9 @@ export function CodiceBiglietto({ trip, kind, refId, title, when, detail, travel
     const bad = checkImmagine(file)
     if (bad) return showToast(bad)
     setBusy(true)
-    const old = codes.find((c) => c.travelerId === who) ?? (people.length <= 1 ? codes[0] : undefined)
-    const m = await tr.saveTicketCode(trip.id, kind, refId, who ?? null, file, old)
+    // si sostituisce il codice mostrato, se è di questa persona (o c'è una persona sola); altrimenti se ne aggiunge uno suo
+    const old = code && (code.travelerId === who || people.length <= 1) ? code : undefined
+    const m = await tr.saveTicketCode(trip.id, kind, refId, who ?? null, file, old, leg)
     setBusy(false)
     showToast(m ?? t('Codice salvato sul telefono'))
   }
@@ -131,8 +134,8 @@ export function CodiceBiglietto({ trip, kind, refId, title, when, detail, travel
           <div className="fa-chips scroll" role="group" aria-label={nBiglietti(people.length)} style={{ justifySelf: 'stretch', justifyContent: 'center' }}>
             <span className="fa-m" style={{ alignSelf: 'center' }}>{nBiglietti(people.length)}</span>
             {people.map((p) => (
-              <button key={p.id} type="button" className={cx('fa-av', `r${discOf(trip, p.id)}`)} aria-label={`${p.name}${codicePer(codes, p.id) ? '' : t(', senza codice')}`} aria-pressed={who === p.id} onClick={() => setWho(p.id)}
-                style={{ width: 40, height: 40, border: who === p.id ? '3px solid var(--primary)' : '3px solid transparent', opacity: who === p.id || codicePer(codes, p.id) ? 1 : 0.5, cursor: 'pointer' }}>
+              <button key={p.id} type="button" className={cx('fa-av', `r${discOf(trip, p.id)}`)} aria-label={`${p.name}${codicePer(codes, p.id, leg) ? '' : t(', senza codice')}`} aria-pressed={who === p.id} onClick={() => setWho(p.id)}
+                style={{ width: 40, height: 40, border: who === p.id ? '3px solid var(--primary)' : '3px solid transparent', opacity: who === p.id || codicePer(codes, p.id, leg) ? 1 : 0.5, cursor: 'pointer' }}>
                 {initials(p.name)}
               </button>
             ))}

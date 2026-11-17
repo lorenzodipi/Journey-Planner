@@ -126,7 +126,7 @@ export async function createFlight(tripId: string, input: FlightInput): Promise<
  */
 export async function updateFlight(old: Flight, tripId: string, input: FlightInput): Promise<void> {
   const db = client()
-  const legs = legColumns(input.legs, old.legs.some((l) => l.terminal || l.gate || l.boardingTime || l.seatsBy))
+  const legs = legColumns(input.legs, old.legs.some((l) => l.terminal || l.gate || l.boardingTime || l.seatsBy), old.legs.some((l) => l.gateClose))
   const head = await db.from('flights').update(flightColumns(input, old)).eq('id', old.id)
   if (head.error) throw mancaPaganti(head.error)
   const del = await db.from('flight_legs').delete().eq('flight_id', old.id)
@@ -150,6 +150,7 @@ export async function updateFlight(old: Flight, tripId: string, input: FlightInp
         seats: l.seats ?? null,
         notes: l.notes ?? null,
         ...(l.terminal || l.gate || l.boardingTime || l.seatsBy ? { terminal: l.terminal ?? null, gate: l.gate ?? null, boarding_time: l.boardingTime ?? null, seats_by: l.seatsBy ?? null } : {}),
+        ...(l.gateClose ? { gate_close: l.gateClose } : {}),
       })),
     )
     throw res.error

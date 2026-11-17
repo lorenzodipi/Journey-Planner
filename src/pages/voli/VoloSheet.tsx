@@ -32,7 +32,7 @@ interface LegDraft extends LegInput {
 let keyCounter = 0
 const emptyLeg = (date: string, fromTz = ''): LegDraft => ({
   key: ++keyCounter, flightNumber: '', from: '', to: '', departDate: date, departTime: '', arriveDate: date, arriveTime: '',
-  fromTz, toTz: '', cabin: '', seats: '', notes: '', terminal: '', gate: '', boardingTime: '', seatsBy: {}, fromTzAuto: true, toTzAuto: true,
+  fromTz, toTz: '', cabin: '', seats: '', notes: '', terminal: '', gate: '', boardingTime: '', gateClose: '', seatsBy: {}, fromTzAuto: true, toTzAuto: true,
 })
 
 const Errore = ({ children }: { children: string }) => (
@@ -147,7 +147,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
     </div>
   )
   const rotta = (l: LegDraft) => (l.from && l.to ? `${l.from} → ${l.to}` : undefined)
-  const altri = compilati([...legs.flatMap((l) => [l.terminal ?? '', l.gate ?? '', l.boardingTime ?? '']), checkin.date || checkin.time])
+  const altri = compilati([...legs.flatMap((l) => [l.terminal ?? '', l.gate ?? '', l.boardingTime ?? '', l.gateClose ?? '']), checkin.date || checkin.time])
 
   return (
     <Foglio
@@ -269,7 +269,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
           <Campo label={tt('Note')} textarea value={notes} onChange={setNotes} placeholder={tt('es. Check-in online 24 ore prima')} />
         </Gruppo>
 
-        <AltriDettagli pieni={altri} contenuto={tt('Terminal, gate, imbarco, fusi orari, check-in')}>
+        <AltriDettagli pieni={altri} contenuto={tt('Terminal, gate, imbarco e chiusura, fusi orari, check-in')}>
           {legs.map((l, i) => (
             <div key={l.key} className="fa-tratta" role="group" aria-label={tt('Tratta {v0}', { v0: i + 1 })}>
               <Micro titolo={tt('Tratta {v0}', { v0: i + 1 })} nota={rotta(l)} />
@@ -277,7 +277,10 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
                 <Campo label={tt('Terminal')} value={l.terminal ?? ''} onChange={(v) => patchLeg(l.key, { terminal: v })} maxLength={10} placeholder={tt('es. T1')} />
                 <Campo label={tt('Gate')} value={l.gate ?? ''} onChange={(v) => patchLeg(l.key, { gate: v.toUpperCase() })} maxLength={10} placeholder={tt('es. B12')} />
               </div>
-              <Campo label={tt('Imbarco')} type="time" icon="clock" value={l.boardingTime ?? ''} onChange={(v) => patchLeg(l.key, { boardingTime: v })} />
+              <div className="fa-2c">
+                <Campo label={tt('Imbarco')} type="time" icon="clock" value={l.boardingTime ?? ''} onChange={(v) => patchLeg(l.key, { boardingTime: v })} />
+                <Campo label={tt('Chiusura del gate')} type="time" icon="clock" value={l.gateClose ?? ''} onChange={(v) => patchLeg(l.key, { gateClose: v })} />
+              </div>
               {fusoInTratta(l) ? null : campiFuso(l)}
             </div>
           ))}

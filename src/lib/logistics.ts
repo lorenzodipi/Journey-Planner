@@ -120,6 +120,8 @@ export interface FlightLegRow {
   gate?: string | null
   boarding_time?: string | null
   seats_by?: Record<string, string> | null
+  // dalla migrazione 0051
+  gate_close?: string | null
 }
 
 const num = (v: number | string | null): number | undefined => (v == null ? undefined : Number(v))
@@ -237,6 +239,7 @@ export function mapFlights(rows: FlightRow[], legs: FlightLegRow[], tripId: stri
           terminal: l.terminal ?? undefined,
           gate: l.gate ?? undefined,
           boardingTime: l.boarding_time ?? undefined,
+          gateClose: l.gate_close ?? undefined,
           seatsBy: l.seats_by && Object.keys(l.seats_by).length > 0 ? l.seats_by : undefined,
         })),
     }))
@@ -463,6 +466,8 @@ export interface LegInput {
   terminal?: string
   gate?: string
   boardingTime?: string
+  /** chiusura del gate, «HH:MM» (0051) */
+  gateClose?: string
   seatsBy?: Record<string, string>
 }
 
@@ -517,8 +522,10 @@ export function flightColumns(i: FlightInput, old?: Flight) {
   }
 }
 
-/** Tratte ordinate per partenza, con `seq` progressivo e orari convertiti in istanti. */
-export function legColumns(legs: LegInput[], hadExtras = false) {
+/** Tratte ordinate per partenza, con `seq` progressivo e orari convertiti in istanti.
+ *  Le colonne delle migrazioni 0021 e 0051 si scrivono solo se servono (o se il volo le aveva già). */
+export function legColumns(legs: LegInput[], hadExtras = false, hadClose = false) {
+  const close = hadClose || legs.some((l) => l.gateClose)
   const extras = hadExtras || legs.some((l) => l.terminal || l.gate || l.boardingTime || (l.seatsBy && Object.values(l.seatsBy).some(Boolean)))
   const rows = legs.map((l) => ({
     flight_number: orNull(l.flightNumber),
@@ -539,6 +546,7 @@ export function legColumns(legs: LegInput[], hadExtras = false) {
           seats_by: l.seatsBy && Object.values(l.seatsBy).some(Boolean) ? Object.fromEntries(Object.entries(l.seatsBy).filter(([, v]) => v)) : null,
         }
       : {}),
+    ...(close ? { gate_close: orNull(l.gateClose ?? '') } : {}),
   }))
   rows.sort((a, b) => a.depart_at.localeCompare(b.depart_at))
   return rows.map((r, idx) => ({ ...r, seq: idx + 1 }))
@@ -564,6 +572,7 @@ export function legToForm(l: FlightLeg): LegInput {
     terminal: l.terminal ?? '',
     gate: l.gate ?? '',
     boardingTime: l.boardingTime ?? '',
+    gateClose: l.gateClose ?? '',
     seatsBy: l.seatsBy ?? {},
   }
 }

@@ -189,7 +189,8 @@ interface TripsValue {
   setBookingItems: (tripId: string, bookingId: string, itemIds: string[]) => Result
   setBookingDeleted: (id: string, deleted: boolean) => Result
   /** Codice del biglietto (#38): salva o sostituisce l'immagine per un passeggero. */
-  saveTicketCode: (tripId: string, kind: TicketKind, refId: string, travelerId: string | null, file: File, old?: TicketCode) => Result
+  saveTicketCode: (tripId: string, kind: TicketKind, refId: string, travelerId: string | null, file: File, old?: TicketCode, leg?: number) => Result
+  setTicketCodeLeg: (code: TicketCode, leg: number | null) => Result
   removeTicketCode: (code: TicketCode) => Result
 }
 
@@ -690,7 +691,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
       return run(() => logistics.updateTransport(id, input, trip?.timezone ?? 'UTC', trip?.days ?? [], trip?.transports.find((x) => x.id === id)), ['logistics'])
     },
     setTransportBought: (id, bought) => run(() => logistics.setTransportBought(id, bought), ['logistics']),
-    saveTicketCode: (tripId, kind, refId, travelerId, file, old) => run(() => planning.saveTicketCode(tripId, kind, refId, travelerId, file, old), ['planning']),
+    saveTicketCode: (tripId, kind, refId, travelerId, file, old, leg) => run(() => planning.saveTicketCode(tripId, kind, refId, travelerId, file, old, leg), ['planning']),
+    setTicketCodeLeg: (code, leg) => run(() => planning.setTicketCodeLeg(code, leg), ['planning']),
     removeTicketCode: (code) => run(() => planning.removeTicketCode(code), ['planning']),
     setTransportDeleted: (id, deleted) => run(() => logistics.setTransportDeleted(id, deleted), ['logistics']),
     createFlight: (tripId, input) => run(() => logistics.createFlight(tripId, input), ['logistics']),

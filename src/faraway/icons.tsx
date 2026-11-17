@@ -47,6 +47,9 @@ const PATHS = {
   refresh: <path d="M19 12a7 7 0 1 1-2-4.9M19 4v4h-4" />,
   file: <path d="M7 3.5h7l4 4V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1zM14 3.5V8h4" />,
   download: <path d="M12 4v11M8 11l4 4 4-4M5 19h14" />,
+  upload: <path d="M12 15V4M8 8l4-4 4 4M5 19h14" />,
+  valigia: <><rect x="5" y="7.5" width="14" height="12" rx="2.5" /><path d="M9.5 7.5V5h5v2.5M9 19.5v1M15 19.5v1" /></>,
+  righe: <path d="M4 7h16M4 12h10M4 17h7" />,
   move: <path d="M8 7l-4 5 4 5M16 7l4 5-4 5M4 12h16" />,
   save: <><path d="M6 4h10l4 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" /><path d="M8 4v4.5h7V4M7.5 20v-5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v5" /></>,
 } as const
