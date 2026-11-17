@@ -4,7 +4,8 @@
 import { clearBookingCache } from './bookingFiles'
 
 /** Aspetto dell'app (tema, ora e unità, stile della mappa, lingua): sono scelte del telefono, non dati dell'account, e restano. */
-export const CHIAVI_DA_TENERE: readonly string[] = ['jp.theme.v1', 'jp.formati.v1', 'jp.mapStyle', 'jp.lingua']
+// l'elenco degli aeroporti (e quando lo si è controllato) non è un dato dell'account: resta
+export const CHIAVI_DA_TENERE: readonly string[] = ['jp.theme.v1', 'jp.formati.v1', 'jp.mapStyle', 'jp.lingua', 'jp.aeroporti', 'jp.aeroporti.controllo']
 
 /** Tra le chiavi di localStorage, quelle da cancellare: dell'app (`jp.`) e della sessione (`sb-`), tranne l'aspetto. */
 export function chiaviDaCancellare(chiavi: readonly string[]): string[] {

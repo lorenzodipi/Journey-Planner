@@ -86,6 +86,12 @@
 - **Griglia** Terminal · Gate · Imbarco · Chiusura (`flight_legs.gate_close`, 0051), «—» se manca; senza gate, prima della partenza, la nota «Il gate compare di solito un'ora prima della partenza.». Il riquadro dello scalo sta solo sulla tratta prima dello scalo.
 - **Sotto**: «Bagaglio e tariffa» e «Note» solo se c'è qualcosa, il codice di prenotazione con «Copia», il biglietto della persona scelta (costo a persona, o totale diviso per i passeggeri), «Maps» (aeroporto di partenza della tratta, non dopo la partenza) e «Segui il volo» (icona radar: la pagina di Flightradar24 del numero di volo della tratta scelta, `linkFlightradar()`; senza numero di volo non c'è), in fondo «Modifica il volo» a sinistra ed «Elimina» a destra. Il visualizzatore non vede il riquadro per caricare, né Modifica ed Elimina.
 
+## Aeroporti
+
+- Il campo «Aeroporto» delle tratte cerca nell'elenco degli aeroporti con codice IATA e voli di linea (più i grandi aeroporti) di OurAirports, pubblico dominio: codice, nome, città, paese, fuso orario (calcolato dalle coordinate) e parole chiave. Scegliendo un aeroporto si compila il fuso della tratta.
+- L'elenco è dentro l'app (`src/data/aeroporti.json`, si carica solo quando serve, funziona offline) e si rigenera con `node scripts/aeroporti/genera.mjs`. Ogni mese l'azione «Aeroporti» lo rigenera e, se è cambiato, lo pubblica nel ramo `dati-aeroporti`; l'app lo controlla al massimo una volta a settimana quando c'è rete e tiene il più nuovo sul telefono (`jp.aeroporti`, resta dopo il logout). Così non serve una nuova versione sugli store.
+- Una volta caricato, l'elenco dà anche città e fuso degli aeroporti fuori dalla tabellina di `src/lib/airports.ts` (che resta per le città in italiano).
+
 ## Riepilogo dopo il viaggio
 
 - Sotto il totale ci sono **sempre due blocchi**, mai uno solo con un buco accanto.

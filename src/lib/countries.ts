@@ -295,7 +295,7 @@ const ZONES: Record<string, string[]> = {
 
 const collator = new Intl.Collator(LINGUA)
 
-function regionName(code: string): string {
+export function regionName(code: string): string {
   for (const lang of [LINGUA, 'en']) {
     try {
       const n = new Intl.DisplayNames(lang, { type: 'region' }).of(code)

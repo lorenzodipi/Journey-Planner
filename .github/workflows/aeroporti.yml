@@ -1,0 +1,44 @@
+# Elenco degli aeroporti aggiornato (OurAirports, pubblico dominio): ogni mese rigenera l'elenco con lo stesso script
+# dell'app e, se è cambiato, lo pubblica nel ramo `dati-aeroporti` (solo il file JSON, senza storia). L'app lo scarica
+# da lì quando c'è rete, così l'elenco si aggiorna senza una nuova versione sugli store e senza ricostruire APK e IPA.
+name: Aeroporti
+
+on:
+  schedule:
+    - cron: '17 3 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  aggiorna:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Genera l'elenco
+        run: |
+          mkdir -p /tmp/dati
+          node scripts/aeroporti/genera.mjs '' /tmp/dati/aeroporti.json
+      - name: Pubblica se è cambiato
+        env:
+          TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          curl -fsSL "https://raw.githubusercontent.com/$REPO/dati-aeroporti/aeroporti.json" -o /tmp/prima.json || echo '{}' > /tmp/prima.json
+          if node -e "const a=require('/tmp/prima.json'),b=require('/tmp/dati/aeroporti.json');process.exit(JSON.stringify(a.voci)===JSON.stringify(b.voci)?0:1)"; then
+            echo "Nessun cambiamento"; exit 0
+          fi
+          cd /tmp/dati
+          git init -q -b dati-aeroporti
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add aeroporti.json
+          git commit -q -m "Elenco degli aeroporti del $(date -u +%F)"
+          git push -q --force "https://x-access-token:$TOKEN@github.com/$REPO.git" dati-aeroporti

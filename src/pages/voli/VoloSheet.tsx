@@ -18,6 +18,7 @@ import type { Flight, Trip } from '../../types'
 import { Campo, Interruttore, Pulsante } from '../../faraway/base'
 import { AltriDettagli, Gruppo, IlCostoE, Micro, PerChi, Percorso } from '../../faraway/Moduli'
 import { CampoValuta } from '../../faraway/CampoValuta'
+import { CampoAeroporto } from '../../faraway/CampoAeroporto'
 import { CampoFuso } from '../../faraway/CampoFuso'
 import { ChiHaPagato } from '../../faraway/ChiHaPagato'
 import { Foglio } from '../../faraway/Foglio'
@@ -82,9 +83,9 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
   const multi = people.length > 1
 
   const patchLeg = (key: number, patch: Partial<LegDraft>) => setLegs((a) => a.map((l) => (l.key === key ? { ...l, ...patch } : l)))
-  function setAirport(leg: LegDraft, side: 'from' | 'to', raw: string) {
+  function setAirport(leg: LegDraft, side: 'from' | 'to', raw: string, fuso?: string) {
     const code = raw.toUpperCase().slice(0, 3)
-    const tz = isIata(code) ? timezoneForAirport(code) : undefined
+    const tz = fuso || (isIata(code) ? timezoneForAirport(code) : undefined)
     if (side === 'from') patchLeg(leg.key, { from: code, ...(tz && leg.fromTzAuto ? { fromTz: tz } : {}) })
     else patchLeg(leg.key, { to: code, ...(tz && leg.toTzAuto ? { toTz: tz } : {}) })
   }
@@ -189,7 +190,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
                       titolo: tt('Partenza'),
                       children: (
                         <>
-                          <Campo label={tt('Aeroporto')} icon="plane" value={l.from} onChange={(v) => setAirport(l, 'from', v)} placeholder={tt('Sigla di 3 lettere')} autoComplete="off" />
+                          <CampoAeroporto label={tt('Aeroporto')} value={l.from} onChange={(v, fuso) => setAirport(l, 'from', v, fuso)} />
                           <div className="dt">
                             <Campo label={tt('Data')} type="date" icon="cal" value={l.departDate} onChange={(v) => patchLeg(l.key, { departDate: v, ...(v && l.arriveDate && l.arriveDate < v ? { arriveDate: v } : {}) })} />
                             <Campo label={tt('Ora')} type="time" icon="clock" value={l.departTime} onChange={(v) => patchLeg(l.key, { departTime: v })} />
@@ -201,7 +202,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
                       titolo: tt('Arrivo'),
                       children: (
                         <>
-                          <Campo label={tt('Aeroporto')} icon="plane" value={l.to} onChange={(v) => setAirport(l, 'to', v)} placeholder={tt('Sigla di 3 lettere')} autoComplete="off" />
+                          <CampoAeroporto label={tt('Aeroporto')} value={l.to} onChange={(v, fuso) => setAirport(l, 'to', v, fuso)} />
                           <div className="dt">
                             <Campo label={tt('Data')} type="date" icon="cal" value={l.arriveDate} onChange={(v) => patchLeg(l.key, { arriveDate: v })} min={l.departDate || undefined} />
                             <Campo label={tt('Ora')} type="time" icon="clock" value={l.arriveTime} onChange={(v) => patchLeg(l.key, { arriveTime: v })} />

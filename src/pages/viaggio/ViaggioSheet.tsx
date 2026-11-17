@@ -335,7 +335,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
                 ) : (
                   <div style={{ display: 'grid', gap: 8 }}>
                     {/* una select vera, con tutti i paesi: prima era un campo di testo con suggerimenti che sembrava una select */}
-                    <CampoPaese label={tt('Paese')} value={p.country} onChange={(code) => scegliPaese(p.id, countryByCode(code)?.name ?? '')} vuoto={tt('Scegli il paese')} />
+                    <CampoPaese label={tt('Paese')} value={p.country} onChange={(code) => scegliPaese(p.id, countryByCode(code)?.name ?? '')}/>
                     {paesi.length > 1 ? (
                       <button type="button" className="fa-lnk" style={{ color: 'var(--danger)', justifySelf: 'start' }} onClick={() => setPaesi(paesi.filter((x) => x.id !== p.id))}>
                         {tt('Rimuovi')}

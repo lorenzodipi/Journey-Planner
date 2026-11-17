@@ -1,30 +1,20 @@
-// Paese scelto da un elenco con tutti i paesi (nome in italiano, in ordine alfabetico), non scritto a mano. Il valore è il codice ISO.
-import { useId } from 'react'
+// Paese scelto dall'elenco di tutti i paesi: campo in cui si scrive il nome (in italiano o in inglese) o il codice e si
+// sceglie tra le voci che corrispondono (CampoCerca). Il valore è il codice ISO; il campo vuoto toglie la scelta.
+import { useMemo } from 'react'
 import { COUNTRIES } from '../lib/countries'
+import type { VoceCerca } from '../lib/cerca'
+import { CampoCerca } from './CampoCerca'
 import { t } from '../i18n'
 
-export function CampoPaese({ label, value, onChange, vuoto = t('Non indicato'), hint }: { label: string; value: string; onChange: (codice: string) => void; /** testo della voce che toglie la scelta */ vuoto?: string; hint?: string }) {
-  const id = useId()
-  const fuori = value && !COUNTRIES.some((c) => c.code === value)
-  return (
-    <div className="fa-fld">
-      <label htmlFor={id}>{label}</label>
-      <span className="fa-in">
-        <select id={id} value={value} onChange={(e) => onChange(e.currentTarget.value)} aria-describedby={hint ? `${id}-h` : undefined}>
-          <option value="">{vuoto}</option>
-          {fuori ? <option value={value}>{value}</option> : null}
-          {COUNTRIES.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </span>
-      {hint ? (
-        <span id={`${id}-h`} className="fa-help">
-          {hint}
-        </span>
-      ) : null}
-    </div>
-  )
+const inglese = (() => {
+  try {
+    return new Intl.DisplayNames('en', { type: 'region' })
+  } catch {
+    return null
+  }
+})()
+
+export function CampoPaese({ label, value, onChange, hint }: { label: string; value: string; onChange: (codice: string) => void; hint?: string }) {
+  const voci = useMemo<VoceCerca[]>(() => COUNTRIES.map((c) => ({ id: c.code, codice: c.code, label: c.name, altro: inglese?.of(c.code) ?? '' })), [])
+  return <CampoCerca label={label} value={value} onChange={onChange} voci={voci} hint={hint} placeholder={t('Nome del paese')} icon="globe" facoltativo />
 }

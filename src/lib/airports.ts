@@ -1,5 +1,6 @@
-// Aeroporti più comuni con il fuso IANA: precompila il fuso quando si scrive il codice IATA.
-// Non è un elenco completo: per gli altri il fuso si scrive a mano (resta sempre modificabile).
+// Aeroporti più comuni con il fuso IANA e la città in italiano: sempre pronti, senza caricare niente.
+// Per tutti gli altri c'è l'elenco completo (aeroportiElenco.ts): una volta caricato, fuso e città vengono da lì.
+import { aeroportoCaricato } from './aeroportiElenco'
 
 export const AIRPORT_TZ: Record<string, string> = {
   MXP: 'Europe/Rome', LIN: 'Europe/Rome', BGY: 'Europe/Rome', FCO: 'Europe/Rome', CIA: 'Europe/Rome',
@@ -20,7 +21,7 @@ export const AIRPORT_TZ: Record<string, string> = {
 
 /** Fuso noto per un codice IATA (maiuscole/minuscole indifferenti), altrimenti `undefined`. */
 export function timezoneForAirport(code: string): string | undefined {
-  return AIRPORT_TZ[code.trim().toUpperCase()]
+  return AIRPORT_TZ[code.trim().toUpperCase()] ?? aeroportoCaricato(code)?.fuso
 }
 
 export const isIata = (code: string) => /^[A-Za-z]{3}$/.test(code.trim())
@@ -36,4 +37,4 @@ export const AIRPORT_CITY: Record<string, string> = {
   DFW: 'Dallas', LAX: 'Los Angeles', SFO: 'San Francisco', SEA: 'Seattle', YYZ: 'Toronto', SYD: 'Sydney', MEL: 'Melbourne',
 }
 
-export const airportCity = (code: string): string => AIRPORT_CITY[code.trim().toUpperCase()] ?? code.trim().toUpperCase()
+export const airportCity = (code: string): string => AIRPORT_CITY[code.trim().toUpperCase()] ?? (aeroportoCaricato(code)?.citta || code.trim().toUpperCase())

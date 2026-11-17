@@ -21,6 +21,7 @@ Obiettivo: **WCAG 2.2 livello AA** in chiaro e in scuro, su telefono, con VoiceO
 - Niente `tabindex` positivi.
 - Gruppi di scelte: una sola fermata del Tab e le frecce che cambiano la scelta (`Segmenti`, giorni in «Sposta», fatti con `RadioGroup` della libreria).
 - Elenchi aperti da un pulsante («Stato della tappa», «Scegli il giorno»): `MenuScelta` (`Select` della libreria). Frecce, Home/Fine, iniziale per saltare, Esc chiude e il focus torna al pulsante. Ogni voce ha un nome (`slot="label"`) e una descrizione (`slot="description"`), letti separati.
+- Scelta da un elenco lungo (aeroporti, paesi, valute, fusi): `CampoCerca`, `ComboBox` della libreria con l'elenco in linea sotto il campo. Etichetta (`Label`) e descrizione (`slot="description"`) collegate al campo; frecce per scorrere le voci senza lasciare il campo, Invio sceglie, Esc chiude solo l'elenco.
 - Suggerimenti sotto un campo di testo («Luogo o attività» con i luoghi salvati): `Autocomplete` della libreria con l'elenco in linea; le frecce scorrono i suggerimenti senza lasciare il campo, Invio sceglie quello evidenziato. Dentro un foglio niente pannelli sopra la pagina: finirebbero dietro il `<dialog>`.
 
 ## Moduli

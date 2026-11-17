@@ -821,3 +821,18 @@ dialog.fa-mod:focus{outline:none}
 @container (max-width:280px){.k-Ticket .ci-btns.n2{grid-template-columns:minmax(0,1fr)}}
 .k-Ticket .ci-fine{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--space-sm);margin:0 -8px -8px}
 .k-Ticket .ci-fine .fa-lnk.dng{color:var(--danger)}
+
+/* Campo in cui si scrive per scegliere da un elenco lungo (CampoCerca): l'elenco sta sotto il campo, nel foglio */
+.fa-cerca-l{margin-top:var(--space-sm);border:1px solid var(--hairline);border-radius:var(--radius-lg);background:var(--surface-card);overflow:hidden;scroll-margin-bottom:var(--space-lg)}
+[data-theme="dark"] .fa-cerca-l{border-color:var(--border-strong)}
+.fa-cerca-lb{display:grid;outline:none}
+.fa-cerca-lb .op{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-md);min-height:48px;box-sizing:border-box;padding:var(--space-sm) var(--space-lg);cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}
+.fa-cerca-lb .op+.op{border-top:1px solid var(--hairline)}
+.fa-cerca-lb .op.fo{background:var(--azzurro-soft)}
+.fa-cerca-lb .op[data-focus-visible]{box-shadow:inset 0 0 0 3px var(--focus)}
+.fa-cerca-lb .sg{flex:none;min-width:3.2em}
+.fa-cerca-lb .cod{font:600 15px/20px var(--font-sans);letter-spacing:.04em;color:var(--azzurro-ink)}
+.fa-cerca-lb .tx{display:grid;flex:1 1 9em;min-width:0}
+.fa-cerca-lb .tx b{font:600 15px/20px var(--font-sans);color:var(--ink);overflow-wrap:break-word}
+.fa-cerca-lb .tx span{font:400 13px/18px var(--font-sans);color:var(--ink-muted);overflow-wrap:break-word}
+.fa-cerca-vuoto{margin:0;padding:var(--space-md) var(--space-lg);font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
