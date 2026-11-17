@@ -6,10 +6,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Radio as AriaRadio, RadioGroup as AriaRadioGroup } from 'react-aria-components'
 import { airportCity } from '../lib/airports'
-import { imageUrl, openBookingFile } from '../lib/bookingFiles'
-import { bigliettoPersona, modoPersone, nomiCorti, postoPersona, scaloDopo, statoCheckin, type StatoCheckin } from '../lib/cartaImbarco'
+import { imageUrl } from '../lib/bookingFiles'
+import { bigliettoPersona, linkFlightradar, modoPersone, nomiCorti, postoPersona, scaloDopo, statoCheckin, type StatoCheckin } from '../lib/cartaImbarco'
 import { checkImmagine, codiceAltraTratta, codiciDi, codicePer } from '../lib/codici'
-import { perRiferimento } from '../lib/documenti'
 import { formatMoney } from '../lib/money'
 import { durataLunga, fasciaScali, riepilogoVolo } from '../lib/voli'
 import { discOf, initials, useMe } from '../state/me'
@@ -153,9 +152,7 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
   const dopo = scaloDopo(flight, li, durataLunga)
   const note = [flight.notes, leg.notes].map((x) => x?.trim()).filter(Boolean).join('\n')
   const prezzo = bigliettoPersona(flight, names.length || 1)
-  const docs = perRiferimento(trip.documents, 'flight', flight.id)
-  const pdf = docs.find((d) => d.mime === 'application/pdf' || /\.pdf$/i.test(d.name)) ?? docs[0]
-  const isPdf = !!pdf && (pdf.mime === 'application/pdf' || /\.pdf$/i.test(pdf.name))
+  const radar = linkFlightradar(leg.flightNumber)
   const maps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${airportCity(leg.from)} ${leg.from} aeroporto${leg.terminal ? ` terminal ${leg.terminal}` : ''}`)}`
 
   async function aggiungi(file: File | undefined) {
@@ -197,15 +194,6 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
     }
   }
 
-  async function apriPdf() {
-    if (!pdf) return
-    try {
-      await openBookingFile(pdf.path)
-    } catch (e) {
-      showToast(e instanceof Error ? e.message : t('Non riesco ad aprire il file.'))
-    }
-  }
-
   const cta = (() => {
     if (codice || lettura || stato.tipo !== 'dafare') return null
     if (altra) {
@@ -222,7 +210,7 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
 
   const pill = PILLOLA[stato.tipo]
   const condiviso = multiLeg && li > 0 && codice && !codice.leg
-  const bottoni = [!partito, !!pdf].filter(Boolean).length
+  const bottoni = [!partito, !!radar].filter(Boolean).length
 
   return (
     <div className="k-Ticket">
@@ -437,9 +425,9 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
                     {t('Maps')}
                   </Pulsante>
                 ) : null}
-                {pdf ? (
-                  <Pulsante size="sm" color="secondary" iconLeading="file" onPress={() => void apriPdf()}>
-                    {isPdf ? t('Apri il PDF') : t('Apri il documento')}
+                {radar ? (
+                  <Pulsante size="sm" color="secondary" iconLeading="radar" href={radar} target="_blank" aria-label={t('Segui il volo {numero} su Flightradar24', { numero: leg.flightNumber?.trim() ?? '' })}>
+                    {t('Segui il volo')}
                   </Pulsante>
                 ) : null}
               </div>

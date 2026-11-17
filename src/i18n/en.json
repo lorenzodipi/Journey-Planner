@@ -2127,8 +2127,6 @@
  "Copia il codice di prenotazione": "Copy the booking code",
  "Biglietto di {nome}": "{nome}'s ticket",
  "Apri l'aeroporto di {city} in Maps": "Open {city} airport in Maps",
- "Apri il PDF": "Open the PDF",
- "Apri il documento": "Open the document",
  "Modifica il volo": "Edit flight",
  "Atterrato": "Landed",
  "In volo": "In flight",
@@ -2139,5 +2137,7 @@
  "Poi scalo a {city}: {v0}": "Then a stopover in {city}: {v0}",
  "Atterri alle {arrivo} e riparti alle {partenza}.": "You land at {arrivo} and leave again at {partenza}.",
  "Terminal, gate, imbarco e chiusura, fusi orari, check-in": "Terminal, gate, boarding and gate closing, time zones, check-in",
- "Chiusura del gate": "Gate closing"
+ "Chiusura del gate": "Gate closing",
+ "Segui il volo": "Track flight",
+ "Segui il volo {numero} su Flightradar24": "Track flight {numero} on Flightradar24"
 }

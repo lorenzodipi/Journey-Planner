@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bigliettoPersona, modoPersone, nomiCorti, postoPersona, scaloDopo, statoCheckin } from './cartaImbarco'
+import { bigliettoPersona, linkFlightradar, modoPersone, nomiCorti, postoPersona, scaloDopo, statoCheckin } from './cartaImbarco'
 import { codiceAltraTratta, codicePer } from './codici'
 import { durataLunga } from './voli'
 import type { FlightLeg, TicketCode } from '../types'
@@ -51,6 +51,14 @@ describe('carta d\'imbarco', () => {
     const legs = [leg(), leg({ id: 'l2', seq: 2, from: 'IST', to: 'HND', departAt: '2026-11-21T15:35:00.000Z', arriveAt: '2026-11-22T04:05:00.000Z', fromTz: 'Europe/Istanbul', toTz: 'Asia/Tokyo' })]
     expect(scaloDopo({ legs }, 0, durataLunga)).toEqual({ titolo: 'Poi scalo a Istanbul: 2 h 15', testo: 'Atterri alle 16:20 e riparti alle 18:35.' })
     expect(scaloDopo({ legs }, 1, durataLunga)).toBeNull()
+  })
+
+  it('costruisce il link a Flightradar24 dal numero del volo', () => {
+    expect(linkFlightradar('CA950')).toBe('https://www.flightradar24.com/data/flights/ca950')
+    expect(linkFlightradar(' AU 784 ')).toBe('https://www.flightradar24.com/data/flights/au784')
+    expect(linkFlightradar('U2-1234')).toBe('https://www.flightradar24.com/data/flights/u21234')
+    expect(linkFlightradar('')).toBeUndefined()
+    expect(linkFlightradar('volo di andata')).toBeUndefined()
   })
 
   it('sceglie il codice della tratta, poi quello che vale per tutte', () => {

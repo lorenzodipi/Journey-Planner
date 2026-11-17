@@ -79,3 +79,9 @@ export function scaloDopo(f: Pick<Flight, 'legs'>, i: number, durata: (min: numb
     testo: t('Atterri alle {arrivo} e riparti alle {partenza}.', { arrivo: formatInZone(a.arriveAt, a.toTz), partenza: formatInZone(b.departAt, b.fromTz) }),
   }
 }
+
+/** Pagina del volo su Flightradar24 («CA 950» → …/data/flights/ca950); senza un numero di volo valido, niente. */
+export function linkFlightradar(numero: string | undefined): string | undefined {
+  const n = (numero ?? '').replace(/[\s-]+/g, '').toLowerCase()
+  return /^[a-z0-9]{2,3}\d{1,4}[a-z]?$/.test(n) ? `https://www.flightradar24.com/data/flights/${n}` : undefined
+}
