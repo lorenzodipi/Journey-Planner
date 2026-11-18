@@ -37,6 +37,10 @@ export interface StayRow {
   phone?: string | null
   email?: string | null
   participants?: string[] | null
+  // dalla migrazione 0052 (privati: arrivano da trip_costs)
+  wifi_name?: string | null
+  wifi_password?: string | null
+  access_code?: string | null
 }
 
 export interface TransportRow {
@@ -157,6 +161,9 @@ export function mapStays(rows: StayRow[], tripId: string): Stay[] {
       phone: r.phone?.trim() || undefined,
       email: r.email?.trim() || undefined,
       participants: r.participants?.length ? r.participants : undefined,
+      wifiName: r.wifi_name?.trim() || undefined,
+      wifiPassword: r.wifi_password?.trim() || undefined,
+      accessCode: r.access_code?.trim() || undefined,
     }))
     .sort((a, b) => a.checkIn.localeCompare(b.checkIn) || a.name.localeCompare(b.name, LINGUA))
 }
@@ -274,6 +281,9 @@ export interface StayInput {
   phone?: string
   email?: string
   participants?: string[]
+  wifiName?: string
+  wifiPassword?: string
+  accessCode?: string
 }
 
 const orNull = (s: string) => s.trim() || null
@@ -295,6 +305,9 @@ export function stayExtras(i: StayInput, old?: Stay) {
   put('phone', i.phone?.trim(), old?.phone)
   put('email', i.email?.trim(), old?.email)
   put('participants', i.participants, old?.participants)
+  put('wifi_name', i.wifiName?.trim(), old?.wifiName)
+  put('wifi_password', i.wifiPassword?.trim(), old?.wifiPassword)
+  put('access_code', i.accessCode?.trim(), old?.accessCode)
   return out
 }
 

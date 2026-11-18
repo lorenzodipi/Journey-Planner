@@ -171,6 +171,11 @@ export interface Stay {
   email?: string
   /** Chi dorme qui: facoltativo e solo informativo. */
   participants?: string[]
+  /** dalla migrazione 0052, privati come i costi (il visualizzatore non li vede) */
+  wifiName?: string
+  wifiPassword?: string
+  /** codice della porta o della cassetta delle chiavi */
+  accessCode?: string
 }
 
 export interface Transport {

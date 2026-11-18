@@ -86,6 +86,12 @@
 - **Griglia** Terminal · Gate · Imbarco · Chiusura (`flight_legs.gate_close`, 0051), «—» se manca; senza gate, prima della partenza, la nota «Il gate compare di solito un'ora prima della partenza.». Il riquadro dello scalo sta solo sulla tratta prima dello scalo.
 - **Sotto**: «Bagaglio e tariffa» e «Note» solo se c'è qualcosa, il codice di prenotazione con «Copia», il biglietto della persona scelta (costo a persona, o totale diviso per i passeggeri), «Maps» (aeroporto di partenza della tratta, non dopo la partenza) e «Segui il volo» (icona radar: la pagina di Flightradar24 del numero di volo della tratta scelta, `linkFlightradar()`; senza numero di volo non c'è), in fondo «Modifica il volo» a sinistra ed «Elimina» a destra. Il visualizzatore non vede il riquadro per caricare, né Modifica ed Elimina.
 
+## Alloggi: accesso, Wi-Fi e note
+
+- Nel foglio dell'alloggio il gruppo «Accesso e Wi-Fi» ha «Codice d'accesso» (porta o cassetta delle chiavi), «Rete Wi-Fi» e «Password del Wi-Fi». Sono dati privati come i costi (0052): con i trigger di `trip_costs` li leggono solo creatore e partecipanti, non il visualizzatore. Nella card aperta e nella riga del giorno compaiono con «Copia».
+- «Persone nella prenotazione» (prima «Ospiti») è il numero di persone della prenotazione, non quante ne può ospitare l'alloggio.
+- I link scritti nelle note (alloggi, voli, luoghi, prenotazioni, descrizione della checklist) si riconoscono da soli (`TestoConLink`, `src/lib/link.ts`): si toccano e si aprono fuori dall'app, su una riga con i tre puntini se sono lunghi.
+
 ## Aeroporti
 
 - Il campo «Aeroporto» delle tratte cerca nell'elenco degli aeroporti con codice IATA e voli di linea (più i grandi aeroporti) di OurAirports, pubblico dominio: codice, nome, città, paese, fuso orario (calcolato dalle coordinate) e parole chiave. Scegliendo un aeroporto si compila il fuso della tratta.

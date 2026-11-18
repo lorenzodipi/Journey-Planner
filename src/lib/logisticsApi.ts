@@ -28,14 +28,17 @@ const now = () => new Date().toISOString()
 
 // ---------- alloggi ----------
 
+const MIGRATION_0052 = t('Per salvare codice d\'accesso e Wi-Fi manca la migrazione 0052 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0052_alloggi_wifi_accesso.sql), poi riprova.')
+const mancaAccesso = (e: { message?: string }) => (/wifi_name|wifi_password|access_code/i.test(e.message ?? '') ? new Error(MIGRATION_0052) : e)
+
 export async function createStay(tripId: string, input: StayInput): Promise<void> {
   const { error } = await client().from('stays').insert({ trip_id: tripId, ...stayColumns(input) })
-  if (error) throw error
+  if (error) throw mancaAccesso(error)
 }
 
 export async function updateStay(id: string, input: StayInput, old?: Stay): Promise<void> {
   const { error } = await client().from('stays').update(stayColumns(input, old)).eq('id', id)
-  if (error) throw error
+  if (error) throw mancaAccesso(error)
 }
 
 export async function setStayFlag(id: string, flag: 'booked' | 'paid', value: boolean): Promise<void> {

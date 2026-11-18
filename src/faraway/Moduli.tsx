@@ -237,7 +237,8 @@ export function Contatore({ label, hint, value, onChange, min = 1, max = 99, vuo
           <Sv name="minus" size={20} />
         </button>
         <output aria-live="polite" className={value === null ? 'vuoto' : undefined} aria-label={value === null ? t('{label}: non indicato', { label }) : undefined}>
-          {value === null ? '—' : value}
+          {/* senza numero resta solo «+», al suo posto di sempre: niente trattino che sembra un «−» */}
+          {value === null ? <span className="sr-only">—</span> : value}
         </output>
         <button type="button" className="fa-ib" aria-label={t('{label}: uno in più', { label })} disabled={value !== null && value >= max} onClick={() => onChange(piu)}>
           <Sv name="plus" size={20} />

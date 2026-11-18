@@ -1,6 +1,7 @@
 // Biglietto lavanda di un alloggio (componente Biglietto, mock Fa-37, #39): «Alloggio · N notti», pillola Pagato / Non pagato,
 // nome grande, indirizzo · città; dopo la perforazione Check-in, Check-out e Camera, il codice di prenotazione e «Apri sulla mappa».
-// Al tocco si apre in linea: costo e chi ha pagato, pasti, note, Modifica, Elimina.
+// Al tocco si apre in linea: costo e chi ha pagato, persone, contatti, codice d'accesso e Wi-Fi (da copiare), pasti, note,
+// Modifica, Elimina.
 import { cameraDi, inclusi, notti, orarioCheck } from '../lib/alloggi'
 import { formatShort } from '../lib/dates'
 import { convert, formatMoney, rateFor } from '../lib/money'
@@ -12,6 +13,8 @@ import { cx } from './cx'
 import { Sv } from './icons'
 import { PersoneRiga, stessePersone } from './Persone'
 import { RigaApribile } from './Righe'
+import { TestoConLink } from './TestoConLink'
+import { showToast } from '../state/toast'
 import { t } from '../i18n'
 
 export function mappaAlloggio(s: Stay): string | null {
@@ -20,6 +23,39 @@ export function mappaAlloggio(s: Stay): string | null {
   return q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : null
 }
 
+
+async function copia(testo: string, fatto: string) {
+  try {
+    await navigator.clipboard.writeText(testo)
+    showToast(fatto)
+  } catch {
+    showToast(t('Non riesco a copiare: seleziona il testo a mano.'))
+  }
+}
+
+/** Codice d'accesso e Wi-Fi (0052): righe con «Copia», nella card e nella riga del giorno. */
+function RigheAccesso({ s }: { s: Stay }) {
+  const riga = (k: string, v: string | undefined, nomeCopia: string, fatto: string) =>
+    v ? (
+      <div>
+        <dt>{k}</dt>
+        <dd className="cpy">
+          <span className="v">{v}</span>
+          <button type="button" className="fa-lnk" aria-label={nomeCopia} onClick={() => void copia(v, fatto)}>
+            <Sv name="copy" size={16} />
+            {t('Copia')}
+          </button>
+        </dd>
+      </div>
+    ) : null
+  return (
+    <>
+      {riga(t('Codice d\'accesso'), s.accessCode, t('Copia il codice d\'accesso'), t('Codice d\'accesso copiato'))}
+      {riga(t('Rete Wi-Fi'), s.wifiName, t('Copia il nome della rete Wi-Fi'), t('Nome della rete copiato'))}
+      {riga(t('Password del Wi-Fi'), s.wifiPassword, t('Copia la password del Wi-Fi'), t('Password del Wi-Fi copiata'))}
+    </>
+  )
+}
 
 interface Props {
   trip: Trip
@@ -46,7 +82,7 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
   // «Dormono qui» solo se sono persone diverse da «Diviso tra» (altrimenti è una ripetizione)
   const dormono = Boolean(s.participants?.length) && !(perChi && stessePersone(s.participants ?? [], ids))
   // il visualizzatore non vede costi e pulsanti: se non resta niente da mostrare, la card non si apre (niente freccia)
-  const apribile = !lettura || Boolean(s.guests || dormono || s.phone || s.email || pasti || s.notes)
+  const apribile = !lettura || Boolean(s.guests || dormono || s.phone || s.email || pasti || s.notes || s.accessCode || s.wifiName || s.wifiPassword)
   const testa = (
     <>
       <span className="hd">
@@ -131,7 +167,7 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
                 ) : null}
                 {s.guests ? (
                   <div>
-                    <dt>{t('Ospiti')}</dt>
+                    <dt>{t('Persone nella prenotazione')}</dt>
                     <dd>{s.guests}</dd>
                   </div>
                 ) : null}
@@ -155,6 +191,7 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
                     <dd><a className="fa-lnk" href={`mailto:${s.email}`}>{s.email}</a></dd>
                   </div>
                 ) : null}
+                <RigheAccesso s={s} />
                 {pasti ? (
                   <div>
                     <dt>{t('Pasti e servizi')}</dt>
@@ -164,7 +201,9 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
                 {s.notes ? (
                   <div>
                     <dt>{t('Nota')}</dt>
-                    <dd style={{ whiteSpace: 'pre-line' }}>{s.notes}</dd>
+                    <dd style={{ whiteSpace: 'pre-line' }}>
+                      <TestoConLink testo={s.notes} />
+                    </dd>
                   </div>
                 ) : null}
               </dl>
@@ -217,6 +256,7 @@ export function RigaAlloggio({ stay: s, date, open, onToggle, onEdit, onDelete, 
             <dd>{cameraDi(s)}</dd>
           </div>
         ) : null}
+        <RigheAccesso s={s} />
       </dl>
       <div className="fa-acts">
         {href ? (

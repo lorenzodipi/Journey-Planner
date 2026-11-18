@@ -2433,14 +2433,14 @@ html,body{margin:0;background:var(--canvas)}
 .fa-perc .rail{position:relative}
 .fa-perc .tp:not(.dur)>.rail::before{content:"";position:absolute;left:2px;top:6px;width:12px;height:12px;border-radius:50%;box-sizing:border-box;border:2.5px solid var(--azzurro-ink);background:var(--surface-card)}
 .fa-perc .tp.end>.rail::before{background:var(--azzurro-ink)}
-.fa-perc .rail::after{content:"";position:absolute;left:7px;width:2px;background:var(--border-strong);border-radius:1px}
+.fa-perc .rail::after{content:"";position:absolute;left:7px;width:2px;background:var(--border-strong)}
 .fa-perc .tp:first-child>.rail::after{top:20px;bottom:0}
 .fa-perc .tp.dur>.rail::after{top:0;bottom:0}
 .fa-perc .tp.end>.rail::after{top:0;height:6px}
 .fa-perc .cnt{display:grid;gap:16px;min-width:0;padding-bottom:16px}
 .fa-perc .tp.end>.cnt{padding-bottom:0}
 .fa-perc :is(h4,h5){margin:0;font:600 16px/24px var(--font-sans);color:var(--ink)}
-.fa-perc .tp.dur{padding-bottom:16px}
+.fa-perc .tp.dur .pill{margin-bottom:16px}
 .fa-perc .pill,.fa-scalo{font:500 14px/20px var(--font-sans);font-variant-numeric:tabular-nums;color:var(--ink-muted);background:var(--surface-soft);border-radius:9999px}
 .fa-perc .pill{justify-self:start;padding:4px 12px}
 .fa-scalo{justify-self:center;display:inline-flex;gap:8px;align-items:center;padding:6px 16px}

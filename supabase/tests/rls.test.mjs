@@ -941,6 +941,20 @@ await asUser(null, 'postgres')
   await asUser(A)
 }
 
+// alloggi, Wi-Fi e codice d'accesso (0052): privati come i costi, in trip_costs
+{
+  await asUser(null, 'postgres')
+  await runMigration('0052_alloggi_wifi_accesso.sql')
+  await runMigration('0052_alloggi_wifi_accesso.sql') // si può rilanciare
+  const tr = (await db.query(`select id from trips limit 1`)).rows[0].id
+  const st = (await db.query(`insert into stays (trip_id,name,check_in,check_out,total_cost,wifi_name,wifi_password) values ($1,'Casa','2026-11-22','2026-11-24',300,'Rete','segreta') returning id`, [tr])).rows[0].id
+  const dati = async () => (await db.query(`select data from trip_costs where kind='stay' and ref_id=$1`, [st])).rows[0]?.data
+  check('0052 Wi-Fi e costo finiscono nei dati privati', (await dati())?.wifi_password === 'segreta' && (await dati())?.wifi_name === 'Rete' && (await dati())?.total_cost === 300)
+  await db.query(`update stays set access_code='1234' where id=$1`, [st])
+  check('0052 una modifica del codice aggiorna solo lui', (await dati())?.access_code === '1234' && (await dati())?.wifi_password === 'segreta')
+  await asUser(A)
+}
+
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione
 await asUser(null, 'service_role')
 const svcTrip = (await db.query(`select id from trips limit 1`)).rows

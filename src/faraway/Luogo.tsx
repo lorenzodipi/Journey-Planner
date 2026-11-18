@@ -1,6 +1,7 @@
 // Card del luogo (componenti Luoghi / LuoghiAperti, mock Fa-16…Fa-21): disco della categoria, nome, città,
 // stato, Maps sempre cliccabile; aperta in linea con durata, orari, note, «Aggiungi a una tappa» (scelta del
 // giorno in linea) o «Aggiunto al Giorno N · Cambia», Modifica ed Elimina.
+import { TestoConLink } from './TestoConLink'
 import { ora } from '../lib/formati'
 import type { ReactNode } from 'react'
 import { useRef, useState } from 'react'
@@ -156,7 +157,7 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
               <div className="rx">
                 <div className="rm">
                   <span className="nt" style={{ fontWeight: 400, whiteSpace: 'pre-line' }}>
-                    {place.note}
+                    <TestoConLink testo={place.note} />
                   </span>
                 </div>
                 <div className="rs">{tt('Note')}</div>

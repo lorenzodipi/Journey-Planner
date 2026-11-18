@@ -1,6 +1,7 @@
 // Pagina Prenotazioni (mock Fa-44, #40): pillole per tipo e biglietti per giorno, come quelli dei trasporti.
 // Chiuso: tipo, titolo, stato, quando e codice. Aperto in linea: costo, dati e azioni (Copia, Codice, Link, File,
 // Collega/Scollega una tappa, Modifica, Elimina).
+import { TestoConLink } from '../../faraway/TestoConLink'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useSearch } from 'wouter'
 import { BOOKING_BUDGET_CATEGORY, BOOKING_LABEL } from '../../lib/bookingMeta'
@@ -222,7 +223,7 @@ export function PrenotazioniPage() {
                             .map(([k, v]) => (
                               <div key={k}>
                                 <dt>{k}</dt>
-                                <dd style={k === 'Nota' ? { whiteSpace: 'pre-line' } : undefined}>{v}</dd>
+                                <dd style={k === tt('Nota') ? { whiteSpace: 'pre-line' } : undefined}>{k === tt('Nota') ? <TestoConLink testo={v} /> : v}</dd>
                               </div>
                             ))}
                         </dl>

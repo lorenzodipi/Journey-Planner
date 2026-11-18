@@ -1,5 +1,6 @@
 // Foglio «Nuovo alloggio» / «Modifica alloggio» (#39, #58), a gruppi: Dove (prima il link di Google Maps, che compila il
-// resto), Quando (check-in → check-out con le notti), Costo, Camera e contatti, Altri dettagli (ospiti, telefono, email, chi dorme qui).
+// resto), Quando (check-in → check-out con le notti), Costo, Camera e contatti, Accesso e Wi-Fi, Altri dettagli (persone nella
+// prenotazione, telefono, email, chi dorme qui).
 import { useConflitto } from '../../faraway/useConflitto'
 import { DocumentiCollegati } from '../documenti/DocumentiCollegati'
 import { useState, type ReactNode } from 'react'
@@ -77,6 +78,9 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
   const [guests, setGuests] = useState(s?.guests ? String(s.guests) : '')
   const [phone, setPhone] = useState(s?.phone ?? '')
   const [email, setEmail] = useState(s?.email ?? '')
+  const [accesso, setAccesso] = useState(s?.accessCode ?? '')
+  const [wifi, setWifi] = useState(s?.wifiName ?? '')
+  const [wifiPw, setWifiPw] = useState(s?.wifiPassword ?? '')
   const [dorme, setDorme] = useState<string[]>(s?.participants ?? [])
   const [code, setCode] = useState(s?.bookingCode ?? '')
   const [cost, setCost] = useState(amountToText(s?.totalCost))
@@ -103,7 +107,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
     if (cost.trim() && amount === null) err.cost = t('Il costo non è chiaro: scrivi per esempio 450,00.')
     if (paid && amount && !paidBy) err.paidBy = t('Manca chi ha pagato. Scegli una persona.')
     const ospiti = guests.trim() ? Number(guests) : null
-    if (ospiti !== null && (!Number.isInteger(ospiti) || ospiti < 1 || ospiti > 99)) err.guests = t('Scrivi quanti ospiti, per esempio 2.')
+    if (ospiti !== null && (!Number.isInteger(ospiti) || ospiti < 1 || ospiti > 99)) err.guests = t('Scrivi quante persone, per esempio 2.')
     if (email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim())) err.email = t('L’email non è valida: controlla la chiocciola e il dominio.')
     setErrors(err)
     if (Object.keys(err).length > 0) return
@@ -111,6 +115,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
       name, city, checkIn, checkOut, checkInInfo: inInfo, checkOutInfo: outInfo, address, mapsUrl,
       totalCost: amount, currency, breakfast, dinner, kitchen, booked: true, paid, notes,
       room, roomType, bookingCode: code, guests: ospiti, phone, email, participants: dorme,
+      accessCode: accesso, wifiName: wifi, wifiPassword: wifiPw,
       paidBy: paid && amount ? paidBy || undefined : (s?.paidBy ?? undefined),
       forTravelers: all.every((id) => people.includes(id)) ? [] : people,
     }
@@ -242,8 +247,14 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
           </div>
           <Campo label={t('Note')} textarea value={notes} onChange={setNotes} placeholder={t('es. Deposito bagagli dopo il check-out')} />
         </Gruppo>
-        <AltriDettagli pieni={altri} contenuto={trip.travelers.length > 1 ? t('Ospiti, telefono, email, chi dorme qui') : t('Ospiti, telefono, email')} errore={errors.email || errors.guests ? errors : undefined}>
-          <Contatore label={t('Ospiti')} value={guests.trim() && Number.isFinite(Number(guests)) ? Number(guests) : null} onChange={(n) => setGuests(n === null ? '' : String(n))} vuoto />
+        <Gruppo titolo={t('Accesso e Wi-Fi')}>
+          <Campo label={t('Codice d\'accesso')} value={accesso} onChange={setAccesso} autoComplete="off" placeholder={t('es. 4821')} hint={t('Della porta o della cassetta delle chiavi.')} />
+          <Campo label={t('Rete Wi-Fi')} value={wifi} onChange={setWifi} autoComplete="off" placeholder={t('es. Nome della rete')} />
+          <Campo label={t('Password del Wi-Fi')} value={wifiPw} onChange={setWifiPw} autoComplete="off" placeholder={t('es. Password della rete')} />
+          <p className="fa-help">{t('Li vedono solo i viaggiatori, non chi segue il viaggio.')}</p>
+        </Gruppo>
+        <AltriDettagli pieni={altri} contenuto={trip.travelers.length > 1 ? t('Persone, telefono, email, chi dorme qui') : t('Persone, telefono, email')} errore={errors.email || errors.guests ? errors : undefined}>
+          <Contatore label={t('Persone nella prenotazione')} value={guests.trim() && Number.isFinite(Number(guests)) ? Number(guests) : null} onChange={(n) => setGuests(n === null ? '' : String(n))} vuoto />
           {errors.guests ? <Errore>{errors.guests}</Errore> : null}
           <Campo label={t('Telefono')} type="tel" value={phone} onChange={setPhone} placeholder={t('es. +39 333 123 4567')} />
           <Campo label={t('Email')} type="email" value={email} onChange={setEmail} placeholder={t('nome@esempio.it')} error={errors.email} />

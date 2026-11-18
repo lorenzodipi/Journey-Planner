@@ -1,5 +1,6 @@
 // Pagina Checklist (mock Fa-51, #41, FRD LIST-001…012): «Tutti» (lista comune, spunte personali) | «Solo mie» (lista privata),
 // avanzamento mio, sezioni per categoria, avatar con «2 di 4», apertura in linea, «Seleziona» e «Duplica da un viaggio».
+import { TestoConLink } from '../../faraway/TestoConLink'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useSearch } from 'wouter'
 import { categoriesFor, categoryOf, cercaVoci, doneCount, inLista, isCategoriaFissa, mioAvanzamento, sezioni, spunteDi, type ListaChecklist, type SezioneChecklist } from '../../lib/checklist'
@@ -195,7 +196,9 @@ export function ChecklistPage() {
               {multi ? ` · ${i.quantity}${i.unit ? ` ${i.unit}` : ''}` : ''}
             </span>
           )}
-          {i.description ? <span className="fa-m" style={{ display: 'block', whiteSpace: 'pre-line' }}>{i.description}</span> : null}
+          {i.description ? <span className="fa-m" style={{ display: 'block', whiteSpace: 'pre-line' }}>
+              <TestoConLink testo={i.description} />
+            </span> : null}
           {chipPrivata || i.dueDate ? (
             <div className="mt">
               {chipPrivata ? (
