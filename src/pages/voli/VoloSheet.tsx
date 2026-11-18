@@ -103,7 +103,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     const err: typeof errors = { legs: {} }
-    if (!title.trim()) err.title = tt('Dai un nome al volo: sceglilo tu, per riconoscerlo.')
+    if (!title.trim()) err.title = tt('Dai un titolo al volo: sceglilo tu, per riconoscerlo.')
     const amount = parseAmount(cost)
     if (cost.trim() && amount === null) err.cost = tt('Il costo non è chiaro: scrivi per esempio 623.')
     if (amount && paid && payers.length === 0) err.paidBy = tt('Manca chi ha pagato. Scegli una persona.')
@@ -171,18 +171,18 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
       <form id="volo-form" className="frm grp" onSubmit={submit} noValidate>
         <Gruppo titolo={tt('Volo')}>
           <Campo
-            label={tt('Nome del volo')}
+            label={tt('Titolo')}
             value={title}
             onChange={setTitle}
-            placeholder={tt('Il nome che scegli tu')}
+            placeholder={tt('Il titolo che scegli tu')}
             maxLength={60}
             error={errors.title}
             info={{
-              label: tt('Che cos’è il nome del volo'),
+              label: tt('Che cos’è il titolo del volo'),
               children: (
                 <>
-                  <p>{tt('È il nome che dai tu a questo volo, per riconoscerlo subito nell’elenco.')}</p>
-                  <p>{tt('Non è il nome della compagnia e non è quello che trovi su altri siti: scegli un nome tuo.')}{' '}<b>{tt('Per esempio: «Volo di andata» o «Volo per le vacanze».')}</b></p>
+                  <p>{tt('È il titolo che dai tu a questo volo, per riconoscerlo subito nell’elenco.')}</p>
+                  <p>{tt('Non è il nome della compagnia e non è quello che trovi su altri siti: scegli un titolo tuo.')}{' '}<b>{tt('Per esempio: «Volo di andata» o «Volo per le vacanze».')}</b></p>
                 </>
               ),
             }}

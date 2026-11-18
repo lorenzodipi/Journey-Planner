@@ -50,12 +50,18 @@ export function alternaPersona(sel: readonly string[], id: string, all: readonly
 }
 
 /** Sotto i riquadri di «Il costo è»: quanto fa l'altra lettura dello stesso numero. */
-export function conseguenzaCosto(amount: number | null, persone: number, currency: string): { perPersona: string; totale: string } {
-  if (amount === null || !(amount > 0) || persone < 2) return { perPersona: '', totale: '' }
-  return {
-    perPersona: t('{v0} in tutto', { v0: formatMoney(Math.round(amount * persone * 100) / 100, currency) }),
-    totale: t('{v0} a testa', { v0: formatMoney(Math.round((amount / persone) * 100) / 100, currency) }),
-  }
+/**
+ * Frase sotto «Il costo è» che dice in chiaro cosa vuol dire il numero scritto: con «A persona» il totale, con
+ * «Totale» la quota di ognuno. Senza importo dice cosa scrivere. Vuota con una persona sola.
+ */
+export function spiegaCosto(scope: 'per_person' | 'total', amount: number | null, persone: number, currency: string): string {
+  if (persone < 2) return ''
+  if (amount === null || !(amount > 0)) return scope === 'per_person' ? t('Scrivi nel costo quanto paga una persona.') : t('Scrivi nel costo quanto costa per tutto il gruppo.')
+  const totale = formatMoney(Math.round((scope === 'per_person' ? amount * persone : amount) * 100) / 100, currency)
+  const quota = formatMoney(Math.round((scope === 'per_person' ? amount : amount / persone) * 100) / 100, currency)
+  return scope === 'per_person'
+    ? t('Ogni persona paga {quota}: in tutto fanno {totale} per {n} persone.', { quota, totale, n: persone })
+    : t('In tutto {totale}, diviso tra {n} persone: ognuno paga {quota}.', { quota, totale, n: persone })
 }
 
 /** Quanti campi di «Altri dettagli» sono compilati (testi non vuoti, numeri, liste non vuote, `true`). */

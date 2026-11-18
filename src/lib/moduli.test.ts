@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alterna, alternaPersona, compilati, conseguenzaCosto, durataTesto, modoPerChi, nottiTesto, selezionePerModo } from './moduli'
+import { alterna, alternaPersona, compilati, spiegaCosto, durataTesto, modoPerChi, nottiTesto, selezionePerModo } from './moduli'
 
 describe('durataTesto', () => {
   it('scrive minuti e ore', () => {
@@ -57,15 +57,15 @@ describe('Per chi', () => {
   })
 })
 
-describe('conseguenzaCosto', () => {
-  it('mostra l’altra lettura dello stesso numero', () => {
-    const c = conseguenzaCosto(80, 2, 'EUR')
-    expect(c.perPersona).toMatch(/^160,00\s€ in tutto$/)
-    expect(c.totale).toMatch(/^40,00\s€ a testa$/)
+describe('spiegaCosto', () => {
+  it('a persona dice il totale, in totale dice la quota', () => {
+    expect(spiegaCosto('per_person', 50, 2, 'EUR')).toMatch(/^Ogni persona paga 50,00\s€: in tutto fanno 100,00\s€ per 2 persone\.$/)
+    expect(spiegaCosto('total', 100, 2, 'EUR')).toMatch(/^In tutto 100,00\s€, diviso tra 2 persone: ognuno paga 50,00\s€\.$/)
   })
-  it('tace senza importo o con una persona', () => {
-    expect(conseguenzaCosto(null, 2, 'EUR')).toEqual({ perPersona: '', totale: '' })
-    expect(conseguenzaCosto(80, 1, 'EUR')).toEqual({ perPersona: '', totale: '' })
+  it('senza importo dice cosa scrivere, con una persona tace', () => {
+    expect(spiegaCosto('per_person', null, 2, 'EUR')).toBe('Scrivi nel costo quanto paga una persona.')
+    expect(spiegaCosto('total', 0, 3, 'EUR')).toBe('Scrivi nel costo quanto costa per tutto il gruppo.')
+    expect(spiegaCosto('total', 80, 1, 'EUR')).toBe('')
   })
 })
 

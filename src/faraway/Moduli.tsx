@@ -1,7 +1,7 @@
 // Pezzi comuni dei fogli (docs/linee-guida/03-modali-e-moduli.md): gruppi con titolo, «Altri dettagli» che si apre come
 // un gruppo, percorso partenza → arrivo con la durata, riquadri con l'immagine, «Diviso tra», «Il costo è» e il contatore.
 import { useEffect, useId, useState, type ReactNode } from 'react'
-import { alterna, alternaPersona, conseguenzaCosto, modoPerChi, selezionePerModo, type ModoPerChi } from '../lib/moduli'
+import { alterna, alternaPersona, spiegaCosto, modoPerChi, selezionePerModo, type ModoPerChi } from '../lib/moduli'
 import { discOf, initials } from '../state/me'
 import type { Trip } from '../types'
 import { Ic } from '../ui/Sprite'
@@ -206,7 +206,6 @@ export function PerChi({ trip, meId, value, onChange, label = t('Diviso tra'), h
 /** «Il costo è»: a persona o totale, con sotto quanto fa l'altra lettura. Con una persona sola non serve e non si mostra. */
 export function IlCostoE({ value, onChange, amount, persone, currency }: { value: 'per_person' | 'total'; onChange: (v: 'per_person' | 'total') => void; amount: number | null; persone: number; currency: string }) {
   if (persone < 2) return null
-  const c = conseguenzaCosto(amount, persone, currency)
   return (
     <Riquadri<'per_person' | 'total'>
       label={t('Il costo è')}
@@ -214,10 +213,12 @@ export function IlCostoE({ value, onChange, amount, persone, currency }: { value
       value={value}
       onChange={(v) => v && onChange(v)}
       options={[
-        { value: 'per_person', label: t('A persona'), icona: 'user', sub: c.perPersona || undefined },
-        { value: 'total', label: t('Totale'), icona: 'users', sub: c.totale || undefined },
+        { value: 'per_person', label: t('A persona'), icona: 'user' },
+        { value: 'total', label: t('Totale'), icona: 'users' },
       ]}
-    />
+    >
+      <span className="fa-help" aria-live="polite">{spiegaCosto(value, amount, persone, currency)}</span>
+    </Riquadri>
   )
 }
 
