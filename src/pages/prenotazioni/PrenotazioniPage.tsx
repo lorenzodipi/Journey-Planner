@@ -1,6 +1,6 @@
 // Pagina Prenotazioni (mock Fa-44, #40): pillole per tipo e biglietti per giorno, come quelli dei trasporti.
 // Chiuso: tipo, titolo, stato, quando e codice. Aperto in linea: costo, dati e azioni (Copia, Codice, Link, File,
-// Collega/Scollega una tappa, Modifica, Elimina).
+// Collega una tappa, Modifica, Elimina). La tappa collegata si cambia o si toglie da «Modifica».
 import { describeError } from '../../lib/db'
 import { TestoConLink } from '../../faraway/TestoConLink'
 import { useEffect, useMemo, useState } from 'react'
@@ -90,11 +90,6 @@ export function PrenotazioniPage() {
     }
   }
   const [occ, faiOcc] = useInCorso()
-  async function scollega(b: Booking, itemId: string) {
-    // BOOK-027: scollegare non elimina né la prenotazione né la tappa
-    const m = await faiOcc(`scollega:${itemId}`, () => t.setBookingItems(trip.id, b.id, tappeDi(trip, b.id).filter((x) => x !== itemId)))
-    showToast(m ?? tt('Prenotazione scollegata'))
-  }
   async function elimina(b: Booking) {
     const ok = await ask({ title: tt('Eliminare la prenotazione?'), message: conDipendenze(tt('{title} sparisce dalle prenotazioni{v1}; le tappe collegate restano. Puoi annullare subito dopo.', { title: b.title, v1: b.cost != null ? tt(' e dalle spese') : '' }), dipendenze(trip, 'prenotazione', b.id)), confirm: tt('Elimina la prenotazione'), cancel: tt('Tieni la prenotazione'), destructive: true })
     if (!ok) return
@@ -252,11 +247,6 @@ export function PrenotazioniPage() {
                               {tt('Collega')}
                             </Pulsante>
                           ) : null}
-                          {tappe.map((id) => (
-                            <Pulsante key={id} size="sm" color="secondary" iconLeading="pin" isLoading={occ === `scollega:${id}`} onPress={() => void scollega(b, id)} aria-label={tt('Scollega dalla tappa {v0}', { v0: giornoDellaTappa(trip, id)?.title ?? '' })}>
-                              {tt('Scollega')}
-                            </Pulsante>
-                          ))}
                           <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => setSheet({ booking: b })}>
                             {tt('Modifica')}
                           </Pulsante>
