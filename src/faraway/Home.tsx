@@ -1,8 +1,8 @@
 // Componenti di Oggi (mock Fa-03…Fa-07, Fa-52…Fa-55): Copertina (saluto), conto alla rovescia (Ticket),
 // ChecklistHome, Orologio, Meteo, Biglietto, ValutaPiccola, Riepilogo.
 import { gradi } from '../lib/formati'
-import type { ReactNode } from 'react'
-import { useState } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'wouter'
 import type { TotaliAperti } from '../lib/debitiSpese'
 import { formatMoney } from '../lib/money'
@@ -139,9 +139,32 @@ export interface VoceHome {
 }
 
 /** «Le mie cose» (ChecklistHome, variante a tondo): anello, fino a 4 voci, stati quasi finita / tutto fatto / vuota. */
+/**
+ * Diametro del cerchio di «Le mie cose»: 64 px, o di più se il numero non ci sta nel foro (r 18 e tratto 5 su 44:
+ * il foro è 31/44 del diametro). Si rimisura se cambia la dimensione del testo (testo di sistema ingrandito).
+ */
+function useDiametro(testo: string) {
+  const num = useRef<HTMLElement>(null)
+  const [d, setD] = useState<number | null>(null)
+  useLayoutEffect(() => {
+    const el = num.current
+    if (!el) return
+    const misura = () => {
+      const serve = Math.ceil(((el.getBoundingClientRect().width + 6) * 44) / 31)
+      setD(serve > 64 ? serve : null)
+    }
+    misura()
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(misura)
+    ro?.observe(el)
+    return () => ro?.disconnect()
+  }, [testo])
+  return { num, stile: d ? ({ '--d': `${d}px` } as CSSProperties) : undefined }
+}
+
 export function ChecklistHome({ done, total, items, rest, onToggle, onCount, onOpen, onCreate }: { done: number; total: number; items: VoceHome[]; rest: number; onToggle: (id: string) => void; onCount?: (id: string, n: number) => void; onOpen: () => void; onCreate: () => void }) {
   const r = 18
   const circ = 2 * Math.PI * r
+  const anello = useDiametro(`${done}/${total}`)
   if (total === 0)
     return (
       <div className="k-ChecklistHome">
@@ -168,12 +191,12 @@ export function ChecklistHome({ done, total, items, rest, onToggle, onCount, onO
     <div className="k-ChecklistHome">
       <div className="card">
         <div className="hd rh">
-          <span className="rg" role="progressbar" aria-label={tt('Checklist completata')} aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}>
+          <span className="rg" style={anello.stile} role="progressbar" aria-label={tt('Checklist completata')} aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}>
             <svg viewBox="0 0 44 44">
               <circle cx="22" cy="22" r={r} fill="none" stroke="var(--surface-high)" strokeWidth="5" />
               <circle cx="22" cy="22" r={r} fill="none" stroke="var(--azzurro-solid)" strokeWidth="5" strokeLinecap="round" strokeDasharray={circ.toFixed(1)} strokeDashoffset={(circ * (1 - done / total)).toFixed(1)} transform="rotate(-90 22 22)" />
             </svg>
-            <b>
+            <b ref={anello.num}>
               {done}/{total}
             </b>
           </span>

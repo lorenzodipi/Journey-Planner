@@ -634,9 +634,11 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-ChecklistHome .hd.rh{justify-content:flex-start;gap:var(--space-md);padding-bottom:var(--space-sm)}
 .k-ChecklistHome .rh .t{display:block}
 .k-ChecklistHome .rh .c{display:block;margin-top:2.0px}
-.k-ChecklistHome .rg{position:relative;width:64px;height:64px;flex:none;display:grid;place-items:center}
-.k-ChecklistHome .rg svg{width:64px;height:64px}
-.k-ChecklistHome .rg b{position:absolute;font:700 14px/1 var(--font-sans);font-variant-numeric:tabular-nums}
+/* il cerchio è largo 64 px; se «fatte/totale» non ci sta nel foro (numeri lunghi come «54/133», testo di sistema
+   ingrandito) diventa più grande quanto serve: --d lo calcola `useDiametro` in Home.tsx, l'anello scala con lui */
+.k-ChecklistHome .rg{position:relative;width:var(--d,64px);height:var(--d,64px);flex:none;display:grid;place-items:center}
+.k-ChecklistHome .rg svg{width:100%;height:100%}
+.k-ChecklistHome .rg b{position:absolute;white-space:nowrap;font:700 14px/1 var(--font-sans);font-variant-numeric:tabular-nums}
 /* ---- ChecklistNuova ---- */
 .k-ChecklistNuova h3{margin:var(--space-xl) 0 0;font:600 14px/20px var(--font-sans)}
 .k-ChecklistNuova .sub{display:block;margin:2.0px 0 var(--space-md);font:400 13px/18px var(--font-sans);color:var(--ink-muted)}

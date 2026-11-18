@@ -123,6 +123,7 @@ Su Android la WebView moltiplica ogni misura del testo per la dimensione scelta 
 
 - **Riquadri con testo** (pulsanti, chip, pillole, segmenti): altezza minima (`min-height`), mai fissa, così crescono invece di far uscire il testo.
 - **Pallini con le iniziali e tessere dell'orologio**: misure in `em`, così crescono insieme al testo.
+- **Cerchi con un numero dentro** (il «54/133» di «Le mie cose»): il numero non deve mai uscire dal foro. Il cerchio resta della sua misura finché il numero ci sta; se no lo si ingrandisce quanto serve, misurando il numero (`useDiametro` in `src/faraway/Home.tsx`, con `ResizeObserver` così segue anche il testo di sistema), e l'anello scala con lui.
 - **Righe a due elementi** (titolo e pillola, codice e «Maps», prezzo e «Aggiungi costo», tappa e ora): `flex-wrap`, con il primo elemento `flex:1 1 0` e una larghezza minima, così il secondo va sotto invece di schiacciare il primo.
 - **Colonne di pagina e di card**: `grid-template-columns:minmax(0,1fr)`, così un contenuto lungo non allarga la colonna oltre lo schermo.
 - **Testo che deve restare su una riga** (barra delle schede, «MXP ✈ HND», titolo della barra in alto, ora del volo, colonne Check-in · Check-out · Camera, segmenti, orologio): attributo `data-adatta` (`src/faraway/adattaTesto.ts`). Se non ci sta, l'elemento si rimpicciolisce con `zoom` quanto basta; `data-adatta="celle"` misura ogni colonna; `data-adatta-min` mette un limite. I pulsanti `.fa-btn` col testo su una riga, se non ci sta, vanno a capo.
