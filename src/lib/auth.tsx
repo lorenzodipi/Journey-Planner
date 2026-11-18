@@ -1,4 +1,5 @@
 import { createContext } from 'react'
+import { describeError } from './db'
 import { useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
@@ -76,7 +77,7 @@ function translateError(message: string): string {
   if (/invalid login credentials/i.test(message)) return t('Email o password non corrette. Controlla i dati e riprova.')
   if (/failed to fetch|network/i.test(message)) return t('Nessuna connessione: per il primo accesso serve la rete.')
   if (/email not confirmed/i.test(message)) return t('Email non confermata: conferma l’utente dalla dashboard di Supabase.')
-  return message
+  return describeError({ message })
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

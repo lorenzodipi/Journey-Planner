@@ -1,5 +1,6 @@
 // Fogli dei documenti (#52): «Nuovo documento» (file, nome, visibilità proposta in base al tipo) e dettaglio
 // (anteprima, apri, offline, chi lo vede, cambio di visibilità solo per chi l'ha caricato, elimina).
+import { describeError } from '../../lib/db'
 import { useEffect, useRef, useState } from 'react'
 import { Campo, Chip, Interruttore, Pulsante, Segmenti } from '../../faraway/base'
 import { Foglio, useConferma } from '../../faraway/Foglio'
@@ -374,7 +375,7 @@ export function DocumentoDettaglio({ trip, doc, onClose }: { trip: Trip; doc: Do
             .filter(Boolean)
             .join(' · ')}
         </p>
-        <Pulsante iconLeading="file" onPress={() => void openBookingFile(doc.path).catch((e: Error) => showToast(e.message))}>
+        <Pulsante iconLeading="file" onPress={() => void openBookingFile(doc.path).catch((e: Error) => showToast(describeError(e)))}>
           {tt('Apri')}
         </Pulsante>
         <Interruttore label={tt('Disponibile offline')} isSelected={offline} onChange={(v) => void toggleOffline(v)} />

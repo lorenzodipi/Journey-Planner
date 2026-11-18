@@ -86,6 +86,11 @@
 - **Griglia** Terminal · Gate · Imbarco · Chiusura (`flight_legs.gate_close`, 0051), «—» se manca; senza gate, prima della partenza, la nota «Il gate compare di solito un'ora prima della partenza.». Il riquadro dello scalo sta solo sulla tratta prima dello scalo.
 - **Sotto**: «Bagaglio e tariffa» e «Note» solo se c'è qualcosa, il codice di prenotazione con «Copia», il biglietto della persona scelta (costo a persona, o totale diviso per i passeggeri), «Maps» (aeroporto di partenza della tratta, non dopo la partenza) e «Segui il volo» (icona radar: la pagina di Flightradar24 del numero di volo della tratta scelta, `linkFlightradar()`; senza numero di volo non c'è), in fondo «Modifica il volo» a sinistra ed «Elimina» a destra. Il visualizzatore non vede il riquadro per caricare, né Modifica ed Elimina.
 
+## Errori e spese automatiche
+
+- Nessun errore tecnico arriva mai a chi usa l'app: ogni messaggio d'errore mostrato (fogli, avvisi, modifiche rifiutate della coda offline) passa da `describeError()` in `src/lib/db.ts`. I messaggi scritti dall'app (anche quelli che chiedono una migrazione) passano com'erano; rete, permessi, sessione scaduta, doppioni e dati non validi hanno il loro testo; tutto il resto diventa «Qualcosa non è andato e non ho salvato niente. Riprova; se succede ancora, segnalalo.». Il dettaglio resta nella console.
+- Le spese automatiche (alloggi, voli, trasporti, prenotazioni pagati senza una spesa registrata) hanno nell'app un id «tipo:uuid». Un pagamento («Ho pagato», «Bilancia») su una di queste card ricorda la voce (`settlements.source_kind` e `source_id`, 0053) e non la spesa: lo fa `riferimentoSpesa()` (`src/lib/moneyApi.ts`). Se la voce viene cancellata, i suoi pagamenti non contano più, come per le spese (0048).
+
 ## Alloggi: accesso, Wi-Fi e note
 
 - Nel foglio dell'alloggio il gruppo «Accesso e Wi-Fi» ha «Codice d'accesso» (porta o cassetta delle chiavi), «Rete Wi-Fi» e «Password del Wi-Fi». Sono dati privati come i costi (0052): con i trigger di `trip_costs` li leggono solo creatore e partecipanti, non il visualizzatore. Nella card aperta e nella riga del giorno compaiono con «Copia».

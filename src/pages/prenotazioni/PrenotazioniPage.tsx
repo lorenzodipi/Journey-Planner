@@ -1,6 +1,7 @@
 // Pagina Prenotazioni (mock Fa-44, #40): pillole per tipo e biglietti per giorno, come quelli dei trasporti.
 // Chiuso: tipo, titolo, stato, quando e codice. Aperto in linea: costo, dati e azioni (Copia, Codice, Link, File,
 // Collega/Scollega una tappa, Modifica, Elimina).
+import { describeError } from '../../lib/db'
 import { TestoConLink } from '../../faraway/TestoConLink'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useSearch } from 'wouter'
@@ -85,7 +86,7 @@ export function PrenotazioniPage() {
     try {
       await openBookingFile(b.filePath as string)
     } catch (e) {
-      showToast(e instanceof Error ? e.message : tt('Non riesco ad aprire il file.'))
+      showToast(e ? describeError(e) : tt('Non riesco ad aprire il file.'))
     }
   }
   const [occ, faiOcc] = useInCorso()

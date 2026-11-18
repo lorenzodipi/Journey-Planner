@@ -50,6 +50,16 @@ const needs0029 = (e: { message: string }) => (/settlements|decide_settlement|ca
 const MIGRATION_0047 = t('Manca la migrazione 0047 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0047_pagamenti_senza_conferma.sql).')
 const senza0047 = (e: { message: string }) => /declare_settlements|dispute_settlement|schema cache|does not exist|Could not find/i.test(e.message)
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const VOCE = /^(stay|flight|transport|booking):[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** Il legame di un pagamento con la sua card: una spesa registrata (uuid) o una spesa automatica («tipo:uuid»). Altro: nessuno. */
+export function riferimentoSpesa(expenseId: string | undefined): { expense_id: string | null; source?: string } {
+  if (expenseId && UUID.test(expenseId)) return { expense_id: expenseId }
+  if (expenseId && VOCE.test(expenseId)) return { expense_id: null, source: expenseId }
+  return { expense_id: null }
+}
+
 /** Dopo la migrazione 0047 i pagamenti valgono subito; prima restano «in attesa di conferma». `undefined` = non l'ho ancora scoperto. */
 let immediati: boolean | undefined
 export const pagamentiImmediati = () => immediati
@@ -62,7 +72,9 @@ export async function declareSettlements(tripId: string, righe: readonly RigaPag
   const db = client()
   const { error } = await db.rpc('declare_settlements', {
     _trip: tripId,
-    _rows: righe.map((r) => ({ from: r.fromId, to: r.toId, amount: r.amount, currency, paid_on: paidOn, expense_id: r.expenseId ?? null, compensation: r.compensation ?? false })),
+    // una spesa registrata va in `expense_id` (uuid); una spesa automatica («stay:uuid»…) in `source` (0053). Prima della
+    // 0053 il server ignora `source`: il pagamento si salva lo stesso, senza il legame con la card.
+    _rows: righe.map((r) => ({ from: r.fromId, to: r.toId, amount: r.amount, currency, paid_on: paidOn, ...riferimentoSpesa(r.expenseId), compensation: r.compensation ?? false })),
   })
   if (!error) {
     immediati = true
@@ -73,7 +85,8 @@ export async function declareSettlements(tripId: string, righe: readonly RigaPag
   if (righe.length !== 1 || righe[0].compensation) throw new Error(MIGRATION_0047)
   const [r] = righe
   const row: Record<string, unknown> = { trip_id: tripId, from_traveler: r.fromId, to_traveler: r.toId, amount: r.amount, currency, paid_on: paidOn }
-  let res = await db.from('settlements').insert(r.expenseId ? { ...row, expense_id: r.expenseId } : row)
+  const spesa = riferimentoSpesa(r.expenseId).expense_id
+  let res = await db.from('settlements').insert(spesa ? { ...row, expense_id: spesa } : row)
   // senza la migrazione 0042 la colonna non c'è: il pagamento si salva lo stesso, senza il legame con la spesa
   if (res.error && r.expenseId && /expense_id|schema cache|column/i.test(res.error.message)) res = await db.from('settlements').insert(row)
   if (res.error) throw needs0029(res.error)

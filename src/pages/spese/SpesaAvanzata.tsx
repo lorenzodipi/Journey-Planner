@@ -1,4 +1,5 @@
 // Parti avanzate del foglio spesa (#50): più paganti, divisione per percentuali o importi fissi, cambio con fonte e ricevute.
+import { describeError } from '../../lib/db'
 import { useRef, useState } from 'react'
 import { cx } from '../../faraway/cx'
 import { Campo, Chip, Pulsante, PulsanteIcona, Segmenti } from '../../faraway/base'
@@ -250,7 +251,7 @@ export function RicevuteEditor({ trip, expenseId, files, added, onAdded, onRemov
       const path = await uploadBookingFile(trip.id, file, `spese/${expenseId}`)
       onAdded([...added, { id: crypto.randomUUID(), path, name: safeFileName(file.name), mimeType: file.type }])
     } catch (e) {
-      showToast(e instanceof Error ? e.message : t('Non sono riuscito a caricare la ricevuta.'))
+      showToast(e ? describeError(e) : t('Non sono riuscito a caricare la ricevuta.'))
     } finally {
       setBusy(false)
       if (input.current) input.current.value = ''
@@ -262,7 +263,7 @@ export function RicevuteEditor({ trip, expenseId, files, added, onAdded, onRemov
       {t('Ricevuta · facoltativa')}
       {all.map((f) => (
         <div key={f.id} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Pulsante color="link-color" size="sm" iconLeading="file" onPress={() => void openBookingFile(f.path).catch((e: Error) => showToast(e.message))}>
+          <Pulsante color="link-color" size="sm" iconLeading="file" onPress={() => void openBookingFile(f.path).catch((e: Error) => showToast(describeError(e)))}>
             {f.name || t('Ricevuta')}
           </Pulsante>
           <PulsanteIcona className="dng" icon="trash" label={t('Togli {v0}', { v0: f.name || t('la ricevuta') })} onPress={() => onRemove(f)} />

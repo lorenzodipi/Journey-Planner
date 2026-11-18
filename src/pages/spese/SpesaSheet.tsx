@@ -1,6 +1,7 @@
 // Fogli «Nuova spesa» e «Modifica spesa» (mock Fa-30, #34): nome, importo con il convertitore (si scrive in una
 // valuta e si legge l'altra), «Pagata da» obbligatorio, «Diviso tra» a riquadri e «Come dividere», categoria a riquadri.
 // Di base: pagata da me, divisa tra tutti, nella valuta del paese.
+import { describeError } from '../../lib/db'
 import { SceltaIcona } from '../../faraway/SceltaIcona'
 import { glifoCategoria, iconaDalNome } from '../../lib/categoryIcon'
 import { useEffect, useState } from 'react'
@@ -171,7 +172,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
       const q = await fetchFxQuote(other, base)
       setFx({ rate: Math.round(q.rate * 1e6) / 1e6, source: q.source, at: q.at })
     } catch (e) {
-      showToast(e instanceof Error ? e.message : tt('Non riesco a leggere il cambio.'))
+      showToast(e ? describeError(e) : tt('Non riesco a leggere il cambio.'))
     } finally {
       setFxBusy(false)
     }

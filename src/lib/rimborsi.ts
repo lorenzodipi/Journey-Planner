@@ -13,8 +13,8 @@ export const STATO_RIMBORSO: Record<StatoRimborso, string> = {
   contestato: tt('Contestato'),
 }
 
-type ConRimborsi = Pick<Trip, 'expenses' | 'settled' | 'settlements'>
-const cacheValidi = new WeakMap<object, { expenses: Trip['expenses']; settled: Trip['settled']; out: Pick<Trip, 'settled' | 'settlements'> }>()
+type ConRimborsi = Pick<Trip, 'expenses' | 'settled' | 'settlements'> & Partial<Pick<Trip, 'stays' | 'flights' | 'transports' | 'bookings'>>
+const cacheValidi = new WeakMap<object, { expenses: Trip['expenses']; settled: Trip['settled']; voci: readonly unknown[]; out: Pick<Trip, 'settled' | 'settlements'> }>()
 const SENZA = {}
 
 /**
@@ -27,8 +27,17 @@ const SENZA = {}
 export function rimborsiValidi(trip: ConRimborsi): Pick<Trip, 'settled' | 'settlements'> {
   const chiave = trip.settlements ?? trip.settled ?? SENZA
   const c = cacheValidi.get(chiave)
-  if (c && c.expenses === trip.expenses && c.settled === trip.settled) return c.out
-  const vive = new Set(trip.expenses.map((e) => e.id))
+  const voci = [trip.stays, trip.flights, trip.transports, trip.bookings]
+  if (c && c.expenses === trip.expenses && c.settled === trip.settled && c.voci.every((v, i) => v === voci[i])) return c.out
+  // le spese registrate e le voci da cui nascono le spese automatiche («stay:uuid»…), come le conosce l'app (0053)
+  const vive = new Set([
+    ...trip.expenses.map((e) => e.id),
+    ...trip.expenses.flatMap((e) => (e.source ? [`${e.source.kind}:${e.source.id}`] : [])),
+    ...(trip.stays ?? []).map((x) => `stay:${x.id}`),
+    ...(trip.flights ?? []).map((x) => `flight:${x.id}`),
+    ...(trip.transports ?? []).map((x) => `transport:${x.id}`),
+    ...(trip.bookings ?? []).map((x) => `booking:${x.id}`),
+  ])
   const morto = (r: Rimborso) => !!r.expenseId && !vive.has(r.expenseId)
   const rotti = new Set((trip.settlements ?? []).filter((r) => r.compensation && r.groupId && morto(r)).map((r) => r.groupId as string))
   const fuori = new Set((trip.settlements ?? []).filter((r) => morto(r) || (r.compensation && r.groupId && rotti.has(r.groupId))).map((r) => r.id))
@@ -36,7 +45,7 @@ export function rimborsiValidi(trip: ConRimborsi): Pick<Trip, 'settled' | 'settl
     fuori.size === 0
       ? { settled: trip.settled, settlements: trip.settlements }
       : { settled: trip.settled?.filter((r) => !fuori.has(r.id)), settlements: trip.settlements?.filter((r) => !fuori.has(r.id)) }
-  cacheValidi.set(chiave, { expenses: trip.expenses, settled: trip.settled, out })
+  cacheValidi.set(chiave, { expenses: trip.expenses, settled: trip.settled, voci, out })
   return out
 }
 

@@ -1,6 +1,7 @@
 // Vista a schermo intero del codice del biglietto (mock Fa-42, Fa-43, #38): nome e percorso in alto, immagine del
 // QR / codice a barre grande su fondo bianco, passeggero e prenotazione sotto. Più passeggeri: avatar per cambiare.
 // Senza codice: «Nessun codice associato» e «Aggiungi un codice». Sempre disponibile offline (copia sul telefono).
+import { describeError } from '../lib/db'
 import { useEffect, useRef, useState } from 'react'
 import { imageUrl } from '../lib/bookingFiles'
 import { checkImmagine, codiciDi, codicePer, nBiglietti } from '../lib/codici'
@@ -72,7 +73,7 @@ export function CodiceBiglietto({ trip, kind, refId, title, when, detail, travel
     let stop = false
     imageUrl(path).then(
       (u) => (stop ? u.startsWith('blob:') && URL.revokeObjectURL(u) : ((url = u), setSrc(u))),
-      (e: Error) => !stop && setFailed(e.message),
+      (e: Error) => !stop && setFailed(describeError(e)),
     )
     return () => {
       stop = true

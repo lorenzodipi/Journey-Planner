@@ -87,6 +87,9 @@ export interface SettlementRow {
   /** dalla migrazione 0047 */
   compensation?: boolean | null
   group_id?: string | null
+  /** dalla migrazione 0053: la voce di una spesa automatica (alloggio, volo, trasporto, prenotazione) */
+  source_kind?: string | null
+  source_id?: string | null
 }
 
 export interface ConfirmedSettlementRow {
@@ -113,7 +116,7 @@ export function mapSettlements(rows: SettlementRow[], tripId: string): Rimborso[
       ...(r.decided_by ? { decidedBy: r.decided_by } : {}),
       ...(r.decided_at ? { decidedAt: r.decided_at } : {}),
       ...(r.corrects ? { corrects: r.corrects } : {}),
-      ...(r.expense_id ? { expenseId: r.expense_id } : {}),
+      ...(r.expense_id ? { expenseId: r.expense_id } : r.source_kind && r.source_id ? { expenseId: `${r.source_kind}:${r.source_id}` } : {}),
       ...(r.compensation ? { compensation: true } : {}),
       ...(r.group_id ? { groupId: r.group_id } : {}),
     }))

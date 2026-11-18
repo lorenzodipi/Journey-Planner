@@ -1,6 +1,7 @@
 // Fogli «Nuovo luogo» e «Modifica luogo» (#33), a gruppi: Trova il luogo (OpenStreetMap o link di Google Maps), Il luogo
 // (nome, nome locale, città, categoria a riquadri, stato, sito), La visita (preferenza, durata a scelte rapide, orari, note),
 // Posizione (indirizzo e pin), Nel viaggio (visite e prenotazioni), Altri dettagli (latitudine e longitudine).
+import { describeError } from '../../lib/db'
 import { SceltaIcona } from '../../faraway/SceltaIcona'
 import { glifoCategoria, iconaDalNome } from '../../lib/categoryIcon'
 import { compilati } from '../../lib/moduli'
@@ -143,7 +144,7 @@ export function LuogoSheet({ trip, place, open, onClose, focusPosition }: Props)
       setResults(await searchPlaces(query, trip.center))
     } catch (e) {
       setResults(null)
-      setSearchError(e instanceof Error ? e.message : tt('Ricerca non riuscita. Controlla la connessione.'))
+      setSearchError(e ? describeError(e) : tt('Ricerca non riuscita. Controlla la connessione.'))
     } finally {
       setSearching(false)
     }

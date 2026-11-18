@@ -2159,5 +2159,9 @@
  "Persone, telefono, email, chi dorme qui": "People, phone, email, who sleeps here",
  "Persone, telefono, email": "People, phone, email",
  "Apri il link {v0}": "Open the link {v0}",
- "Per salvare codice d'accesso e Wi-Fi manca la migrazione 0052 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0052_alloggi_wifi_accesso.sql), poi riprova.": "To save the access code and Wi-Fi, migration 0052 is missing on the database: run it in the Supabase SQL Editor (file supabase/migrations/0052_alloggi_wifi_accesso.sql), then try again."
+ "Per salvare codice d'accesso e Wi-Fi manca la migrazione 0052 sul database: eseguila nell'SQL Editor di Supabase (file supabase/migrations/0052_alloggi_wifi_accesso.sql), poi riprova.": "To save the access code and Wi-Fi, migration 0052 is missing on the database: run it in the Supabase SQL Editor (file supabase/migrations/0052_alloggi_wifi_accesso.sql), then try again.",
+ "La sessione è scaduta: esci e rientra, poi riprova.": "Your session has expired: sign out and back in, then try again.",
+ "Un elemento collegato non c'è più. Ricarica la pagina e riprova.": "A linked item no longer exists. Reload the page and try again.",
+ "Un dato non è valido e non ho salvato niente. Controlla i campi e riprova.": "Something you entered isn't valid and nothing was saved. Check the fields and try again.",
+ "Qualcosa non è andato e non ho salvato niente. Riprova; se succede ancora, segnalalo.": "Something went wrong and nothing was saved. Try again; if it happens again, report it."
 }

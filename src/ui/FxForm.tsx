@@ -1,3 +1,4 @@
+import { describeError } from '../lib/db'
 import { useState } from 'react'
 import { currencyName, extraCurrencies, formatMoney, parseRate } from '../lib/money'
 import { fetchFxRate } from '../lib/moneyApi'
@@ -41,7 +42,7 @@ export function FxForm({ trip, onSubmit, onDone }: Props) {
       setRate(toText(got[0]))
       setExtras(extras.map((x, i) => ({ ...x, text: toText(got[i + 1]) })))
     } catch (e) {
-      setError(e instanceof Error ? e.message : tt('Non riesco a leggere il cambio. Scrivilo a mano.'))
+      setError(e ? describeError(e) : tt('Non riesco a leggere il cambio. Scrivilo a mano.'))
     } finally {
       setLoading(false)
     }

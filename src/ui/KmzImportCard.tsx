@@ -1,3 +1,4 @@
+import { describeError } from '../lib/db'
 import type React from 'react'
 import { useMemo, useRef, useState } from 'react'
 import { readKmzFile, type KmzContent } from '../lib/kmz'
@@ -54,7 +55,7 @@ export function KmzImportCard() {
     try {
       setContent(await readKmzFile(file))
     } catch (err) {
-      setError(err instanceof Error ? err.message : tt('Non riesco a leggere il file.'))
+      setError(err ? describeError(err) : tt('Non riesco a leggere il file.'))
     } finally {
       setReading(false)
     }

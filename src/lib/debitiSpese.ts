@@ -127,7 +127,9 @@ export function debitiPerSpesa(
       return v.fromId === d.fromId && v.toId === d.toId
     }
     // 1) legati alla spesa
-    for (const v of voci) if (v.expenseId) for (const g of out) if (g.expenseId === v.expenseId && stessa(g, v)) applica(g, v)
+    //    (una spesa registrata nata da una voce vale anche per i pagamenti legati alla voce, «stay:uuid»)
+    const legata = (g: DebitoSpesa, id: string) => g.expenseId === id || (!!g.expense.source && `${g.expense.source.kind}:${g.expense.source.id}` === id)
+    for (const v of voci) if (v.expenseId) for (const g of out) if (legata(g, v.expenseId) && stessa(g, v)) applica(g, v)
     // 2) il resto, dalla spesa più vecchia (e dal rimborso più vecchio)
     const ordinate = [...voci].sort((a, b) => a.ordine.localeCompare(b.ordine))
     for (const g of out) for (const v of ordinate) if (stessa(g, v)) applica(g, v)
@@ -169,7 +171,7 @@ export function totaliAperti(righe: readonly DebitoSpesa[]): TotaliAperti {
 
 /** I totali di chi usa l'app. `null` se non so chi è. */
 export function totaliDelViaggio(
-  trip: Pick<Trip, 'travelers' | 'expenses' | 'settled' | 'settlements'>,
+  trip: Pick<Trip, 'travelers' | 'expenses' | 'settled' | 'settlements'> & Partial<Pick<Trip, 'stays' | 'flights' | 'transports' | 'bookings'>>,
   spese: readonly Expense[],
   fx: FxContext,
   me: string | undefined,

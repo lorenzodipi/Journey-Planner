@@ -3,6 +3,7 @@
 // persona; poi posto e stato del check-in, il QR o il codice a barre salvato (#38, si ingrandisce a schermo intero)
 // o il riquadro per aggiungerlo, Terminal · Gate · Imbarco · Chiusura, lo scalo dopo la tratta; sotto bagaglio e
 // tariffa, note, codice di prenotazione, il biglietto della persona, Maps e il PDF, Modifica il volo ed Elimina.
+import { describeError } from '../lib/db'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Radio as AriaRadio, RadioGroup as AriaRadioGroup } from 'react-aria-components'
 import { airportCity } from '../lib/airports'
@@ -101,7 +102,7 @@ function useImmagine(path: string | undefined) {
     let stop = false
     imageUrl(path).then(
       (u) => (stop ? u.startsWith('blob:') && URL.revokeObjectURL(u) : ((url = u), setSrc(u))),
-      (e: Error) => !stop && setErrore(e.message),
+      (e: Error) => !stop && setErrore(describeError(e)),
     )
     return () => {
       stop = true

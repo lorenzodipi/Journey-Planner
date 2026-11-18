@@ -1,5 +1,6 @@
 // Dati sul telefono (#42, #45): sincronizzazione, riscarico, esporta (riepilogo e file), ripristina, importa da Google Maps.
 // Non è più una pagina a sé: le sezioni stanno dentro Impostazioni.
+import { describeError } from '../../lib/db'
 import { useState } from 'react'
 import { clearSnapshot, loadSnapshot } from '../../lib/cache'
 import { buildExport, downloadJson, exportFileName, serializeExport } from '../../lib/exportData'
@@ -34,7 +35,7 @@ export function SezioniDati({ ask }: { ask: ReturnType<typeof useConferma>[0] })
       await downloadJson(exportFileName(list), serializeExport(buildExport(list)))
       showToast(__NATIVE__ ? tt('File pronto: scegli dove salvarlo') : tt('File scaricato'))
     } catch (e) {
-      showToast(e instanceof Error ? e.message : tt('Esportazione non riuscita'))
+      showToast(e ? describeError(e) : tt('Esportazione non riuscita'))
     }
   }
 
@@ -81,7 +82,7 @@ export function SezioniDati({ ask }: { ask: ReturnType<typeof useConferma>[0] })
         {tt('Copie e file')}
       </h2>
       <div className="fa-list">
-        <Riga icon={<Sv name="share" size={22} />} title={tt('Esporta il riepilogo')} sub={tt('Immagine con statistiche e il tuo bilancio')} onPress={() => void esportaRiepilogo(riepilogoViaggio(trip)).catch((e) => showToast(e instanceof Error ? e.message : tt('Esportazione non riuscita')))} />
+        <Riga icon={<Sv name="share" size={22} />} title={tt('Esporta il riepilogo')} sub={tt('Immagine con statistiche e il tuo bilancio')} onPress={() => void esportaRiepilogo(riepilogoViaggio(trip)).catch((e) => showToast(e ? describeError(e) : tt('Esportazione non riuscita')))} />
         <Riga icon={<Sv name="download" size={22} />} title={tt('Esporta questo viaggio')} sub={tt('«{title}» in un file, con i codici di prenotazione', { title: trip.title })} onPress={() => void esporta(false)} />
         {t.trips.length > 1 ? <Riga icon={<Sv name="download" size={22} />} title={tt('Esporta tutti i {length} viaggi', { length: t.trips.length })} sub={tt('Un solo file con tutto, da conservare')} onPress={() => void esporta(true)} /> : null}
         <Riga icon={<Sv name="file" size={22} />} title={tt('Ripristina da file')} sub={tt('Riporta i viaggi da un file esportato')} onPress={() => toggle('ripristina')} />

@@ -1,6 +1,7 @@
 // Documenti (#52): file senza un luogo (eSIM, assicurazione, passaporti, visti…) con la loro visibilità.
 // I file di alloggi, voli e trasporti stanno nelle loro pagine; quelli delle prenotazioni nelle tappe: niente doppioni.
 // Ogni documento è un biglietto come quelli dei trasporti: chiuso nome, formato e dimensione; aperto i dati e le azioni.
+import { describeError } from '../../lib/db'
 import { useState } from 'react'
 import { Pulsante } from '../../faraway/base'
 import { cx } from '../../faraway/cx'
@@ -110,7 +111,7 @@ export function DocumentiPage() {
                     </dl>
                     {mio ? null : <p className="fa-help" style={{ margin: '16px 0 0' }}>{tt('Solo chi l’ha caricato può cambiarne la visibilità o eliminarlo.')}</p>}
                     <div className="acts2">
-                      <Pulsante size="sm" color="secondary" iconLeading="file" isLoading={occ === `apri:${d.id}`} onPress={() => void faiOcc(`apri:${d.id}`, () => openBookingFile(d.path)).catch((e: Error) => showToast(e.message))}>
+                      <Pulsante size="sm" color="secondary" iconLeading="file" isLoading={occ === `apri:${d.id}`} onPress={() => void faiOcc(`apri:${d.id}`, () => openBookingFile(d.path)).catch((e: Error) => showToast(describeError(e)))}>
                         {tt('Apri')}
                       </Pulsante>
                       <Pulsante size="sm" color="secondary" iconLeading="pencil" onPress={() => setModifica(d.id)}>

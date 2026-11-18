@@ -955,6 +955,44 @@ await asUser(null, 'postgres')
   await asUser(A)
 }
 
+// pagamenti delle spese automatiche (0053): «Ho pagato» e «Bilancia» su card nate da alloggi, voli, trasporti, prenotazioni
+{
+  await asUser(null, 'postgres')
+  await runMigration('0053_pagamenti_spese_automatiche.sql')
+  await runMigration('0053_pagamenti_spese_automatiche.sql') // si può rilanciare
+  const tr = (await db.query(`insert into trips (title, owner_id) values ('Spese automatiche', $1) returning id`, [A])).rows[0].id
+  await db.query(`insert into trip_members (trip_id,user_id,role) values ($1,$2,'editor') on conflict do nothing`, [tr, B])
+  const ta = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'A',$2) returning id`, [tr, A])).rows[0].id
+  const tb = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'B',$2) returning id`, [tr, B])).rows[0].id
+  await asUser(A)
+  const st = (await db.query(`insert into stays (trip_id,name,check_in,check_out,total_cost,paid,paid_by) values ($1,'Casa','2026-11-22','2026-11-26',400,true,$2) returning id`, [tr, ta])).rows[0].id
+  const fl = (await db.query(`insert into flights (trip_id,title,cost,paid) values ($1,'Andata',300,true) returning id`, [tr])).rows[0].id
+  const ex = (await db.query(`insert into expenses (trip_id,label,amount,currency,paid_by) values ($1,'Cena',40,'EUR',$2) returning id`, [tr, ta])).rows[0].id
+  const row = (f, t, amount, extra = {}) => ({ from: f, to: t, amount, currency: 'EUR', paid_on: '2026-11-28', ...extra })
+  const dichiara = (rows) => db.query(`select declare_settlements($1, $2::jsonb) g`, [tr, JSON.stringify(rows)])
+  await asUser(B)
+  // la bilancia del bug: card di un alloggio, di un volo e di una spesa registrata, con compensazioni
+  const g = (await dichiara([
+    row(tb, ta, 150, { source: `stay:${st}`, compensation: true }),
+    row(tb, ta, 50, { expense_id: `stay:${st}` }), // app vecchia: la voce in expense_id
+    row(ta, tb, 150, { source: `flight:${fl}`, compensation: true }),
+    row(tb, ta, 20, { expense_id: ex }),
+  ])).rows[0].g
+  const righe = (await db.query(`select expense_id, source_kind, source_id from settlements where group_id=$1 order by amount, source_kind nulls last`, [g])).rows
+  check('0053 la bilancia con le spese automatiche si registra', righe.length === 4)
+  check('0053 la voce della spesa automatica resta legata', righe.filter((r) => r.source_kind === 'stay' && r.source_id === st && r.expense_id === null).length === 2 && righe.some((r) => r.source_kind === 'flight' && r.source_id === fl))
+  check('0053 la spesa registrata resta in expense_id', righe.some((r) => r.expense_id === ex && r.source_kind === null))
+  await throws('0053 una voce di un altro viaggio non vale', () => dichiara([row(tb, ta, 5, { source: `stay:${ex}` })]))
+  await throws('0053 un riferimento strano non vale', () => dichiara([row(tb, ta, 5, { expense_id: 'boh:123' })]))
+  const ids = (await db.query(`select id from settlements where group_id=$1`, [g])).rows.map((r) => r.id)
+  check('0053 i pagamenti contano nei saldi', (await db.query(`select count(*)::int n from my_confirmed_settlements() where id = any($1)`, [ids])).rows[0].n === 4)
+  await asUser(A)
+  await db.query(`update stays set deleted_at = now() where id = $1`, [st])
+  await asUser(B)
+  check('0053 cancellato l\'alloggio, non contano i suoi pagamenti né le compensazioni del gruppo', (await db.query(`select count(*)::int n from my_confirmed_settlements() where id = any($1)`, [ids])).rows[0].n === 1)
+  await asUser(A)
+}
+
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione
 await asUser(null, 'service_role')
 const svcTrip = (await db.query(`select id from trips limit 1`)).rows
