@@ -4,6 +4,13 @@ import { airportCity } from './airports'
 import { formatInZone, layover } from './flights'
 import { LOCALE, t } from '../i18n'
 
+/** Chi viaggia con un volo: i passeggeri scelti; per i voli vecchi (non scelti) «Diviso tra»; vuoto = tutti. */
+export function passeggeriVolo(flight: Pick<Flight, 'passengerIds' | 'forTravelers'>, travelers: readonly Pick<Traveler, 'id'>[]): string[] {
+  const scelti = flight.passengerIds ?? flight.forTravelers
+  const validi = scelti?.filter((id) => travelers.some((p) => p.id === id))
+  return validi?.length ? validi : travelers.map((p) => p.id)
+}
+
 /** Come si mostrano le persone nel selettore: nome intero fino a due, tre con nomi corti in piccolo, oltre solo le iniziali. */
 export type ModoPersone = 'due' | 'tre' | 'iniziali'
 

@@ -98,6 +98,8 @@ export interface FlightRow {
   for_travelers?: string[] | null
   // dalla migrazione 0039: più paganti
   payer_ids?: string[] | null
+  // dalla migrazione 0054: passeggeri (null = non scelto, {} = tutti)
+  passenger_ids?: string[] | null
   // dalla migrazione 0021
   baggage?: string | null
   policy?: string | null
@@ -224,6 +226,7 @@ export function mapFlights(rows: FlightRow[], legs: FlightLegRow[], tripId: stri
       paidBy: r.paid_by ?? undefined,
       forTravelers: r.for_travelers?.length ? r.for_travelers : undefined,
       payerIds: r.payer_ids?.length ? r.payer_ids : undefined,
+      passengerIds: r.passenger_ids ?? undefined,
       baggage: r.baggage ?? undefined,
       policy: r.policy ?? undefined,
       checkinAt: r.checkin_at ?? undefined,
@@ -498,6 +501,8 @@ export interface FlightInput {
   forTravelers?: string[]
   /** Più paganti (migrazione 0039): il totale si divide in parti uguali. Con uno solo vale `paidBy`. */
   payerIds?: string[]
+  /** Passeggeri (migrazione 0054): `[]` = tutti, assente = non toccare. */
+  passengerIds?: string[]
   baggage?: string
   policy?: string
   /** apertura del check-in online (istante ISO), vuoto = nessun promemoria */
@@ -515,6 +520,8 @@ export function flightExtras(i: FlightInput, old?: Flight) {
   put('paid_by', i.paidBy, old?.paidBy)
   put('for_travelers', i.forTravelers, old?.forTravelers)
   put('payer_ids', i.payerIds, old?.payerIds)
+  // «tutti» (`[]`) va scritto anche se non c'era niente: un volo vecchio senza passeggeri userebbe «Diviso tra»
+  if (i.passengerIds !== undefined && (i.passengerIds.length > 0 || old?.passengerIds !== undefined || old?.forTravelers?.length)) out.passenger_ids = i.passengerIds
   put('baggage', i.baggage?.trim(), old?.baggage)
   put('policy', i.policy?.trim(), old?.policy)
   put('checkin_at', i.checkinAt, old?.checkinAt)

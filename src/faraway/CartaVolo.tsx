@@ -8,7 +8,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { Radio as AriaRadio, RadioGroup as AriaRadioGroup } from 'react-aria-components'
 import { airportCity } from '../lib/airports'
 import { imageUrl } from '../lib/bookingFiles'
-import { bigliettoPersona, linkFlightradar, modoPersone, nomiCorti, postoPersona, scaloDopo, statoCheckin, type StatoCheckin } from '../lib/cartaImbarco'
+import { bigliettoPersona, passeggeriVolo, linkFlightradar, modoPersone, nomiCorti, postoPersona, scaloDopo, statoCheckin, type StatoCheckin } from '../lib/cartaImbarco'
 import { checkImmagine, codiceAltraTratta, codiciDi, codicePer } from '../lib/codici'
 import { formatMoney } from '../lib/money'
 import { durataLunga, fasciaScali, riepilogoVolo } from '../lib/voli'
@@ -117,7 +117,7 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
   const me = useMe(trip)
   const r = riepilogoVolo(flight)
   const scalo = fasciaScali(r.scali)
-  const people = flight.forTravelers?.length ? flight.forTravelers : trip.travelers.map((p) => p.id)
+  const people = passeggeriVolo(flight, trip.travelers)
   const names = people.map((id) => trip.travelers.find((p) => p.id === id)).filter((p): p is NonNullable<typeof p> => Boolean(p))
   const brand = flight.airline?.trim() || t('Volo')
   const numeri = r.numeri.length > 0 ? `${flight.airline ? t('Volo ') : ''}${r.numeri.join(' · ')}` : flight.airline ? '' : flight.title

@@ -5,20 +5,17 @@ import { cittaDelGiorno, indiceCittaAdesso } from '../lib/meteoGiorno'
 import { ora, useRiferimento } from '../lib/formati'
 import { Foglio } from '../faraway/Foglio'
 import { Chip, Pulsante } from '../faraway/base'
-import { RimborsiOggi } from './spese/Rimborsi'
 import { oggiNelViaggio } from '../lib/paesi'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'wouter'
 import { countryByCode } from '../lib/countries'
 import { currencyName } from '../lib/money'
 import { dateAddDays, daysBetween, parseYmd } from '../lib/dates'
 import { groupDays, rangeText, type DayGroup } from '../lib/dayGroups'
-import { totaliDelViaggio } from '../lib/debitiSpese'
-import { riassunto } from '../lib/spese'
 import { soloLettura } from '../lib/ruolo'
 import { StepperViaggio, type TappaViaggio } from '../faraway/StepperViaggio'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
-import { avvisoPioggia, faseViaggio, notteAlle, numeriViaggio, prossimeOre, statisticheDopo } from '../lib/oggi'
+import { avvisoPioggia, faseViaggio, notteAlle, prossimeOre } from '../lib/oggi'
 import { isClosed, toMin } from '../lib/tappa'
 import { minutesOfDay, sunForDay } from '../lib/sun'
 import { tripToday } from '../lib/today'
@@ -26,16 +23,16 @@ import { showToast } from '../state/toast'
 import { useForecast } from '../state/forecast'
 import { cityCenters, useCityForecasts } from '../state/cityForecast'
 import { useDaySegments } from '../state/daySegments'
-import { discOf, useMe } from '../state/me'
+import { useMe } from '../state/me'
 import { useAuth } from '../lib/auth'
-import { savedAtText, useOnline } from '../state/online'
 import { useTrip, useTrips } from '../state/trip'
 import type { DayItem, ItemStatus, Trip } from '../types'
 import { Ic } from '../ui/Sprite'
-import { Banner } from '../faraway/base'
-import { AvvisoPioggia, BigliettoPiccolo, ChecklistHome, ContoAllaRovescia, DueValori, Orologio, Riepilogo, Saluto, DareRicevere, SimboloPiatto, ValutaPiccola, type VoceHome } from '../faraway/Home'
+import { OggiDopo } from './OggiDopo'
+import { Offline } from '../faraway/Offline'
+import { DISCHI as CITY_DISCS } from '../faraway/DopoCard'
+import { AvvisoPioggia, BigliettoPiccolo, ChecklistHome, ContoAllaRovescia, Orologio, Saluto, ValutaPiccola, type VoceHome } from '../faraway/Home'
 import { Sv } from '../faraway/icons'
-import { RigaApribile, useUnaAperta } from '../faraway/Righe'
 import { Affianca, Colonna, Schermata } from '../faraway/shell'
 import { TappeLista } from '../faraway/Tappe'
 import { useConferma } from '../faraway/Foglio'
@@ -70,25 +67,6 @@ export function Oggi() {
 }
 
 /** Avviso offline in cima (Fa-07 chiaro, #49). */
-function Offline() {
-  const online = useOnline()
-  if (online) return null
-  const at = savedAtText()
-  return (
-    <>
-      {at ? (
-        <div className="fa-off">
-          <Sv name="wifi" size={16} />
-          {tt('Aggiornato alle {at}', { at })}
-        </div>
-      ) : null}
-      <Banner tone="az" icon="wifi" title={tt('Sei offline.')}>
-        {tt('Vedi i dati salvati sul telefono. Le modifiche partono quando torna la rete.')}
-      </Banner>
-    </>
-  )
-}
-
 /* ------------------------------------------------------------------ checklist «Le mie cose» */
 
 function useLeMieCose(trip: Trip, me: string | undefined) {
@@ -393,275 +371,3 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
     </Schermata>
   )
 }
-
-/* ------------------------------------------------------------------ dopo il viaggio (#30) */
-
-const CITY_DISCS = ['viola', 'corallo', 'turchese', 'azzurro', 'menta', 'glicine', 'rosa', 'cielo']
-
-function OggiDopo({ trip, now, today }: { trip: Trip; now: Date; today: string }) {
-  const me = useMe(trip)
-  const [, navigate] = useLocation()
-  const r = riassunto(trip, me?.id)
-  const groups = useMemo(() => groupDays(trip, today), [trip, today])
-  const n = numeriViaggio(trip)
-  const open = useUnaAperta()
-  const ticket = useRef<HTMLElement>(null)
-  const nDays = trip.days.length || daysBetween(trip.startDate, trip.endDate) + 1
-  const nights = Math.max(0, daysBetween(trip.startDate, trip.endDate))
-  const people = trip.travelers.map((p) => ({ name: p.name, n: discOf(trip, p.id) }))
-  const cityGroups = groups.filter((g) => g.kind === 'city')
-  const colorOf = new Map<string, string>()
-  for (const g of cityGroups) if (!colorOf.has(g.title)) colorOf.set(g.title, CITY_DISCS[colorOf.size % CITY_DISCS.length])
-  // ogni pezzo della barra ha la sua voce in legenda: città con il loro colore, viaggi e rientro in ardesia
-  const colore = (g: (typeof groups)[number]) => (g.kind === 'city' ? (colorOf.get(g.title) as string) : 'ardesia')
-  const legend: { c: string; col: string; n: number }[] = []
-  for (const g of groups) {
-    const l = legend.find((x) => x.c === g.title)
-    if (l) l.n += g.cells.length
-    else legend.push({ c: g.title, col: colore(g), n: g.cells.length })
-  }
-  // senza nessuna città scritta la barra direbbe solo «Da definire»: non la mostriamo
-  const conCitta = trip.days.some((d) => d.city?.trim())
-
-  // Sotto il totale ci sono sempre due blocchi, mai uno solo con un buco accanto. Da soli raccontano il viaggio, non i soldi.
-  // statistiche del viaggio in ordine di preferenza: ci sono solo quelle con un valore vero, quindi c'è sempre un'alternativa
-  const stats = statisticheDopo(trip)
-  const secondaRiga = r.solo ? (
-    <DueValori a={stats[0]} b={stats[1]} />
-  ) : me ? (
-    <DareRicevere bilancio={totaliDelViaggio(trip, r.spese, r.fx, me.id)} currency={trip.baseCurrency} />
-  ) : (
-    <DueValori a={stats[0]} b={{ l: tt('Persone'), v: String(people.length), c: people.map((p) => firstName(p.name)).join(', ') }} />
-  )
-
-  async function condividi() {
-    const text = tt('{nDays} giorni in {destination} con Faraway', { nDays, destination: trip.destination })
-    const el = ticket.current
-    try {
-      const blob = el ? await nodeToPng(el) : null
-      const file = blob ? new File([blob], 'faraway-viaggio.png', { type: 'image/png' }) : null
-      if (file && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], text })
-      } else if (file) {
-        const a = document.createElement('a')
-        a.href = URL.createObjectURL(file)
-        a.download = file.name
-        a.click()
-        showToast(tt('Immagine scaricata'))
-      } else if (navigator.share) await navigator.share({ text })
-    } catch {
-      // condivisione annullata
-    }
-  }
-
-  return (
-    <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now)} greeting={tt('Bentornato')} name={firstName(me?.name)} />}>
-      <h1 className="sr-only">{tt('Oggi, {destination}', { destination: trip.destination })}</h1>
-      <Offline />
-      {/* pieghevole aperto: riepilogo e giorni a sinistra, il viaggio in numeri a destra */}
-      <Affianca>
-      <Colonna lato="sinistra">
-      {/* il visualizzatore (0049) non vede soldi: solo i numeri del viaggio */}
-      {soloLettura(trip) ? (
-        <div className="k-Riepilogo">
-          <DueValori a={stats[0]} b={stats[1]} />
-        </div>
-      ) : (
-        <>
-          <RimborsiOggi trip={trip} />
-          <Riepilogo dove={trip.destination} speso={r.speso} currency={trip.baseCurrency} limit={r.limit} simbolo={false} second={secondaRiga} />
-        </>
-      )}
-      </Colonna>
-
-      <Colonna lato="destra" alta>
-      <section ref={ticket} aria-label={tt('Il viaggio in numeri')} className="fa-r2 fa-tkt" role="group">
-        <div className="tp hero">
-          <SimboloPiatto style={{ right: 14, top: 14, width: 40 }} />
-          <span className="k">{tt('Il viaggio in numeri')}</span>
-          <div className="n">
-            <b>{nDays}</b>
-            <span>
-              {tt('{v0} in', { v0: nDays === 1 ? tt('giorno') : tt('giorni') })}{' '}<br />
-              {trip.destination}
-            </span>
-          </div>
-          <span className="s">
-            {rangeText(trip.startDate, trip.endDate)} · {nights} {nights === 1 ? tt('notte') : tt('notti')}
-          </span>
-          {groups.length > 0 && conCitta ? (
-            <>
-              <div className="seg" role="img" aria-label={tt('Giorni per città')}>
-                {groups.map((g, i) => (
-                  <i key={i} style={{ flex: g.cells.length, background: `var(--disco-${colore(g)})` }} />
-                ))}
-              </div>
-              <div className="leg">
-                {legend.map((l) => (
-                  <span key={l.c}>
-                    <i style={{ background: `var(--disco-${l.col})` }} /> {l.c} <b>{l.n}</b>
-                  </span>
-                ))}
-              </div>
-            </>
-          ) : null}
-        </div>
-        <div className="bt">
-          <div className="grp">{tt('Sul posto')}</div>
-          <div className="r2">
-            <Ic name="i-nav-route" size={48} />
-            <div className="tx">
-              <div className="t">{tt('Tappe fatte')}</div>
-              <div className="m">
-                {tt('{tappeFatte} su {tappePianificate} pianificate', { tappeFatte: n.tappeFatte, tappePianificate: n.tappePianificate })}
-              </div>
-            </div>
-            <div className="rg" role="img" aria-label={`${n.tappeFatte} (${n.tappePianificate ? Math.round((n.tappeFatte / n.tappePianificate) * 100) : 0}%)`} style={{ ['--p' as string]: n.tappePianificate ? Math.round((n.tappeFatte / n.tappePianificate) * 100) : 0 } as React.CSSProperties}>
-              <b>{n.tappeFatte}</b>
-            </div>
-          </div>
-          <div className="r2">
-            <Ic name="i-cat-temple" size={48} />
-            <div className="tx">
-              <div className="t">{tt('Luoghi visitati')}</div>
-              <div className="m">
-                {tt('{luoghiVisitati} su {luoghiSalvati} salvati', { luoghiVisitati: n.luoghiVisitati, luoghiSalvati: n.luoghiSalvati })}
-              </div>
-            </div>
-            <div className="rg" role="img" aria-label={`${n.luoghiVisitati} (${n.luoghiSalvati ? Math.round((n.luoghiVisitati / n.luoghiSalvati) * 100) : 0}%)`} style={{ ['--p' as string]: n.luoghiSalvati ? Math.round((n.luoghiVisitati / n.luoghiSalvati) * 100) : 0 } as React.CSSProperties}>
-              <b>{n.luoghiVisitati}</b>
-            </div>
-          </div>
-          <div className="r2">
-            <Ic name="i-cat-stay" size={48} />
-            <div className="tx">
-              <div className="t">{tt('Notti')}</div>
-              <div className="m">
-                {tt('in {alloggi} {v1}', { alloggi: n.alloggi, v1: n.alloggi === 1 ? tt('alloggio') : tt('alloggi') })}
-              </div>
-            </div>
-            <div className="nc">{n.notti}</div>
-          </div>
-          {n.spostamenti > 0 ? <div className="grp">{tt('Spostamenti')}</div> : null}
-          {n.voli > 0 ? (
-            <div className="r2">
-              <Ic name="i-tra-plane" size={48} />
-              <div className="tx">
-                <div className="t">{tt('Voli')}</div>
-                <div className="m">{n.cittaVoli.join(', ')}</div>
-              </div>
-              <div className="nc">{n.voli}</div>
-            </div>
-          ) : null}
-          {n.treni > 0 ? (
-            <div className="r2">
-              <Ic name="i-tra-train" size={48} />
-              <div className="tx">
-                <div className="t">{tt('Treni')}</div>
-                <div className="m">{tt('corse in treno')}</div>
-              </div>
-              <div className="nc">{n.treni}</div>
-            </div>
-          ) : null}
-          {n.metroBus > 0 ? (
-            <div className="r2">
-              <Ic name="i-tra-metro" size={48} />
-              <div className="tx">
-                <div className="t">{tt('Metro e bus')}</div>
-                <div className="m">{tt('corse con biglietto')}</div>
-              </div>
-              <div className="nc">{n.metroBus}</div>
-            </div>
-          ) : null}
-          <div className="ft">
-            <div className="fr">
-              <div>
-                <b>
-                  {n.spostamenti} {n.spostamenti === 1 ? tt('spostamento') : tt('spostamenti')}
-                </b>
-                <span>
-                  {tt('in {nDays} {v1}', { nDays, v1: nDays === 1 ? tt('giorno') : tt('giorni') })}
-                </span>
-              </div>
-              <button type="button" className="fa-btn" onClick={() => void condividi()}>
-                <Sv name="share" size={18} />
-                {tt('Condividi')}
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-      </Colonna>
-
-
-      <Colonna lato="sinistra" mobile>
-      {cityGroups.length > 0 ? (
-        <section className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 16px 8px' }}>
-            <h2 className="fa-h3">{tt('Rivedi i giorni')}</h2>
-          </div>
-          {cityGroups.map((g, i) => {
-            const id = `${i}-${g.cells[0].day.id}`
-            const tappe = g.cells.reduce((s, c) => s + c.day.items.length, 0)
-            return (
-              <RigaApribile key={id} icon="i-nav-calendar" title={`${g.title} · ${rangeText(g.cells[0].day.date, g.cells[g.cells.length - 1].day.date)}`} sub={`${g.cells.length} ${g.cells.length === 1 ? tt('giorno') : tt('giorni')} · ${tappe} ${tappe === 1 ? tt('tappa') : tt('tappe')}`} open={open.isOpen(id)} onToggle={() => open.toggle(id)}>
-                <div className="fa-list">
-                  {g.cells.map((c) => (
-                    <button key={c.day.id} type="button" className="fa-row" style={{ minHeight: 52, gridTemplateColumns: 'minmax(0,1fr) auto' }} onClick={() => navigate(`/giorni/${c.day.id}`)}>
-                      <span>
-                        <span className="t" style={{ display: 'block' }}>
-                          {cap(wdm(c.day.date))}
-                        </span>
-                        <span className="s" style={{ display: 'block' }}>
-                          {c.label} · {c.day.items.length} {c.day.items.length === 1 ? tt('tappa') : tt('tappe')}
-                        </span>
-                      </span>
-                      <span className="end">
-                        <Sv name="chevr" size={20} />
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </RigaApribile>
-            )
-          })}
-        </section>
-      ) : null}
-      </Colonna>
-      </Affianca>
-    </Schermata>
-  )
-}
-
-/** Immagine PNG di un elemento (per «Condividi»): copia il DOM con gli stili in un SVG e lo disegna su un canvas. */
-async function nodeToPng(node: HTMLElement): Promise<Blob | null> {
-  const rect = node.getBoundingClientRect()
-  const clone = node.cloneNode(true) as HTMLElement
-  const inline = (src: Element, dst: Element) => {
-    const cs = getComputedStyle(src)
-    let css = ''
-    for (let i = 0; i < cs.length; i++) css += `${cs[i]}:${cs.getPropertyValue(cs[i])};`
-    dst.setAttribute('style', css)
-    for (let i = 0; i < src.children.length; i++) inline(src.children[i], dst.children[i])
-  }
-  inline(node, clone)
-  clone.querySelectorAll('button').forEach((b) => b.remove())
-  const sprite = document.querySelector('svg defs')?.outerHTML ?? ''
-  const w = Math.ceil(rect.width)
-  const h = Math.ceil(rect.height)
-  const xml = new XMLSerializer().serializeToString(clone)
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><svg width="0" height="0">${sprite}</svg><foreignObject width="100%" height="100%">${xml}</foreignObject></svg>`
-  const img = new Image()
-  img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
-  await img.decode()
-  const scale = 2
-  const canvas = document.createElement('canvas')
-  canvas.width = w * scale
-  canvas.height = h * scale
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return null
-  ctx.scale(scale, scale)
-  ctx.drawImage(img, 0, 0)
-  return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'))
-}
-

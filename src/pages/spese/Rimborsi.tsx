@@ -207,26 +207,6 @@ export function RimborsiCard({ trip, conMie = true }: { trip: Trip; /** Le mie r
   )
 }
 
-/** Card in Oggi: una richiesta in attesa da decidere, oppure un pagamento nuovo di un altro. */
-export function RimborsiOggi({ trip }: { trip: Trip }) {
-  const dec = useRichiesteDaDecidere(trip)
-  const { nuovi } = useNovitaRimborsi(trip)
-  if (dec.length === 0 && nuovi.length === 0) return null
-  return (
-    <>
-      {dec.length > 0 ? (
-        <Banner tone="az" icon="info" action={<Link href="/spese" className="fa-btn sm">{tt('Rispondi')}</Link>}>
-          {chiRichiesta(dec[0], trip.travelers)}
-          {dec.length > 1 ? ` (+${dec.length - 1})` : ''}
-          <br />
-          {dataNumerica(dec[0].paidOn)}
-        </Banner>
-      ) : null}
-      <AvvisiNovita trip={trip} solo={1} />
-    </>
-  )
-}
-
 /** «Bilancia tutte le spese» con una persona: dice cosa succede e registra tutto in un colpo. */
 export function BilanciaSheet({ trip, piano, onClose }: { trip: Trip; piano: PianoBilancia; onClose: () => void }) {
   const t = useTrips()

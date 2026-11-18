@@ -259,8 +259,10 @@ export interface Flight {
   paidBy?: string
   /** Più paganti (migrazione 0039): il totale si divide in parti uguali. */
   payerIds?: string[]
-  /** Per chi è (#34), vuoto = tutti. */
+  /** Per chi è (#34), vuoto = tutti. Per un volo vale solo per il costo («Diviso tra»). */
   forTravelers?: string[]
+  /** Passeggeri del volo (migrazione 0054), a parte dal costo. Assente = non scelto: valgono `forTravelers`; `[]` = tutti. */
+  passengerIds?: string[]
   /** dalla migrazione 0021 */
   baggage?: string
   policy?: string

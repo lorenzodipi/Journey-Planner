@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bigliettoPersona, linkFlightradar, modoPersone, nomiCorti, postoPersona, scaloDopo, statoCheckin } from './cartaImbarco'
+import { bigliettoPersona, linkFlightradar, modoPersone, nomiCorti, postoPersona, scaloDopo, statoCheckin, passeggeriVolo } from './cartaImbarco'
 import { codiceAltraTratta, codicePer } from './codici'
 import { durataLunga } from './voli'
 import type { FlightLeg, TicketCode } from '../types'
@@ -71,5 +71,20 @@ describe('carta d\'imbarco', () => {
     expect(codicePer(codes, 'm')?.id).toBe('m1')
     expect(codiceAltraTratta([c('d1', 'd', 1)], 'd', 2)?.id).toBe('d1')
     expect(codiceAltraTratta([c('d1', 'd', 1)], 'm', 2)).toBeUndefined()
+  })
+})
+
+describe('passeggeriVolo', () => {
+  const viaggiatori = [{ id: 'a' }, { id: 'b' }]
+  it('usa i passeggeri scelti, anche se il costo è di uno solo', () => {
+    expect(passeggeriVolo({ passengerIds: ['a', 'b'], forTravelers: ['a'] }, viaggiatori)).toEqual(['a', 'b'])
+  })
+  it('nei voli vecchi (passeggeri non scelti) valgono quelli del costo', () => {
+    expect(passeggeriVolo({ forTravelers: ['a'] }, viaggiatori)).toEqual(['a'])
+  })
+  it('vuoto o sconosciuto = tutti', () => {
+    expect(passeggeriVolo({ passengerIds: [] }, viaggiatori)).toEqual(['a', 'b'])
+    expect(passeggeriVolo({}, viaggiatori)).toEqual(['a', 'b'])
+    expect(passeggeriVolo({ passengerIds: ['x'] }, viaggiatori)).toEqual(['a', 'b'])
   })
 })

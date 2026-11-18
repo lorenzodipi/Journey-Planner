@@ -157,6 +157,8 @@ interface InputProps {
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
   enterKeyHint?: 'done' | 'go' | 'next' | 'search' | 'send'
   hideLabel?: boolean
+  /** «i» in fondo alla riga dell'etichetta: apre un riquadro che spiega che cosa scrivere nel campo (stessa `Info` dei titoli). */
+  info?: { label: string; children: ReactNode }
 }
 
 /** Segnaposto di riserva: ogni campo vuoto dice cosa scrivere o scegliere, anche dove chi lo usa non ne ha dato uno. */
@@ -194,7 +196,7 @@ export function useFocoIniziale<T extends HTMLElement>(attivo: boolean | undefin
   return ref
 }
 
-export function Campo({ label, value, onChange, placeholder, type = 'text', inputMode, icon: ic, hint, error, positive, textarea, trailing, hideLabel, da00, onBlur, autoFocus, ...rest }: InputProps) {
+export function Campo({ label, value, onChange, placeholder, type = 'text', inputMode, icon: ic, hint, error, positive, textarea, trailing, hideLabel, info, da00, onBlur, autoFocus, ...rest }: InputProps) {
   const id = useId()
   const foco = useFocoIniziale<HTMLInputElement>(autoFocus && !textarea)
   const focoTa = useFocoIniziale<HTMLTextAreaElement>(autoFocus && textarea)
@@ -206,9 +208,18 @@ export function Campo({ label, value, onChange, placeholder, type = 'text', inpu
   const pickerVuoto = (type === 'date' || type === 'time') && !mostrato
   return (
     <div className="fa-fld">
-      <label htmlFor={id} className={hideLabel ? 'sr-only' : undefined}>
-        {label}
-      </label>
+      {info ? (
+        <div className="fa-tinfo">
+          <label htmlFor={id} className={hideLabel ? 'sr-only' : undefined}>
+            {label}
+          </label>
+          <Info label={info.label}>{info.children}</Info>
+        </div>
+      ) : (
+        <label htmlFor={id} className={hideLabel ? 'sr-only' : undefined}>
+          {label}
+        </label>
+      )}
       <span className={cx('fa-in', textarea && 'ta', error && 'bad', pickerVuoto && 'vuoto')}>
         {ic ? <Sv name={ic} size={20} /> : null}
         {textarea ? (

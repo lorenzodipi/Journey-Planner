@@ -5,6 +5,7 @@ import { DocumentiCollegati } from '../documenti/DocumentiCollegati'
 import { Fragment, useState } from 'react'
 import { isIata, timezoneForAirport } from '../../lib/airports'
 import { layover, legDuration } from '../../lib/flights'
+import { passeggeriVolo } from '../../lib/cartaImbarco'
 import { compilati, durataTesto } from '../../lib/moduli'
 import { legToForm, type FlightInput, type LegInput } from '../../lib/logistics'
 import { amountToText, parseAmount, tripCurrencies } from '../../lib/money'
@@ -64,6 +65,8 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
   const [payers, setPayers] = useState<string[]>(() => (flight?.payerIds?.length ? flight.payerIds : flight?.paidBy ? [flight.paidBy] : flight ? [] : me?.id ? [me.id] : all.length === 1 ? [all[0]] : []))
   const paidBy = payers.length === 1 ? payers[0] : ''
   const [who, setWho] = useState<string[]>(flight?.forTravelers?.length ? flight.forTravelers : all)
+  // chi viaggia: a parte dalla divisione del costo (si può pagare il volo di un'altra persona)
+  const [pass, setPass] = useState<string[]>(() => (flight ? passeggeriVolo(flight, trip.travelers) : all))
   const [baggage, setBaggage] = useState(flight?.baggage ?? '')
   const [policy, setPolicy] = useState(flight?.policy ?? '')
   const firstTz = flight?.legs[0]?.fromTz
@@ -80,7 +83,8 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
   const [errors, setErrors] = useState<{ title?: string; cost?: string; paidBy?: string; who?: string; legs: Record<number, string>; form?: string }>({ legs: {} })
   const [busy, setBusy] = useState(false)
   const people = who.length === 0 ? all : who
-  const multi = people.length > 1
+  const passeggeri = pass.length === 0 ? all : pass
+  const multi = passeggeri.length > 1
 
   const patchLeg = (key: number, patch: Partial<LegDraft>) => setLegs((a) => a.map((l) => (l.key === key ? { ...l, ...patch } : l)))
   function setAirport(leg: LegDraft, side: 'from' | 'to', raw: string, fuso?: string) {
@@ -99,7 +103,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
     const err: typeof errors = { legs: {} }
-    if (!title.trim()) err.title = tt('Dai un nome al volo (es. Andata).')
+    if (!title.trim()) err.title = tt('Dai un nome al volo: sceglilo tu, per riconoscerlo.')
     const amount = parseAmount(cost)
     if (cost.trim() && amount === null) err.cost = tt('Il costo non è chiaro: scrivi per esempio 623.')
     if (amount && paid && payers.length === 0) err.paidBy = tt('Manca chi ha pagato. Scegli una persona.')
@@ -116,12 +120,14 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
     if (err.title || err.cost || err.paidBy || Object.keys(err.legs).length > 0) return
 
     const checkinAt = checkin.date && checkin.time && firstTz !== '' ? zonedToInstant(checkin.date, checkin.time, legs[0].fromTz) : ''
+    const forCosto = who.length === 0 || all.every((id) => who.includes(id)) ? [] : who
     const input: FlightInput = {
       title, airline, bookingRef, cost: amount, currency, scope, paid, notes,
       baggage, policy, checkinAt,
       paidBy: (paid || amount) && payers.length === 1 ? paidBy : undefined,
       payerIds: (paid || amount) && payers.length > 1 ? payers : [],
-      forTravelers: who.length === 0 || all.every((id) => who.includes(id)) ? [] : who,
+      forTravelers: forCosto,
+      passengerIds: all.every((id) => passeggeri.includes(id)) ? (forCosto.length > 0 ? all : []) : passeggeri.filter((id) => all.includes(id)),
       legs: legs.map(({ key: _k, fromTzAuto: _a, toTzAuto: _b, ...l }) => l),
     }
     setBusy(true)
@@ -164,9 +170,33 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
     >
       <form id="volo-form" className="frm grp" onSubmit={submit} noValidate>
         <Gruppo titolo={tt('Volo')}>
-          <Campo label={tt('Nome del volo')} value={title} onChange={setTitle} placeholder={tt('es. Andata')} maxLength={60} error={errors.title} />
+          <Campo
+            label={tt('Nome del volo')}
+            value={title}
+            onChange={setTitle}
+            placeholder={tt('Il nome che scegli tu')}
+            maxLength={60}
+            error={errors.title}
+            info={{
+              label: tt('Che cos’è il nome del volo'),
+              children: (
+                <>
+                  <p>{tt('È il nome che dai tu a questo volo, per riconoscerlo subito nell’elenco.')}</p>
+                  <p>{tt('Non è il nome della compagnia e non è quello che trovi su altri siti: scegli un nome tuo.')}{' '}<b>{tt('Per esempio: «Volo di andata» o «Volo per le vacanze».')}</b></p>
+                </>
+              ),
+            }}
+          />
           <Campo label={tt('Compagnia')} value={airline} onChange={setAirline} placeholder={tt('Nome della compagnia')} />
           <Campo label={tt('Codice di prenotazione')} value={bookingRef} onChange={(v) => setBookingRef(v.toUpperCase())} autoComplete="off" placeholder={tt('es. 4K7QX2')} />
+          <PerChi
+            trip={trip}
+            meId={me?.id}
+            value={passeggeri}
+            onChange={setPass}
+            label={tt('Passeggeri')}
+            help={tt('Chi ha questo biglietto. I posti si scrivono per ognuno. Il costo si divide più sotto, a parte.')}
+          />
         </Gruppo>
 
         <Gruppo titolo={tt('Tratte')}>
@@ -220,7 +250,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
                   ) : null}
                   {multi ? (
                     <div className="fa-2c riempi">
-                      {people.map((id) => (
+                      {passeggeri.map((id) => (
                         <Campo key={id} label={tt('Posto di {v0}', { v0: nome(id) })} value={l.seatsBy?.[id] ?? ''} onChange={(v) => patchLeg(l.key, { seatsBy: { ...l.seatsBy, [id]: v.toUpperCase() } })} maxLength={6} placeholder={tt('es. 32A')} />
                       ))}
                     </div>

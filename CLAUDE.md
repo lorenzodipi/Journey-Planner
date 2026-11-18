@@ -4,13 +4,14 @@ Prima di toccare il codice leggi le linee guida in [docs/linee-guida](docs/linee
 
 ## Come si lavora con Lorenzo
 - Rispondi **in italiano**, in modo sintetico. Alla fine: che cosa è cambiato, che cosa hai controllato, che cosa non hai potuto provare (per esempio un dispositivo vero).
-- Chiedi prima di azioni distruttive o ambigue. Fai solo ciò che è richiesto: un'analisi o un mock non toccano il codice; quello che noti ma non ti è stato chiesto lo segnali, non lo fai.
+- Chiedi prima di azioni distruttive o ambigue (la pubblicazione, a controlli passati, non lo è: vedi «Sicurezza e repo»). Fai solo ciò che è richiesto: un'analisi o un mock non toccano il codice; quello che noti ma non ti è stato chiesto lo segnali, non lo fai.
 - Se una domanda resta senza risposta, non procedere su quel punto.
 
 ## Sicurezza e repo
 - Lavora solo su `main` di `lorenzodipi/Journey-Planner`. **Mai** modificare `stefanoVeni/iceland-roadtrip`: non è di Lorenzo.
 - La repo è **pubblica**: mai committare dati personali, email, file `.env*`, la chiave `service_role` di Supabase.
 - Ogni push pubblica il sito e costruisce APK e IPA.
+- **Pubblicazione automatica**: a lavoro finito e con i controlli sotto passati, commit e push su `main` si fanno da soli, senza chiedere. Si ferma solo se Lorenzo dice esplicitamente di non pubblicare (o di aspettare), o se un controllo non passa.
 - Commit in italiano e descrittivi, con i trailer `Co-Authored-By` e `Claude-Session` della sessione. Dopo il push `origin/main` deve coincidere con `HEAD`.
 
 ## Prima di ogni push (NRT)
