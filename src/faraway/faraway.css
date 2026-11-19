@@ -88,6 +88,7 @@ html{scroll-padding-top:var(--head-h,0px)}
 .fa-btn.soft{background:var(--azzurro-soft);color:var(--azzurro-ink)}
 .fa-btn.out{background:var(--surface-card);border:1.5px solid var(--border-strong);color:var(--ink);box-shadow:var(--shadow-xs)}
 .fa-btn.txt{background:none;color:var(--azzurro-ink);text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:2px;width:auto;padding:0 8px;min-height:44px}
+.fa-btn.sott{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:2px}
 .fa-btn.del{background:none;color:var(--danger);width:auto;padding:0 8px;min-height:44px}
 .fa-btn.sm{min-height:44px;padding:0 16px;font:600 14px/20px var(--font-sans);letter-spacing:0;width:auto}
 .fa-btn.dis{opacity:.4}

@@ -156,7 +156,7 @@ function AvvisiNovita({ trip, aperti = false }: { trip: Trip; /** elenco già ap
       azioniSotto
       action={
         <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <Link href="/spese/bilancio" className="fa-btn sm" onClick={() => visto([n.key])}>{tt('Controlla')}</Link>
+          <Link href="/spese/bilancio" className="fa-btn sm sott" onClick={() => visto([n.key])}>{tt('Controlla')}</Link>
           <Pulsante size="sm" color="secondary" onPress={() => visto([n.key])}>{tt('Ho visto')}</Pulsante>
         </span>
       }
@@ -207,7 +207,7 @@ function AvvisiNovita({ trip, aperti = false }: { trip: Trip; /** elenco già ap
                 ) : null}
               </span>
               <span className="fa-novita-ra">
-                <Link href="/spese/bilancio" className="fa-btn sm" onClick={() => visto([n.key])}>{tt('Controlla')}</Link>
+                <Link href="/spese/bilancio" className="fa-btn sm sott" onClick={() => visto([n.key])}>{tt('Controlla')}</Link>
                 <Pulsante size="sm" color="secondary" onPress={() => visto([n.key])}>{tt('Ho visto')}</Pulsante>
               </span>
             </li>
