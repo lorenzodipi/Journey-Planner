@@ -1,7 +1,8 @@
 // Riordino a trascinamento delle tappe senza orario (#88). I calcoli stanno in lib/dragOrder; qui c'è la parte con i tocchi:
 // si afferra la maniglia (subito) o si tiene premuto su tutta la card per mezzo secondo (anche aperta), la tappa segue il
 // dito, le altre si fanno da parte, al rilascio si scrive il nuovo ordine. Il posto d'arrivo dipende da dove sta il dito,
-// non dal centro della card: così anche una card aperta, alta, sale e scende come le altre.
+// non dal centro della card. Una card aperta, mentre si trascina, si richiude (la riapre Tappe al rilascio): così è
+// piccola come le altre e le tappe dopo di lei restano a portata di dito anche su uno schermo piccolo.
 // Da tastiera: sulla maniglia, frecce su/giù spostano la tappa di un posto.
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, RefObject } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -43,6 +44,8 @@ export function useTrascinaTappe(listRef: RefObject<HTMLElement | null>, count: 
   const geo = useRef<Geo | null>(null)
   const from = useRef(0)
   const start = useRef({ y: 0, sy: 0 })
+  // di quanto spostare la card all'inizio perché stia sotto il dito (dopo che una card aperta si è richiusa)
+  const scarto = useRef(0)
   // pressione lunga in attesa (prima che parta il trascinamento)
   const attesa = useRef<(() => void) | null>(null)
   const ptr = useRef(0)
@@ -59,7 +62,7 @@ export function useTrascinaTappe(listRef: RefObject<HTMLElement | null>, count: 
     // la card si vede spostata solo dentro la lista; il posto d'arrivo segue il dito anche oltre
     const min = g.tops[0] - g.tops[f]
     const max = g.tops[g.tops.length - 1] + g.hs[g.hs.length - 1] - (g.tops[f] + g.hs[f])
-    const dy = Math.min(max, Math.max(min, mosso))
+    const dy = Math.min(max, Math.max(min, mosso + scarto.current))
     // il dito, in coordinate della pagina
     const dito = start.current.y + start.current.sy + mosso
     const next = { from: f, to: dropIndex(g.mids, f, dito), dy }
@@ -72,13 +75,27 @@ export function useTrascinaTappe(listRef: RefObject<HTMLElement | null>, count: 
     (clientY: number, index: number, daPressione: boolean) => {
       const ol = listRef.current
       if (!ol) return
-      const g = misura(ol)
-      if (!g) return
-      geo.current = g
       from.current = index
       start.current = { y: clientY, sy: window.scrollY }
       ptr.current = clientY
+      scarto.current = 0
+      geo.current = null
+      // prima si richiude la card (se era aperta), poi si misura la lista com'è adesso
       setSt({ from: index, to: index, dy: 0 })
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          if (stop.current !== chiudi) return
+          const g = misura(ol)
+          if (!g) return chiudi()
+          geo.current = g
+          const dito = start.current.y + start.current.sy
+          const top = g.tops[index]
+          const h = g.hs[index]
+          // se il dito è rimasto fuori dalla card richiusa, la card gli va sotto
+          scarto.current = dito < top || dito > top + h ? dito - (top + Math.min(h / 2, 32)) : 0
+          aggiorna()
+        }),
+      )
       const move = (ev: PointerEvent) => {
         ptr.current = ev.clientY
         aggiorna()
@@ -110,9 +127,9 @@ export function useTrascinaTappe(listRef: RefObject<HTMLElement | null>, count: 
         raf.current = requestAnimationFrame(tick)
       }
       const chiudi = () => {
-        window.removeEventListener('pointermove', move)
-        window.removeEventListener('pointerup', fine)
-        window.removeEventListener('pointercancel', fine)
+        window.removeEventListener('pointermove', move, true)
+        window.removeEventListener('pointerup', fine, true)
+        window.removeEventListener('pointercancel', fine, true)
         window.removeEventListener('keydown', esc)
         window.removeEventListener('touchmove', blocca)
         cancelAnimationFrame(raf.current)
@@ -121,9 +138,9 @@ export function useTrascinaTappe(listRef: RefObject<HTMLElement | null>, count: 
         setSt(null)
       }
       stop.current = chiudi
-      window.addEventListener('pointermove', move)
-      window.addEventListener('pointerup', fine)
-      window.addEventListener('pointercancel', fine)
+      window.addEventListener('pointermove', move, true)
+      window.addEventListener('pointerup', fine, true)
+      window.addEventListener('pointercancel', fine, true)
       window.addEventListener('keydown', esc)
       if (daPressione) window.addEventListener('touchmove', blocca, { passive: false })
       raf.current = requestAnimationFrame(tick)
@@ -168,9 +185,9 @@ export function useTrascinaTappe(listRef: RefObject<HTMLElement | null>, count: 
       }
       const pulisci = () => {
         window.clearTimeout(timer)
-        window.removeEventListener('pointermove', muovi)
-        window.removeEventListener('pointerup', pulisci)
-        window.removeEventListener('pointercancel', pulisci)
+        window.removeEventListener('pointermove', muovi, true)
+        window.removeEventListener('pointerup', pulisci, true)
+        window.removeEventListener('pointercancel', pulisci, true)
         window.removeEventListener('scroll', scorre)
         attesa.current = null
       }
@@ -179,9 +196,10 @@ export function useTrascinaTappe(listRef: RefObject<HTMLElement | null>, count: 
         navigator.vibrate?.(15)
         avvia(y, index, true)
       }, 500)
-      window.addEventListener('pointermove', muovi)
-      window.addEventListener('pointerup', pulisci)
-      window.addEventListener('pointercancel', pulisci)
+      // in cattura: i pulsanti della libreria (react-aria) fermano gli eventi del puntatore
+      window.addEventListener('pointermove', muovi, true)
+      window.addEventListener('pointerup', pulisci, true)
+      window.addEventListener('pointercancel', pulisci, true)
       window.addEventListener('scroll', scorre)
       attesa.current = pulisci
     },

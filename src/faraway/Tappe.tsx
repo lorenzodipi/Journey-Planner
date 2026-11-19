@@ -232,7 +232,8 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
           // in alto, la tappa non si apre (niente freccia)
           const orarioUtile = !!orario && (orario.sub != null || opening != null || orario.main !== (item.time ?? '').slice(0, 5))
           const apribile = !readOnly || orarioUtile || !!place || !!item.note || !!exp
-          const aperta = open && apribile
+          // mentre si trascina, una card aperta si richiude (è piccola come le altre); al rilascio torna aperta
+          const aperta = open && apribile && trascinata !== idx
           // passata e ancora «Da fare»: bordo e «!» perché qualcuno ne aggiorni lo stato
           const scaduta = daAggiornare(items, idx, (i) => placeOf(trip, i), ctx)
           return (
@@ -256,7 +257,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
               ) : null}
               <li id={`tappa-${item.id}`} className={cx('stp', ndCls, aperta && 'sel', scaduta && 'da-aggiornare', puoiTrascinare && 'spostabile', highlight === item.id && 'fa-flash', trascinata === idx && 'drag')}
                 style={stile}
-                onPointerDown={puoiTrascinare ? (e) => premi(e, idx) : undefined}
+                onPointerDownCapture={puoiTrascinare ? (e) => premi(e, idx) : undefined}
                 onContextMenu={puoiTrascinare ? (e) => e.preventDefault() : undefined}>
                 <span className="rail">
                   <span className={cx('nd', ndCls)}>
