@@ -172,6 +172,7 @@ function AvvisiNovita({ trip, aperti = false }: { trip: Trip; /** elenco già ap
   ))
   if (nuovi.length === 1) return <>{righe}</>
   const r = riepilogoNovita(nuovi, trip.travelers)
+  // un riquadro solo: il riepilogo in alto e, aperto, le righe sotto nello stesso riquadro, divise da una linea
   return (
     <div className="fa-novita">
       <Banner
@@ -193,9 +194,25 @@ function AvvisiNovita({ trip, aperti = false }: { trip: Trip; /** elenco già ap
         </button>
       </Banner>
       {aperto ? (
-        <div id={elenco} className="fa-novita-el">
-          {righe}
-        </div>
+        <ul id={elenco} className="fa-novita-el">
+          {nuovi.map((n) => (
+            <li key={n.key}>
+              <span className="fa-novita-rt">
+                {n.testo}
+                {n.dettaglio ? (
+                  <>
+                    <br />
+                    {n.dettaglio}
+                  </>
+                ) : null}
+              </span>
+              <span className="fa-novita-ra">
+                <Link href="/spese/bilancio" className="fa-btn sm" onClick={() => visto([n.key])}>{tt('Controlla')}</Link>
+                <Pulsante size="sm" color="secondary" onPress={() => visto([n.key])}>{tt('Ho visto')}</Pulsante>
+              </span>
+            </li>
+          ))}
+        </ul>
       ) : null}
     </div>
   )

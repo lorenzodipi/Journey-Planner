@@ -2692,8 +2692,13 @@ html,body{margin:0;background:var(--canvas)}
 }
 
 /* Pagamenti nuovi da segnare «Ho visto»: da due in su una riga di riepilogo che apre l'elenco (Rimborsi.tsx, AvvisiNovita) */
-.fa-novita{display:grid;gap:8px}
-.fa-novita-el{display:grid;gap:8px}
+.fa-novita{border-radius:12px;background:var(--azzurro-soft);color:var(--ink)}
+.fa-novita>.fa-banner{background:none}
+/* le righe stanno nello stesso riquadro, allineate al testo del riepilogo (16 + icona 20 + 16), divise da una linea */
+.fa-novita .fa-novita-el{list-style:none;margin:0;padding:0 16px 8px 52px}
+.fa-novita-el>li{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:12px 0;border-top:1px solid color-mix(in srgb,var(--azzurro-ink) 22%,transparent);font:400 14px/20px var(--font-sans)}
+.fa-novita-rt{flex:1 1 160px;min-width:0}
+.fa-novita-ra{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto}
 .fa-novita-t{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;margin:-8px 0;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .fa-novita-t>span{flex:1;min-width:0;display:grid}
 .fa-novita-s{color:var(--ink)}
