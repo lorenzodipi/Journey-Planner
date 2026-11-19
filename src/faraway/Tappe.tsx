@@ -181,7 +181,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
   const items = day.items
   const listRef = useRef<HTMLOListElement>(null)
   const [annuncio, setAnnuncio] = useState('')
-  const { trascinata, inizia, tasto, spostamento } = useTrascinaTappe(listRef, items.length, (from, to) => {
+  const { trascinata, inizia, premi, tasto, spostamento } = useTrascinaTappe(listRef, items.length, (from, to) => {
     onReorder?.(items[from], to)
     setAnnuncio(t('{title}: posizione {v1} di {length}', { title: items[from].title, v1: to + 1, length: items.length }))
   })
@@ -254,7 +254,10 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                   )}
                 </li>
               ) : null}
-              <li id={`tappa-${item.id}`} className={cx('stp', ndCls, aperta && 'sel', scaduta && 'da-aggiornare', highlight === item.id && 'fa-flash', trascinata === idx && 'drag')} style={stile}>
+              <li id={`tappa-${item.id}`} className={cx('stp', ndCls, aperta && 'sel', scaduta && 'da-aggiornare', puoiTrascinare && 'spostabile', highlight === item.id && 'fa-flash', trascinata === idx && 'drag')}
+                style={stile}
+                onPointerDown={puoiTrascinare ? (e) => premi(e, idx) : undefined}
+                onContextMenu={puoiTrascinare ? (e) => e.preventDefault() : undefined}>
                 <span className="rail">
                   <span className={cx('nd', ndCls)}>
                     <G name={ndIcon} />
