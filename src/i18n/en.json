@@ -2186,5 +2186,6 @@
  "{n} pagamenti nuovi": "{n} new payments",
  "{v0} in tutto": "{v0} in total",
  "Ho visto tutti": "Seen them all",
- "Segna come visti tutti i {n} pagamenti nuovi": "Mark all {n} new payments as seen"
+ "Segna come visti tutti i {n} pagamenti nuovi": "Mark all {n} new payments as seen",
+ "Passata e ancora da fare: aggiorna lo stato.": "Already past and still to do: update its status."
 }

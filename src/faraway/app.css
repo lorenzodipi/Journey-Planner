@@ -924,3 +924,16 @@ dialog.fa-mod:focus{outline:none}
 .dp-anello svg{position:absolute;inset:0;width:100%;height:100%}
 .dp-anello span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
 .k-Copertina header .fa-ib{flex:none}
+
+/* Tappe: binario continuo anche nello spazio sopra e sotto lo spostamento (la riga .seg ha 8 px di padding) */
+.k-Tappa .seg .rail{margin:-8px 0}
+/* la maniglia per trascinare e il lucchetto stanno nell'angolo in basso a destra: la chip di stato si sposta a sinistra */
+.k-Tappa .tw.ico .r>.next,.k-Tappa .tw.ico .r>.now,.k-Tappa .tw.ico .r>.st{margin-right:24px}
+/* tappa passata e ancora «Da fare» (daAggiornare in lib/tappa.ts): bordo corallo e «!» sull'angolo in alto a destra */
+.k-Tappa .stp.scad .body{position:relative}
+.k-Tappa .stp.scad .body{border-color:var(--corallo)!important;box-shadow:0 0 0 1px var(--corallo)!important}
+.k-Tappa .scad-i{position:absolute;top:-10px;right:-10px;z-index:1;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--corallo-solid);color:var(--on-corallo-solid);font:700 15px/1 var(--font-sans);box-shadow:0 0 0 3px var(--canvas)}
+/* con il «!» la card scende di 8 px (insieme al pallino del binario), così il cerchio non tocca la card sopra */
+.k-Tappa .stp.scad .body{margin-top:8px!important}
+.k-Tappa .stp.scad .rail{padding-top:8px}
+.k-Tappa .stp.scad:first-child .rail::before{top:28px}

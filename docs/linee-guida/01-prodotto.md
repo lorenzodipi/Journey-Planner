@@ -39,7 +39,7 @@ La barra in basso ha cinque schede. Ogni pagina interna appartiene a una scheda,
 | --- | --- |
 | Viaggio | Destinazione, date, fusi, valute, budget e viaggiatori. Si può archiviare (reversibile) o eliminare (definitivo) |
 | Giorno | Una data del viaggio, con città e tappe |
-| Tappa | Un elemento del giorno: luogo, pasto, attività libera, nota. Ha uno stato: da fare, fatta, saltata, rimandata |
+| Tappa | Un elemento del giorno: luogo, pasto, attività libera, nota. Ha uno stato: da fare, fatta, saltata, rimandata. Una tappa ancora «da fare» ma ormai passata ha il bordo corallo e un «!» sull'angolo in alto a destra (`daAggiornare` in `src/lib/tappa.ts`): è finita la sua durata, è iniziata una tappa con orario che viene dopo, una tappa dopo è «fatta», o è passata la mezzanotte del suo giorno (fuso del viaggio). |
 | Luogo | Un posto salvato, con categoria e stato (da visitare, in programma, visitato, scartato) |
 | Alloggio, volo, trasporto, prenotazione | I biglietti del viaggio. Se hanno un costo diventano spese |
 | Spesa | Importo, valuta, chi ha pagato, come si divide. Da qui nascono saldi e rimborsi |

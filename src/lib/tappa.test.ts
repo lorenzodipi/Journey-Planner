@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fase, riepilogo, riepilogoPercorso, stimaSpostamento, statusOf, rigaOrario } from './tappa'
+import { daAggiornare, fase, riepilogo, riepilogoPercorso, stimaSpostamento, statusOf, rigaOrario } from './tappa'
 import { formatOpening, openingFor, type OpeningSpec } from './opening'
 import { groupDays } from './dayGroups'
 import type { Day, DayItem } from '../types'
@@ -94,5 +94,45 @@ describe('gruppi di Giorni', () => {
     expect(g.map((x) => x.title)).toEqual(['Osaka', 'Rientro'])
     expect(g[1].cells.map((c) => c.day.id)).toEqual(['c', 'd'])
     expect(g[1].meta).toBe('2 giorni · 8–9 dic')
+  })
+})
+
+describe('tappe passate da aggiornare', () => {
+  const oggi = (nowMin: number) => ({ isToday: true, isPast: false, nowMin })
+  const nessuno = () => undefined
+  const h = (hh: number, mm = 0) => hh * 60 + mm
+  const da = (items: DayItem[], idx: number, nowMin: number) => daAggiornare(items, idx, nessuno, oggi(nowMin))
+  it('alle 12 con durata di un\'ora: segnalata dalle 13, anche se dopo ci sono solo tappe senza orario', () => {
+    const items = [it0({ id: 'a', time: '12:00', durationMinutes: 60 }), it0({ id: 'b' }), it0({ id: 'c' })]
+    expect(da(items, 0, h(12, 30))).toBe(false)
+    expect(da(items, 0, h(13, 15))).toBe(true)
+  })
+  it('la durata del posto conta come durata', () => {
+    const items = [it0({ id: 'a', time: '12:00' })]
+    expect(daAggiornare(items, 0, () => ({ visitMinutes: 30 }), oggi(h(12, 45)))).toBe(true)
+  })
+  it('alle 12 senza durata, dopo solo tappe senza orario: segnalata solo se una dopo è fatta, o a fine giornata', () => {
+    const items = [it0({ id: 'a', time: '12:00' }), it0({ id: 'b' }), it0({ id: 'c' })]
+    expect(da(items, 0, h(20))).toBe(false)
+    expect(da([items[0], it0({ id: 'b', status: 'done' }), items[2]], 0, h(14))).toBe(true)
+    expect(daAggiornare(items, 0, nessuno, { isToday: false, isPast: true, nowMin: 0 })).toBe(true)
+    expect(daAggiornare(items, 2, nessuno, { isToday: false, isPast: true, nowMin: 0 })).toBe(true)
+  })
+  it('alle 12 senza durata e la dopo alle 13: segnalata quando la dopo è iniziata', () => {
+    const items = [it0({ id: 'a', time: '12:00' }), it0({ id: 'b', time: '13:00' })]
+    expect(da(items, 0, h(12, 50))).toBe(false)
+    expect(da(items, 0, h(13, 15))).toBe(true)
+  })
+  it('una tappa senza orario prima di una tappa con orario già iniziata si segnala', () => {
+    const items = [it0({ id: 'a' }), it0({ id: 'b', time: '15:00' })]
+    expect(da(items, 0, h(14, 30))).toBe(false)
+    expect(da(items, 0, h(15, 30))).toBe(true)
+  })
+  it('mai le tappe fatte, saltate o in ritardo, mai i giorni che devono arrivare', () => {
+    const fatta = [it0({ id: 'a', time: '08:00', status: 'done' }), it0({ id: 'b', status: 'done' })]
+    expect(da(fatta, 0, h(23))).toBe(false)
+    expect(da([it0({ id: 'a', time: '08:00', status: 'skipped' })], 0, h(23))).toBe(false)
+    expect(da([it0({ id: 'a', time: '08:00', durationMinutes: 30, status: 'late' })], 0, h(23))).toBe(false)
+    expect(daAggiornare([it0({ id: 'a', time: '08:00', durationMinutes: 30 })], 0, nessuno, { isToday: false, isPast: false, nowMin: h(23) })).toBe(false)
   })
 })

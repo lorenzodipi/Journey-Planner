@@ -82,6 +82,34 @@ export function forseInRitardo(item: DayItem, ctx: { isToday: boolean; nowMin: n
   return s !== null && ctx.nowMin > s + 15
 }
 
+/**
+ * Tappa passata e ancora «Da fare», da segnalare (bordo e «!» sulla card) perché qualcuno ne aggiorni lo stato:
+ * - il giorno è finito (dalla mezzanotte, nel fuso del viaggio), oppure, oggi:
+ * - è finita la sua durata (orario + durata, o orario di fine);
+ * - è già iniziata una tappa con orario che viene dopo;
+ * - una tappa che viene dopo è segnata «Fatta».
+ * Una tappa senza orario e senza nessuna di queste condizioni non si segnala fino a mezzanotte.
+ */
+export function daAggiornare(
+  items: readonly DayItem[],
+  idx: number,
+  placeOf: (item: DayItem) => Pick<Place, 'visitMinutes'> | undefined,
+  ctx: { isToday: boolean; isPast: boolean; nowMin: number },
+): boolean {
+  const item = items[idx]
+  if (!item || statusOf(item) !== 'todo') return false
+  if (ctx.isPast) return true
+  if (!ctx.isToday) return false
+  const fine = endMin(item, placeOf(item))
+  if (fine !== null && ctx.nowMin >= fine) return true
+  for (const dopo of items.slice(idx + 1)) {
+    if (statusOf(dopo) === 'done') return true
+    const inizio = toMin(dopo.time)
+    if (inizio !== null && ctx.nowMin >= inizio) return true
+  }
+  return false
+}
+
 /** «2 di 5 tappe chiuse · 1 saltata» e «Prossima: 15:30». */
 export function riepilogo(items: DayItem[], ctx: { isToday: boolean; nowMin: number }): { line: string; next: string | null; closed: number; total: number } {
   const total = items.length

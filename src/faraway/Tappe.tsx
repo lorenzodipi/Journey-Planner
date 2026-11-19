@@ -12,7 +12,7 @@ import { categoryIcon } from '../lib/categoryIcon'
 import { formatMoney, round2 } from '../lib/money'
 import { mapsLinkFor } from '../lib/mapsUrl'
 import { openingFor } from '../lib/opening'
-import { durata, fase, forseInRitardo, riepilogo, rigaOrario, statoOf, statusOf, TAPPA_STATI, toMin, type Fase, type Spostamento } from '../lib/tappa'
+import { daAggiornare, durata, fase, forseInRitardo, riepilogo, rigaOrario, statoOf, statusOf, TAPPA_STATI, toMin, type Fase, type Spostamento } from '../lib/tappa'
 import { itemDuration } from '../lib/duration'
 import { Sv } from './icons'
 import { discOf, initials } from '../state/me'
@@ -233,6 +233,8 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
           const orarioUtile = !!orario && (orario.sub != null || opening != null || orario.main !== (item.time ?? '').slice(0, 5))
           const apribile = !readOnly || orarioUtile || !!place || !!item.note || !!exp
           const aperta = open && apribile
+          // passata e ancora «Da fare»: bordo e «!» perché qualcuno ne aggiorni lo stato
+          const scaduta = daAggiornare(items, idx, (i) => placeOf(trip, i), ctx)
           return (
             <Fragment key={item.id}>
               {seg && idx > 0 ? (
@@ -252,13 +254,18 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                   )}
                 </li>
               ) : null}
-              <li id={`tappa-${item.id}`} className={cx('stp', ndCls, aperta && 'sel', highlight === item.id && 'fa-flash', trascinata === idx && 'drag')} style={stile}>
+              <li id={`tappa-${item.id}`} className={cx('stp', ndCls, aperta && 'sel', scaduta && 'scad', highlight === item.id && 'fa-flash', trascinata === idx && 'drag')} style={stile}>
                 <span className="rail">
                   <span className={cx('nd', ndCls)}>
                     <G name={ndIcon} />
                   </span>
                 </span>
                 <div className="body">
+                  {scaduta ? (
+                    <span className="scad-i" aria-hidden="true">
+                      !
+                    </span>
+                  ) : null}
                   <div className={cx('tw', (puoiTrascinare || bloccata) && 'ico')}>
                   <div
                     className={cx('top', !apribile && 'fermo')}
@@ -278,7 +285,10 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                       : {})}
                   >
                     <div className="tt">
-                      <div className="t">{item.title}</div>
+                      <div className="t">
+                        {item.title}
+                        {scaduta ? <span className="sr-only">{`. ${t('Passata e ancora da fare: aggiorna lo stato.')}`}</span> : null}
+                      </div>
                       <div className="m">{metaOf(trip, item)}</div>
                       {meteoDi?.(item) ? <div className="m">{meteoDi(item)}</div> : null}
                       {item.time && item.timeLock ? (
