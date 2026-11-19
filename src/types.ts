@@ -570,8 +570,10 @@ export interface Trip {
   fxRate?: number
   /** Cambi delle valute extra del viaggio: unità di valuta base per 1 unità di ciascuna (es. { KRW: 0.00065 }). */
   fxRates?: Record<string, number>
-  /** Budget massimo del viaggio, nella valuta base (facoltativo). */
+  /** Budget del viaggio di prima della 0055 (uno per tutti, nella valuta base): vale solo se manca il budget a persona. */
   budgetLimit?: number
+  /** Budget a persona (0055), nella valuta base: assente prima della migrazione e per il visualizzatore. */
+  budgets?: BudgetPersone
   /** Paesi del viaggio con le date (migrazione 0020); assenti = un solo paese, quello di destination. */
   countries?: TripCountry[]
   /** Paese di casa (codice ISO, es. «IT») e suo fuso: per l'ora di casa e il fuso di partenza di voli e trasporti. */
@@ -592,3 +594,14 @@ export interface Attivita {
 }
 
 export type PlacePref = 'must' | 'if_time'
+
+/** Budget a persona (0055): le righe che posso vedere (il mio e quelli di chi non ha l'account) e la somma di tutti. */
+export interface BudgetPersone {
+  /** id del viaggiatore → importo */
+  righe: Record<string, number>
+  /** somma dei budget messi */
+  totale: number
+  /** quante persone hanno messo un budget, su quante sono nel viaggio */
+  persone: number
+  viaggiatori: number
+}

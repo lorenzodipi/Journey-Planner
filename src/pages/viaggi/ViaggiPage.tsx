@@ -128,7 +128,7 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
             {people.length ? <Avatars people={people} /> : null}
           </span>
           <span style={{ font: '600 14px/20px var(--font-sans)', color: 'var(--ink)' }}>
-            {soloLettura(trip) ? rigaFinale({ ...trip, budgetLimit: undefined }, 0).replace(/^Spesi .*/, 'Concluso') : rigaFinale(trip, stato === 'concluso' ? riassunto(trip, undefined).speso : 0)}
+            {soloLettura(trip) ? rigaFinale({ ...trip, budgetLimit: undefined, budgets: undefined }, 0).replace(/^Spesi .*/, 'Concluso') : rigaFinale(trip, stato === 'concluso' ? riassunto(trip, undefined).speso : 0)}
           </span>
         </span>
       </button>

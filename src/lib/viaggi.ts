@@ -1,4 +1,5 @@
 // Pagina Viaggi (#43, mock Fa-12): stato, ordine, scena della copertina e riga finale di ogni viaggio.
+import { budgetTotale } from './budgetPersona'
 import { daysBetween } from './dates'
 import { formatMoney } from './money'
 import { tripToday } from './today'
@@ -42,13 +43,14 @@ export function scenaDelViaggio(trip: Pick<Trip, 'originCountry' | 'destination'
 }
 
 /** Riga finale: «Tra 23 giorni · Budget 5.000,00 €» · «In corso · oggi a Kyoto» · «Spesi 1.240,00 €». */
-export function rigaFinale(trip: Pick<Trip, 'startDate' | 'endDate' | 'timezone' | 'days' | 'destination' | 'budgetLimit' | 'baseCurrency'>, speso: number, now?: Date): string {
+export function rigaFinale(trip: Pick<Trip, 'startDate' | 'endDate' | 'timezone' | 'days' | 'destination' | 'budgetLimit' | 'budgets' | 'baseCurrency'>, speso: number, now?: Date): string {
   const stato = statoViaggio(trip, now)
   const today = tripToday(trip, now)
   if (stato === 'prossimo') {
     const n = daysBetween(today, trip.startDate)
     const quando = n === 1 ? t('Domani') : t('Tra {n} giorni', { n })
-    return trip.budgetLimit ? t('{quando} · Budget {v1}', { quando, v1: formatMoney(trip.budgetLimit, trip.baseCurrency) }) : quando
+    const budget = budgetTotale(trip).importo
+    return budget ? t('{quando} · Budget {v1}', { quando, v1: formatMoney(budget, trip.baseCurrency) }) : quando
   }
   if (stato === 'incorso') {
     const city = trip.days.find((d) => d.date === today)?.city || trip.destination

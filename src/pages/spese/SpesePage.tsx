@@ -6,7 +6,9 @@ import { useLocation } from 'wouter'
 import { daysBetween } from '../../lib/dates'
 import { debitiPerSpesa, pianoBilancia, totaliDelViaggio, type PianoBilancia } from '../../lib/debitiSpese'
 import { formatMoney, round2 } from '../../lib/money'
-import { ricevuta, type RigaCategoria } from '../../lib/ricevuta'
+import { ricevuta, type Ricevuta as Dati, type RigaCategoria } from '../../lib/ricevuta'
+import { budgetDi, budgetTotale } from '../../lib/budgetPersona'
+import { useVistaRicevuta } from '../../lib/vistaRicevuta'
 import { alGiorno, riassunto } from '../../lib/spese'
 import { tripToday } from '../../lib/today'
 import { useMe } from '../../state/me'
@@ -15,7 +17,7 @@ import { useTrip, useTrips } from '../../state/trip'
 import { Pulsante } from '../../faraway/base'
 import { useConferma } from '../../faraway/Foglio'
 import { DareRicevere, DueValori, Riepilogo } from '../../faraway/Home'
-import { Ricevuta } from '../../faraway/Ricevuta'
+import { DueRicevute, Ricevuta } from '../../faraway/Ricevuta'
 import { Affianca, BarraGrande, Colonna, Schermata } from '../../faraway/shell'
 import { SpesaSheet } from './SpesaSheet'
 import { BilanciaSheet, RimborsiCard } from './Rimborsi'
@@ -31,9 +33,19 @@ export function SpesePage() {
   const [ask, confirmNode] = useConferma()
   const today = tripToday(trip)
   const r = riassunto(trip, me?.id)
-  const dati = useMemo(() => ricevuta(trip, r.spese, r.fx), [trip, r.spese, r.fx])
-  const cur = trip.baseCurrency
   const n = trip.travelers.length
+  const dati = useMemo(() => ricevuta(trip, r.spese, r.fx), [trip, r.spese, r.fx])
+  // in gruppo, la ricevuta con solo la mia parte: la card del budget segue quella che si guarda
+  const due = n > 1 && !!me?.id
+  const datiMia = useMemo(() => (due && me?.id ? ricevuta(trip, r.spese, r.fx, me.id) : null), [due, trip, r.spese, r.fx, me?.id])
+  const [vistaScelta, setVista] = useVistaRicevuta(trip.id)
+  const vista = datiMia ? vistaScelta : 'tutti'
+  const totale = budgetTotale(trip)
+  const card =
+    vista === 'mia' && datiMia
+      ? { speso: datiMia.pagato, limit: budgetDi(trip, me?.id), nota: undefined }
+      : { speso: r.speso, limit: totale.importo, nota: totale.persone !== undefined && totale.viaggiatori !== undefined && totale.persone < totale.viaggiatori ? tt('{v0} su {v1}', { v0: totale.persone === 1 ? tt('1 persona') : tt('{n} persone', { n: totale.persone }), v1: totale.viaggiatori }) : undefined }
+  const cur = trip.baseCurrency
   const bilancio = useMemo(() => totaliDelViaggio(trip, r.spese, r.fx, me?.id), [trip, r.spese, r.fx, me?.id])
   /** «Bilancia tutte le spese»: per ogni persona con cui c'è qualcosa da chiudere, cosa succederebbe (serve la migrazione 0029: senza, niente rimborsi) */
   const piani = useMemo(() => {
@@ -116,6 +128,20 @@ export function SpesePage() {
     showToast(m ?? tt('Categoria eliminata'), m ? undefined : { label: tt('Annulla'), run: () => void t.setExpenseCategoryDeleted(c.id as string, false) })
   }
 
+  const ricevutaDi = (d: Dati, mia: boolean) => (
+    <Ricevuta
+      trip={trip}
+      dati={d}
+      sub={[trip.destination, intervallo(trip.startDate, trip.endDate), mia ? (me?.name.split(/\s+/)[0] ?? '') : inQuanti(n)].filter(Boolean).join(' · ')}
+      onPlanned={onPlanned}
+      onRename={onRename}
+      onDelete={onDelete}
+      bilancia={me?.id ? { me: me.id, con: new Set(piani.keys()), onPress: setBilancia } : undefined}
+      io={me?.id}
+      mia={mia}
+    />
+  )
+
   return (
     <Schermata
       bar={<BarraGrande title={tt('Spese')} sub={[trip.destination, n > 1 ? tt('{n} persone', { n }) : ''].filter(Boolean).join(' · ')} />}
@@ -133,20 +159,20 @@ export function SpesePage() {
       {/* pieghevole aperto: riepilogo, saldi e collegamenti a sinistra, la ricevuta a destra */}
       <Affianca>
         <Colonna lato="sinistra">
-          <Riepilogo dove={trip.destination} speso={r.speso} currency={cur} limit={r.limit} onSetBudget={() => navigate('/spese/budget')} onOpenBudget={() => navigate('/spese/budget')} second={second} />
+          <Riepilogo dove={trip.destination} speso={card.speso} currency={cur} limit={card.limit} nota={card.nota} onSetBudget={() => navigate('/spese/budget')} onOpenBudget={() => navigate('/spese/budget')} second={second} />
           <RimborsiCard trip={trip} />
         </Colonna>
         <Colonna lato="destra" alta>
-          <Ricevuta
-            trip={trip}
-            dati={dati}
-            sub={[trip.destination, intervallo(trip.startDate, trip.endDate), inQuanti(n)].filter(Boolean).join(' · ')}
-            onPlanned={onPlanned}
-            onRename={onRename}
-            onDelete={onDelete}
-            bilancia={me?.id ? { me: me.id, con: new Set(piani.keys()), onPress: setBilancia } : undefined}
-            io={me?.id}
-          />
+          {datiMia ? (
+            <DueRicevute
+              vista={vista}
+              onVista={setVista}
+              tutti={ricevutaDi(dati, false)}
+              mia={ricevutaDi(datiMia, true)}
+            />
+          ) : (
+            ricevutaDi(dati, false)
+          )}
         </Colonna>
         <Colonna lato="sinistra">
           <Pulsante color="secondary" iconTrailing="chevr" onPress={() => navigate('/spese/dettaglio')}>

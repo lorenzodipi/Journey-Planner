@@ -993,6 +993,40 @@ await asUser(null, 'postgres')
   await asUser(A)
 }
 
+// budget a persona (0055): ognuno il suo, chi modifica scrive quello di chi non ha account, si vede solo la somma
+{
+  await asUser(null, 'postgres')
+  await runMigration('0055_budget_a_persona.sql')
+  await runMigration('0055_budget_a_persona.sql') // si può rilanciare
+  const tr = (await db.query(`insert into trips (title, owner_id) values ('Budget', $1) returning id`, [A])).rows[0].id
+  await db.query(`insert into trip_members (trip_id,user_id,role) values ($1,$2,'editor'),($1,$3,'viewer') on conflict do nothing`, [tr, B, C])
+  const ta = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'A',$2) returning id`, [tr, A])).rows[0].id
+  const tb = (await db.query(`insert into trip_travelers (trip_id,name,user_id) values ($1,'B',$2) returning id`, [tr, B])).rows[0].id
+  const tn = (await db.query(`insert into trip_travelers (trip_id,name) values ($1,'Senza account') returning id`, [tr])).rows[0].id
+  const metti = (who, amount) => db.query(`insert into traveler_budgets (traveler_id, trip_id, amount) values ($1,$2,$3) on conflict (traveler_id) do update set amount = excluded.amount`, [who, tr, amount])
+  const totale = async () => (await db.query(`select total::float8 t, persone p, viaggiatori v from trip_budget_totals() where trip_id = $1`, [tr])).rows[0]
+  await asUser(A)
+  await metti(ta, 1500)
+  await metti(tn, 800)
+  await throws('0055 non si scrive il budget di un altro con l\'account', () => metti(tb, 10))
+  check('0055 si vede il proprio budget e quello di chi non ha account', (await db.query(`select traveler_id from traveler_budgets where trip_id=$1`, [tr])).rows.length === 2)
+  await asUser(B)
+  await metti(tb, 1200)
+  const visti = (await db.query(`select traveler_id from traveler_budgets where trip_id=$1`, [tr])).rows.map((r) => r.traveler_id)
+  check('0055 B non vede il budget di A', !visti.includes(ta) && visti.includes(tb))
+  const tot = await totale()
+  check('0055 il totale è la somma di chi l\'ha messo', tot?.t === 3500 && tot?.p === 3 && tot?.v === 3, JSON.stringify(tot))
+  await asUser(C)
+  check('0055 il visualizzatore non vede i budget', (await db.query(`select 1 from traveler_budgets where trip_id=$1`, [tr])).rows.length === 0)
+  check('0055 il visualizzatore non vede il totale', (await totale()) === undefined)
+  await throws('0055 il visualizzatore non scrive un budget', () => metti(tn, 5))
+  await asUser(A)
+  await db.query(`delete from traveler_budgets where traveler_id=$1`, [ta])
+  const dopo = await totale()
+  check('0055 tolto un budget il totale scende', dopo?.t === 2000 && dopo?.p === 2, JSON.stringify(dopo))
+  await throws('0055 un budget a zero non vale', () => metti(ta, 0))
+}
+
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione
 await asUser(null, 'service_role')
 const svcTrip = (await db.query(`select id from trips limit 1`)).rows

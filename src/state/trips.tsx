@@ -161,6 +161,8 @@ interface TripsValue {
   balanceVersion: (tripId: string) => Promise<string | null>
   setExpenseCategoryPlanned: (tripId: string, label: string, planned: number | null) => Result
   setTripBudgetLimit: (tripId: string, limit: number | null) => Result
+  /** Budget a persona (0055): il mio, o quello di chi non ha l'account. */
+  setTravelerBudget: (tripId: string, travelerId: string, amount: number | null) => Result
   updateBudgetItem: (tripId: string, item: BudgetItem, input: BudgetInput) => Result
   setBudgetSharePaid: (shareId: string, paid: boolean) => Result
   setBudgetItemDeleted: (id: string, deleted: boolean) => Result
@@ -720,6 +722,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     balanceVersion: (tripId) => money.fetchBalanceVersion(tripId).catch(() => null),
     setExpenseCategoryPlanned: (tripId, label, planned) => run(() => money.setExpenseCategoryPlanned(tripId, label, planned, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['expenseCategories']),
     setTripBudgetLimit: (tripId, limit) => run(() => api.setTripBudgetLimit(tripId, limit), ['trips']),
+    setTravelerBudget: (tripId, travelerId, amount) => run(() => money.setTravelerBudget(tripId, travelerId, amount), ['money']),
     setBudgetSharePaid: (shareId, paid) => run(() => money.setBudgetSharePaid(shareId, paid), ['money']),
     setBudgetItemDeleted: (id, deleted) => run(() => money.setBudgetItemDeleted(id, deleted), ['money']),
     createExpense: (tripId, input) => {

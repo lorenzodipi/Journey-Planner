@@ -939,3 +939,19 @@ dialog.fa-mod:focus{outline:none}
 .k-Tappa .stp.da-aggiornare:first-child .rail::before{top:28px}
 /* tappe spostabili tenendo premuto (useTrascinaTappe, «premi»): niente selezione del testo né menu del browser durante la pressione */
 .k-Tappa .stp.spostabile .body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+
+/* Pagina Spese: due ricevute da sfogliare, quella di tutti e «La mia parte» (si vede il bordo dell'altra) */
+.k-Ricevuta .fa-rcat .cat.fisso{cursor:default}
+.fa-ricevute{display:grid;gap:0;min-width:0}
+.fa-ricevute .sf{display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;align-items:flex-start;box-sizing:border-box;padding:4px 0 12px;margin:-4px 0 -12px}
+.fa-ricevute .sf.anima{transition:height .2s cubic-bezier(.23,1,.32,1)}
+.fa-ricevute .sf::-webkit-scrollbar{display:none}
+.fa-ricevute .sl{flex:0 0 calc(100% - 28px);min-width:0;scroll-snap-align:start;scroll-snap-stop:always}
+.fa-ricevute .sl:last-child{scroll-snap-align:end}
+.fa-ricevute .sl[inert]{opacity:.6;transition:opacity .2s}
+.fa-ricevute .punti{display:flex;justify-content:center;gap:0;margin-top:8px}
+.fa-ricevute .punti button{all:unset;box-sizing:border-box;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:9999px}
+.fa-ricevute .punti button:focus-visible{outline:3px solid var(--focus);outline-offset:-4px}
+.fa-ricevute .punti i{display:block;width:8px;height:8px;border-radius:9999px;background:var(--border-strong);transition:width .2s cubic-bezier(.23,1,.32,1),background-color .2s}
+.fa-ricevute .punti .on i{width:24px;background:var(--azzurro)}
+@media (prefers-reduced-motion:reduce){.fa-ricevute .sf,.fa-ricevute .punti i,.fa-ricevute .sl[inert]{transition:none}}

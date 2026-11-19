@@ -2,6 +2,7 @@
 // segnata pagata — alloggi, voli, trasporti, prenotazioni — è una spesa, nei totali e nel Dettaglio spese.
 // Le spese registrate a mano (o nate da una tappa con costo) restano quelle del database; le voci pagate
 // senza una spesa collegata diventano spese «derivate» (una sola per voce, nessun doppione).
+import { budgetTotale } from './budgetPersona'
 import { expenseBase, expenseOwed, fxOf, summarizeExpenses, type ExpenseSummary, type FxContext } from './budget'
 import { rimborsiValidi } from './rimborsi'
 import { BOOKING_BUDGET_CATEGORY } from './bookingMeta'
@@ -120,7 +121,7 @@ export function riassunto(trip: Trip, me: string | undefined): Riassunto {
     spese,
     summary,
     speso: summary.total,
-    limit: trip.budgetLimit,
+    limit: budgetTotale(trip).importo,
     mioSaldo: mine ? mine.net : null,
     inPari: summary.transfers.length === 0,
     solo: trip.travelers.length <= 1,

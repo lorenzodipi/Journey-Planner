@@ -2,6 +2,7 @@
 // così i dati di una persona non finiscono mai nelle schermate di un'altra. Un solo posto, che riconosce le chiavi
 // dal prefisso: una chiave nuova (`jp.…`) viene cancellata da sola, senza dover ricordarsi di aggiungerla qui.
 import { clearBookingCache } from './bookingFiles'
+import { dimenticaVista } from './vistaRicevuta'
 
 /** Aspetto dell'app (tema, ora e unità, stile della mappa, lingua): sono scelte del telefono, non dati dell'account, e restano. */
 // l'elenco degli aeroporti (e quando lo si è controllato) non è un dato dell'account: resta
@@ -29,6 +30,7 @@ export function cancellaDatiLocali(): void {
   } catch {
     // ignorato
   }
+  dimenticaVista() // la ricevuta scelta (tutti o mia) si legge di nuovo, vuota
   clearBookingCache() // file dei biglietti sul telefono (IndexedDB) e la loro chiave di cifratura
   // gli avvisi già programmati sul telefono parlano dei viaggi di chi è uscito
   void import('./notificheDevice').then((m) => m.programma([])).catch(() => undefined)

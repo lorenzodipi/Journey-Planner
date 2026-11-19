@@ -20,6 +20,9 @@ export function queryMoney(db: SupabaseClient) {
     // prima della migrazione 0029 niente rimborsi: `data: null` = l'app non li mostra e i saldi restano quelli delle spese
     db.from('settlements').select('*').order('created_at').then((r) => (r.error && /settlements|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: null, error: null } : r)),
     db.rpc('my_confirmed_settlements').then((r) => (r.error ? { ...r, data: null, error: null } : r)),
+    // budget a persona (0055): prima della migrazione `data: null` = l'app usa il budget del viaggio di prima
+    db.from('traveler_budgets').select('traveler_id, trip_id, amount').then((r) => (r.error ? { ...r, data: null, error: null } : r)),
+    db.rpc('trip_budget_totals').then((r) => (r.error ? { ...r, data: null, error: null } : r)),
   ])
 }
 
@@ -296,4 +299,14 @@ export async function fetchFxQuote(local: string, base: string): Promise<{ rate:
   const rate = typeof table === 'object' ? table[base.toLowerCase()] : undefined
   if (!rate || !(rate > 0)) throw new Error(`Nessun tasso ${local}→${base} disponibile. Scrivilo a mano.`)
   return { rate, source: 'Servizio dei cambi', at: new Date().toISOString() }
+}
+
+/** Budget di un viaggiatore (0055): il mio, o quello di chi non ha l'account se posso modificare il viaggio. null = lo toglie. */
+export async function setTravelerBudget(tripId: string, travelerId: string, amount: number | null): Promise<void> {
+  const db = client()
+  const r =
+    amount === null
+      ? await db.from('traveler_budgets').delete().eq('traveler_id', travelerId)
+      : await db.from('traveler_budgets').upsert({ traveler_id: travelerId, trip_id: tripId, amount, updated_at: now() }, { onConflict: 'traveler_id' })
+  if (r.error) throw /traveler_budgets|schema cache|does not exist/i.test(r.error.message) ? new Error(t('Manca la migrazione 0055 sul database: il budget a persona non si può ancora salvare.')) : r.error
 }

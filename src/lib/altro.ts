@@ -1,4 +1,5 @@
 // Riepiloghi calcolati per la pagina Altro (#42, mock Fa-36).
+import { budgetTotale } from './budgetPersona'
 import { formatShort } from './dates'
 import { mioAvanzamento } from './checklist'
 import { currencySymbol, formatMoney, round2, tripCurrencies } from './money'
@@ -18,11 +19,12 @@ export function periodo(trip: Pick<Trip, 'startDate' | 'endDate' | 'days'>): str
 }
 
 /** «Budget 5.000,00 € · valuta di casa EUR, viaggio in JPY» (con più paesi: tutte le valute del viaggio). */
-export function rigaBudgetValute(trip: Pick<Trip, 'budgetLimit' | 'baseCurrency' | 'localCurrency' | 'fxRates' | 'countries'>): string {
+export function rigaBudgetValute(trip: Pick<Trip, 'budgetLimit' | 'budgets' | 'baseCurrency' | 'localCurrency' | 'fxRates' | 'countries'>): string {
   const base = trip.baseCurrency
   const altre = tripCurrencies(trip).filter((c) => c !== base)
   const valute = altre.length ? tt('valuta di casa {base}, viaggio in {v1}', { base, v1: altre.join(', ') }) : tt('valuta {base}', { base })
-  return trip.budgetLimit ? tt('Budget {v0} · {valute}', { v0: formatMoney(trip.budgetLimit, base), valute }) : tt('Nessun budget · {valute}', { valute })
+  const budget = budgetTotale(trip).importo
+  return budget ? tt('Budget {v0} · {valute}', { v0: formatMoney(budget, base), valute }) : tt('Nessun budget · {valute}', { valute })
 }
 
 export function riepilogoAlloggi(trip: Pick<Trip, 'stays'>): string {

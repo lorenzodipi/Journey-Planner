@@ -1,6 +1,6 @@
 import { cleanSpec, type OpeningSpec } from './opening'
 import { noteItemRow, schema } from './schema'
-import type { Category, Day, DayItem, ItemKind, ItemStatus, MemberRole, MezzoTratto, MezzoViaggio, Place, PlacePref, PlaceStatus, ReceivedInvite, StatoInvito, ThemeName, Traveler, Trip, TripCountry } from '../types'
+import type { BudgetPersone, Category, Day, DayItem, ItemKind, ItemStatus, MemberRole, MezzoTratto, MezzoViaggio, Place, PlacePref, PlaceStatus, ReceivedInvite, StatoInvito, ThemeName, Traveler, Trip, TripCountry } from '../types'
 import { todayYmd } from './dates'
 import { client } from './db'
 import { queryLogistics } from './logisticsApi'
@@ -72,6 +72,8 @@ export interface TripInput {
   center: { lat: number; lng: number }
   /** Budget massimo nella valuta base: `undefined` = non toccare la colonna, `null` = toglierlo. */
   budgetLimit?: number | null
+  /** Il mio budget (0055), nella valuta base: `undefined` = non toccarlo, `null` = toglierlo. Senza la migrazione va in `budget_limit`. */
+  mioBudget?: number | null
   /** Paese e fuso di casa: `undefined` = non toccare le colonne, `null` = toglierli. */
   originCountry?: string | null
   originTimezone?: string | null
@@ -178,6 +180,28 @@ interface ItemRow {
   arrive_mode?: MezzoTratto | null
   arrive_minutes?: number | null
 }
+interface TravelerBudgetRow {
+  traveler_id: string
+  trip_id: string
+  amount: number | string
+}
+interface BudgetTotalRow {
+  trip_id: string
+  total: number | string
+  persone: number
+  viaggiatori: number
+}
+
+/** Budget a persona di un viaggio (0055): undefined prima della migrazione o per chi non vede i costi. */
+export function mapBudgets(rows: TravelerBudgetRow[] | null | undefined, totals: BudgetTotalRow[] | null | undefined, tripId: string): BudgetPersone | undefined {
+  if (!rows || !totals) return undefined
+  const tot = totals.find((r) => r.trip_id === tripId)
+  if (!tot) return undefined
+  const righe: Record<string, number> = {}
+  for (const r of rows) if (r.trip_id === tripId && Number(r.amount) > 0) righe[r.traveler_id] = Number(r.amount)
+  return { righe, totale: Number(tot.total) || 0, persone: tot.persone, viaggiatori: tot.viaggiatori }
+}
+
 interface Extras {
   places: PlaceRow[]
   categories: CategoryRow[]
@@ -196,6 +220,9 @@ interface Extras {
   /** null = database senza la migrazione 0029 */
   settlements?: SettlementRow[] | null
   confirmedSettlements?: ConfirmedSettlementRow[] | null
+  /** null = database senza la migrazione 0055 */
+  travelerBudgets?: TravelerBudgetRow[] | null
+  budgetTotals?: BudgetTotalRow[] | null
   checklist: ChecklistRow[]
   bookings: BookingRow[]
   ticketCodes?: TicketCodeRow[]
@@ -385,6 +412,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     ...(extras.documents ? { documents: mapDocuments(extras.documents, extras.documentAccess ?? [], extras.documentLinks ?? [], row.id) } : {}),
     ...(extras.settlements ? { settlements: mapSettlements(extras.settlements, row.id) } : {}),
     ...(extras.confirmedSettlements ? { settled: mapConfirmed(extras.confirmedSettlements, row.id) } : {}),
+    ...(mapBudgets(extras.travelerBudgets, extras.budgetTotals, row.id) ? { budgets: mapBudgets(extras.travelerBudgets, extras.budgetTotals, row.id) } : {}),
     expenses: mapExpenses(extras.expenses, extras.expenseShares, row.id, expenseCategoryLabel, extras.expensePayers, extras.expenseFiles),
     checklist: mapChecklist(extras.checklist, row.id, extras.checks, myTravelerId),
     ...(extras.checks ? { checklistV2: true } : {}),
@@ -432,6 +460,7 @@ export function scopeOfTable(table: string): Scope | null {
     case 'expense_payers':
     case 'expense_files':
     case 'settlements':
+    case 'traveler_budgets':
       return 'money'
     case 'checklist_items':
     case 'bookings':
@@ -503,7 +532,7 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
   const results = [trips, places, categories, expenseCategories, items, ...(logisticsR ?? []), ...(moneyR ?? []), ...(planningR ?? []), costiR]
   for (const r of results) if (r?.error) throw r.error
   const [stays, transports, flights, legs] = logisticsR ?? []
-  const [budgetItems, budgetShares, expenses, expenseShares, expensePayers, expenseFiles, settlements, confirmedSettlements] = moneyR ?? []
+  const [budgetItems, budgetShares, expenses, expenseShares, expensePayers, expenseFiles, settlements, confirmedSettlements, travelerBudgets, budgetTotals] = moneyR ?? []
   const [checklist, bookings, checks, documents, documentAccess, documentLinks, ticketCodes, activity, bookingItems, placePrefs] = planningR ?? []
   const old = prev?.extras
   const extras: Extras = {
@@ -523,6 +552,8 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
     expenseFiles: keep(expenseFiles, old?.expenseFiles as ExpenseFileRow[]),
     settlements: keep(settlements, old?.settlements as SettlementRow[] | null),
     confirmedSettlements: keep(confirmedSettlements, old?.confirmedSettlements as ConfirmedSettlementRow[] | null),
+    travelerBudgets: keep(travelerBudgets, old?.travelerBudgets as TravelerBudgetRow[] | null),
+    budgetTotals: keep(budgetTotals, old?.budgetTotals as BudgetTotalRow[] | null),
     checklist: keep(checklist, old?.checklist as ChecklistRow[]),
     bookings: keep(bookings, old?.bookings as BookingRow[]),
     ticketCodes: keep(ticketCodes, old?.ticketCodes as TicketCodeRow[]),
@@ -653,7 +684,10 @@ export async function createTrip(input: TripInput, people: TripPeople): Promise<
     const me = await db
       .from('trip_travelers')
       .insert({ trip_id: id, name: people.self.name.trim(), color: people.self.color, position: 1000, user_id: uid })
+      .select('id')
+      .single()
     if (me.error) throw me.error
+    if (input.mioBudget) await scriviMioBudget(id, (me.data as { id: string }).id, input.mioBudget)
     for (const o of people.others) {
       const res = await db.rpc('add_traveler_by_email', { _trip: id, _email: o.email.trim(), _name: o.name.trim(), _color: o.color })
       if (res.error) throw res.error
@@ -673,6 +707,20 @@ export async function createTrip(input: TripInput, people: TripPeople): Promise<
   return id
 }
 
+/** Il mio budget (0055); senza la tabella va nel budget unico del viaggio (0013), come prima. */
+async function scriviMioBudget(tripId: string, travelerId: string | undefined, amount: number | null): Promise<void> {
+  const db = client()
+  if (travelerId) {
+    const r =
+      amount === null
+        ? await db.from('traveler_budgets').delete().eq('traveler_id', travelerId)
+        : await db.from('traveler_budgets').upsert({ trip_id: tripId, traveler_id: travelerId, amount, updated_at: new Date().toISOString() }, { onConflict: 'traveler_id' })
+    if (!r.error) return
+    if (!/traveler_budgets|schema cache|does not exist/i.test(r.error.message)) throw r.error
+  }
+  await setTripBudgetLimit(tripId, amount)
+}
+
 /** Imposta o toglie il budget del viaggio (0013). */
 export async function setTripBudgetLimit(id: string, limit: number | null): Promise<void> {
   const { error } = await client().from('trips').update({ budget_limit: limit }).eq('id', id)
@@ -685,6 +733,11 @@ export async function updateTrip(id: string, input: TripInput): Promise<void> {
   const { error } = await db.from('trips').update(tripColumns(input)).eq('id', id)
   if (error) throw error
   await writeCountries(id, input.countries)
+  if (input.mioBudget !== undefined) {
+    const uid = (await db.auth.getSession()).data.session?.user.id
+    const me = uid ? await db.from('trip_travelers').select('id').eq('trip_id', id).eq('user_id', uid).is('deleted_at', null).maybeSingle() : null
+    await scriviMioBudget(id, (me?.data as { id: string } | null)?.id, input.mioBudget)
+  }
 
   const { data, error: daysError } = await db.from('days').select('id, date, deleted_at').eq('trip_id', id)
   if (daysError) throw daysError

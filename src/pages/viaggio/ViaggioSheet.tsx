@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'wouter'
 import { useAuth } from '../../lib/auth'
+import { budgetDi } from '../../lib/budgetPersona'
 import { countryByCode, countryByName, themeForCountry } from '../../lib/countries'
 import { currencyName, parseAmount, parseRate } from '../../lib/money'
 import { fetchFxRate } from '../../lib/moneyApi'
@@ -97,7 +98,8 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
   const [home, setHome] = useState(trip?.baseCurrency ?? 'EUR')
   const [startDate, setStartDate] = useState(trip?.startDate ?? '')
   const [endDate, setEndDate] = useState(trip?.endDate ?? '')
-  const [budget, setBudget] = useState(trip?.budgetLimit ? String(trip.budgetLimit).replace('.', ',') : '')
+  const mioPrima = trip ? budgetDi(trip, trip.myTravelerId) : undefined
+  const [budget, setBudget] = useState(mioPrima ? String(mioPrima).replace('.', ',') : '')
   const [paesi, setPaesi] = useState<Bozza[]>(() => {
     if (!trip) return []
     const base = trip.countries && trip.countries.length > 0 ? trip.countries : [{ id: 'unico', country: countryByName(trip.destination)?.code ?? '', name: trip.destination, currency: trip.localCurrency ?? '', timezone: trip.timezone, startDate: trip.startDate, endDate: trip.endDate, fxRate: trip.fxRate, position: 0 }]
@@ -173,12 +175,12 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
     e.preventDefault()
     setError(null)
     if (!dateOk) return setDateError(tt('La fine è prima dell\'inizio. Scegli una data dopo il {v0}.', { v0: formatShort(startDate) }))
-    let budgetLimit: number | null | undefined
+    let mioBudget: number | null | undefined
     if (budget.trim()) {
       const n = parseAmount(budget)
       if (n === null || n <= 0 || n >= 1e11) return setError(tt('Il budget è un importo maggiore di zero (esempio: 3000).'))
-      budgetLimit = n
-    } else if (trip?.budgetLimit) budgetLimit = null
+      if (n !== mioPrima) mioBudget = n
+    } else if (mioPrima) mioBudget = null
 
     const list: TripCountry[] = paesi.map((p, i) => {
       const r = p.currency && p.currency !== home ? parseRate(p.rate) : null
@@ -212,7 +214,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
       baseCurrency: home,
       localCurrency: principale.currency && principale.currency !== home ? principale.currency : '',
       center: paeseInfo?.center ?? trip?.center ?? { lat: 41.9028, lng: 12.4964 },
-      ...(budgetLimit !== undefined ? { budgetLimit } : {}),
+      ...(mioBudget !== undefined ? { mioBudget } : {}),
       ...(origine ? { originCountry: origine.code, originTimezone: origine.timezone } : trip?.originCountry ? { originCountry: null, originTimezone: null } : {}),
       countries: list,
       fxRate: principale.currency && principale.currency !== home ? (principale.fxRate ?? null) : null,
@@ -402,12 +404,12 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
           <div className="fa-tinfo">
             <h2 className="fa-h3">{tt('Budget')}</h2>
             <Info label={tt('Che cosa conta nel budget')}>
-              <p>{tt('È quanto pensate di spendere')}{' '}<b>{tt('per tutto il viaggio')}</b>{tt(', in totale per tutte le persone insieme, non a testa.')}</p>
+              <p>{tt('È quanto pensi di spendere')}{' '}<b>{tt('tu')}</b>{tt(' per tutto il viaggio. Ognuno mette il suo: il budget del viaggio è la somma di quelli messi.')}</p>
               <p>{tt('Ci rientra')}{' '}<b>{tt('ogni acquisto')}</b>{tt(': voli, alloggi, trasporti, prenotazioni e tutte le altre spese, non solo quelle fatte sul posto.')}</p>
             </Info>
           </div>
           <Campo
-            label={tt('Budget totale (facoltativo)')}
+            label={tt('Il mio budget (facoltativo)')}
             icon="bag"
             inputMode="decimal"
             value={budget}
