@@ -98,7 +98,7 @@ export function CartaAlloggio({ trip, stay: s, open, onToggle, onEdit, onDelete,
         )}
       </span>
       <span className="nm">{s.name}</span>
-      {indirizzo ? <span className="ad">{indirizzo}</span> : null}
+      {indirizzo ? <span className="indirizzo">{indirizzo}</span> : null}
     </>
   )
   return (

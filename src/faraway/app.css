@@ -180,13 +180,13 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 /* ---- Alloggi: biglietto lavanda (#39) ---- */
 .fa-stay .hdl{all:unset;box-sizing:border-box;display:grid;gap:var(--space-sm);width:100%;cursor:pointer;position:relative}
 /* il chip Pagato/Non pagato occupa tutta la larghezza fino al bordo destro; solo nome e indirizzo lasciano posto alla freccia */
-.fa-stay .hdl .nm,.fa-stay .hdl .ad{padding-right:32px}
+.fa-stay .hdl .nm,.fa-stay .hdl .indirizzo{padding-right:32px}
 .fa-stay .hdl:focus-visible{outline:2px solid var(--focus);outline-offset:4px;border-radius:var(--radius-md)}
 .fa-stay .hdl .chv{position:absolute;right:0;bottom:2px;transition:transform .2s}
 .fa-stay .hdl .chv.up{transform:rotate(180deg)}
 .fa-stay .hdl.fermo{cursor:default}
 .fa-stay .nm{font:500 28px/32px var(--font-display);letter-spacing:-.01em;overflow-wrap:anywhere}
-.fa-stay .ad{font:400 14px/20px var(--font-sans);color:var(--on-tinta-muted)}
+.fa-stay .indirizzo{font:400 14px/20px var(--font-sans);color:var(--on-tinta-muted)}
 .fa-stay .ok.td{background:var(--corallo-solid);color:var(--on-corallo-solid)}
 .fa-stay .fr{display:flex;align-items:center;justify-content:space-between;gap:var(--space-md)}
 .fa-stay .fr .k{display:block;font:400 13px/18px var(--font-sans);color:var(--on-tinta-muted)}
@@ -930,10 +930,10 @@ dialog.fa-mod:focus{outline:none}
 /* la maniglia per trascinare e il lucchetto stanno nell'angolo in basso a destra: la chip di stato si sposta a sinistra */
 .k-Tappa .tw.ico .r>.next,.k-Tappa .tw.ico .r>.now,.k-Tappa .tw.ico .r>.st{margin-right:24px}
 /* tappa passata e ancora «Da fare» (daAggiornare in lib/tappa.ts): bordo corallo e «!» sull'angolo in alto a destra */
-.k-Tappa .stp.scad .body{position:relative}
-.k-Tappa .stp.scad .body{border-color:var(--corallo)!important;box-shadow:0 0 0 1px var(--corallo)!important}
-.k-Tappa .scad-i{position:absolute;top:-10px;right:-10px;z-index:1;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--corallo-solid);color:var(--on-corallo-solid);font:700 15px/1 var(--font-sans);box-shadow:0 0 0 3px var(--canvas)}
+.k-Tappa .stp.da-aggiornare .body{position:relative}
+.k-Tappa .stp.da-aggiornare .body{border-color:var(--corallo)!important;box-shadow:0 0 0 1px var(--corallo)!important}
+.k-Tappa .agg-segno{position:absolute;top:-10px;right:-10px;z-index:1;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--corallo-solid);color:var(--on-corallo-solid);font:700 15px/1 var(--font-sans);box-shadow:0 0 0 3px var(--canvas)}
 /* con il «!» la card scende di 8 px (insieme al pallino del binario), così il cerchio non tocca la card sopra */
-.k-Tappa .stp.scad .body{margin-top:8px!important}
-.k-Tappa .stp.scad .rail{padding-top:8px}
-.k-Tappa .stp.scad:first-child .rail::before{top:28px}
+.k-Tappa .stp.da-aggiornare .body{margin-top:8px!important}
+.k-Tappa .stp.da-aggiornare .rail{padding-top:8px}
+.k-Tappa .stp.da-aggiornare:first-child .rail::before{top:28px}

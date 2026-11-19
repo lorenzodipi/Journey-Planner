@@ -445,7 +445,7 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-Biglietto .bar{height:44px;border-radius:2px;background:repeating-linear-gradient(90deg,var(--on-tinta) 0 2px,#0000 2px 4px,var(--on-tinta) 4px 5px,#0000 5px 8px,var(--on-tinta) 8px 11px,#0000 11px 13px,var(--on-tinta) 13px 14px,#0000 14px 17px)}
 .k-Biglietto .code{font:600 13px/18px var(--font-sans);letter-spacing:.14em;color:var(--on-tinta-muted);text-align:center}
 .k-Biglietto .nm{font:500 26px/32px var(--font-display)}
-.k-Biglietto .ad{font:400 14px/20px var(--font-sans);color:var(--on-tinta-muted)}
+.k-Biglietto .indirizzo{font:400 14px/20px var(--font-sans);color:var(--on-tinta-muted)}
 .k-Biglietto .row2{display:flex;justify-content:space-between;align-items:center;gap:var(--space-md)}
 .k-Biglietto .row2 .code{text-align:left;letter-spacing:.1em}
 .k-Biglietto .chip{display:inline-flex;align-items:center;gap:var(--space-xs);height:40px;padding:0 var(--space-md) 0 var(--space-sm);border-radius:var(--radius-full);background:var(--surface-card);color:var(--ink);font:600 14px/20px var(--font-sans)}

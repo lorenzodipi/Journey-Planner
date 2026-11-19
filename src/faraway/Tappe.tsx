@@ -254,7 +254,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                   )}
                 </li>
               ) : null}
-              <li id={`tappa-${item.id}`} className={cx('stp', ndCls, aperta && 'sel', scaduta && 'scad', highlight === item.id && 'fa-flash', trascinata === idx && 'drag')} style={stile}>
+              <li id={`tappa-${item.id}`} className={cx('stp', ndCls, aperta && 'sel', scaduta && 'da-aggiornare', highlight === item.id && 'fa-flash', trascinata === idx && 'drag')} style={stile}>
                 <span className="rail">
                   <span className={cx('nd', ndCls)}>
                     <G name={ndIcon} />
@@ -262,7 +262,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                 </span>
                 <div className="body">
                   {scaduta ? (
-                    <span className="scad-i" aria-hidden="true">
+                    <span className="agg-segno" aria-hidden="true">
                       !
                     </span>
                   ) : null}

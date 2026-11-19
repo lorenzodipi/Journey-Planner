@@ -116,6 +116,7 @@ Prima di scrivere un elemento nuovo: cercarlo in `src/faraway/`, poi in `react-a
 - `height` fissa su contenitori di testo; `100vh` (si usa `100dvh`).
 - Estetica «da AI»: card tutte uguali, gradienti decorativi, barre colorate a sinistra, maiuscoletto ovunque, emoji nei testi.
 - `transition: all`, `will-change` messo per abitudine.
+- Nomi di classe che sembrano pubblicità: i blocchi annunci del browser (uBlock, AdBlock…) nascondono gli elementi con classi come `ad`, `ads`, `adv`, `banner`, `sponsor`, `promo`, `scad` e simili, e in incognito (estensioni spente) tutto si vede. Le card delle tappe da aggiornare sparivano per la classe `scad`: oggi sono `da-aggiornare` e `agg-segno`. Nomi interi e italiani, mai sigle corte.
 
 ## Testo di sistema ingrandito
 
