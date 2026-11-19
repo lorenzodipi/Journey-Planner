@@ -2180,5 +2180,11 @@
  "Scrivi nel costo quanto paga una persona.": "In the cost, enter what one person pays.",
  "Scrivi nel costo quanto costa per tutto il gruppo.": "In the cost, enter the price for the whole group.",
  "Ogni persona paga {quota}: in tutto fanno {totale} per {n} persone.": "Each person pays {quota}: that makes {totale} in total for {n} people.",
- "In tutto {totale}, diviso tra {n} persone: ognuno paga {quota}.": "{totale} in total, split between {n} people: each person pays {quota}."
+ "In tutto {totale}, diviso tra {n} persone: ognuno paga {quota}.": "{totale} in total, split between {n} people: each person pays {quota}.",
+ "{n} pagamenti nuovi da {chi}": "{n} new payments from {chi}",
+ "{n} pagamenti nuovi con {chi}": "{n} new payments with {chi}",
+ "{n} pagamenti nuovi": "{n} new payments",
+ "{v0} in tutto": "{v0} in total",
+ "Ho visto tutti": "Seen them all",
+ "Segna come visti tutti i {n} pagamenti nuovi": "Mark all {n} new payments as seen"
 }

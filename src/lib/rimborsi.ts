@@ -108,6 +108,11 @@ export interface PagamentoNuovo {
   key: string
   testo: string
   dettaglio?: string
+  /** l'altra persona del pagamento */
+  altroId: string
+  /** quanto mi è arrivato (positivo) o quanto risulta che ho dato io (negativo), compensazioni escluse */
+  netto: number
+  currency: string
 }
 
 /**
@@ -142,14 +147,29 @@ export function pagamentiNuovi(
     const netto = round2(righe.filter((r) => !r.compensation).reduce((n, r) => n + (r.toId === me ? r.amount : -r.amount), 0))
     const quando = righe.map((r) => r.createdAt).sort().at(-1) as string
     if (compensato === 0 && righe.length === 1) {
-      out.push({ key, quando, testo: netto > 0 ? tt('{chi} ti ha dato {v1}', { chi, v1: formatMoney(netto, cur) }) : tt('{chi} ha segnato che le hai dato {v1}', { chi, v1: formatMoney(-netto, cur) }) })
+      out.push({ key, quando, altroId: altro, netto, currency: cur, testo: netto > 0 ? tt('{chi} ti ha dato {v1}', { chi, v1: formatMoney(netto, cur) }) : tt('{chi} ha segnato che le hai dato {v1}', { chi, v1: formatMoney(-netto, cur) }) })
       continue
     }
     const parti = [
       compensato > 0 ? tt('Compensati {v0}', { v0: formatMoney(compensato, cur) }) : '',
       netto > 0 ? tt('{chi} ti ha dato {v1}', { chi, v1: formatMoney(netto, cur) }) : netto < 0 ? tt('le hai dato {v0}', { v0: formatMoney(-netto, cur) }) : '',
     ].filter(Boolean)
-    out.push({ key, quando, testo: tt('{chi} ha bilanciato le spese con te', { chi }), ...(parti.length ? { dettaglio: parti.join(' · ') } : {}) })
+    out.push({ key, quando, altroId: altro, netto, currency: cur, testo: tt('{chi} ha bilanciato le spese con te', { chi }), ...(parti.length ? { dettaglio: parti.join(' · ') } : {}) })
   }
   return out.sort((a, b) => b.quando.localeCompare(a.quando)).map(({ quando: _q, ...x }) => x)
+}
+
+/**
+ * Riga di riepilogo quando i pagamenti nuovi sono più di uno: quanti sono, con chi e, se sono tutti soldi ricevuti nella
+ * stessa valuta, quanto in tutto.
+ */
+export function riepilogoNovita(nuovi: readonly PagamentoNuovo[], travelers: readonly Pick<Traveler, 'id' | 'name'>[]): { titolo: string; sub?: string } {
+  const n = nuovi.length
+  const persone = [...new Set(nuovi.map((x) => x.altroId))]
+  const chi = persone.length === 1 ? nome(travelers, persone[0]) : undefined
+  const valute = new Set(nuovi.map((x) => x.currency))
+  const ricevuti = valute.size === 1 && nuovi.every((x) => x.netto > 0)
+  const titolo = chi ? (ricevuti ? tt('{n} pagamenti nuovi da {chi}', { n, chi }) : tt('{n} pagamenti nuovi con {chi}', { n, chi })) : tt('{n} pagamenti nuovi', { n })
+  if (!ricevuti) return { titolo }
+  return { titolo, sub: tt('{v0} in tutto', { v0: formatMoney(round2(nuovi.reduce((t, x) => t + x.netto, 0)), nuovi[0].currency) }) }
 }

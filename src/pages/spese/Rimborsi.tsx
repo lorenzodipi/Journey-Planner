@@ -1,11 +1,12 @@
 // Rimborsi (#51): «Ho pagato» vale subito e il destinatario, se non torna, lo contesta dal menu della voce (0047); «Bilancia
 // tutte le spese» chiude in un colpo i pagamenti e le compensazioni con una persona. Le richieste dichiarate prima della
 // 0047 restano «in attesa» e si decidono come sempre. I rimborsi non sono spese.
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { Link } from 'wouter'
 import { Banner, Campo, Pillola, Pulsante } from '../../faraway/base'
 import { Foglio } from '../../faraway/Foglio'
-import { chiRichiesta, controllaRimborso, daDecidere, dataNumerica, inAttesaMie, pagamentiNuovi, rimborsiValidi, STATO_RIMBORSO } from '../../lib/rimborsi'
+import { Sv } from '../../faraway/icons'
+import { chiRichiesta, controllaRimborso, daDecidere, dataNumerica, inAttesaMie, pagamentiNuovi, riepilogoNovita, rimborsiValidi, STATO_RIMBORSO } from '../../lib/rimborsi'
 import { pagamentiImmediati } from '../../lib/moneyApi'
 import type { PianoBilancia } from '../../lib/debitiSpese'
 import { leggiVisti, segnaVisti } from '../../lib/rimborsiVisti'
@@ -138,40 +139,70 @@ export function DecidiSheet({ trip, r, onClose }: { trip: Trip; r: Rimborso; onC
   )
 }
 
-/** Avvisi sui pagamenti che altri hanno registrato per me: «Controlla» porta alle voci (dove si può contestare), «Ho visto» li toglie. */
-function AvvisiNovita({ trip, solo }: { trip: Trip; /** quanti mostrarne al massimo */ solo?: number }) {
+/**
+ * Avvisi sui pagamenti che altri hanno registrato per me: «Controlla» porta alle voci (dove si può contestare), «Ho visto»
+ * li toglie. Da due in su c'è una riga sola di riepilogo con «Ho visto tutti»; toccandola si apre l'elenco.
+ */
+function AvvisiNovita({ trip, aperti = false }: { trip: Trip; /** elenco già aperto (nel Bilancio) */ aperti?: boolean }) {
   const { nuovi, visto } = useNovitaRimborsi(trip)
+  const [aperto, setAperto] = useState(aperti)
+  const elenco = useId()
   if (nuovi.length === 0) return null
+  const righe = nuovi.map((n) => (
+    <Banner
+      key={n.key}
+      tone="az"
+      icon="info"
+      azioniSotto
+      action={
+        <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <Link href="/spese/bilancio" className="fa-btn sm" onClick={() => visto([n.key])}>{tt('Controlla')}</Link>
+          <Pulsante size="sm" color="secondary" onPress={() => visto([n.key])}>{tt('Ho visto')}</Pulsante>
+        </span>
+      }
+    >
+      {n.testo}
+      {n.dettaglio ? (
+        <>
+          <br />
+          {n.dettaglio}
+        </>
+      ) : null}
+    </Banner>
+  ))
+  if (nuovi.length === 1) return <>{righe}</>
+  const r = riepilogoNovita(nuovi, trip.travelers)
   return (
-    <>
-      {nuovi.slice(0, solo ?? nuovi.length).map((n) => (
-        <Banner
-          key={n.key}
-          tone="az"
-          icon="info"
-          azioniSotto
-          action={
-            <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <Link href="/spese/bilancio" className="fa-btn sm" onClick={() => visto([n.key])}>{tt('Controlla')}</Link>
-              <Pulsante size="sm" color="secondary" onPress={() => visto([n.key])}>{tt('Ho visto')}</Pulsante>
-            </span>
-          }
-        >
-          {n.testo}
-          {n.dettaglio ? (
-            <>
-              <br />
-              {n.dettaglio}
-            </>
-          ) : null}
-        </Banner>
-      ))}
-    </>
+    <div className="fa-novita">
+      <Banner
+        tone="az"
+        icon="info"
+        azioniSotto
+        action={
+          <Pulsante size="sm" color="secondary" onPress={() => visto(nuovi.map((n) => n.key))} aria-label={tt('Segna come visti tutti i {n} pagamenti nuovi', { n: nuovi.length })}>
+            {tt('Ho visto tutti')}
+          </Pulsante>
+        }
+      >
+        <button type="button" className="fa-novita-t" aria-expanded={aperto} aria-controls={elenco} onClick={() => setAperto((x) => !x)}>
+          <span>
+            <b>{r.titolo}</b>
+            {r.sub ? <span className="fa-novita-s">{r.sub}</span> : null}
+          </span>
+          <Sv name="chev" size={20} />
+        </button>
+      </Banner>
+      {aperto ? (
+        <div id={elenco} className="fa-novita-el">
+          {righe}
+        </div>
+      ) : null}
+    </div>
   )
 }
 
 /** Richieste da decidere (quelle di prima della 0047), mie in attesa e pagamenti nuovi di altri, in cima alla pagina Spese. */
-export function RimborsiCard({ trip, conMie = true }: { trip: Trip; /** Le mie richieste in attesa: in «Il mio bilancio» ci sono già. */ conMie?: boolean }) {
+export function RimborsiCard({ trip, conMie = true, novitaAperte = false }: { trip: Trip; /** Le mie richieste in attesa: in «Il mio bilancio» ci sono già. */ conMie?: boolean; /** pagamenti nuovi già aperti (nel Bilancio) */ novitaAperte?: boolean }) {
   const t = useTrips()
   const me = useMe(trip)
   const [aperta, setAperta] = useState<Rimborso | null>(null)
@@ -187,7 +218,7 @@ export function RimborsiCard({ trip, conMie = true }: { trip: Trip; /** Le mie r
   }
   return (
     <div style={{ display: 'grid', gap: 8 }}>
-      <AvvisiNovita trip={trip} />
+      <AvvisiNovita trip={trip} aperti={novitaAperte} />
       {dec.map((r) => (
         <Banner key={r.id} tone="az" icon="info" action={<Pulsante size="sm" onPress={() => setAperta(r)}>{tt('Rispondi')}</Pulsante>}>
           {chiRichiesta(r, trip.travelers)}

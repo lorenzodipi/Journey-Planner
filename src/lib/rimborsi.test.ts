@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Expense } from '../types'
 import { summarizeExpenses } from './budget'
-import { controllaRimborso, cronologia, daDecidere, inAttesaMie, pagamentiNuovi, residuo, testoCronologia, testoRichiesta } from './rimborsi'
+import { controllaRimborso, cronologia, daDecidere, inAttesaMie, pagamentiNuovi, residuo, riepilogoNovita, testoCronologia, testoRichiesta } from './rimborsi'
 
 const people = [{ id: 'a', name: 'Anna' }, { id: 'g', name: 'Giorgio' }]
 const fx = { base: 'EUR', local: 'JPY', rate: 0.005 }
@@ -66,7 +66,7 @@ describe('avviso dei pagamenti di altri', () => {
   const pag = (o: object) => r({ status: 'confermato', createdBy: 'u-g', createdAt: '2026-11-12T10:00:00Z', ...o })
   const nuovi = (list: object[], visti: string[] = []) => pagamentiNuovi(list as never, people, 'a', 'u-a', new Set(visti), adesso)
   it('un pagamento di Giorgio verso di me', () => {
-    expect(nuovi([pag({ id: 'p1' })])).toEqual([{ key: 'p1', testo: 'Giorgio ti ha dato 50,00\u00a0€' }])
+    expect(nuovi([pag({ id: 'p1' })])).toEqual([{ key: 'p1', testo: 'Giorgio ti ha dato 50,00\u00a0€', altroId: 'g', netto: 50, currency: 'EUR' }])
   })
   it('non avvisa dei miei, di quelli già visti, di quelli vecchi né di quelli non validi', () => {
     expect(nuovi([pag({ id: 'p1', createdBy: 'u-a' })])).toEqual([])
@@ -81,6 +81,21 @@ describe('avviso dei pagamenti di altri', () => {
       pag({ id: 'c2', groupId: g, compensation: true, fromId: 'a', toId: 'g', amount: 30 }),
       pag({ id: 'p', groupId: g, fromId: 'g', toId: 'a', amount: 10 }),
     ]
-    expect(nuovi(righe)).toEqual([{ key: g, testo: 'Giorgio ha bilanciato le spese con te', dettaglio: 'Compensati 30,00\u00a0€ · Giorgio ti ha dato 10,00\u00a0€' }])
+    expect(nuovi(righe)).toEqual([{ key: g, testo: 'Giorgio ha bilanciato le spese con te', dettaglio: 'Compensati 30,00\u00a0€ · Giorgio ti ha dato 10,00\u00a0€', altroId: 'g', netto: 10, currency: 'EUR' }])
+  })
+})
+
+describe('riepilogo dei pagamenti nuovi', () => {
+  const n = (altroId: string, netto: number, currency = 'EUR') => ({ key: `${altroId}${netto}`, testo: '', altroId, netto, currency })
+  const tre = [{ id: 'a', name: 'Anna' }, { id: 'g', name: 'Giorgio' }, { id: 'm', name: 'Marta' }]
+  it('tutti ricevuti dalla stessa persona: chi e quanto in tutto', () => {
+    expect(riepilogoNovita([n('g', 176.33), n('g', 129.89), n('g', 219.1), n('g', 81.14)], tre)).toEqual({ titolo: '4 pagamenti nuovi da Giorgio', sub: '606,46\u00a0€ in tutto' })
+  })
+  it('in tutte e due le direzioni o in valute diverse: niente totale', () => {
+    expect(riepilogoNovita([n('g', 10), n('g', -5)], tre)).toEqual({ titolo: '2 pagamenti nuovi con Giorgio' })
+    expect(riepilogoNovita([n('g', 10), n('g', 5, 'JPY')], tre)).toEqual({ titolo: '2 pagamenti nuovi con Giorgio' })
+  })
+  it('da più persone: solo quanti', () => {
+    expect(riepilogoNovita([n('g', 10), n('m', 5)], tre)).toEqual({ titolo: '2 pagamenti nuovi', sub: '15,00\u00a0€ in tutto' })
   })
 })

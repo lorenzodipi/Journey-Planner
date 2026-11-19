@@ -17,7 +17,7 @@ export function Bilancio() {
   const saldo = r.mioSaldo
   return (
     <Schermata bar={<BarraIndietro title={t('Il mio bilancio')} back="/spese" />} gap={16}>
-      <RimborsiCard trip={trip} conMie={false} />
+      <RimborsiCard trip={trip} conMie={false} novitaAperte />
       <DebitiSpesa trip={trip} spese={r.spese} fx={r.fx} me={me?.id} abilitaPagamento={trip.settlements !== undefined} />
       {dati.transfers.filter((x) => x.from === me?.id || x.to === me?.id).length === 0 && saldo !== null ? <p className="fa-m" style={{ margin: 0 }}>{t('Nessun rimborso necessario.')}</p> : null}
     </Schermata>

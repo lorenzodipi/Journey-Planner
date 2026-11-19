@@ -2690,3 +2690,14 @@ html,body{margin:0;background:var(--canvas)}
   .k-TicketOrizzontale .hz2 .rt2 .rl{gap:4px;justify-content:center}
   .k-TicketOrizzontale .hz2 .rt2 .ln{display:none}
 }
+
+/* Pagamenti nuovi da segnare «Ho visto»: da due in su una riga di riepilogo che apre l'elenco (Rimborsi.tsx, AvvisiNovita) */
+.fa-novita{display:grid;gap:8px}
+.fa-novita-el{display:grid;gap:8px}
+.fa-novita-t{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;margin:-8px 0;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.fa-novita-t>span{flex:1;min-width:0;display:grid}
+.fa-novita-s{color:var(--ink)}
+.fa-novita-t svg{color:var(--azzurro-ink);transition:transform .2s cubic-bezier(.23,1,.32,1)}
+.fa-novita-t[aria-expanded="true"] svg{transform:rotate(180deg)}
+.fa-novita-t:focus-visible{outline:2px solid var(--azzurro-ink);outline-offset:4px;border-radius:8px}
+@media (prefers-reduced-motion:reduce){.fa-novita-t svg{transition:none}}
