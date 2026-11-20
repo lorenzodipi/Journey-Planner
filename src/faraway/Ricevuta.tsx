@@ -1,6 +1,6 @@
 // Ricevuta del riepilogo spese (componente Ricevuta, mock Fa-23…Fa-26): per categoria (toccando una riga si
 // imposta il previsto), totali, saldo a persona e «Per pareggiare», con il bordo dentellato in fondo.
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { formatMoney, parseAmount } from '../lib/money'
 import type { Ricevuta as Dati, PrevistoPersona, RigaCategoria } from '../lib/ricevuta'
 import { discOf, initials } from '../state/me'
@@ -346,10 +346,55 @@ export function DueRicevute({ tutti, mia, vista, onVista }: { tutti: ReactNode; 
     onVista(v)
   }
 
+  // con il mouse (web) si trascina: il browser scorre da solo solo con la rotella e con il dito. Oltre 6 px il foglio
+  // segue il puntatore senza scatti; al rilascio va alla ricevuta verso cui si è tirato e il clic che chiude il
+  // trascinamento non apre la categoria sotto
+  const tira = useRef<{ id: number; x: number; left: number; via: boolean } | null>(null)
+  const appenaTirato = useRef(false)
+  const [tirando, setTirando] = useState(false)
+  function giu(e: ReactPointerEvent<HTMLDivElement>) {
+    tocca()
+    if (e.pointerType !== 'mouse' || e.button !== 0 || !box.current) return
+    tira.current = { id: e.pointerId, x: e.clientX, left: box.current.scrollLeft, via: false }
+  }
+  function muovi(e: ReactPointerEvent<HTMLDivElement>) {
+    const t = tira.current
+    const el = box.current
+    if (!t || !el || e.pointerId !== t.id) return
+    const dx = e.clientX - t.x
+    if (!t.via) {
+      if (Math.abs(dx) < 6) return
+      t.via = true
+      el.setPointerCapture(e.pointerId)
+      el.style.scrollSnapType = 'none' // subito: lo stato arriva al giro dopo
+      setTirando(true)
+    }
+    tocca()
+    el.scrollLeft = t.left - dx
+  }
+  function su(e: ReactPointerEvent<HTMLDivElement>) {
+    const t = tira.current
+    const el = box.current
+    tira.current = null
+    if (!t || !el || !t.via) return
+    el.style.scrollSnapType = ''
+    setTirando(false)
+    if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId)
+    const dx = e.clientX - t.x
+    appenaTirato.current = true
+    window.setTimeout(() => (appenaTirato.current = false), 0)
+    vai(dx < -40 ? 'mia' : dx > 40 ? 'tutti' : el.scrollLeft > fine(el) / 2 ? 'mia' : 'tutti')
+  }
+  function clic(e: ReactMouseEvent<HTMLDivElement>) {
+    if (!appenaTirato.current) return
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
   const nomi = [tt('Ricevuta di tutti'), tt('La mia parte')]
   return (
     <div className="fa-ricevute">
-      <div ref={box} className={cx('sf', anima && 'anima')} onScroll={onScroll} onPointerDown={tocca} onTouchStart={tocca} onTouchMove={tocca} onWheel={tocca} onKeyDown={tocca} style={alto ? { height: alto + 16 } : undefined}>
+      <div ref={box} className={cx('sf', anima && 'anima', tirando && 'tira')} onScroll={onScroll} onPointerDown={giu} onPointerMove={muovi} onPointerUp={su} onPointerCancel={su} onClickCapture={clic} onTouchStart={tocca} onTouchMove={tocca} onWheel={tocca} onKeyDown={tocca} style={alto ? { height: alto + 16 } : undefined}>
         {[tutti, mia].map((r, i) => (
           <div key={i} ref={fogli[i]} className="sl" role="group" aria-roledescription={tt('foglio')} aria-label={tt('{v0}, {n} di 2', { v0: nomi[i], n: i + 1 })} inert={i !== attiva ? true : undefined}>
             {r}

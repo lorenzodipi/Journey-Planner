@@ -946,6 +946,9 @@ dialog.fa-mod:focus{outline:none}
 .fa-ricevute .sf{display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;align-items:flex-start;box-sizing:border-box;padding:4px 0 12px;margin:-4px 0 -12px}
 .fa-ricevute .sf.anima{transition:height .2s cubic-bezier(.23,1,.32,1)}
 .fa-ricevute .sf::-webkit-scrollbar{display:none}
+/* web: con il mouse si trascina (DueRicevute); mentre si tira niente aggancio e niente selezione del testo */
+@media (hover:hover) and (pointer:fine){.fa-ricevute .sf{cursor:grab}}
+.fa-ricevute .sf.tira{scroll-snap-type:none;cursor:grabbing;user-select:none;-webkit-user-select:none}
 .fa-ricevute .sl{flex:0 0 calc(100% - 28px);min-width:0;scroll-snap-align:start;scroll-snap-stop:always}
 .fa-ricevute .sl:last-child{scroll-snap-align:end}
 .fa-ricevute .sl[inert]{opacity:.6;transition:opacity .2s}
