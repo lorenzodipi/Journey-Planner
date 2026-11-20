@@ -1,4 +1,5 @@
 import { cleanSpec, type OpeningSpec } from './opening'
+import { senzaTaxi } from './mezzi'
 import { noteItemRow, schema } from './schema'
 import type { BudgetPersone, PrevistiPersone, Category, Day, DayItem, ItemKind, ItemStatus, MemberRole, MezzoTratto, MezzoViaggio, Place, PlacePref, PlaceStatus, ReceivedInvite, StatoInvito, ThemeName, Traveler, Trip, TripCountry } from '../types'
 import { todayYmd } from './dates'
@@ -177,7 +178,7 @@ interface ItemRow {
   lock_source?: 'manual' | 'booking' | null
   lock_changed_by?: string | null
   lock_changed_at?: string | null
-  arrive_mode?: MezzoTratto | null
+  arrive_mode?: MezzoTratto | 'taxi' | null
   arrive_minutes?: number | null
 }
 interface TravelerBudgetRow {
@@ -361,7 +362,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
       categoryId: it.category_id ?? undefined,
       position: it.position,
       ...(it.time_lock ? { timeLock: it.time_lock, lockSource: it.lock_source ?? undefined, lockChangedBy: it.lock_changed_by ?? undefined, lockChangedAt: it.lock_changed_at ?? undefined } : {}),
-      ...(it.arrive_mode ? { arriveMode: it.arrive_mode } : {}),
+      ...(it.arrive_mode ? { arriveMode: senzaTaxi(it.arrive_mode) } : {}),
       ...(it.arrive_minutes != null ? { arriveMinutes: it.arrive_minutes } : {}),
     })
     itemsByDay.set(it.day_id, list)

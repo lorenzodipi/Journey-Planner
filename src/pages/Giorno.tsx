@@ -293,7 +293,7 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
                 {spostamenti.map((e, i) => (
                   <Riga
                     key={`${e.ref?.id ?? i}-${e.at}`}
-                    icon={e.kind === 'flight' ? 'i-tra-plane' : `i-tra-${e.mode && ['bus', 'car', 'ferry', 'metro', 'taxi', 'train', 'plane'].includes(e.mode) ? e.mode : 'train'}`}
+                    icon={e.kind === 'flight' ? 'i-tra-plane' : `i-tra-${e.mode && ['bus', 'car', 'ferry', 'metro', 'train', 'plane'].includes(e.mode) ? e.mode : 'train'}`}
                     title={e.title}
                     sub={[e.time ? (e.endTime ? `${e.time} → ${e.endTime}` : e.time) : null, e.sub].filter(Boolean).join(' · ')}
                     onPress={() => navigate(e.kind === 'flight' ? '/altro/voli' : '/altro/trasporti')}

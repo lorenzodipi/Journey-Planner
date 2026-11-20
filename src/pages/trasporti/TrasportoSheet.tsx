@@ -20,8 +20,8 @@ import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { t as tt } from '../../i18n'
 
-const MODI: TransportMode[] = ['train', 'metro', 'bus', 'taxi', 'walk', 'car', 'ferry', 'plane', 'other']
-const MODE_GLIFO: Record<TransportMode, string> = { train: 'g-tra-train', metro: 'g-tra-metro', bus: 'g-tra-bus', taxi: 'g-tra-taxi', walk: 'g-tra-walk', car: 'g-tra-car', ferry: 'g-tra-ferry', plane: 'g-tra-plane', other: 'g-cat-pin' }
+const MODI: TransportMode[] = ['train', 'metro', 'bus', 'walk', 'car', 'ferry', 'plane', 'other']
+const MODE_GLIFO: Record<TransportMode, string> = { train: 'g-tra-train', metro: 'g-tra-metro', bus: 'g-tra-bus', walk: 'g-tra-walk', car: 'g-tra-car', ferry: 'g-tra-ferry', plane: 'g-tra-plane', other: 'g-cat-pin' }
 
 const Errore = ({ children }: { children: string }) => (
   <span className="fa-help bad" role="alert">

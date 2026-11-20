@@ -61,7 +61,7 @@ export interface Dati {
     davedere: { nomi: string[]; altri: number }
     volo: { voli: { da: string; a: string }[]; minuti: number; fusoOre: number }
     dormito: { alloggi: { nome: string; notti: number; citta: string }[]; notti: number; altri: number }
-    mossi: { mezzi: { mezzo: 'train' | 'metro' | 'bus' | 'taxi' | 'car' | 'ferry' | 'walk'; n: number }[] }
+    mossi: { mezzi: { mezzo: 'train' | 'metro' | 'bus' | 'car' | 'ferry' | 'walk'; n: number }[] }
   }>
   strette: Partial<{
     paesi: { codici: string[]; valute: number }

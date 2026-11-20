@@ -244,7 +244,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                   {onSeg && !readOnly ? (
                     <button type="button" className="sg tap" aria-label={t('Da {title} a {title2}: {v2}{v3}. Cambia il mezzo', { title: items[idx - 1].title, title2: item.title, v2: seg.text.charAt(0).toLowerCase(), v3: seg.text.slice(1).replace(' · ', ', ') })} onClick={() => onSeg(item)}>
                       <G name={seg.icon} />
-                      {seg.text}
+                      <span className="tx">{seg.text}</span>
                       <G name="g-chev" cls="chv" />
                     </button>
                   ) : (

@@ -176,7 +176,7 @@ export function CardDormito({ dati, colore }: { dati: NonNullable<Dati['larghe']
   )
 }
 
-const ICONA_MEZZO: Record<string, string> = { train: 'i-tra-train', metro: 'i-tra-metro', bus: 'i-tra-bus', taxi: 'i-tra-taxi', car: 'i-tra-car', ferry: 'i-tra-ferry', walk: 'i-tra-walk' }
+const ICONA_MEZZO: Record<string, string> = { train: 'i-tra-train', metro: 'i-tra-metro', bus: 'i-tra-bus', car: 'i-tra-car', ferry: 'i-tra-ferry', walk: 'i-tra-walk' }
 /** Il nome del mezzo, al singolare con una corsa e al plurale con più. */
 function nomeMezzo(mezzo: string, n: number): string {
   const uno = n === 1
@@ -184,7 +184,6 @@ function nomeMezzo(mezzo: string, n: number): string {
     case 'train': return uno ? tt('treno') : tt('treni')
     case 'metro': return tt('metro')
     case 'bus': return tt('autobus')
-    case 'taxi': return tt('taxi')
     case 'car': return tt('auto')
     case 'ferry': return uno ? tt('traghetto') : tt('traghetti')
     default: return tt('a piedi')

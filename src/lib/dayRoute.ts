@@ -298,7 +298,6 @@ const MODE_IN: Record<TransportMode, string> = {
   train: tt('In treno'),
   metro: tt('In metro'),
   bus: tt('In bus'),
-  taxi: tt('In taxi'),
   walk: tt('A piedi'),
   car: tt('In auto'),
   plane: tt('In aereo'),

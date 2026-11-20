@@ -7,7 +7,6 @@ import {
   faRightToBracket,
   faRoute,
   faShip,
-  faTaxi,
   faTrain,
   faTrainSubway,
   type IconDefinition,
@@ -39,7 +38,6 @@ export const TrainIcon = wrap(faTrain)
 export const MetroIcon = wrap(faTrainSubway)
 export const BusIcon = wrap(faBus)
 export const CarIcon = wrap(faCar)
-export const TaxiIcon = wrap(faTaxi)
 export const WalkIcon = wrap(faPersonWalking)
 export const FerryIcon = wrap(faShip)
 export const RouteIcon = wrap(faRoute)

@@ -6,7 +6,7 @@ import { durataLunga } from './voli'
 import { LOCALE, t as tt } from '../i18n'
 
 export const MODE_NOME: Record<Transport['mode'], string> = {
-  train: tt('Treno'), metro: tt('Metro'), bus: tt('Autobus'), taxi: tt('Taxi'), walk: tt('A piedi'), car: tt('Auto'), plane: tt('Aereo'), ferry: tt('Traghetto'), other: tt('Trasporto'),
+  train: tt('Treno'), metro: tt('Metro'), bus: tt('Autobus'), walk: tt('A piedi'), car: tt('Auto'), plane: tt('Aereo'), ferry: tt('Traghetto'), other: tt('Trasporto'),
 }
 
 /** «Haruka 33» se c'è il nome, altrimenti «Treno · Kyoto → Osaka». */

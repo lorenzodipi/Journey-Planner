@@ -19,7 +19,7 @@ describe('scegliMezzo', () => {
   it('il trasporto del giorno, poi la scelta a mano che vince su tutto', () => {
     expect(scegliMezzo(5000, { via: 'train', imp: auto })).toEqual({ mezzo: 'train', fonte: 'trasporto' })
     expect(scegliMezzo(5000, { scelto: 'bus', via: 'train', imp: auto })).toEqual({ mezzo: 'bus', fonte: 'scelto' })
-    expect(scegliMezzo(300, { scelto: 'taxi', imp: base }).mezzo).toBe('taxi')
+    expect(scegliMezzo(300, { scelto: 'car', imp: base }).mezzo).toBe('car')
   })
 })
 
@@ -57,7 +57,7 @@ describe('testi e Google Maps', () => {
   })
   it('sulla mappa: a piedi e in auto lungo le strade', () => {
     expect(tipoSuMappa('walk')).toBe('walk')
-    expect(tipoSuMappa('taxi')).toBe('drive')
+    expect(tipoSuMappa('car')).toBe('drive')
     expect(tipoSuMappa('metro')).toBe('line')
   })
 })
@@ -87,5 +87,14 @@ describe('mappa del giorno', () => {
     const legs = planLegs(stops, [], (_a, _b, m) => scegliMezzo(m, { imp: base }).mezzo)
     expect(legs[0].kind).toBe('line')
     expect(walkLegs(legs)).toHaveLength(0)
+  })
+})
+
+describe('taxi e auto sono un mezzo solo', () => {
+  it('i dati salvati come taxi si leggono come auto, gli altri restano', async () => {
+    const { senzaTaxi } = await import('./mezzi')
+    expect(senzaTaxi('taxi')).toBe('car')
+    expect(senzaTaxi('bus')).toBe('bus')
+    expect(senzaTaxi('car')).toBe('car')
   })
 })

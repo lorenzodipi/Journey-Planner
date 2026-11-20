@@ -75,7 +75,8 @@
 - Il viaggio ha un mezzo di solito usato («In auto», «Con i mezzi», «A piedi») e una soglia «A piedi se ci vogliono meno di» (15 minuti se non scelta), in «Modifica viaggio». Senza scelta l'app propone l'auto dove serve (paesi senza metro, noleggio auto tra le prenotazioni), ma non mostra avvisi nella pagina del giorno.
 - Ogni spostamento si può cambiare dalla sua riga tra le due tappe: mezzo e, se la si conosce, durata vera, che vince sulla stima. Quello scelto a mano resta anche se cambia il mezzo del viaggio; scegliere il mezzo che il viaggio darebbe comunque non lo fissa.
 - Ordine: scelta a mano → trasporto del giorno che copre il tratto → a piedi se breve → mezzo del viaggio. La logica sta in `src/lib/spostamenti.ts`.
-- Sulla mappa a piedi e in auto (o taxi) si va lungo le strade (OSRM, profili `foot` e `car`); con i mezzi e i trasporti del giorno in linea d'aria tratteggiata.
+- Taxi e auto sono un mezzo solo, «Auto», negli spostamenti e nei trasporti; i dati salvati prima come taxi si leggono come auto (`senzaTaxi` in `src/lib/mezzi.ts`), senza riscriverli.
+- Sulla mappa a piedi e in auto si va lungo le strade (OSRM, profili `foot` e `car`); con i mezzi e i trasporti del giorno in linea d'aria tratteggiata.
 
 ## Voli: la carta d'imbarco
 

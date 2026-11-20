@@ -1,4 +1,5 @@
 import { cleanUrl } from './planningData'
+import { senzaTaxi } from './mezzi'
 import type {
   Booking,
   BookingType,
@@ -94,7 +95,7 @@ const coords = (lat: unknown, lng: unknown): { lat: number; lng: number } | null
 
 const STATUS = ['idea', 'planned', 'done', 'skipped'] as const satisfies readonly PlaceStatus[]
 const KINDS = ['visit', 'meal', 'transport', 'free', 'note', 'flight'] as const satisfies readonly ItemKind[]
-const MODES = ['train', 'metro', 'bus', 'taxi', 'walk', 'car', 'plane', 'ferry', 'other'] as const satisfies readonly TransportMode[]
+const MODES = ['train', 'metro', 'bus', 'walk', 'car', 'plane', 'ferry', 'other'] as const satisfies readonly TransportMode[]
 /** Costo di una prenotazione dal file: solo se c'è un importo; i pagatori sono quelli che esistono ancora. */
 function bookingCost(b: Obj, travelerIds: Set<string>, baseCurrency: string): Pick<Booking, 'cost' | 'currency' | 'scope' | 'payerIds'> {
   const cost = money(b.cost)
@@ -286,7 +287,7 @@ function cleanTrip(raw: Obj, warnings: string[]): Trip | string {
         id: idOf(t.id),
         from: str(t.from).trim(),
         to: str(t.to).trim(),
-        mode: oneOf(t.mode, MODES, 'other'),
+        mode: senzaTaxi(oneOf(t.mode, [...MODES, 'taxi'] as const, 'other')),
         departAt: instant(t.departAt),
         arriveAt: instant(t.arriveAt),
         departDate: t.departAt ? undefined : ymd(t.departDate),

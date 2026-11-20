@@ -2476,10 +2476,12 @@ html,body{margin:0;background:var(--canvas)}
 @media (prefers-reduced-motion:reduce){.fa-altri>summary .chv{transition:none}}
 
 /* Spostamento tra due tappe che si può toccare (0045): pillola staccata dalle card, area di tocco di 44 px */
-.k-Tappa .seg .sg.tap{all:unset;box-sizing:border-box;position:relative;align-self:center;justify-self:start;display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:0 8px 0 4px;border:1px solid var(--border-strong);border-radius:var(--radius-full);background:var(--surface-card);color:var(--ink);font:500 13px/18px var(--font-sans);font-variant-numeric:tabular-nums;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform 120ms cubic-bezier(.23,1,.32,1),background-color 120ms ease}
+.k-Tappa .seg .sg.tap{all:unset;box-sizing:border-box;position:relative;align-self:center;justify-self:start;display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:0 4px;margin-left:-4px;border-radius:var(--radius-md);color:var(--ink);font:500 13px/18px var(--font-sans);font-variant-numeric:tabular-nums;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform 120ms cubic-bezier(.23,1,.32,1),background-color 120ms ease}
 .k-Tappa .seg .sg.tap::after{content:"";position:absolute;inset:-4px -2px}
 .k-Tappa .seg .sg.tap svg{width:26px;height:26px;margin:0}
-.k-Tappa .seg .sg.tap svg.chv{width:16px;height:16px;color:var(--ink-muted)}
+/* versione A: niente cornice; si capisce che si tocca dalla sottolineatura e dalla freccia a destra (apre il foglio, non la card) */
+.k-Tappa .seg .sg.tap .tx{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.k-Tappa .seg .sg.tap svg.chv{width:16px;height:16px;color:var(--ink-muted);transform:rotate(-90deg)}
 .k-Tappa .seg .sg.tap:active{transform:scale(.97)}
 .k-Tappa .seg .sg.tap:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 @media (hover:hover) and (pointer:fine){.k-Tappa .seg .sg.tap:hover{background:var(--surface-high)}}

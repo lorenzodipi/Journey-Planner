@@ -1,4 +1,5 @@
 import type { Day, Flight, FlightLeg, Scope, Stay, Transport, TransportMode } from '../types'
+import { senzaTaxi } from './mezzi'
 import { formatDateInZone } from './flights'
 import { instantToZoned, isCompleteZoned, zonedToInstant } from './zoned'
 import { LINGUA } from '../i18n'
@@ -50,7 +51,8 @@ export interface TransportRow {
   day_id: string | null
   from_label: string
   to_label: string
-  mode: TransportMode
+  /** taxi = salvato prima che taxi e auto diventassero un mezzo solo */
+  mode: TransportMode | 'taxi'
   depart_at: string | null
   arrive_at: string | null
   depart_date?: string | null // assenti finché non è applicata la migrazione 0009
@@ -178,7 +180,7 @@ export function mapTransports(rows: TransportRow[], tripId: string): Transport[]
       createdAt: r.created_at ?? undefined,
       from: r.from_label,
       to: r.to_label,
-      mode: r.mode,
+      mode: senzaTaxi(r.mode),
       departAt: r.depart_at ?? undefined,
       arriveAt: r.arrive_at ?? undefined,
       departDate: r.depart_at ? undefined : (r.depart_date ?? undefined),

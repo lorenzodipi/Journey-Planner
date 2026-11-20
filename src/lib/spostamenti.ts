@@ -8,7 +8,7 @@ export type { MezzoTratto, MezzoViaggio }
 /** Il mezzo di un tratto: uno preciso, un trasporto del giorno, o «con i mezzi» generico. */
 export type MezzoEffettivo = TransportMode | 'transit'
 
-export const MEZZI_TRATTO: MezzoTratto[] = ['walk', 'metro', 'bus', 'train', 'taxi', 'car']
+export const MEZZI_TRATTO: MezzoTratto[] = ['walk', 'metro', 'bus', 'train', 'car']
 export const MEZZI_VIAGGIO: MezzoViaggio[] = ['car', 'transit', 'walk']
 /** Sotto questi minuti a piedi si va a piedi (se il viaggio non dice altro). */
 export const SOGLIA_PIEDI_MIN = 15
@@ -16,7 +16,7 @@ export const SOGLIA_PIEDI_MIN = 15
 export const DETOUR = 1.3
 
 /** Velocità medie in km/h, per stimare quando non c'è un percorso calcolato né una durata scritta. */
-const KMH: Record<MezzoEffettivo, number> = { walk: 5, transit: 25, metro: 25, bus: 18, train: 45, taxi: 30, car: 45, ferry: 25, plane: 500, other: 25 }
+const KMH: Record<MezzoEffettivo, number> = { walk: 5, transit: 25, metro: 25, bus: 18, train: 45, car: 45, ferry: 25, plane: 500, other: 25 }
 
 const TESTO: Record<MezzoEffettivo, string> = {
   walk: tt('A piedi'),
@@ -24,7 +24,6 @@ const TESTO: Record<MezzoEffettivo, string> = {
   metro: tt('In metro'),
   bus: tt('In autobus'),
   train: tt('In treno'),
-  taxi: tt('In taxi'),
   car: tt('In auto'),
   ferry: tt('In traghetto'),
   plane: tt('In aereo'),
@@ -40,7 +39,6 @@ const GLIFO: Record<MezzoEffettivo, string> = {
   metro: 'g-tra-metro',
   bus: 'g-tra-bus',
   train: 'g-tra-train',
-  taxi: 'g-tra-taxi',
   car: 'g-tra-car',
   ferry: 'g-tra-ferry',
   plane: 'g-tra-plane',
@@ -49,7 +47,7 @@ const GLIFO: Record<MezzoEffettivo, string> = {
 export const glifoMezzo = (m: MezzoEffettivo) => GLIFO[m]
 
 /** Nome del riquadro nel foglio dello spostamento. */
-export const NOME_MEZZO: Record<MezzoTratto, string> = { walk: tt('A piedi'), metro: tt('Metro'), bus: tt('Autobus'), train: tt('Treno'), taxi: tt('Taxi'), car: tt('Auto') }
+export const NOME_MEZZO: Record<MezzoTratto, string> = { walk: tt('A piedi'), metro: tt('Metro'), bus: tt('Autobus'), train: tt('Treno'), car: tt('Auto') }
 
 export interface Impostazioni {
   mezzo: MezzoViaggio
@@ -78,7 +76,7 @@ export function scegliMezzo(lineaAriaM: number, o: { scelto?: MezzoTratto | null
 /** Come si disegna un tratto sulla mappa: a piedi o in auto lungo le strade, altrimenti in linea d'aria. */
 export function tipoSuMappa(mezzo: MezzoEffettivo): 'walk' | 'drive' | 'line' {
   if (mezzo === 'walk') return 'walk'
-  if (mezzo === 'car' || mezzo === 'taxi') return 'drive'
+  if (mezzo === 'car') return 'drive'
   return 'line'
 }
 
@@ -129,7 +127,7 @@ export function comeCiSiMuove(modi: MezzoEffettivo[]): string {
 /** Modo di Google Maps per un insieme di tratti. */
 export function modoGoogle(modi: MezzoEffettivo[]): 'walking' | 'driving' | 'transit' {
   if (modi.length > 0 && modi.every((m) => m === 'walk')) return 'walking'
-  if (modi.length > 0 && modi.every((m) => m === 'car' || m === 'taxi' || m === 'walk')) return 'driving'
+  if (modi.length > 0 && modi.every((m) => m === 'car' || m === 'walk')) return 'driving'
   return 'transit'
 }
 
