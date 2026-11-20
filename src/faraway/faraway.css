@@ -984,10 +984,41 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-Meteo .sx .v{font:700 20px/26px var(--font-sans)}
 .k-Meteo .sx .c{text-align:center}
 .k-Meteo .sx .r{text-align:right}
-.k-Meteo .alert{display:flex;gap:var(--space-md);align-items:center;background:var(--corallo-soft);color:var(--ink);border:2px solid var(--corallo);border-radius:var(--radius-lg);padding:var(--space-md) var(--space-lg)}
-.k-Meteo .alert .ai{width:40px;height:40px;border-radius:50%;background:var(--corallo-solid);color:var(--on-corallo-solid);display:grid;place-items:center;flex:none}
-.k-Meteo .alert .v{font:700 17px/22px var(--font-sans);color:var(--corallo-ink)}
-.k-Meteo .alert .s{font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
+/* Allerte di viaggio (Allerte.tsx): Pericolo come l'avviso pioggia di sempre; Attenzione card con filo forte; Da sapere fondo tenue */
+.k-Allerte{display:grid;gap:var(--space-sm);min-width:0}
+.k-Allerte .al{all:unset;box-sizing:border-box;display:grid;grid-template-columns:40px minmax(0,1fr) 16px;column-gap:var(--space-md);align-items:center;width:100%;padding:var(--space-md);border-radius:var(--radius-lg);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.k-Allerte .al:focus-visible,.k-Allerte .r:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.k-Allerte .ai{width:40px;height:40px;border-radius:50%;display:grid;place-items:center}
+.k-Allerte .tx{display:grid;gap:2px;min-width:0}
+.k-Allerte .lv,.k-AllertaDettaglio .lv{font:600 12px/16px var(--font-sans);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-muted)}
+.k-Allerte .lv.pericolo,.k-Allerte .lv.attenzione,.k-AllertaDettaglio .lv.pericolo,.k-AllertaDettaglio .lv.attenzione{color:var(--corallo-ink)}
+.k-Allerte .v{font:700 17px/22px var(--font-sans);color:var(--ink);overflow-wrap:anywhere}
+.k-Allerte .s{font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
+.k-Allerte .f{font:400 13px/18px var(--font-sans);color:var(--ink-muted)}
+.k-Allerte .chv{color:var(--ink-muted)}
+.k-Allerte .al.pericolo{background:var(--corallo-soft);border:2px solid var(--corallo)}
+.k-Allerte .al.pericolo .ai{background:var(--corallo-solid);color:var(--on-corallo-solid)}
+.k-Allerte .al.pericolo .lv,.k-Allerte .al.pericolo .v{color:var(--corallo-ink)}
+.k-Allerte .al.attenzione{background:var(--surface-card);border:1px solid var(--border-strong)}
+.k-Allerte .al.attenzione .ai{background:var(--corallo-soft);color:var(--corallo-ink)}
+.k-Allerte .al.info{background:var(--surface-soft);border:1px solid var(--hairline)}
+.k-Allerte .al.info .ai{background:var(--surface-high);color:var(--ink)}
+.k-Allerte .ls{list-style:none;margin:0;padding:0;display:grid;border:1px solid var(--hairline);border-radius:var(--radius-lg);background:var(--surface-card);overflow:hidden}
+.k-Allerte .ls li+li{border-top:1px solid var(--hairline)}
+.k-Allerte .r{all:unset;box-sizing:border-box;display:grid;grid-template-columns:28px minmax(0,1fr) 16px;column-gap:var(--space-md);align-items:center;width:100%;min-height:56px;padding:var(--space-sm) var(--space-md);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.k-Allerte .r .d{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--surface-high);color:var(--ink)}
+.k-Allerte .r .d.pericolo,.k-Allerte .r .d.attenzione{background:var(--corallo-soft);color:var(--corallo-ink)}
+.k-Allerte .r .x{display:grid;min-width:0}
+.k-Allerte .r .x b{font:600 15px/20px var(--font-sans);overflow-wrap:anywhere}
+.k-Allerte .r .x span:last-child{font:400 13px/18px var(--font-sans);color:var(--ink-muted)}
+@media (hover:hover) and (pointer:fine){.k-Allerte .r:hover{background:var(--surface-soft)}}
+.k-AllertaDettaglio{display:grid;gap:var(--space-md)}
+.k-AllertaDettaglio .tx{margin:0;font:400 16px/24px var(--font-sans)}
+.k-AllertaDettaglio dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:var(--space-md);row-gap:var(--space-sm)}
+.k-AllertaDettaglio dl div{display:contents}
+.k-AllertaDettaglio dt{font:400 15px/20px var(--font-sans);color:var(--ink-muted)}
+.k-AllertaDettaglio dd{margin:0;font:600 15px/20px var(--font-sans);overflow-wrap:anywhere}
+.k-AllertaDettaglio .nota{margin:0;font:400 13px/18px var(--font-sans);color:var(--ink-muted)}
 .k-Meteo .rws{padding:var(--space-xs) var(--space-xl)}
 .k-Meteo .rw{display:flex;align-items:center;gap:var(--space-md);padding:var(--space-md) 0}
 .k-Meteo .rw+.rw{border-top:1px solid var(--hairline)}

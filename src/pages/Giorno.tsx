@@ -29,7 +29,10 @@ import { PulsanteIcona, Pulsante, Sezione } from '../faraway/base'
 import { useConferma } from '../faraway/Foglio'
 import { MeteoGiornoCard } from './giorno/MeteoGiornoCard'
 import { meteoDellaTappa, cittaTappa, cittaDelGiorno } from '../lib/meteoGiorno'
-import { useCityForecasts } from '../state/cityForecast'
+import { cityCenters, useCityForecasts } from '../state/cityForecast'
+import { useTerremoti } from '../state/terremoti'
+import { allerteMeteo, allerteTerremoti, oreDelGiorno, ordinaAllerte } from '../lib/allerte'
+import { Allerte } from '../faraway/Allerte'
 import { Sv } from '../faraway/icons'
 import { RigaAlloggio } from '../faraway/CartaAlloggio'
 import { Riga, useUnaAperta } from '../faraway/Righe'
@@ -117,6 +120,13 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
   const ctx = { isToday: day.date === today, isPast: day.date < today, nowMin: minutesOfDay(new Date(), dayView.timezone), timeZone: dayView.timezone }
   const city = day.city || trip.destination
   const previsioniCitta = useCityForecasts(trip, cittaDelGiorno(trip, day).map((c) => c.city))
+  // allerte del giorno dal meteo già scaricato (la pioggia normale la dice già la card del meteo) e, oggi, i terremoti recenti
+  const terremoti = useTerremoti(ctx.isToday)
+  const puntoCitta = cityCenters(trip, [city])[0] ?? { city, ...trip.center }
+  const allerte = ordinaAllerte([
+    ...allerteMeteo(oreDelGiorno(previsioniCitta.get(city), day.date, today, new Date(), dayView.timezone), day.date === today ? today : day.date, city).filter((a) => !(a.tipo === 'pioggia' && a.livello === 'info')),
+    ...allerteTerremoti(terremoti, [puntoCitta], Date.now(), dayView.timezone),
+  ])
   const legs = [...segments.values()]
   const stopState = new Map(day.items.map((i) => {
     const f = fase(i, i.placeId ? trip.places.find((p) => p.id === i.placeId) : undefined, ctx)
@@ -249,6 +259,7 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
           ) : null}
 
           <MeteoGiornoCard trip={trip} day={day} />
+          <Allerte allerte={allerte} />
         </Colonna>
         <Colonna lato="destra" alta>
           <div className="fa-stack" style={{ gap: 0 }}>

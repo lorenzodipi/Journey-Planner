@@ -15,7 +15,10 @@ import { groupDays, rangeText, type DayGroup } from '../lib/dayGroups'
 import { soloLettura } from '../lib/ruolo'
 import { StepperViaggio, type TappaViaggio } from '../faraway/StepperViaggio'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
-import { avvisoPioggia, faseViaggio, notteAlle, prossimeOre } from '../lib/oggi'
+import { faseViaggio, notteAlle, prossimeOre } from '../lib/oggi'
+import { allerteMeteo, allerteTerremoti, ordinaAllerte } from '../lib/allerte'
+import { useTerremoti } from '../state/terremoti'
+import { Allerte } from '../faraway/Allerte'
 import { isClosed, toMin } from '../lib/tappa'
 import { minutesOfDay, sunForDay } from '../lib/sun'
 import { tripToday } from '../lib/today'
@@ -31,7 +34,7 @@ import { Ic } from '../ui/Sprite'
 import { OggiDopo } from './OggiDopo'
 import { Offline } from '../faraway/Offline'
 import { DISCHI as CITY_DISCS } from '../faraway/DopoCard'
-import { AvvisoPioggia, BigliettoPiccolo, ChecklistHome, ContoAllaRovescia, Orologio, Saluto, ValutaPiccola, type VoceHome } from '../faraway/Home'
+import { BigliettoPiccolo, ChecklistHome, ContoAllaRovescia, Orologio, Saluto, ValutaPiccola, type VoceHome } from '../faraway/Home'
 import { Sv } from '../faraway/icons'
 import { Affianca, Colonna, Schermata } from '../faraway/shell'
 import { TappeLista } from '../faraway/Tappe'
@@ -190,7 +193,9 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
   const hour = hourIn(now, trip.timezone)
   const ore = prossimeOre(forecast, today, hour, 24)
   const nightNow = notteAlle(hour, sun)
-  const rain = avvisoPioggia(ore.slice(0, 12))
+  // allerte: dal meteo già scaricato e dai terremoti recenti vicino alla città (una richiesta piccola, ogni 15 minuti al massimo)
+  const terremoti = useTerremoti(true)
+  const allerte = ordinaAllerte([...allerteMeteo(ore, today, city), ...allerteTerremoti(terremoti, [{ city, lat: center.lat, lng: center.lng }], now.getTime(), trip.timezone)])
 
   // orologi: solo se il fuso di casa è diverso da quello del viaggio
   const homeTz = trip.originTimezone || deviceTz()
@@ -304,7 +309,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
       </Foglio>
       {/* stessa card della giornata: una per città, scorrevoli, a partire da quella di adesso. Con una località scelta, solo quella. */}
       <MeteoGiornoCard trip={trip} day={day && !(rif && cittaViaggio.includes(rif)) ? day : { date: today, city, items: [] }} />
-      {rain ? <AvvisoPioggia title={rain.title} text={rain.text} /> : null}
+      <Allerte allerte={allerte} />
       </Colonna>
 
       <Colonna lato="destra" alta>

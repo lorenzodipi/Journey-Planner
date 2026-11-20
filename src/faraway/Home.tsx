@@ -431,26 +431,6 @@ export function MeteoCard({ city, t, code, night, desc, hours, sun }: { city: st
   )
 }
 
-/** Avviso di pioggia del componente Meteo. */
-export function AvvisoPioggia({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="k-Meteo">
-      <div className="alert" role="status">
-        <span className="ai">
-          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 12a9 9 0 0 1 18 0z" />
-            <path d="M12 12v6a2 2 0 0 1-4 0" />
-          </svg>
-        </span>
-        <div>
-          <div className="v">{title}</div>
-          <div className="s">{text}</div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 /** Biglietto piccolo (componente Biglietto, «ct»): disco, titolo, sottotitolo; a destra ora e dettaglio. */
 export function BigliettoPiccolo({ glyph, title, sub, right, rightSub, tint = 'rosa', onPress, label }: { glyph: string; title: string; sub?: string; right?: string; rightSub?: string; tint?: string; onPress?: () => void; label: string }) {
   const body = (

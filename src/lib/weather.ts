@@ -14,6 +14,8 @@ export interface HourWeather {
   feels?: number // temperatura percepita
   wind?: number // km/h
   windDir?: number // gradi, da dove soffia
+  /** raffiche, km/h (assenti nelle copie salvate prima) */
+  gust?: number
   hum?: number // umidità, %
   /** precipitazione prevista nell'ora, mm */
   mm?: number
@@ -63,6 +65,7 @@ interface ForecastJson {
     weather_code?: (number | null)[]
     wind_speed_10m?: (number | null)[]
     wind_direction_10m?: (number | null)[]
+    wind_gusts_10m?: (number | null)[]
     relative_humidity_2m?: (number | null)[]
     precipitation?: (number | null)[]
   }
@@ -84,10 +87,12 @@ function parseHours(json: ForecastJson): Map<string, HourWeather[]> {
     const feels = num(h.apparent_temperature?.[i])
     const wind = num(h.wind_speed_10m?.[i])
     const windDir = num(h.wind_direction_10m?.[i])
+    const gust = num(h.wind_gusts_10m?.[i])
     const hum = num(h.relative_humidity_2m?.[i])
     if (feels != null) hour.feels = feels
     if (wind != null) hour.wind = wind
     if (windDir != null) hour.windDir = windDir
+    if (gust != null) hour.gust = gust
     if (hum != null) hour.hum = hum
     const mm = h.precipitation?.[i]
     if (typeof mm === 'number') hour.mm = Math.round(mm * 10) / 10
@@ -122,7 +127,7 @@ export function forecastUrl(lat: number, lng: number, timeZone: string): string 
     latitude: lat.toFixed(3),
     longitude: lng.toFixed(3),
     daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max',
-    hourly: 'temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_direction_10m,relative_humidity_2m',
+    hourly: 'temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,relative_humidity_2m',
     timezone: timeZone,
     forecast_days: String(FORECAST_DAYS),
   })

@@ -78,6 +78,13 @@
 - Taxi e auto sono un mezzo solo, «Auto», negli spostamenti e nei trasporti; i dati salvati prima come taxi si leggono come auto (`senzaTaxi` in `src/lib/mezzi.ts`), senza riscriverli.
 - Sulla mappa a piedi e in auto si va lungo le strade (OSRM, profili `foot` e `car`); con i mezzi e i trasporti del giorno in linea d'aria tratteggiata.
 
+## Allerte di viaggio
+
+- In Oggi (al posto dell'avviso pioggia) e nella pagina del giorno, sotto il meteo: la più grave in grande, le altre in righe; ognuna apre un foglio con il dettaglio. Livelli scritti a parole: «Pericolo» (come l'avviso pioggia di prima), «Attenzione», «Da sapere». Logica in `src/lib/allerte.ts`, componente `src/faraway/Allerte.tsx`.
+- **Niente server sempre acceso**: si aggiornano quando si apre l'app e lo dicono nel dettaglio («non sostituiscono gli avvisi di emergenza del telefono»).
+- **Meteo**: calcolate dalle previsioni orarie che l'app scarica già (Open-Meteo, con le raffiche nella stessa richiesta): pioggia (da sapere), pioggia forte (≥ 8 mm/h, ≥ 20 pericolo), temporale (con grandine pericolo), vento (raffiche ≥ 60 km/h, ≥ 90 pericolo; senza raffiche il vento medio, 40 e 65), neve, caldo e freddo percepiti (35/40 °C, −10/−20 °C). Fonte «Previsione»: non sono allerte ufficiali. Nel giorno la pioggia normale non si ripete (la dice la card del meteo).
+- **Terremoti**: dal catalogo USGS (`4.5_day.geojson`, pochi KB), solo durante il viaggio, con la rete, al massimo ogni 15 minuti e una richiesta alla volta (`src/state/terremoti.ts`, copia in `jp.terremoti.v1`). Si mostrano quelli delle ultime 24 ore entro 250 km (400 da M6, 600 da M7) dalla città; «Attenzione» se forti e vicini o in mare. Non si scrive mai che non c'è pericolo di tsunami: con un evento in mare si dice di controllare gli avvisi ufficiali.
+
 ## Voli: la carta d'imbarco
 
 - **Carta chiusa**: codici, orari, durata, scali e, in basso, chi vola e la freccia. La data non c'è: è già nel titolo del gruppo («Andata · sab 21 nov»). Con più di quattro persone si vedono tre pallini e un «+N».
