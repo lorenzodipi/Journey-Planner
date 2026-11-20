@@ -181,8 +181,15 @@ export function forecastAvailableFrom(ymd: string): string {
 }
 
 // ---------- copia sul telefono ----------
+// Una copia per ogni posto (città del viaggio, centro del viaggio): prima ce n'era una sola e le città si sostituivano a
+// vicenda, così ogni pagina riscaricava tutto e offline restava solo l'ultima. Si tengono le più recenti (al massimo
+// MAX_COPIE, non più vecchie di COPIA_MAX_MS); la lettura riusa l'ultima decodifica finché il testo salvato non cambia.
 
-const KEY = 'jp.weather.v1'
+const KEY = 'jp.weather.v2'
+const KEY_VECCHIA = 'jp.weather.v1'
+export const MAX_COPIE = 24
+const COPIA_MAX_MS = 10 * 24 * 3600_000
+
 export interface CachedForecast {
   key: string
   savedAt: number
@@ -191,23 +198,91 @@ export interface CachedForecast {
 
 export const forecastKey = (lat: number, lng: number, tz: string) => `${lat.toFixed(2)},${lng.toFixed(2)},${tz}`
 
-export function loadForecast(key: string): CachedForecast | null {
+let decodifica: { raw: string; copie: Record<string, CachedForecast> } | null = null
+
+function leggiCopie(): Record<string, CachedForecast> {
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) return null
-    const c = JSON.parse(raw) as CachedForecast
-    return c.key === key && Array.isArray(c.days) ? c : null
+    if (raw === null) {
+      // la copia unica di prima diventa la prima delle copie
+      const vecchia = localStorage.getItem(KEY_VECCHIA)
+      if (!vecchia) return {}
+      const c = JSON.parse(vecchia) as CachedForecast
+      localStorage.removeItem(KEY_VECCHIA)
+      if (!c?.key || !Array.isArray(c.days)) return {}
+      scriviCopie({ [c.key]: c })
+      return { [c.key]: c }
+    }
+    if (decodifica?.raw === raw) return decodifica.copie
+    const copie = JSON.parse(raw) as Record<string, CachedForecast>
+    decodifica = { raw, copie: copie && typeof copie === 'object' ? copie : {} }
+    return decodifica.copie
   } catch {
-    return null
+    return {}
   }
 }
 
-export function saveForecast(c: CachedForecast): void {
+function scriviCopie(copie: Record<string, CachedForecast>): void {
+  const ora = Date.now()
+  const tenute = Object.values(copie)
+    .filter((c) => c && Array.isArray(c.days) && ora - c.savedAt < COPIA_MAX_MS)
+    .sort((a, b) => b.savedAt - a.savedAt)
+    .slice(0, MAX_COPIE)
+  const out = Object.fromEntries(tenute.map((c) => [c.key, c]))
+  const raw = JSON.stringify(out)
   try {
-    localStorage.setItem(KEY, JSON.stringify(c))
+    localStorage.setItem(KEY, raw)
+    decodifica = { raw, copie: out }
+  } catch {
+    // storage pieno: si tiene almeno la più recente
+    try {
+      const una = tenute[0] ? { [tenute[0].key]: tenute[0] } : {}
+      const r = JSON.stringify(una)
+      localStorage.setItem(KEY, r)
+      decodifica = { raw: r, copie: una }
+    } catch {
+      // ignorato
+    }
+  }
+}
+
+export function loadForecast(key: string): CachedForecast | null {
+  const c = leggiCopie()[key]
+  return c && c.key === key && Array.isArray(c.days) ? c : null
+}
+
+export function saveForecast(c: CachedForecast): void {
+  scriviCopie({ ...leggiCopie(), [c.key]: c })
+}
+
+/** Cancella tutte le copie del meteo (Dati sul telefono › Scarica di nuovo). */
+export function clearForecasts(): void {
+  decodifica = null
+  try {
+    localStorage.removeItem(KEY)
+    localStorage.removeItem(KEY_VECCHIA)
   } catch {
     // ignorato
   }
+}
+
+// una richiesta alla volta per posto: Oggi, la card del meteo e il Giorno chiedono spesso lo stesso nello stesso momento
+const inCorso = new Map<string, Promise<DayWeather[]>>()
+
+/** Come `fetchForecast`, ma condivide la richiesta già partita per lo stesso posto e salva la copia sul telefono. */
+export function fetchForecastCondiviso(lat: number, lng: number, timeZone: string): Promise<DayWeather[]> {
+  const key = forecastKey(lat, lng, timeZone)
+  let p = inCorso.get(key)
+  if (!p) {
+    p = fetchForecast(lat, lng, timeZone)
+      .then((days) => {
+        saveForecast({ key, savedAt: Date.now(), days })
+        return days
+      })
+      .finally(() => inCorso.delete(key))
+    inCorso.set(key, p)
+  }
+  return p
 }
 
 export const FORECAST_TTL_MS = 3 * 60 * 60 * 1000

@@ -62,13 +62,15 @@
 - Ogni scrittura che aspetta il server mostra la **barra d'attesa** in cima (`BarraAttesa`), che compare dopo 150 ms per non lampeggiare.
 - Il pulsante premuto mostra la rotellina (`isLoading` di `Pulsante`, con `useInCorso()` per sapere quale). Dove c'è una conferma, la rotellina parte dopo la conferma.
 - Le modifiche frequenti (spunte, stato delle tappe) passano dalla coda locale e non aspettano: lì non serve caricamento.
-- Il primo caricamento dell'app usa gli skeleton (`SchermataCaricamento`).
+- Il primo caricamento dell'app (`SchermataCaricamento`) mostra **solo l'indicatore** al centro: niente testata né barra delle schede, perché l'app non sa ancora se aprirà un viaggio o «Tutti i viaggi».
 - Quello che arriva dalla rete dopo (il meteo, l'anteprima di un file) mostra uno **scheletro** con la stessa forma e altezza del contenuto (`.fa-sk`, `MeteoScheletro`), così quando arriva non sposta nulla. Lo scheletro compare solo se c'è una risposta da aspettare (rete presente, niente copia sul telefono) e sparisce anche se la richiesta fallisce o non risponde. Le rotelle (`Loader`) restano per le azioni dell'utente (ricerca, mappa).
 
 ## Offline
 
 - Le modifiche frequenti si salvano sul telefono e partono quando torna la rete. Ogni schermata dice se i dati sono aggiornati.
 - Le azioni che richiedono il server (inviti, eliminazioni di viaggio, file) dicono chiaramente che serve la connessione.
+- **Meteo sul telefono**: una copia per ogni posto (città del viaggio, centro del viaggio) in `jp.weather.v2`, le 24 più recenti e non più vecchie di 10 giorni, così offline ci sono tutte le città. Si riscarica al massimo ogni 3 ore e una richiesta alla volta per posto (`fetchForecastCondiviso` in `src/lib/weather.ts`).
+- Le richieste ai servizi esterni hanno un tempo massimo (meteo 10 s, terremoti e cambi 8 s): con una rete lenta non restano appese.
 
 ## Spostamenti tra le tappe
 

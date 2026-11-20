@@ -927,6 +927,11 @@ dialog.fa-mod:focus{outline:none}
 .dp-anello svg{position:absolute;inset:0;width:100%;height:100%}
 .dp-anello span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
 .k-Copertina header .fa-ib{flex:none}
+/* testo di sistema grande: il saluto va a capo e l'avatar resta nello schermo */
+.k-Copertina header{gap:16px}
+.k-Copertina header>div{flex:1 1 0;min-width:0}
+.k-Copertina header h2{overflow-wrap:anywhere}
+.k-Copertina header .me{flex:none}
 
 /* Tappe: binario continuo anche nello spazio sopra e sotto lo spostamento (la riga .seg ha 8 px di padding) */
 .k-Tappa .seg .rail{margin:-8px 0}
@@ -961,3 +966,6 @@ dialog.fa-mod:focus{outline:none}
 .fa-ricevute .punti i{display:block;width:8px;height:8px;border-radius:9999px;background:var(--border-strong);transition:width .2s cubic-bezier(.23,1,.32,1),background-color .2s}
 .fa-ricevute .punti .on i{width:24px;background:var(--azzurro)}
 @media (prefers-reduced-motion:reduce){.fa-ricevute .sf,.fa-ricevute .punti i,.fa-ricevute .sl[inert]{transition:none}}
+
+/* avvio: solo l'indicatore, al centro dello schermo (SchermataCaricamento) */
+.fa-avvio{min-height:calc(100dvh - 160px);display:grid;place-items:center;color:var(--azzurro-ink)}

@@ -1,11 +1,9 @@
 // Stati di sistema del design system (mock Fa-19, Fa-49, Fa-50, issue #49): vuoto con
-// illustrazione, vuoto da filtro, caricamento a scheletro, errore, offline.
-import { Loader } from './Loader'
+// illustrazione, vuoto da filtro, errore, offline.
 import type { ReactNode } from 'react'
 import { ART } from '../ui/art'
 import { Pulsante } from './base'
 import type { SvName } from './icons'
-import { t } from '../i18n'
 
 type ArtName = keyof typeof ART
 
@@ -51,34 +49,3 @@ export function VuotoFiltro({ title, text, action, onAction }: { title: string; 
   )
 }
 
-const bar = (h: number, w: string, r = 8) => <span className="fa-sk" style={{ height: h, width: w, borderRadius: r }} />
-
-/** Caricamento a scheletro (niente rotelle infinite): card e righe grigie con una frase. */
-export function Caricamento({ text = t('Sto caricando il viaggio'), rows = 4 }: { text?: string; rows?: number }) {
-  return (
-    <>
-      <div role="status" aria-busy="true" aria-label={text} style={{ display: 'grid', gap: 16 }}>
-        <div aria-hidden="true" className="fa-card xl pad" style={{ display: 'grid', gap: 16 }}>
-          {bar(20, '40%')}
-          {bar(44, '70%', 12)}
-          {bar(14, '55%')}
-          {bar(8, '100%', 9999)}
-        </div>
-        <div className="fa-list" aria-hidden="true">
-          {Array.from({ length: rows }, (_, i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '44px 1fr', gap: 16, padding: '8px 16px', alignItems: 'center' }}>
-              {bar(44, '44px', 9999)}
-              <div style={{ display: 'grid', gap: 8 }}>
-                {bar(16, '60%')}
-                {bar(14, '40%')}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div style={{ display: 'grid', justifyContent: 'center', padding: '16px 0' }}>
-        <Loader size={40} label={text} />
-      </div>
-    </>
-  )
-}

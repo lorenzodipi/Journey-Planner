@@ -7,14 +7,18 @@ import { useTrips } from '../state/trip'
 import { Banner, Pulsante } from './base'
 import { Sv } from './icons'
 import { BarraGrande, Schermata } from './shell'
-import { Caricamento } from './Stati'
 import { t } from '../i18n'
 
-/** Avvio: nome del viaggio, scheletri delle card e «Sto caricando il viaggio» (Fa-49 chiaro). */
-export function SchermataCaricamento({ title }: { title: string }) {
+/**
+ * Avvio: finché non si sa dove andare (un viaggio o «Tutti i viaggi») solo l'indicatore di caricamento, senza testata
+ * né barra delle schede, che farebbero pensare di essere già dentro un viaggio.
+ */
+export function SchermataCaricamento() {
   return (
-    <Schermata bar={<BarraGrande title={title} />} rete={false}>
-      <Caricamento text={t('Sto caricando il viaggio')} rows={4} />
+    <Schermata tabs={false} rete={false}>
+      <div className="fa-avvio">
+        <Loader size={40} label={t('Caricamento in corso')} />
+      </div>
     </Schermata>
   )
 }

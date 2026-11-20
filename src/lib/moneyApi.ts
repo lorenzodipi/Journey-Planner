@@ -298,11 +298,19 @@ export async function fetchFxRate(local: string, base: string): Promise<number> 
   return (await fetchFxQuote(local, base)).rate
 }
 
+/** Con una rete lenta il cambio non resta appeso: dopo 8 secondi si passa al ripiego, poi al tasso del viaggio o a mano. */
+const FX_TIMEOUT_MS = 8000
+function entro(ms: number): AbortSignal {
+  const c = new AbortController()
+  setTimeout(() => c.abort(), ms)
+  return c.signal
+}
+
 /** Come `fetchFxRate`, ma dice anche da dove viene il tasso e a che ora è stato letto (si salva sulla spesa, #50). */
 export async function fetchFxQuote(local: string, base: string): Promise<{ rate: number; source: string; at: string }> {
   if (local.toUpperCase() === base.toUpperCase()) return { rate: 1, source: 'Valuta del viaggio', at: new Date().toISOString() }
   try {
-    const res = await fetch(`https://api.frankfurter.dev/v1/latest?base=${encodeURIComponent(local)}&symbols=${encodeURIComponent(base)}`)
+    const res = await fetch(`https://api.frankfurter.dev/v1/latest?base=${encodeURIComponent(local)}&symbols=${encodeURIComponent(base)}`, { signal: entro(FX_TIMEOUT_MS) })
     if (res.ok) {
       const json = (await res.json()) as { rates?: Record<string, number> }
       const rate = json.rates?.[base]
@@ -312,7 +320,7 @@ export async function fetchFxQuote(local: string, base: string): Promise<{ rate:
     // rete assente o servizio fermo: si prova il ripiego
   }
   const low = local.toLowerCase()
-  const res = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${low}.json`).catch(() => null)
+  const res = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${low}.json`, { signal: entro(FX_TIMEOUT_MS) }).catch(() => null)
   if (!res || !res.ok) throw new Error('Servizio dei cambi non raggiungibile. Scrivi il tasso a mano.')
   const json = (await res.json()) as Record<string, Record<string, number> | string>
   const table = json[low]

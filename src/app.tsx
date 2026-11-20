@@ -127,10 +127,10 @@ export function App() {
       </Route>
     </Switch>
   )
-  if (auth.status === 'loading') return screen(<SchermataCaricamento title={title} />)
+  if (auth.status === 'loading') return screen(<SchermataCaricamento />)
   if (auth.status === 'unreachable') return screen(<SchermataErrore title={title} onRetry={auth.retry} onSaved={saved ? auth.useSaved : undefined} />)
   if (auth.status === 'signed-out') return <Login />
-  if (status === 'loading') return screen(<SchermataCaricamento title={title} />)
+  if (status === 'loading') return screen(<SchermataCaricamento />)
   if (status === 'error') return screen(<SchermataErrore title={title} onRetry={() => void refresh()} />)
 
   // subito dopo l'accesso si sceglie quale viaggio aprire (#43), anche se ce n'è uno solo. Senza viaggi si vede lo stesso

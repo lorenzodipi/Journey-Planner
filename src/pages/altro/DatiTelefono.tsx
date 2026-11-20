@@ -3,6 +3,7 @@
 import { describeError } from '../../lib/db'
 import { useState } from 'react'
 import { clearSnapshot, loadSnapshot } from '../../lib/cache'
+import { clearForecasts } from '../../lib/weather'
 import { buildExport, downloadJson, exportFileName, serializeExport } from '../../lib/exportData'
 import { riepilogoViaggio } from '../../lib/ricerca'
 import { esportaRiepilogo } from '../../lib/riepilogoImmagine'
@@ -50,11 +51,7 @@ export function SezioniDati({ ask }: { ask: ReturnType<typeof useConferma>[0] })
     })
     if (!ok) return
     clearSnapshot()
-    try {
-      localStorage.removeItem('jp.weather.v1')
-    } catch {
-      // ignorato
-    }
+    clearForecasts()
     await faiOcc('riscarica', () => t.refresh())
     showToast(tt('Copia locale svuotata e riscaricata'))
   }

@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { daysBetween } from '../lib/dates'
 import { tripToday } from '../lib/today'
-import { FORECAST_DAYS, FORECAST_TTL_MS, fetchForecast, forecastKey, loadForecast, saveForecast, type DayWeather } from '../lib/weather'
+import { FORECAST_DAYS, FORECAST_TTL_MS, fetchForecastCondiviso, forecastKey, loadForecast, type DayWeather } from '../lib/weather'
 import type { Trip } from '../types'
 
 export interface CityPoint {
@@ -84,9 +84,8 @@ export function useCityForecastsStato(trip: Pick<Trip, 'places' | 'destination' 
       const key = forecastKey(p.lat, p.lng, trip.timezone)
       const cached = loadForecast(key)
       if (cached && Date.now() - cached.savedAt < FORECAST_TTL_MS && cached.days.some((d) => d.hours)) continue
-      fetchForecast(p.lat, p.lng, trip.timezone).then(
+      fetchForecastCondiviso(p.lat, p.lng, trip.timezone).then(
         (days) => {
-          saveForecast({ key, savedAt: Date.now(), days })
           if (active) setMap((m) => new Map(m).set(p.city, days))
           finita(p.city)
         },

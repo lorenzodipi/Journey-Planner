@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { daysBetween } from '../lib/dates'
 import { tripToday } from '../lib/today'
-import { FORECAST_DAYS, FORECAST_TTL_MS, fetchForecast, forecastKey, loadForecast, saveForecast, type DayWeather } from '../lib/weather'
+import { FORECAST_DAYS, FORECAST_TTL_MS, fetchForecastCondiviso, forecastKey, loadForecast, type DayWeather } from '../lib/weather'
 import type { Trip } from '../types'
 import { t } from '../i18n'
 
@@ -33,11 +33,9 @@ export function useForecast(trip: Pick<Trip, 'center' | 'timezone' | 'startDate'
     if (cached && Date.now() - cached.savedAt < FORECAST_TTL_MS && cached.days.some((d) => d.hours)) return
     let active = true
     setState((s) => ({ ...s, loading: true, error: null }))
-    fetchForecast(trip.center.lat, trip.center.lng, trip.timezone).then(
+    fetchForecastCondiviso(trip.center.lat, trip.center.lng, trip.timezone).then(
       (days) => {
-        const savedAt = Date.now()
-        saveForecast({ key, savedAt, days })
-        if (active) setState({ days, savedAt, loading: false, error: null })
+        if (active) setState({ days, savedAt: Date.now(), loading: false, error: null })
       },
       (e) => {
         if (active) setState((s) => ({ ...s, loading: false, error: e instanceof Error ? e.message : t('Previsioni non disponibili.') }))
