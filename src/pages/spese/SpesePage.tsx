@@ -22,7 +22,7 @@ import { Affianca, BarraGrande, Colonna, Schermata } from '../../faraway/shell'
 import { SpesaSheet } from './SpesaSheet'
 import { BilanciaSheet, RimborsiCard } from './Rimborsi'
 import { finoAl, inQuanti, intervallo } from './testi'
-import { t as tt } from '../../i18n'
+import { nomeCategoria, t as tt } from '../../i18n'
 
 export function SpesePage() {
   const trip = useTrip()
@@ -34,7 +34,7 @@ export function SpesePage() {
   const today = tripToday(trip)
   const r = riassunto(trip, me?.id)
   const n = trip.travelers.length
-  const dati = useMemo(() => ricevuta(trip, r.spese, r.fx), [trip, r.spese, r.fx])
+  const dati = useMemo(() => ricevuta(trip, r.spese, r.fx, undefined, me?.id), [trip, r.spese, r.fx, me?.id])
   // in gruppo, la ricevuta con solo la mia parte: la card del budget segue quella che si guarda
   const due = n > 1 && !!me?.id
   const datiMia = useMemo(() => (due && me?.id ? ricevuta(trip, r.spese, r.fx, me.id) : null), [due, trip, r.spese, r.fx, me?.id])
@@ -76,9 +76,25 @@ export function SpesePage() {
     <DareRicevere bilancio={bilancio} currency={cur} />
   )
 
-  async function onPlanned(c: RigaCategoria, planned: number | null) {
-    const m = await t.setExpenseCategoryPlanned(trip.id, c.label, planned)
-    if (!m) showToast(planned === null ? tt('Previsto di {label} calcolato dai costi', { label: c.label }) : tt('Previsto di {label}: {v1}', { label: c.label, v1: formatMoney(planned, cur) }))
+  async function onPlanned(c: RigaCategoria, planned: number | null, travelerId?: string) {
+    if (!travelerId) {
+      const m = await t.setExpenseCategoryPlanned(trip.id, c.label, planned)
+      if (!m) showToast(planned === null ? tt('Previsto di {label} calcolato dai costi', { label: c.label }) : tt('Previsto di {label}: {v1}', { label: c.label, v1: formatMoney(planned, cur) }))
+      return m
+    }
+    const mio = travelerId === me?.id
+    const chi = trip.travelers.find((x) => x.id === travelerId)?.name.split(/\s+/)[0] ?? ''
+    const m = await t.setTravelerCategoryPlanned(trip.id, c.label, travelerId, planned)
+    if (!m)
+      showToast(
+        planned === null
+          ? mio
+            ? tt('Il tuo previsto di {label} torna alla stima dai costi', { label: nomeCategoria(c.label) })
+            : tt('Il previsto di {nome} per {label} torna alla stima dai costi', { nome: chi, label: nomeCategoria(c.label) })
+          : mio
+            ? tt('Il tuo previsto di {label}: {v1}', { label: nomeCategoria(c.label), v1: formatMoney(planned, cur) })
+            : tt('Previsto di {nome} per {label}: {v1}', { nome: chi, label: nomeCategoria(c.label), v1: formatMoney(planned, cur) }),
+      )
     return m
   }
   async function onRename(c: RigaCategoria, label: string) {

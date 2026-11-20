@@ -2209,5 +2209,15 @@
  "È quanto pensi di spendere": "It's how much you plan to spend",
  "tu": "yourself",
  " per tutto il viaggio. Ognuno mette il suo: il budget del viaggio è la somma di quelli messi.": " for the whole trip. Everyone sets their own: the trip's budget is the sum of those set.",
- "Il mio budget (facoltativo)": "My budget (optional)"
+ "Il mio budget (facoltativo)": "My budget (optional)",
+ "Senza una cifra conta la tua quota, {v0}, calcolata dai costi inseriti.": "Without an amount, your share counts: {v0}, worked out from the costs entered.",
+ "Senza una cifra conta la sua quota, {v0}, calcolata dai costi inseriti.": "Without an amount, their share counts: {v0}, worked out from the costs entered.",
+ "Quanto pensi di spendere tu per questa categoria.": "How much you plan to spend on this category.",
+ "Quanto pensi che spender\u00e0 per questa categoria.": "How much you think they will spend on this category.",
+ "Il tuo previsto": "Your planned amount",
+ "Previsto di {nome}": "Planned by {nome}",
+ "Il tuo previsto di {label} torna alla stima dai costi": "Your planned {label} is back to the estimate from the costs",
+ "Il previsto di {nome} per {label} torna alla stima dai costi": "{nome}'s planned {label} is back to the estimate from the costs",
+ "Il tuo previsto di {label}: {v1}": "Your planned {label}: {v1}",
+ "Previsto di {nome} per {label}: {v1}": "{nome}'s planned {label}: {v1}"
 }

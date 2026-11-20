@@ -160,6 +160,8 @@ interface TripsValue {
   decideSettlement: (id: string, accept: boolean, version: string | null) => Result
   balanceVersion: (tripId: string) => Promise<string | null>
   setExpenseCategoryPlanned: (tripId: string, label: string, planned: number | null) => Result
+  /** Previsto a persona (0056): il mio, o quello di chi non ha l'account. `null` torna alla quota stimata. */
+  setTravelerCategoryPlanned: (tripId: string, label: string, travelerId: string, amount: number | null) => Result
   setTripBudgetLimit: (tripId: string, limit: number | null) => Result
   /** Budget a persona (0055): il mio, o quello di chi non ha l'account. */
   setTravelerBudget: (tripId: string, travelerId: string, amount: number | null) => Result
@@ -721,6 +723,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     decideSettlement: (id, accept, version) => run(() => money.decideSettlement(id, accept, version), ['money']),
     balanceVersion: (tripId) => money.fetchBalanceVersion(tripId).catch(() => null),
     setExpenseCategoryPlanned: (tripId, label, planned) => run(() => money.setExpenseCategoryPlanned(tripId, label, planned, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['expenseCategories']),
+    setTravelerCategoryPlanned: (tripId, label, travelerId, amount) => run(() => money.setTravelerCategoryPlanned(tripId, label, travelerId, amount, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['money', 'expenseCategories']),
     setTripBudgetLimit: (tripId, limit) => run(() => api.setTripBudgetLimit(tripId, limit), ['trips']),
     setTravelerBudget: (tripId, travelerId, amount) => run(() => money.setTravelerBudget(tripId, travelerId, amount), ['money']),
     setBudgetSharePaid: (shareId, paid) => run(() => money.setBudgetSharePaid(shareId, paid), ['money']),

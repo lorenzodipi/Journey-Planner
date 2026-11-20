@@ -1025,6 +1025,38 @@ await asUser(null, 'postgres')
   const dopo = await totale()
   check('0055 tolto un budget il totale scende', dopo?.t === 2000 && dopo?.p === 2, JSON.stringify(dopo))
   await throws('0055 un budget a zero non vale', () => metti(ta, 0))
+
+  // previsto a persona (0056): stesse regole del budget; i previsti di prima si dividono tra i viaggiatori
+  await asUser(A)
+  const cibo = (await db.query(`insert into expense_categories (trip_id, label, planned) values ($1,'Cibo',100) returning id`, [tr])).rows[0].id
+  const vuota = (await db.query(`insert into expense_categories (trip_id, label) values ($1,'Svago') returning id`, [tr])).rows[0].id
+  await asUser(null, 'postgres')
+  await runMigration('0056_previsto_a_persona.sql')
+  await runMigration('0056_previsto_a_persona.sql') // si può rilanciare: non divide di nuovo
+  const divisi = (await db.query(`select amount::float8 a from traveler_category_planned where category_id=$1 order by amount desc`, [cibo])).rows.map((r) => r.a)
+  check('0056 il previsto di prima si divide tra tutti, i centesimi al primo', JSON.stringify(divisi) === JSON.stringify([33.34, 33.33, 33.33]), JSON.stringify(divisi))
+  check('0056 il previsto di prima si toglie dalla categoria', (await db.query(`select planned from expense_categories where id=$1`, [cibo])).rows[0].planned === null)
+  const prev = (who, cat, amount) => db.query(`insert into traveler_category_planned (traveler_id, category_id, trip_id, amount) values ($1,$2,$3,$4) on conflict (traveler_id, category_id) do update set amount = excluded.amount`, [who, cat, tr, amount])
+  const totCat = async (cat) => (await db.query(`select total::float8 t, chi from trip_category_planned_totals() where category_id = $1`, [cat])).rows[0]
+  await asUser(A)
+  await prev(ta, vuota, 50)
+  await prev(tn, vuota, 20)
+  await throws('0056 non si scrive il previsto di un altro con l\'account', () => prev(tb, vuota, 10))
+  check('0056 si vede il proprio previsto e quello di chi non ha account', (await db.query(`select traveler_id from traveler_category_planned where category_id=$1`, [vuota])).rows.length === 2)
+  await asUser(B)
+  await prev(tb, vuota, 30)
+  const vistiP = (await db.query(`select traveler_id from traveler_category_planned where trip_id=$1`, [tr])).rows.map((r) => r.traveler_id)
+  check('0056 B non vede i previsti di A', !vistiP.includes(ta) && vistiP.includes(tb))
+  const tc = await totCat(vuota)
+  check('0056 il totale è la somma e dice chi l\'ha messo', tc?.t === 100 && tc?.chi.length === 3, JSON.stringify(tc))
+  await throws('0056 un previsto negativo non vale', () => prev(tb, vuota, -1))
+  const altroViaggio = (await db.query(`select id from expense_categories where trip_id <> $1 limit 1`, [tr])).rows[0]?.id
+  if (altroViaggio) await throws('0056 la categoria deve essere del viaggio', () => prev(tb, altroViaggio, 5))
+  await asUser(C)
+  check('0056 il visualizzatore non vede i previsti', (await db.query(`select 1 from traveler_category_planned where trip_id=$1`, [tr])).rows.length === 0)
+  check('0056 il visualizzatore non vede i totali', (await totCat(vuota)) === undefined)
+  await throws('0056 il visualizzatore non scrive un previsto', () => prev(tn, vuota, 5))
+  await asUser(A)
 }
 
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione

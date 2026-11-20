@@ -1,6 +1,6 @@
 import { cleanSpec, type OpeningSpec } from './opening'
 import { noteItemRow, schema } from './schema'
-import type { BudgetPersone, Category, Day, DayItem, ItemKind, ItemStatus, MemberRole, MezzoTratto, MezzoViaggio, Place, PlacePref, PlaceStatus, ReceivedInvite, StatoInvito, ThemeName, Traveler, Trip, TripCountry } from '../types'
+import type { BudgetPersone, PrevistiPersone, Category, Day, DayItem, ItemKind, ItemStatus, MemberRole, MezzoTratto, MezzoViaggio, Place, PlacePref, PlaceStatus, ReceivedInvite, StatoInvito, ThemeName, Traveler, Trip, TripCountry } from '../types'
 import { todayYmd } from './dates'
 import { client } from './db'
 import { queryLogistics } from './logisticsApi'
@@ -192,6 +192,29 @@ interface BudgetTotalRow {
   viaggiatori: number
 }
 
+interface CategoryPlannedRow {
+  traveler_id: string
+  category_id: string
+  trip_id: string
+  amount: number | string
+}
+interface CategoryPlannedTotalRow {
+  trip_id: string
+  category_id: string
+  total: number | string
+  chi: string[] | null
+}
+
+/** Previsto a persona di un viaggio (0056): undefined prima della migrazione o per chi non vede i costi. */
+export function mapPrevisti(rows: CategoryPlannedRow[] | null | undefined, totals: CategoryPlannedTotalRow[] | null | undefined, tripId: string): PrevistiPersone | undefined {
+  if (!rows || !totals) return undefined
+  const righe: PrevistiPersone['righe'] = {}
+  for (const r of rows) if (r.trip_id === tripId) (righe[r.category_id] ??= {})[r.traveler_id] = Number(r.amount) || 0
+  const totali: PrevistiPersone['totali'] = {}
+  for (const r of totals) if (r.trip_id === tripId) totali[r.category_id] = { totale: Number(r.total) || 0, chi: r.chi ?? [] }
+  return { righe, totali }
+}
+
 /** Budget a persona di un viaggio (0055): undefined prima della migrazione o per chi non vede i costi. */
 export function mapBudgets(rows: TravelerBudgetRow[] | null | undefined, totals: BudgetTotalRow[] | null | undefined, tripId: string): BudgetPersone | undefined {
   if (!rows || !totals) return undefined
@@ -223,6 +246,8 @@ interface Extras {
   /** null = database senza la migrazione 0055 */
   travelerBudgets?: TravelerBudgetRow[] | null
   budgetTotals?: BudgetTotalRow[] | null
+  categoryPlanned?: CategoryPlannedRow[] | null
+  categoryPlannedTotals?: CategoryPlannedTotalRow[] | null
   checklist: ChecklistRow[]
   bookings: BookingRow[]
   ticketCodes?: TicketCodeRow[]
@@ -413,6 +438,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     ...(extras.settlements ? { settlements: mapSettlements(extras.settlements, row.id) } : {}),
     ...(extras.confirmedSettlements ? { settled: mapConfirmed(extras.confirmedSettlements, row.id) } : {}),
     ...(mapBudgets(extras.travelerBudgets, extras.budgetTotals, row.id) ? { budgets: mapBudgets(extras.travelerBudgets, extras.budgetTotals, row.id) } : {}),
+    ...(mapPrevisti(extras.categoryPlanned, extras.categoryPlannedTotals, row.id) ? { previsti: mapPrevisti(extras.categoryPlanned, extras.categoryPlannedTotals, row.id) } : {}),
     expenses: mapExpenses(extras.expenses, extras.expenseShares, row.id, expenseCategoryLabel, extras.expensePayers, extras.expenseFiles),
     checklist: mapChecklist(extras.checklist, row.id, extras.checks, myTravelerId),
     ...(extras.checks ? { checklistV2: true } : {}),
@@ -461,6 +487,7 @@ export function scopeOfTable(table: string): Scope | null {
     case 'expense_files':
     case 'settlements':
     case 'traveler_budgets':
+    case 'traveler_category_planned':
       return 'money'
     case 'checklist_items':
     case 'bookings':
@@ -532,7 +559,7 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
   const results = [trips, places, categories, expenseCategories, items, ...(logisticsR ?? []), ...(moneyR ?? []), ...(planningR ?? []), costiR]
   for (const r of results) if (r?.error) throw r.error
   const [stays, transports, flights, legs] = logisticsR ?? []
-  const [budgetItems, budgetShares, expenses, expenseShares, expensePayers, expenseFiles, settlements, confirmedSettlements, travelerBudgets, budgetTotals] = moneyR ?? []
+  const [budgetItems, budgetShares, expenses, expenseShares, expensePayers, expenseFiles, settlements, confirmedSettlements, travelerBudgets, budgetTotals, categoryPlanned, categoryPlannedTotals] = moneyR ?? []
   const [checklist, bookings, checks, documents, documentAccess, documentLinks, ticketCodes, activity, bookingItems, placePrefs] = planningR ?? []
   const old = prev?.extras
   const extras: Extras = {
@@ -554,6 +581,8 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
     confirmedSettlements: keep(confirmedSettlements, old?.confirmedSettlements as ConfirmedSettlementRow[] | null),
     travelerBudgets: keep(travelerBudgets, old?.travelerBudgets as TravelerBudgetRow[] | null),
     budgetTotals: keep(budgetTotals, old?.budgetTotals as BudgetTotalRow[] | null),
+    categoryPlanned: keep(categoryPlanned, old?.categoryPlanned as CategoryPlannedRow[] | null),
+    categoryPlannedTotals: keep(categoryPlannedTotals, old?.categoryPlannedTotals as CategoryPlannedTotalRow[] | null),
     checklist: keep(checklist, old?.checklist as ChecklistRow[]),
     bookings: keep(bookings, old?.bookings as BookingRow[]),
     ticketCodes: keep(ticketCodes, old?.ticketCodes as TicketCodeRow[]),

@@ -23,6 +23,9 @@ export function queryMoney(db: SupabaseClient) {
     // budget a persona (0055): prima della migrazione `data: null` = l'app usa il budget del viaggio di prima
     db.from('traveler_budgets').select('traveler_id, trip_id, amount').then((r) => (r.error ? { ...r, data: null, error: null } : r)),
     db.rpc('trip_budget_totals').then((r) => (r.error ? { ...r, data: null, error: null } : r)),
+    // previsto a persona (0056): prima della migrazione `data: null` = un previsto solo per categoria, come prima
+    db.from('traveler_category_planned').select('traveler_id, category_id, trip_id, amount').then((r) => (r.error ? { ...r, data: null, error: null } : r)),
+    db.rpc('trip_category_planned_totals').then((r) => (r.error ? { ...r, data: null, error: null } : r)),
   ])
 }
 
@@ -138,6 +141,23 @@ export async function setExpenseCategoryPlanned(tripId: string, label: string, p
   if (!id) return
   const { error } = await client().from('expense_categories').update({ planned }).eq('id', id)
   if (error) throw /planned/i.test(error.message) ? new Error(MIGRATION_0019) : error
+}
+
+/**
+ * Previsto di una persona per una categoria (0056): la crea se è una categoria base non ancora usata; `null` lo toglie
+ * (torna a contare la sua quota stimata). Prima della migrazione si scrive il previsto unico della categoria, come prima.
+ */
+export async function setTravelerCategoryPlanned(tripId: string, label: string, travelerId: string, amount: number | null, known: Category[]): Promise<void> {
+  const id = await resolveExpenseCategory(tripId, label, known)
+  if (!id) return
+  const db = client()
+  const r =
+    amount === null
+      ? await db.from('traveler_category_planned').delete().eq('traveler_id', travelerId).eq('category_id', id)
+      : await db.from('traveler_category_planned').upsert({ traveler_id: travelerId, category_id: id, trip_id: tripId, amount, updated_at: now() }, { onConflict: 'traveler_id,category_id' })
+  if (!r.error) return
+  if (!/traveler_category_planned|schema cache|does not exist/i.test(r.error.message)) throw r.error
+  await setExpenseCategoryPlanned(tripId, label, amount, known)
 }
 
 const MIGRATION_0008 = t('Manca la migrazione 0008 sul database: eseguila nell\'SQL Editor di Supabase (file supabase/migrations/0008_expense_categories.sql).')

@@ -80,6 +80,13 @@ export interface RigaCategoria {
   planned: number
   /** il previsto è scritto a mano */
   plannedSet: boolean
+  /**
+   * Previsto a persona (0056), per chi lo modifica: il suo previsto scritto a mano (se c'è) e la sua quota stimata,
+   * quella che conta senza una cifra. Solo con il previsto a persona e chi usa l'app.
+   */
+  mio?: PrevistoPersona
+  /** lo stesso per chi non ha l'account, se posso scriverlo (solo quelli che il database mi fa vedere) */
+  altri?: PrevistoPersona[]
   /** voci con costo ancora da pagare */
   unpaid: number
   nSpese: number
@@ -87,6 +94,12 @@ export interface RigaCategoria {
   sub: string
   /** «previsto 1.200,00 €» sulla riga sotto (vuota se non c'è un previsto) */
   previstoTesto: string
+}
+
+export interface PrevistoPersona {
+  travelerId: string
+  valore?: number
+  stima: number
 }
 
 export interface PersonaSaldo {
@@ -137,17 +150,96 @@ function sottotitolo(c: Omit<RigaCategoria, 'sub' | 'previstoTesto'>): string {
 
 /**
  * La ricevuta tra tutti oppure, con `io`, solo la parte di una persona: per categoria la sua quota delle spese e delle voci
- * che divide (pagate e da pagare), il previsto diviso per le persone del viaggio (o la sua quota delle voci previste),
- * i totali suoi e solo il suo saldo con i trasferimenti che lo riguardano.
+ * che divide (pagate e da pagare), il suo previsto (quello che ha scritto o la sua quota stimata), i totali suoi e solo il
+ * suo saldo con i trasferimenti che lo riguardano. Tra tutti il previsto è la somma di quelli di ognuno.
  */
 export function ricevuta(
-  trip: Pick<Trip, 'stays' | 'flights' | 'transports' | 'bookings' | 'travelers' | 'budget' | 'baseCurrency' | 'expenses' | 'settled' | 'settlements'> & { expenseCategories: Category[] },
+  trip: Pick<Trip, 'stays' | 'flights' | 'transports' | 'bookings' | 'travelers' | 'budget' | 'baseCurrency' | 'expenses' | 'settled' | 'settlements' | 'previsti'> & { expenseCategories: Category[] },
   spese: SpesaVista[],
   fx: FxContext,
   io?: string,
+  /** chi usa l'app, per modificare il suo previsto anche nella ricevuta di tutti (previsto a persona, 0056) */
+  me: string | undefined = io,
 ): Ricevuta {
   const n = Math.max(1, trip.travelers.length)
-  const map = new Map<string, Omit<RigaCategoria, 'sub' | 'previstoTesto'>>()
+  const map = categorieDi(trip, spese, fx, io)
+  const unconverted = map.unconverted
+  const P = trip.previsti
+  if (P) {
+    // previsto a persona: per ognuno il suo previsto scritto, altrimenti la quota di quello di prima (diviso tra tutti)
+    // o la sua quota stimata dai costi. Tra tutti è la somma; senza nessun previsto scritto resta il calcolo di sempre.
+    const per = new Map<string, Map<string, Riga>>()
+    const stimaDi = (tid: string, k: string, cat?: Category): number => {
+      if (cat?.planned != null) return round2(cat.planned / n)
+      if (!per.has(tid)) per.set(tid, categorieDi(trip, spese, fx, tid).righe)
+      return per.get(tid)?.get(k)?.planned ?? 0
+    }
+    const scrivibili = trip.travelers.filter((t) => t.id !== me && !t.userId)
+    for (const c of map.righe.values()) {
+      const cat = trip.expenseCategories.find((x) => x.id === c.id)
+      const righe = (c.id && P.righe[c.id]) || {}
+      const tot = c.id ? P.totali[c.id] : undefined
+      if (io) {
+        const v = righe[io]
+        if (v !== undefined) {
+          c.planned = v
+          c.plannedSet = true
+        }
+      } else if (tot && tot.chi.length > 0) {
+        c.planned = round2(tot.totale + trip.travelers.filter((t) => !tot.chi.includes(t.id)).reduce((a, t) => a + stimaDi(t.id, c.key, cat), 0))
+        c.plannedSet = true
+      }
+      if (me && trip.travelers.some((t) => t.id === me)) {
+        c.mio = { travelerId: me, valore: righe[me], stima: stimaDi(me, c.key, cat) }
+        c.altri = scrivibili.map((t) => ({ travelerId: t.id, valore: righe[t.id], stima: stimaDi(t.id, c.key, cat) }))
+      }
+    }
+  }
+
+  const order = (c: Omit<RigaCategoria, 'sub' | 'previstoTesto'>) => {
+    const i = CATEGORIE_BASE.findIndex((b) => catKey(b.label) === c.key)
+    return c.key === 'altro' ? 1000 : i >= 0 ? i : 100
+  }
+  const categorie = [...map.righe.values()]
+    .filter((c) => (c.key === 'altro' ? c.spent > 0 || c.voci.tot > 0 || c.plannedSet : true))
+    .sort((a, b) => order(a) - order(b) || a.label.localeCompare(b.label, LINGUA))
+    .map((c) => ({ ...c, sub: sottotitolo(c), previstoTesto: c.planned > 0 ? tt('Previsto {v0}', { v0: formatMoney(c.planned, trip.baseCurrency) }) : '' }))
+
+  const summary = summarizeExpenses(spese, trip.travelers, fx, rimborsiValidi(trip).settled)
+  summary.unconverted.forEach((u) => unconverted.add(u))
+  const persone = trip.travelers.map((t) => {
+    const bal = summary.balances.find((b) => b.travelerId === t.id)
+    const quota = summary.spentBy.find((s) => s.travelerId === t.id)?.amount ?? 0
+    const net = bal?.net ?? 0
+    return { travelerId: t.id, quota, net, paid: round2(net - (bal?.refunds ?? 0) + quota) }
+  })
+  const sum = (f: (c: RigaCategoria) => number) => round2(categorie.reduce((tot, c) => tot + f(c), 0))
+  const transfers = settle(persone)
+  return {
+    categorie,
+    previsto: sum((c) => c.planned),
+    pagato: io ? sum((c) => c.spent) : summary.total,
+    daPagare: sum((c) => c.unpaid),
+    persone: io ? persone.filter((p) => p.travelerId === io) : persone,
+    transfers: io ? transfers.filter((x) => x.from === io || x.to === io) : transfers,
+    unconverted: [...unconverted].sort(),
+  }
+}
+
+type Riga = Omit<RigaCategoria, 'sub' | 'previstoTesto'>
+
+/**
+ * Categorie con speso, voci e previsto (scritto per la categoria o calcolato) di tutti oppure, con `io`, di una persona.
+ * È il calcolo di sempre; il previsto a persona (0056) si aggiunge sopra, in `ricevuta`.
+ */
+function categorieDi(
+  trip: Pick<Trip, 'stays' | 'flights' | 'transports' | 'bookings' | 'travelers' | 'budget'> & { expenseCategories: Category[] },
+  spese: SpesaVista[],
+  fx: FxContext,
+  io?: string,
+): { righe: Map<string, Riga>; unconverted: Set<string> } {
+  const n = Math.max(1, trip.travelers.length)
+  const map = new Map<string, Riga>()
   const slot = (label: string, cat?: Category) => {
     const key = catKey(label)
     let c = map.get(key)
@@ -197,35 +289,7 @@ export function ricevuta(
     if (!c.plannedSet) c.planned = io ? (sl.perTraveler.find((p) => p.travelerId === io)?.planned ?? 0) : sl.planned
   }
   for (const c of map.values()) if (!c.plannedSet) c.planned = round2(Math.max(c.spent + c.unpaid, c.planned))
-
-  const order = (c: Omit<RigaCategoria, 'sub' | 'previstoTesto'>) => {
-    const i = CATEGORIE_BASE.findIndex((b) => catKey(b.label) === c.key)
-    return c.key === 'altro' ? 1000 : i >= 0 ? i : 100
-  }
-  const categorie = [...map.values()]
-    .filter((c) => (c.key === 'altro' ? c.spent > 0 || c.voci.tot > 0 || c.plannedSet : true))
-    .sort((a, b) => order(a) - order(b) || a.label.localeCompare(b.label, LINGUA))
-    .map((c) => ({ ...c, sub: sottotitolo(c), previstoTesto: c.planned > 0 ? tt('Previsto {v0}', { v0: formatMoney(c.planned, trip.baseCurrency) }) : '' }))
-
-  const summary = summarizeExpenses(spese, trip.travelers, fx, rimborsiValidi(trip).settled)
-  summary.unconverted.forEach((u) => unconverted.add(u))
-  const persone = trip.travelers.map((t) => {
-    const bal = summary.balances.find((b) => b.travelerId === t.id)
-    const quota = summary.spentBy.find((s) => s.travelerId === t.id)?.amount ?? 0
-    const net = bal?.net ?? 0
-    return { travelerId: t.id, quota, net, paid: round2(net - (bal?.refunds ?? 0) + quota) }
-  })
-  const sum = (f: (c: RigaCategoria) => number) => round2(categorie.reduce((tot, c) => tot + f(c), 0))
-  const transfers = settle(persone)
-  return {
-    categorie,
-    previsto: sum((c) => c.planned),
-    pagato: io ? sum((c) => c.spent) : summary.total,
-    daPagare: sum((c) => c.unpaid),
-    persone: io ? persone.filter((p) => p.travelerId === io) : persone,
-    transfers: io ? transfers.filter((x) => x.from === io || x.to === io) : transfers,
-    unconverted: [...unconverted].sort(),
-  }
+  return { righe: map, unconverted }
 }
 
 /** Quota di una persona in una spesa, nella valuta di casa (null = manca il cambio). */

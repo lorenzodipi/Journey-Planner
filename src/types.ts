@@ -574,6 +574,8 @@ export interface Trip {
   budgetLimit?: number
   /** Budget a persona (0055), nella valuta base: assente prima della migrazione e per il visualizzatore. */
   budgets?: BudgetPersone
+  /** Previsto a persona per categoria (0056); undefined prima della migrazione o per chi non vede i costi. */
+  previsti?: PrevistiPersone
   /** Paesi del viaggio con le date (migrazione 0020); assenti = un solo paese, quello di destination. */
   countries?: TripCountry[]
   /** Paese di casa (codice ISO, es. «IT») e suo fuso: per l'ora di casa e il fuso di partenza di voli e trasporti. */
@@ -594,6 +596,14 @@ export interface Attivita {
 }
 
 export type PlacePref = 'must' | 'if_time'
+
+/** Previsto a persona (0056), per id della categoria di spesa. */
+export interface PrevistiPersone {
+  /** id categoria → previsti che posso vedere (il mio e quelli di chi non ha l'account): id viaggiatore → importo */
+  righe: Record<string, Record<string, number>>
+  /** id categoria → somma dei previsti scritti da tutti e chi li ha scritti (senza gli importi dei singoli) */
+  totali: Record<string, { totale: number; chi: string[] }>
+}
 
 /** Budget a persona (0055): le righe che posso vedere (il mio e quelli di chi non ha l'account) e la somma di tutti. */
 export interface BudgetPersone {

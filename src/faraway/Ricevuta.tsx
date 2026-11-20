@@ -2,12 +2,13 @@
 // imposta il previsto), totali, saldo a persona e «Per pareggiare», con il bordo dentellato in fondo.
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { formatMoney, parseAmount } from '../lib/money'
-import type { Ricevuta as Dati, RigaCategoria } from '../lib/ricevuta'
+import type { Ricevuta as Dati, PrevistoPersona, RigaCategoria } from '../lib/ricevuta'
 import { discOf, initials } from '../state/me'
 import type { Trip } from '../types'
 import { Ic } from '../ui/Sprite'
 import { Campo, Pulsante } from './base'
 import { cx } from './cx'
+import { soloLettura } from '../lib/ruolo'
 import { nomeCategoria, t as tt } from '../i18n'
 
 // Bordo a denti in fondo alla ricevuta: un solo disegno largo 3200 px (punte ogni 16 px), centrato e tagliato dalla
@@ -22,7 +23,8 @@ interface Props {
   trip: Trip
   dati: Dati
   sub: string
-  onPlanned: (c: RigaCategoria, planned: number | null) => Promise<string | null>
+  /** `travelerId` = il previsto di quella persona (0056); senza, il previsto unico della categoria (prima della migrazione) */
+  onPlanned: (c: RigaCategoria, planned: number | null, travelerId?: string) => Promise<string | null>
   onRename: (c: RigaCategoria, label: string) => Promise<string | null>
   onDelete: (c: RigaCategoria) => Promise<void>
   /** «Bilancia» accanto alle righe di «Per pareggiare» che mi riguardano: `con` = le persone per cui c'è qualcosa da chiudere */
@@ -52,23 +54,44 @@ function RigaFissa({ c, cur }: { c: RigaCategoria; cur: string }) {
   )
 }
 
-function RigaCat({ c, cur, open, onToggle, onPlanned, onRename, onDelete }: { c: RigaCategoria; cur: string; open: boolean; onToggle: () => void } & Pick<Props, 'onPlanned' | 'onRename' | 'onDelete'>) {
-  const [planned, setPlanned] = useState(c.plannedSet ? String(c.planned).replace('.', ',') : '')
+function RigaCat({ c: riga, cur, open, onToggle, onPlanned, onRename, onDelete, nome, gruppo, scrive }: { c: RigaCategoria; cur: string; open: boolean; onToggle: () => void; nome: (id: string) => string; gruppo: boolean; scrive: boolean } & Pick<Props, 'onPlanned' | 'onRename' | 'onDelete'>) {
+  // il previsto di chi non ha l'account solo se posso modificare il viaggio
+  const c = scrive ? riga : { ...riga, altri: [] }
+  const testo = (v: number | undefined) => (v === undefined ? '' : String(v).replace('.', ','))
+  // con il previsto a persona (0056) si scrive il mio e, se posso, quello di chi non ha l'account; prima, quello della categoria
+  const persone = c.mio ? [c.mio, ...(c.altri ?? [])] : []
+  const [planned, setPlanned] = useState(c.mio ? testo(c.mio.valore) : c.plannedSet ? testo(c.planned) : '')
+  const [altri, setAltri] = useState<Record<string, string>>(() => Object.fromEntries((c.altri ?? []).map((p) => [p.travelerId, testo(p.valore)])))
   const [label, setLabel] = useState(c.label)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   async function save() {
-    const n = planned.trim() ? parseAmount(planned) : null
-    if (planned.trim() && (n === null || n < 0)) return setError(tt('Il previsto non è chiaro: scrivi un importo, per esempio 600.'))
+    const valori = persone.length ? persone.map((p, i) => ({ p, v: i === 0 ? planned : (altri[p.travelerId] ?? '') })) : [{ p: undefined, v: planned }]
+    const letti = valori.map(({ p, v }) => ({ p, n: v.trim() ? parseAmount(v) : null, bad: !!v.trim() && (parseAmount(v) === null || (parseAmount(v) ?? 0) < 0) }))
+    if (letti.some((x) => x.bad)) return setError(tt('Il previsto non è chiaro: scrivi un importo, per esempio 600.'))
     setBusy(true)
     let m: string | null = null
     if (c.personale && label.trim() && label.trim() !== c.label) m = await onRename(c, label.trim())
-    if (!m && (n !== (c.plannedSet ? c.planned : null))) m = await onPlanned(c, n)
+    for (const { p, n } of letti) {
+      if (m) break
+      const prima = p ? (p.valore ?? null) : c.plannedSet ? c.planned : null
+      if (n !== prima) m = await onPlanned(c, n, p?.travelerId)
+    }
     setBusy(false)
     setError(m)
     if (!m) onToggle()
   }
+  const suggerimento = (p: PrevistoPersona, mio: boolean) =>
+    p.valore !== undefined
+      ? undefined
+      : p.stima > 0
+        ? mio
+          ? tt('Senza una cifra conta la tua quota, {v0}, calcolata dai costi inseriti.', { v0: formatMoney(p.stima, cur) })
+          : tt('Senza una cifra conta la sua quota, {v0}, calcolata dai costi inseriti.', { v0: formatMoney(p.stima, cur) })
+        : mio
+          ? tt('Quanto pensi di spendere tu per questa categoria.')
+          : tt('Quanto pensi che spenderà per questa categoria.')
 
   return (
     <div className={cx('fa-rcat', open && 'open')}>
@@ -87,16 +110,43 @@ function RigaCat({ c, cur, open, onToggle, onPlanned, onRename, onDelete }: { c:
       {open ? (
         <div className="fa-rcat-ed">
           {c.personale ? <Campo label={tt('Nome della categoria')} value={label} onChange={setLabel} maxLength={40} /> : null}
-          <Campo
-            label={tt('Previsto')}
-            icon="bag"
-            inputMode="decimal"
-            value={planned}
-            onChange={setPlanned}
-            placeholder={tt('Per esempio {v0}', { v0: formatMoney(c.planned || 100, cur) })}
-            hint={c.plannedSet ? undefined : c.planned > 0 ? tt('Senza una cifra conta {v0}, calcolato dai costi inseriti.', { v0: formatMoney(c.planned, cur) }) : tt('Quanto pensi di spendere per questa categoria.')}
-            error={error}
-          />
+          {c.mio ? (
+            <>
+              <Campo
+                label={gruppo ? tt('Il tuo previsto') : tt('Previsto')}
+                icon="bag"
+                inputMode="decimal"
+                value={planned}
+                onChange={setPlanned}
+                placeholder={tt('Per esempio {v0}', { v0: formatMoney(c.mio.stima || 100, cur) })}
+                hint={suggerimento(c.mio, true)}
+                error={error}
+              />
+              {(c.altri ?? []).map((p) => (
+                <Campo
+                  key={p.travelerId}
+                  label={tt('Previsto di {nome}', { nome: nome(p.travelerId) })}
+                  icon="bag"
+                  inputMode="decimal"
+                  value={altri[p.travelerId] ?? ''}
+                  onChange={(v) => setAltri((a) => ({ ...a, [p.travelerId]: v }))}
+                  placeholder={tt('Per esempio {v0}', { v0: formatMoney(p.stima || 100, cur) })}
+                  hint={suggerimento(p, false)}
+                />
+              ))}
+            </>
+          ) : (
+            <Campo
+              label={tt('Previsto')}
+              icon="bag"
+              inputMode="decimal"
+              value={planned}
+              onChange={setPlanned}
+              placeholder={tt('Per esempio {v0}', { v0: formatMoney(c.planned || 100, cur) })}
+              hint={c.plannedSet ? undefined : c.planned > 0 ? tt('Senza una cifra conta {v0}, calcolato dai costi inseriti.', { v0: formatMoney(c.planned, cur) }) : tt('Quanto pensi di spendere per questa categoria.')}
+              error={error}
+            />
+          )}
           <div className="acts">
             <Pulsante size="sm" iconLeading="save" onPress={() => void save()} isLoading={busy}>
               {tt('Salva')}
@@ -138,7 +188,7 @@ export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilan
               mia ? (
                 <RigaFissa key={c.key} c={c} cur={cur} />
               ) : (
-              <RigaCat key={`${c.key}:${c.planned}:${c.label}`} c={c} cur={cur} open={open === c.key} onToggle={() => setOpen(open === c.key ? null : c.key)} onPlanned={onPlanned} onRename={onRename} onDelete={onDelete} />
+              <RigaCat key={`${c.key}:${c.planned}:${c.label}:${c.mio?.valore ?? ''}:${(c.altri ?? []).map((p) => p.valore ?? '').join(',')}`} c={c} cur={cur} open={open === c.key} onToggle={() => setOpen(open === c.key ? null : c.key)} onPlanned={onPlanned} onRename={onRename} onDelete={onDelete} nome={nome} gruppo={gruppo} scrive={!soloLettura(trip)} />
               ),
             )}
           </div>
