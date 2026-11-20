@@ -1219,7 +1219,9 @@ html{scroll-padding-top:var(--head-h,0px)}
 .k-Ricevuta .rc{filter:drop-shadow(0 2px 8px rgba(20,33,61,.14));margin-top:var(--space-xs)}
 [data-theme="dark"] .k-Ricevuta .rc{filter:none}
 .k-Ricevuta .rb{background:var(--surface-card);padding:var(--space-xl) var(--space-xl) var(--space-lg);border-radius:var(--radius-xl) var(--radius-xl) 0 0;display:grid;gap:var(--space-lg)}
-.k-Ricevuta .rz{height:12px;background:var(--surface-card);-webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/16px 100%;mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/16px 100%}
+.k-Ricevuta .rz{height:12px;overflow:hidden}
+.k-Ricevuta .rz svg{display:block;width:3200px;height:12px;margin-left:calc(50% - 1600px)}
+.k-Ricevuta .rz path{fill:var(--surface-card)}
 /* un pezzo solo: niente bordo sul rettangolo (il contorno in scuro lo disegna il drop-shadow su tutta la sagoma) e i denti si sovrappongono di 1 px, così non resta la riga di giunzione */
 .k-Ricevuta .rz{margin-top:-1px;position:relative}
 .k-Ricevuta .rh{display:grid;gap:2.0px;justify-items:center;text-align:center;padding-bottom:var(--space-md);border-bottom:2px dashed var(--border-strong)}

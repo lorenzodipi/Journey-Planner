@@ -10,6 +10,11 @@ import { Campo, Pulsante } from './base'
 import { cx } from './cx'
 import { nomeCategoria, t as tt } from '../i18n'
 
+// Bordo a denti in fondo alla ricevuta: un solo disegno largo 3200 px (punte ogni 16 px), centrato e tagliato dalla
+// ricevuta. Non una maschera né un motivo ripetuto: con la scala dello schermo non intera (2,625, 2,75, zoom…) Chrome
+// lasciava una riga sottile, chiara in scuro e scura in chiaro, sotto le punte su tutta la larghezza.
+const DENTI = `M0 0H3200V12${Array.from({ length: 200 }, (_, i) => `L${3192 - i * 16} 3.72L${3184 - i * 16} 12`).join('')}Z`
+
 const COL = ['corallo', 'glicine', 'cielo', 'menta', 'rosa']
 const segno = (n: number, cur: string) => `${n > 0.004 ? '+' : n < -0.004 ? '−' : ''}${formatMoney(Math.abs(n), cur)}`
 
@@ -203,7 +208,11 @@ export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilan
           ) : null}
           {dati.unconverted.length > 0 ? <div className="ft">{tt('Senza cambio, non contate nei totali: {v0}', { v0: dati.unconverted.join(', ') })}</div> : null}
         </div>
-        <div className="rz" />
+        <div className="rz" aria-hidden="true">
+          <svg viewBox="0 0 3200 12" focusable="false">
+            <path d={DENTI} />
+          </svg>
+        </div>
       </div>
     </div>
   )
