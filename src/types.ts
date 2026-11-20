@@ -576,6 +576,8 @@ export interface Trip {
   budgets?: BudgetPersone
   /** Previsto a persona per categoria (0056); undefined prima della migrazione o per chi non vede i costi. */
   previsti?: PrevistiPersone
+  /** Pagamenti di altri che ho già visto, da qualsiasi dispositivo (0057): id del pagamento o del gruppo. Assente prima della migrazione. */
+  pagamentiVisti?: string[]
   /** Paesi del viaggio con le date (migrazione 0020); assenti = un solo paese, quello di destination. */
   countries?: TripCountry[]
   /** Paese di casa (codice ISO, es. «IT») e suo fuso: per l'ora di casa e il fuso di partenza di voli e trasporti. */

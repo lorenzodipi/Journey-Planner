@@ -25,6 +25,9 @@ function leggiCopia(): Copia | null {
 }
 
 let inCorso: Promise<Terremoto[]> | null = null
+/** Dopo un errore non si riprova per 2 minuti: con la rete scarsa ogni pagina aperta riprenderebbe da capo. */
+const PAUSA_DOPO_ERRORE_MS = 2 * 60 * 1000
+let fallitoAlle = 0
 
 async function scarica(): Promise<Terremoto[]> {
   const stop = new AbortController()
@@ -51,9 +54,17 @@ export function useTerremoti(attivo: boolean): Terremoto[] {
     if (!attivo) return setEventi([])
     const c = leggiCopia()
     setEventi(c?.eventi ?? [])
-    if ((c && Date.now() - c.savedAt < TERREMOTI_TTL_MS) || !navigator.onLine) return
+    if ((c && Date.now() - c.savedAt < TERREMOTI_TTL_MS) || !navigator.onLine || Date.now() - fallitoAlle < PAUSA_DOPO_ERRORE_MS) return
     let vivo = true
-    inCorso ??= scarica().finally(() => (inCorso = null))
+    inCorso ??= scarica()
+      .then(
+        (e) => ((fallitoAlle = 0), e),
+        (err: unknown) => {
+          fallitoAlle = Date.now()
+          throw err
+        },
+      )
+      .finally(() => (inCorso = null))
     inCorso.then(
       (e) => vivo && setEventi(e),
       () => undefined, // senza rete o servizio giù: resta la copia

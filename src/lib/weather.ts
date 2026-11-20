@@ -270,15 +270,28 @@ export function clearForecasts(): void {
 const inCorso = new Map<string, Promise<DayWeather[]>>()
 
 /** Come `fetchForecast`, ma condivide la richiesta già partita per lo stesso posto e salva la copia sul telefono. */
-export function fetchForecastCondiviso(lat: number, lng: number, timeZone: string): Promise<DayWeather[]> {
+/** Dopo una richiesta fallita (rete scarsa, servizio giù) lo stesso posto non si richiede per un po': ogni pagina aperta riprenderebbe da capo. */
+export const PAUSA_DOPO_ERRORE_MS = 2 * 60 * 1000
+const fallite = new Map<string, { alle: number; errore: unknown }>()
+
+export function fetchForecastCondiviso(lat: number, lng: number, timeZone: string, adesso = Date.now()): Promise<DayWeather[]> {
   const key = forecastKey(lat, lng, timeZone)
+  const ko = fallite.get(key)
+  if (ko && adesso - ko.alle < PAUSA_DOPO_ERRORE_MS) return Promise.reject(ko.errore)
   let p = inCorso.get(key)
   if (!p) {
     p = fetchForecast(lat, lng, timeZone)
-      .then((days) => {
-        saveForecast({ key, savedAt: Date.now(), days })
-        return days
-      })
+      .then(
+        (days) => {
+          fallite.delete(key)
+          saveForecast({ key, savedAt: Date.now(), days })
+          return days
+        },
+        (e: unknown) => {
+          fallite.set(key, { alle: Date.now(), errore: e })
+          throw e
+        },
+      )
       .finally(() => inCorso.delete(key))
     inCorso.set(key, p)
   }

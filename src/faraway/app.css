@@ -368,6 +368,10 @@ sup{margin-left:0}
 /* Card «Da dare» / «Da ricevere» (una per spesa) */
 .fa-dbt{display:grid;gap:16px;padding:16px}
 .fa-dbt+.fa-dbt{border-top:1px solid var(--hairline)}
+/* card raggiunta da «Controlla» su un pagamento nuovo: tinta azzurra per qualche secondo, poi torna com'era */
+.fa-dbt{transition:background-color .6s ease}
+.fa-dbt.ev{background:var(--azzurro-soft);transition:none}
+.fa-dbt:focus:not(:focus-visible){outline:none}
 .fa-dbt .top{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:16px;align-items:center}
 .fa-dbt .t{display:block;font:600 16px/24px var(--font-sans);letter-spacing:.16px;overflow-wrap:anywhere}
 .fa-dbt .s{display:block;font:400 14px/20px var(--font-sans);color:var(--ink-muted)}

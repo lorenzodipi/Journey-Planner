@@ -249,6 +249,8 @@ interface Extras {
   budgetTotals?: BudgetTotalRow[] | null
   categoryPlanned?: CategoryPlannedRow[] | null
   categoryPlannedTotals?: CategoryPlannedTotalRow[] | null
+  /** pagamenti visti (0057); null = database senza la migrazione */
+  seen?: { trip_id: string; ref: string }[] | null
   checklist: ChecklistRow[]
   bookings: BookingRow[]
   ticketCodes?: TicketCodeRow[]
@@ -440,6 +442,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     ...(extras.confirmedSettlements ? { settled: mapConfirmed(extras.confirmedSettlements, row.id) } : {}),
     ...(mapBudgets(extras.travelerBudgets, extras.budgetTotals, row.id) ? { budgets: mapBudgets(extras.travelerBudgets, extras.budgetTotals, row.id) } : {}),
     ...(mapPrevisti(extras.categoryPlanned, extras.categoryPlannedTotals, row.id) ? { previsti: mapPrevisti(extras.categoryPlanned, extras.categoryPlannedTotals, row.id) } : {}),
+    ...(extras.seen ? { pagamentiVisti: extras.seen.filter((r) => r.trip_id === row.id).map((r) => r.ref) } : {}),
     expenses: mapExpenses(extras.expenses, extras.expenseShares, row.id, expenseCategoryLabel, extras.expensePayers, extras.expenseFiles),
     checklist: mapChecklist(extras.checklist, row.id, extras.checks, myTravelerId),
     ...(extras.checks ? { checklistV2: true } : {}),
@@ -458,7 +461,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
  * Gruppi di dati che si possono ricaricare da soli. Dopo una modifica si ricarica solo il gruppo toccato
  * (es. dopo aver salvato un luogo solo i luoghi) invece di tutte le 15 tabelle.
  */
-export type Scope = 'trips' | 'places' | 'categories' | 'expenseCategories' | 'items' | 'logistics' | 'money' | 'planning'
+export type Scope = 'trips' | 'places' | 'categories' | 'expenseCategories' | 'items' | 'logistics' | 'money' | 'planning' | 'seen'
 
 /** Il gruppo di una tabella; `null` se non si sa (allora si ricarica tutto, per sicurezza). */
 export function scopeOfTable(table: string): Scope | null {
@@ -490,6 +493,8 @@ export function scopeOfTable(table: string): Scope | null {
     case 'traveler_budgets':
     case 'traveler_category_planned':
       return 'money'
+    case 'settlement_seen':
+      return 'seen'
     case 'checklist_items':
     case 'bookings':
     case 'documents':
@@ -536,7 +541,7 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
   const keep = <T,>(fresh: { data: unknown } | null | undefined, old: T): T => (fresh ? (fresh.data as T) : old)
   // Richieste separate e in parallelo: più semplici e robuste degli "embed" annidati.
   const conCostiPrivati = want('trips') || want('places') || want('items') || want('logistics')
-  const [trips, places, categories, expenseCategories, items, logisticsR, moneyR, planningR, costiR] = await Promise.all([
+  const [trips, places, categories, expenseCategories, items, logisticsR, moneyR, planningR, costiR, seen] = await Promise.all([
     want('trips')
       ? db
           .from('trips')
@@ -556,8 +561,10 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
     want('planning') ? queryPlanning(db) : null,
     // costi privati (0049): senza la tabella si usano le colonne di sempre
     conCostiPrivati ? db.from('trip_costs').select('kind, ref_id, data').then((r) => (r.error && /trip_costs|schema cache|does not exist/i.test(r.error.message) ? { ...r, data: [], error: null } : r)) : null,
+    // pagamenti visti (0057): solo le mie righe; prima della migrazione `data: null` = restano solo sul dispositivo
+    want('seen') ? db.from('settlement_seen').select('trip_id, ref').then((r) => (r.error ? { ...r, data: null, error: null } : r)) : null,
   ])
-  const results = [trips, places, categories, expenseCategories, items, ...(logisticsR ?? []), ...(moneyR ?? []), ...(planningR ?? []), costiR]
+  const results = [trips, places, categories, expenseCategories, items, ...(logisticsR ?? []), ...(moneyR ?? []), ...(planningR ?? []), costiR, seen]
   for (const r of results) if (r?.error) throw r.error
   const [stays, transports, flights, legs] = logisticsR ?? []
   const [budgetItems, budgetShares, expenses, expenseShares, expensePayers, expenseFiles, settlements, confirmedSettlements, travelerBudgets, budgetTotals, categoryPlanned, categoryPlannedTotals] = moneyR ?? []
@@ -584,6 +591,7 @@ export async function fetchTrips(only?: Scope[]): Promise<Trip[]> {
     budgetTotals: keep(budgetTotals, old?.budgetTotals as BudgetTotalRow[] | null),
     categoryPlanned: keep(categoryPlanned, old?.categoryPlanned as CategoryPlannedRow[] | null),
     categoryPlannedTotals: keep(categoryPlannedTotals, old?.categoryPlannedTotals as CategoryPlannedTotalRow[] | null),
+    seen: keep(seen, old?.seen as { trip_id: string; ref: string }[] | null | undefined),
     checklist: keep(checklist, old?.checklist as ChecklistRow[]),
     bookings: keep(bookings, old?.bookings as BookingRow[]),
     ticketCodes: keep(ticketCodes, old?.ticketCodes as TicketCodeRow[]),

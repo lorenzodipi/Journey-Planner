@@ -110,6 +110,17 @@ export async function cancelSettlement(id: string): Promise<void> {
 }
 
 /** Versione attuale dei saldi: la conferma vale solo se non è cambiata (COST-038). */
+/**
+ * Segna come visti dei pagamenti di altri (0057), per ritrovarli visti su ogni dispositivo. Solo id veri (uuid): gli id
+ * della demo restano sul telefono. Una riga già presente non si tocca.
+ */
+export async function segnaPagamentiVisti(tripId: string, refs: readonly string[]): Promise<void> {
+  const rows = [...new Set(refs)].filter((r) => UUID.test(r)).map((ref) => ({ trip_id: tripId, ref }))
+  if (!UUID.test(tripId) || rows.length === 0) return
+  const { error } = await client().from('settlement_seen').upsert(rows, { onConflict: 'user_id,trip_id,ref', ignoreDuplicates: true })
+  if (error) throw error
+}
+
 export async function fetchBalanceVersion(tripId: string): Promise<string | null> {
   const { data, error } = await client().rpc('balance_version', { _trip: tripId })
   if (error) throw needs0029(error)

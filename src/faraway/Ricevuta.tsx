@@ -31,7 +31,7 @@ interface Props {
   bilancia?: { me: string; con: ReadonlySet<string>; onPress: (otherId: string) => void }
   /** chi usa l'app: sotto «Già pagato» compare «La tua quota» (la sua parte delle spese, a prescindere da chi ha pagato) */
   io?: string
-  /** solo la parte di `io` (pagina Spese, «La mia parte»): titolo suo, previsto non modificabile, solo il suo saldo */
+  /** solo la parte di `io` (pagina Spese, «La mia parte»): titolo suo, solo il suo previsto (modificabile), solo il suo saldo */
   mia?: boolean
 }
 
@@ -54,9 +54,9 @@ function RigaFissa({ c, cur }: { c: RigaCategoria; cur: string }) {
   )
 }
 
-function RigaCat({ c: riga, cur, open, onToggle, onPlanned, onRename, onDelete, nome, gruppo, scrive }: { c: RigaCategoria; cur: string; open: boolean; onToggle: () => void; nome: (id: string) => string; gruppo: boolean; scrive: boolean } & Pick<Props, 'onPlanned' | 'onRename' | 'onDelete'>) {
-  // il previsto di chi non ha l'account solo se posso modificare il viaggio
-  const c = scrive ? riga : { ...riga, altri: [] }
+function RigaCat({ c: riga, cur, open, onToggle, onPlanned, onRename, onDelete, nome, gruppo, scrive, soloMio = false }: { c: RigaCategoria; cur: string; open: boolean; onToggle: () => void; nome: (id: string) => string; gruppo: boolean; scrive: boolean; /** «La mia parte»: solo il mio previsto, senza quello degli altri né nome ed eliminazione della categoria */ soloMio?: boolean } & Pick<Props, 'onPlanned' | 'onRename' | 'onDelete'>) {
+  // il previsto di chi non ha l'account solo se posso modificare il viaggio (e mai nella mia parte)
+  const c = scrive && !soloMio ? riga : { ...riga, altri: [], personale: soloMio ? false : riga.personale }
   const testo = (v: number | undefined) => (v === undefined ? '' : String(v).replace('.', ','))
   // con il previsto a persona (0056) si scrive il mio e, se posso, quello di chi non ha l'account; prima, quello della categoria
   const persone = c.mio ? [c.mio, ...(c.altri ?? [])] : []
@@ -185,10 +185,11 @@ export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilan
           <div className="sc">{tt('Per categoria')}</div>
           <div className="cats">
             {dati.categorie.map((c) =>
-              mia ? (
+              // nella mia parte si scrive il mio previsto come nel riepilogo; senza il previsto a persona (prima della 0056) resta fisso
+              mia && (!c.mio || soloLettura(trip)) ? (
                 <RigaFissa key={c.key} c={c} cur={cur} />
               ) : (
-              <RigaCat key={`${c.key}:${c.planned}:${c.label}:${c.mio?.valore ?? ''}:${(c.altri ?? []).map((p) => p.valore ?? '').join(',')}`} c={c} cur={cur} open={open === c.key} onToggle={() => setOpen(open === c.key ? null : c.key)} onPlanned={onPlanned} onRename={onRename} onDelete={onDelete} nome={nome} gruppo={gruppo} scrive={!soloLettura(trip)} />
+              <RigaCat key={`${c.key}:${c.planned}:${c.label}:${c.mio?.valore ?? ''}:${(c.altri ?? []).map((p) => p.valore ?? '').join(',')}`} c={c} cur={cur} open={open === c.key} onToggle={() => setOpen(open === c.key ? null : c.key)} onPlanned={onPlanned} onRename={onRename} onDelete={onDelete} nome={nome} gruppo={gruppo} scrive={!soloLettura(trip)} soloMio={mia} />
               ),
             )}
           </div>

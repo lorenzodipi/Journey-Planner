@@ -9,7 +9,7 @@ import { Sv } from '../../faraway/icons'
 import { chiRichiesta, controllaRimborso, daDecidere, dataNumerica, inAttesaMie, pagamentiNuovi, riepilogoNovita, rimborsiValidi, STATO_RIMBORSO } from '../../lib/rimborsi'
 import { pagamentiImmediati } from '../../lib/moneyApi'
 import type { PianoBilancia } from '../../lib/debitiSpese'
-import { leggiVisti, segnaVisti } from '../../lib/rimborsiVisti'
+import { ascoltaVisti, leggiVisti, segnaVisti } from '../../lib/rimborsiVisti'
 import { formatMoney, parseAmount } from '../../lib/money'
 import { tripToday } from '../../lib/today'
 import { useMe } from '../../state/me'
@@ -27,16 +27,46 @@ export function useRichiesteDaDecidere(trip: Trip | null | undefined): Rimborso[
   return daDecidere(trip ? rimborsiValidi(trip).settlements : undefined, me?.id)
 }
 
-/** Pagamenti di altri che non ho ancora visto (avviso in Oggi, in Spese e pallino sulla scheda). */
+/** Visti segnati su questo dispositivo e già mandati al server in questa sessione (per non riprovare a ogni ricarica). */
+const giaMandati = new Set<string>()
+
+/**
+ * Pagamenti di altri che non ho ancora visto (avviso in Oggi, in Spese e pallino sulla scheda). Un pagamento visto da un
+ * dispositivo qualsiasi vale ovunque (0057): si uniscono quelli del server e quelli del telefono, e quelli segnati solo
+ * qui (offline o prima della migrazione) si mandano al server appena si può.
+ */
 export function useNovitaRimborsi(trip: Trip | null | undefined) {
   const me = useMe(trip)
-  const [visti, setVisti] = useState<Set<string>>(() => (trip ? leggiVisti(trip.id) : new Set()))
+  const t = useTrips()
+  const [locali, setLocali] = useState<Set<string>>(() => (trip ? leggiVisti(trip.id) : new Set()))
   const tripId = trip?.id
   useEffect(() => {
-    if (tripId) setVisti(leggiVisti(tripId))
+    if (!tripId) return
+    setLocali(leggiVisti(tripId))
+    return ascoltaVisti((id) => id === tripId && setLocali(leggiVisti(tripId)))
   }, [tripId])
+  const server = trip?.pagamentiVisti
+  const visti = useMemo(() => (server?.length ? new Set([...locali, ...server]) : locali), [locali, server])
+  // i visti solo di questo dispositivo che sono pagamenti del viaggio: si mandano una volta
+  useEffect(() => {
+    if (!tripId || !server || !trip?.settlements || !navigator.onLine) return
+    const sul = new Set(server)
+    const chiavi = new Set(trip.settlements.flatMap((r) => [r.id, ...(r.groupId ? [r.groupId] : [])]))
+    const mancano = [...locali].filter((k) => !sul.has(k) && chiavi.has(k) && !giaMandati.has(`${me?.userId}:${tripId}:${k}`))
+    if (mancano.length === 0) return
+    for (const k of mancano) giaMandati.add(`${me?.userId}:${tripId}:${k}`)
+    void t.segnaPagamentiVisti(tripId, mancano)
+  }, [tripId, server, locali, trip?.settlements]) // eslint-disable-line react-hooks/exhaustive-deps
   const nuovi = useMemo(() => (trip ? pagamentiNuovi(rimborsiValidi(trip).settlements, trip.travelers, me?.id, me?.userId, visti, new Date()) : []), [trip, me?.id, me?.userId, visti])
-  return { nuovi, visto: (keys: readonly string[]) => tripId && setVisti(segnaVisti(tripId, keys)) }
+  const visto = (keys: readonly string[]) => {
+    if (!tripId) return
+    segnaVisti(tripId, keys)
+    // offline restano sul telefono e partono al prossimo caricamento con la rete
+    if (!navigator.onLine) return
+    for (const k of keys) giaMandati.add(`${me?.userId}:${tripId}:${k}`)
+    void t.segnaPagamentiVisti(tripId, keys)
+  }
+  return { nuovi, visto }
 }
 
 /** «Ho pagato»: importo (anche parziale, non oltre il dovuto) e data; la richiesta va «In attesa di conferma». */
@@ -140,7 +170,8 @@ export function DecidiSheet({ trip, r, onClose }: { trip: Trip; r: Rimborso; onC
 }
 
 /**
- * Avvisi sui pagamenti che altri hanno registrato per me: «Controlla» porta alle voci (dove si può contestare), «Ho visto»
+ * Avvisi sui pagamenti che altri hanno registrato per me: «Controlla» apre il Bilancio sulle card che il pagamento copre
+ * (dove si può contestare) e lo segna visto, «Ho visto»
  * li toglie. Da due in su c'è una riga sola di riepilogo con «Ho visto tutti»; toccandola si apre l'elenco.
  */
 function AvvisiNovita({ trip, aperti = false }: { trip: Trip; /** elenco già aperto (nel Bilancio) */ aperti?: boolean }) {
@@ -156,7 +187,7 @@ function AvvisiNovita({ trip, aperti = false }: { trip: Trip; /** elenco già ap
       azioniSotto
       action={
         <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <Link href="/spese/bilancio" className="fa-btn sm sott" onClick={() => visto([n.key])}>{tt('Controlla')}</Link>
+          <Link href={`/spese/bilancio?voce=${encodeURIComponent(n.key)}`} className="fa-btn sm sott" onClick={() => visto([n.key])}>{tt('Controlla')}</Link>
           <Pulsante size="sm" color="secondary" onPress={() => visto([n.key])}>{tt('Ho visto')}</Pulsante>
         </span>
       }
@@ -207,7 +238,7 @@ function AvvisiNovita({ trip, aperti = false }: { trip: Trip; /** elenco già ap
                 ) : null}
               </span>
               <span className="fa-novita-ra">
-                <Link href="/spese/bilancio" className="fa-btn sm sott" onClick={() => visto([n.key])}>{tt('Controlla')}</Link>
+                <Link href={`/spese/bilancio?voce=${encodeURIComponent(n.key)}`} className="fa-btn sm sott" onClick={() => visto([n.key])}>{tt('Controlla')}</Link>
                 <Pulsante size="sm" color="secondary" onPress={() => visto([n.key])}>{tt('Ho visto')}</Pulsante>
               </span>
             </li>

@@ -51,9 +51,9 @@ describe('ricaricamento solo di ciò che cambia', () => {
     forgetFetched()
   })
 
-  it('il caricamento completo legge tutte le 31 tabelle (con i costi privati) e le persone di ogni viaggio', async () => {
+  it('il caricamento completo legge tutte le 32 tabelle (con i costi privati) e le persone di ogni viaggio', async () => {
     const trips = await fetchTrips()
-    expect(calls).toHaveLength(31)
+    expect(calls).toHaveLength(32)
     expect(rpcCalls).toBe(4)
     expect(trips[0].places.map((p) => p.name)).toEqual(['Senso-ji'])
   })
@@ -76,14 +76,27 @@ describe('ricaricamento solo di ciò che cambia', () => {
     expect(calls.sort()).toEqual(['budget_item_shares', 'budget_items', 'expense_categories', 'expense_files', 'expense_payers', 'expense_shares', 'expenses', 'settlements', 'traveler_budgets', 'traveler_category_planned'])
   })
 
+  it('un pagamento visto rilegge solo i visti (0057)', async () => {
+    rows.settlement_seen = [{ trip_id: 't1', ref: 'a' }, { trip_id: 'altro', ref: 'b' }]
+    await fetchTrips()
+    calls.length = 0
+    rpcCalls = 0
+    const trips = await fetchTrips(['seen'])
+    expect(calls).toEqual(['settlement_seen'])
+    expect(rpcCalls).toBe(0)
+    expect(trips[0].pagamentiVisti).toEqual(['a'])
+    delete rows.settlement_seen
+  })
+
   it('senza una copia già scaricata ricarica tutto, anche se si chiede una parte', async () => {
     await fetchTrips(['places'])
-    expect(calls).toHaveLength(31)
+    expect(calls).toHaveLength(32)
   })
 
   it('le tabelle sconosciute non hanno un gruppo (quindi si ricarica tutto)', () => {
     expect(scopeOfTable('places')).toBe('places')
     expect(scopeOfTable('checklist_items')).toBe('planning')
+    expect(scopeOfTable('settlement_seen')).toBe('seen')
     expect(scopeOfTable('boh')).toBeNull()
   })
 

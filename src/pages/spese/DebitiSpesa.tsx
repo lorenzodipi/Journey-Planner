@@ -1,7 +1,7 @@
 // «Da dare» e «Da ricevere» spesa per spesa (#51): una card per ogni spesa in cui devo dare o ricevere dei soldi,
 // con l'importo tra me e l'altra persona e lo stato. Le azioni (Ho pagato, Rispondi, Annulla, Rettifica) stanno
 // nel menu a tre puntini a destra dell'importo.
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'wouter'
 import { MenuAzioni, Pillola } from '../../faraway/base'
 import { filtraBilancio, FILTRI_VUOTI, ORDINE_BASE, ordinaBilancio, type FiltriBilancio as TipoFiltri, type Ordine } from '../../lib/filtriBilancio'
@@ -12,7 +12,7 @@ import { useMe } from '../../state/me'
 import { showToast } from '../../state/toast'
 import { useTrips } from '../../state/trip'
 import type { Rimborso } from '../../types'
-import { debitiPerSpesa, type DebitoSpesa } from '../../lib/debitiSpese'
+import { carteDelPagamento, chiaveCard, debitiPerSpesa, type DebitoSpesa } from '../../lib/debitiSpese'
 import { formatMoney, round2 } from '../../lib/money'
 import { iconaSpesa } from '../../lib/ricevuta'
 import { dataNumerica, rimborsiValidi } from '../../lib/rimborsi'
@@ -35,7 +35,10 @@ function Stato({ d }: { d: DebitoSpesa }) {
   return <Pillola tone={d.verso === 'devo' ? 'cor' : 'mut'}>{d.verso === 'devo' ? tt('Da pagare') : tt('Da ricevere')}</Pillola>
 }
 
-export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: Trip; spese: readonly SpesaVista[]; fx: FxContext; me: string | undefined; abilitaPagamento: boolean }) {
+/** Quanto resta evidenziata la card raggiunta da «Controlla». */
+const EVIDENZA_MS = 4000
+
+export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento, voce }: { trip: Trip; spese: readonly SpesaVista[]; fx: FxContext; me: string | undefined; abilitaPagamento: boolean; /** pagamento da mostrare («Controlla»): la pagina scorre fino alle sue card e le evidenzia */ voce?: { ref: string; n: number } | null }) {
   const cur = trip.baseCurrency
   const t = useTrips()
   const nome = useCallback((id: string) => trip.travelers.find((x) => x.id === id)?.name.split(/\s+/)[0] ?? '—', [trip.travelers])
@@ -102,6 +105,26 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
   const tutte = useMemo(() => debitiPerSpesa(spese, trip.travelers, fx, me, validi.settled, validi.settlements), [spese, trip.travelers, fx, me, validi.settled, validi.settlements])
   const righe = useMemo(() => ordinaBilancio(filtraBilancio(tutte, filtri), ordine, nome), [tutte, filtri, ordine, nome])
   const filtrate = righe.length !== tutte.length
+  // «Controlla» su un pagamento nuovo: filtri azzerati, la pagina scorre fino alla prima card che copre e le evidenzia tutte
+  const [evidenza, setEvidenza] = useState<ReadonlySet<string>>(new Set())
+  useEffect(() => {
+    if (!voce) return
+    const carte = carteDelPagamento(tutte, trip.settlements, voce.ref)
+    if (carte.length === 0) return
+    setFiltri(FILTRI_VUOTI)
+    setOrdine(ORDINE_BASE)
+    setEvidenza(new Set(carte))
+    // dopo il rendering con i filtri azzerati (e senza l'avviso appena tolto) la card è al suo posto
+    const vai = window.setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(`[data-card="${CSS.escape(carte[0])}"]`)
+      if (!el) return
+      const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      el.scrollIntoView({ block: 'center', behavior: calm ? 'auto' : 'smooth' })
+      el.focus({ preventScroll: true })
+    }, 80)
+    const spegni = window.setTimeout(() => setEvidenza(new Set()), EVIDENZA_MS)
+    return () => (window.clearTimeout(vai), window.clearTimeout(spegni))
+  }, [voce?.ref, voce?.n]) // eslint-disable-line react-hooks/exhaustive-deps
   const sezioni: { verso: DebitoSpesa['verso']; titolo: string }[] = [
     { verso: 'devo', titolo: tt('Da dare') },
     { verso: 'devono', titolo: tt('Da ricevere') },
@@ -129,7 +152,7 @@ export function DebitiSpesa({ trip, spese, fx, me, abilitaPagamento }: { trip: T
             {filtrate ? <p className="fa-m" style={{ margin: 0 }}>{tt('Solo le voci filtrate.')}</p> : null}
             <div className="fa-list">
               {list.map((d) => (
-                <div key={`${d.expenseId}:${d.otherId}`} className="fa-dbt">
+                <div key={chiaveCard(d)} data-card={chiaveCard(d)} tabIndex={-1} className={evidenza.has(chiaveCard(d)) ? 'fa-dbt ev' : 'fa-dbt'}>
                   <div className="top">
                     <Ic name={iconaSpesa(d.expense)} size={44} />
                     <span style={{ minWidth: 0 }}>

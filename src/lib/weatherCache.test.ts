@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { MAX_COPIE, clearForecasts, fetchForecastCondiviso, forecastKey, loadForecast, saveForecast } from './weather'
+import { MAX_COPIE, PAUSA_DOPO_ERRORE_MS, clearForecasts, fetchForecastCondiviso, forecastKey, loadForecast, saveForecast } from './weather'
 
 const giorni = [{ date: '2026-11-24', code: 2, max: 18, min: 9, rainPct: 0, hours: [{ h: 0, t: 10, code: 2, rain: 0 }] }]
 const copia = (key: string, savedAt = Date.now()) => ({ key, savedAt, days: giorni })
@@ -60,5 +60,14 @@ describe('copia del meteo sul telefono', () => {
     expect(f).toHaveBeenCalledTimes(1)
     expect(a).toBe(b)
     expect(loadForecast(forecastKey(35.68, 139.76, 'Asia/Tokyo'))?.days[0].date).toBe('2026-11-24')
+  })
+
+  it('dopo un errore lo stesso posto non si richiede per 2 minuti', async () => {
+    const f = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'))
+    await expect(fetchForecastCondiviso(1.5, 2.5, 'Asia/Tokyo')).rejects.toThrow()
+    await expect(fetchForecastCondiviso(1.5, 2.5, 'Asia/Tokyo')).rejects.toThrow()
+    expect(f).toHaveBeenCalledTimes(1)
+    await expect(fetchForecastCondiviso(1.5, 2.5, 'Asia/Tokyo', Date.now() + PAUSA_DOPO_ERRORE_MS + 1)).rejects.toThrow()
+    expect(f).toHaveBeenCalledTimes(2)
   })
 })

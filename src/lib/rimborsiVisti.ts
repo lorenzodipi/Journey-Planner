@@ -1,5 +1,13 @@
-// I pagamenti di altri che ho già visto (avviso in Oggi e in Spese): solo su questo telefono, per viaggio.
+// I pagamenti di altri che ho già visto (avviso in Oggi e in Spese), per viaggio: la copia di questo dispositivo. Con la
+// migrazione 0057 si uniscono a quelli segnati dagli altri dispositivi (Trip.pagamentiVisti, useNovitaRimborsi).
 const chiave = (tripId: string) => `jp.rimborsiVisti.${tripId}`
+const ascoltatori = new Set<(tripId: string) => void>()
+
+/** Avvisa quando questo dispositivo segna dei visti (l'avviso in Spese e il pallino sulla scheda si aggiornano insieme). */
+export function ascoltaVisti(fn: (tripId: string) => void): () => void {
+  ascoltatori.add(fn)
+  return () => void ascoltatori.delete(fn)
+}
 
 export function leggiVisti(tripId: string): Set<string> {
   try {
@@ -19,5 +27,6 @@ export function segnaVisti(tripId: string, keys: readonly string[]): Set<string>
   } catch {
     // senza memoria locale l'avviso torna alla prossima apertura: va bene
   }
+  for (const fn of ascoltatori) fn(tripId)
   return new Set(tutti)
 }

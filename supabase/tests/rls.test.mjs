@@ -1059,6 +1059,38 @@ await asUser(null, 'postgres')
   await asUser(A)
 }
 
+// pagamenti visti (0057): ognuno legge e scrive solo i suoi, solo nei viaggi a cui partecipa
+{
+  await asUser(null, 'postgres')
+  await runMigration('0057_pagamenti_visti.sql')
+  await runMigration('0057_pagamenti_visti.sql') // si può rilanciare
+  const tv = (await db.query(`select id from trips where id in (select trip_id from trip_members where user_id=$1) and id in (select trip_id from trip_members where user_id=$2) limit 1`, [A, B])).rows[0].id
+  const fuori = (await db.query(`select id from trips where id not in (select trip_id from trip_members where user_id=$1) limit 1`, [B])).rows[0]?.id
+  const ref = '99999999-9999-9999-9999-999999999999'
+  const segna = (trip) => db.query(`insert into settlement_seen (trip_id, ref) values ($1,$2) on conflict do nothing`, [trip, ref])
+  await asUser(A)
+  await segna(tv)
+  await segna(tv) // la seconda volta non cambia niente
+  check('0057 si vede il proprio pagamento visto, una volta', (await db.query(`select user_id from settlement_seen where trip_id=$1`, [tv])).rows.length === 1)
+  await throws('0057 non si segna per un altro', () => db.query(`insert into settlement_seen (user_id, trip_id, ref) values ($1,$2,$3)`, [B, tv, ref]))
+  await asUser(B)
+  check('0057 B non vede i visti di A', (await db.query(`select 1 from settlement_seen where trip_id=$1`, [tv])).rows.length === 0)
+  await segna(tv)
+  check('0057 B segna il suo', (await db.query(`select 1 from settlement_seen where trip_id=$1`, [tv])).rows.length === 1)
+  await db.query(`delete from settlement_seen where trip_id=$1`, [tv])
+  await asUser(A)
+  check('0057 B toglie solo i suoi', (await db.query(`select 1 from settlement_seen where trip_id=$1`, [tv])).rows.length === 1)
+  if (fuori) {
+    await asUser(B)
+    await throws('0057 non si segna in un viaggio a cui non si partecipa', () => segna(fuori))
+  }
+  await asUser(null, 'postgres')
+  const pub = (await db.query(`select count(*)::int n from pg_publication_tables where pubname='supabase_realtime' and tablename in ('settlement_seen','traveler_budgets')`)).rows[0].n
+  const conPub = (await db.query(`select count(*)::int n from pg_publication where pubname='supabase_realtime'`)).rows[0].n
+  check('0057 visti e budget a persona nel tempo reale', conPub === 0 || pub === 2, String(pub))
+  await asUser(A)
+}
+
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione
 await asUser(null, 'service_role')
 const svcTrip = (await db.query(`select id from trips limit 1`)).rows

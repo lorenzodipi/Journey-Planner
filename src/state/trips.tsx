@@ -159,6 +159,8 @@ interface TripsValue {
   unlinkDocument: (id: string, kind: DocKind, refId: string) => Result
   decideSettlement: (id: string, accept: boolean, version: string | null) => Result
   balanceVersion: (tripId: string) => Promise<string | null>
+  /** Pagamenti di altri segnati come visti su tutti i dispositivi (0057). Senza rete o senza migrazione non fa niente: restano sul dispositivo. */
+  segnaPagamentiVisti: (tripId: string, refs: readonly string[]) => Promise<void>
   setExpenseCategoryPlanned: (tripId: string, label: string, planned: number | null) => Result
   /** Previsto a persona (0056): il mio, o quello di chi non ha l'account. `null` torna alla quota stimata. */
   setTravelerCategoryPlanned: (tripId: string, label: string, travelerId: string, amount: number | null) => Result
@@ -232,6 +234,9 @@ function checkOps(trip: Trip, item: ChecklistItem, check: { done: boolean; quant
   return [{ k: 'update', table: 'checklist_items', id: item.id, patch: legacy }]
 }
 
+/** Due ricaricamenti completi chiesti a meno di questo tempo l'uno dall'altro diventano uno solo. */
+const RICARICA_UNITA_MS = 4000
+
 const DEMO_MESSAGE = tt('Anteprima demo: collega Supabase per salvare le modifiche.')
 const demoResult: Result = Promise.resolve(DEMO_MESSAGE)
 
@@ -265,9 +270,27 @@ export function TripProvider({ children }: { children: ReactNode }) {
     setReceivedInvites(await api.fetchReceivedInvites())
   }, [demo])
 
+  // ricaricamento completo in corso o appena partito: tornando online e ricollegando il tempo reale partono insieme due
+  // ricaricamenti completi (più di 30 richieste l'uno) per la stessa ragione; il secondo usa il primo
+  const completo = useRef<{ alle: number; p: Promise<boolean> } | null>(null)
+
   /** Ricarica dal server (tutto, o solo i gruppi indicati). `true` se ci è riuscita. */
   const load = useCallback(async (only?: api.Scope[]): Promise<boolean> => {
     if (demo) return false
+    if (!only) {
+      const c = completo.current
+      if (c && Date.now() - c.alle < RICARICA_UNITA_MS) return c.p
+      const p = carica()
+      const questo = { alle: Date.now(), p }
+      completo.current = questo
+      // un caricamento fallito non si riusa: «Riprova» deve riprovare davvero
+      void p.then((ok) => !ok && completo.current === questo && (completo.current = null))
+      return p
+    }
+    return carica(only)
+  }, [demo, refreshInvites]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function carica(only?: api.Scope[]): Promise<boolean> {
     try {
       // senza dati sul telefono non si aspetta all'infinito (#25): dopo il tempo limite compare l'errore
       let timer: ReturnType<typeof setTimeout> | undefined
@@ -294,7 +317,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       }
       return false
     }
-  }, [demo, refreshInvites])
+  }
 
   const refresh = useCallback(() => load(), [load])
 
@@ -354,6 +377,9 @@ export function TripProvider({ children }: { children: ReactNode }) {
   // e si ricarica solo il gruppo di dati toccato (le raffiche, come un import, diventano un solo ricaricamento).
   // Serve la migrazione 0011 (abilita il tempo reale sulle tabelle); senza, tutto funziona come prima.
   const watchedId = active?.id
+  // tabelle nuove seguite solo quando esistono e sono nel tempo reale (la query è andata): una tabella che manca farebbe
+  // fallire tutto il canale. I budget a persona entrano nel tempo reale con la 0057.
+  const extraWatched = [active?.budgets !== undefined && active?.pagamentiVisti !== undefined ? 'traveler_budgets' : '', active?.previsti !== undefined ? 'traveler_category_planned' : '', active?.pagamentiVisti !== undefined ? 'settlement_seen' : ''].filter(Boolean).join(',')
   useEffect(() => {
     if (demo || !signedIn || !supabase || !watchedId) return
     const db = supabase
@@ -372,7 +398,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       timer = setTimeout(flushChanges, 600)
     }
     let channel = db.channel(`trip-${watchedId}`)
-    for (const table of WATCHED_TABLES) {
+    for (const table of [...WATCHED_TABLES, ...(extraWatched ? extraWatched.split(',') : [])]) {
       channel = channel.on('postgres_changes', { event: '*', schema: 'public', table, filter: table === 'trips' ? `id=eq.${watchedId}` : `trip_id=eq.${watchedId}` }, () => onChange(table))
     }
     channel.subscribe((state) => {
@@ -385,7 +411,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       clearTimeout(timer)
       void db.removeChannel(channel)
     }
-  }, [demo, signedIn, watchedId, load])
+  }, [demo, signedIn, watchedId, load, extraWatched])
 
   const setActive = useCallback((id: string) => {
     setActiveId(id)
@@ -722,6 +748,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     unlinkDocument: (id, kind, refId) => run(() => planning.unlinkDocument(id, kind, refId), ['planning']),
     decideSettlement: (id, accept, version) => run(() => money.decideSettlement(id, accept, version), ['money']),
     balanceVersion: (tripId) => money.fetchBalanceVersion(tripId).catch(() => null),
+    segnaPagamentiVisti: (tripId, refs) => (demo || !signedIn || !navigator.onLine ? Promise.resolve() : money.segnaPagamentiVisti(tripId, refs).catch(() => undefined)),
     setExpenseCategoryPlanned: (tripId, label, planned) => run(() => money.setExpenseCategoryPlanned(tripId, label, planned, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['expenseCategories']),
     setTravelerCategoryPlanned: (tripId, label, travelerId, amount) => run(() => money.setTravelerCategoryPlanned(tripId, label, travelerId, amount, trips.find((x) => x.id === tripId)?.expenseCategories ?? []), ['money', 'expenseCategories']),
     setTripBudgetLimit: (tripId, limit) => run(() => api.setTripBudgetLimit(tripId, limit), ['trips']),

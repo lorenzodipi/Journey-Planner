@@ -246,3 +246,16 @@ export function pianoBilancia(righe: readonly DebitoSpesa[], me: string, otherId
     voci: devo.length + devono.length,
   }
 }
+
+/** Chiave di una card del bilancio (una spesa con una persona). */
+export const chiaveCard = (d: Pick<DebitoSpesa, 'expenseId' | 'otherId'>) => `${d.expenseId}:${d.otherId}`
+
+/**
+ * Le card coperte da un pagamento («Controlla» sull'avviso di un pagamento nuovo): `ref` è l'id del pagamento o del gruppo
+ * di una «Bilancia», che può coprire più card. Nell'ordine dell'elenco.
+ */
+export function carteDelPagamento(righe: readonly DebitoSpesa[], settlements: readonly Pick<Rimborso, 'id' | 'groupId'>[] | undefined, ref: string): string[] {
+  const ids = new Set((settlements ?? []).filter((r) => r.id === ref || r.groupId === ref).map((r) => r.id))
+  if (ids.size === 0) return []
+  return righe.filter((d) => [...d.confermati, ...d.richieste, ...d.contestati].some((c) => ids.has(c.id))).map(chiaveCard)
+}
