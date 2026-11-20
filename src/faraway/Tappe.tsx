@@ -2,6 +2,7 @@
 // binario con i nodi, stato a destra, spostamenti tra una tappa e l'altra, una card aperta in linea
 // con orari, apertura, indirizzo, Maps, costo, menu «Stato della tappa» e Modifica · Sposta · Elimina.
 // La usa la pagina Giorno e «Il programma di oggi» in Oggi (#29).
+import { TestoConLink } from './TestoConLink'
 import { Pulsante } from './base'
 import { MenuScelta } from './MenuScelta'
 import { ora } from '../lib/formati'
@@ -223,6 +224,8 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
           const opening = place?.openingSpec ? openingFor(place.openingSpec, day.date, f === 'now' ? ctx.nowMin : startAt) : null
           const address = place?.address || [place?.name, place?.city].filter(Boolean).join(', ')
           const hereText = fromHere?.(item) ?? null
+          // note della tappa e del luogo collegato (senza ripetere la stessa): si vedono aprendo la card, solo se ci sono
+          const note = [...new Set([item.note, place?.note].map((n) => n?.trim()).filter((n): n is string => !!n))]
           const bloccata = !!item.time && item.timeLock === 'locked'
           const puoiTrascinare = !!onReorder && !readOnly && !item.time && items.length > 1
           const dy = spostamento(idx)
@@ -368,6 +371,9 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                           }
                         />
                       ) : null}
+                      {note.map((n) => (
+                        <Riga key={n} icon="g-note" main={<span style={{ fontWeight: 400, whiteSpace: 'pre-line', overflowWrap: 'anywhere' }}><TestoConLink testo={n} /></span>} />
+                      ))}
                       {exp && !(f === 'now') ? (
                         <Riga
                           icon="g-budget"

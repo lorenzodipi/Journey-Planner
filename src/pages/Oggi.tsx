@@ -112,6 +112,22 @@ function useLeMieCose(trip: Trip, me: string | undefined) {
   )
 }
 
+/** Cambio valuta (tra la valuta di casa e quella del posto), in Oggi prima e durante il viaggio; niente per il visualizzatore. */
+const conCambio = (trip: Trip) => !soloLettura(trip) && !!trip.localCurrency && trip.localCurrency !== trip.baseCurrency && !!trip.fxRate
+
+function CambioValuta({ trip }: { trip: Trip }) {
+  const rate = trip.fxRate
+  if (!conCambio(trip) || !trip.localCurrency || !rate) return null
+  return (
+    <section style={{ display: 'grid', gap: 8 }}>
+      <div className="fa-sech">
+        <h2 className="fa-h3">{tt('Cambio valuta')}</h2>
+      </div>
+      <ValutaPiccola base={trip.baseCurrency} local={trip.localCurrency} rate={rate} baseName={cap(currencyName(trip.baseCurrency) ?? trip.baseCurrency)} localName={cap(currencyName(trip.localCurrency) ?? trip.localCurrency)} />
+    </section>
+  )
+}
+
 /* ------------------------------------------------------------------ prima del viaggio (#28) */
 
 /** Città del viaggio in ordine, con date e notti: la fine di una città è l'arrivo nella successiva. */
@@ -157,9 +173,11 @@ function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string 
             {checklist}
           </Colonna>
         )}
-        {tappeViaggio.length > 1 ? (
+        {/* in fondo, dopo le città: il cambio valuta */}
+        {tappeViaggio.length > 1 || conCambio(trip) ? (
           <Colonna lato="sinistra" mobile>
-            <StepperViaggio tappe={tappeViaggio} />
+            {tappeViaggio.length > 1 ? <StepperViaggio tappe={tappeViaggio} /> : null}
+            <CambioValuta trip={trip} />
           </Colonna>
         ) : null}
       </Affianca>
@@ -230,9 +248,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
     .filter((b) => b.validFrom && Date.parse(b.validFrom) > now.getTime() && daysBetween(today, tripToday({ timezone: trip.timezone }, new Date(b.validFrom))) <= 1)
     .sort((a, b) => (a.validFrom as string).localeCompare(b.validFrom as string))[0]
 
-  const rate = trip.fxRate
   const lettura = soloLettura(trip)
-  const showFx = !lettura && trip.localCurrency && trip.localCurrency !== trip.baseCurrency && rate
 
   const [ask, confirmNode] = useConferma()
   const onStatus = async (item: DayItem, status: ItemStatus) => {
@@ -367,14 +383,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
         </section>
       ) : null}
 
-      {showFx ? (
-        <section style={{ display: 'grid', gap: 8 }}>
-          <div className="fa-sech">
-            <h2 className="fa-h3">{tt('Cambio valuta')}</h2>
-          </div>
-          <ValutaPiccola base={trip.baseCurrency} local={trip.localCurrency as string} rate={rate as number} baseName={cap(currencyName(trip.baseCurrency) ?? trip.baseCurrency)} localName={cap(currencyName(trip.localCurrency as string) ?? (trip.localCurrency as string))} />
-        </section>
-      ) : null}
+      <CambioValuta trip={trip} />
       </Colonna>
       </Affianca>
       {confirmNode}
