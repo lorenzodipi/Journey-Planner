@@ -198,7 +198,7 @@ export function PerChi({ trip, meId, value, onChange, label = t('Diviso tra'), h
           {scelti.length === 1 ? <span className="fa-help">{t('Serve almeno una persona.')}</span> : null}
         </div>
       ) : null}
-      {help}
+      {help ? <span className="fa-help">{help}</span> : null}
     </Riquadri>
   )
 }
