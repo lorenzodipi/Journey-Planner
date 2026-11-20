@@ -4,7 +4,7 @@ import { MeteoGiornoCard } from './giorno/MeteoGiornoCard'
 import { cittaDelGiorno, indiceCittaAdesso } from '../lib/meteoGiorno'
 import { ora, useRiferimento } from '../lib/formati'
 import { Foglio } from '../faraway/Foglio'
-import { Chip, Pulsante } from '../faraway/base'
+import { Chip } from '../faraway/base'
 import { oggiNelViaggio } from '../lib/paesi'
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'wouter'
@@ -15,6 +15,7 @@ import { groupDays, rangeText, type DayGroup } from '../lib/dayGroups'
 import { soloLettura } from '../lib/ruolo'
 import { StepperViaggio, type TappaViaggio } from '../faraway/StepperViaggio'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
+import { dateInZone } from '../lib/flights'
 import { faseViaggio, notteAlle, prossimeOre } from '../lib/oggi'
 import { allerteMeteo, allerteTerremoti, ordinaAllerte } from '../lib/allerte'
 import { useTerremoti } from '../state/terremoti'
@@ -63,10 +64,12 @@ export function Oggi() {
   const now = useNow()
   // più paesi: oggi, fuso, valuta e centro seguono il paese del giorno (#35)
   const { today, trip } = oggiNelViaggio(real, now)
-  const fase = faseViaggio(trip, today)
+  // l'inizio si conta a casa: il giorno prima della partenza resta la Home di prima, anche se là è già domani
+  const fase = faseViaggio(trip, today, now, real.originTimezone || deviceTz())
   if (fase === 'pre') return <OggiPrima trip={trip} now={now} today={today} />
   if (fase === 'post') return <OggiDopo trip={trip} now={now} today={today} />
-  return <OggiDurante trip={trip} now={now} today={today} />
+  // partiti, ma alla destinazione è ancora il giorno prima (fusi indietro rispetto a casa): si mostra il primo giorno
+  return <OggiDurante trip={trip} now={now} today={today < trip.startDate ? trip.startDate : today} />
 }
 
 /** Avviso offline in cima (Fa-07 chiaro, #49). */
@@ -128,7 +131,8 @@ function OggiPrima({ trip, now, today }: { trip: Trip; now: Date; today: string 
   const me = useMe(trip)
   // il visualizzatore non è tra i viaggiatori: nel saluto vale il nome del profilo
   const auth = useAuth()
-  const days = daysBetween(today, trip.startDate)
+  // i giorni alla partenza si contano a casa (la sera prima, là può essere già il giorno della partenza)
+  const days = daysBetween(dateInZone(now.toISOString(), trip.originTimezone || deviceTz()), trip.startDate)
   const groups = groupDays(trip, today)
   const meta = groups.find((g) => g.kind === 'city')?.title ?? trip.destination
   const legs = trip.flights.flatMap((f) => f.legs).filter((l) => Date.parse(l.departAt) > now.getTime()).sort((a, b) => a.departAt.localeCompare(b.departAt))
@@ -292,9 +296,10 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
         />
       ) : null}
       {cittaViaggio.length > 1 ? (
-        <Pulsante color="tertiary" size="sm" iconLeading="pin" onPress={() => setSceltaCitta(true)}>
-          {rif && cittaViaggio.includes(rif) ? tt('Località scelta: {rif}', { rif }) : tt('Cambia località di riferimento')}
-        </Pulsante>
+        <button type="button" className="fa-lnk ic" aria-haspopup="dialog" onClick={() => setSceltaCitta(true)}>
+          <Sv name="pin" size={20} />
+          <span>{rif && cittaViaggio.includes(rif) ? tt('Località scelta: {rif}', { rif }) : tt('Cambia località di riferimento')}</span>
+        </button>
       ) : null}
       <Foglio open={sceltaCitta} title={tt('Località di riferimento')} onClose={() => setSceltaCitta(false)}>
         <div style={{ display: 'grid', gap: 16 }}>

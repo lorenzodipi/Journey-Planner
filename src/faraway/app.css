@@ -56,6 +56,9 @@ input:autofill{background:transparent}
 .fa-seg>.fa-segr{min-width:auto}
 .fa-ib[data-focus-visible],.fa-btn[data-focus-visible],.fa-chip[data-focus-visible]{outline:3px solid var(--focus);outline-offset:2px}
 .fa-lnk:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+/* link con icona davanti (Oggi: «Cambia località di riferimento»): icona dello stesso blu, non sottolineata, allineata al bordo */
+.fa-lnk.ic{display:inline-flex;align-items:center;gap:8px;justify-self:start;align-self:flex-start;padding-left:0;text-decoration:none;color:var(--azzurro-ink)}
+.fa-lnk.ic span{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:2px}
 .fa-sech .fa-lnk{display:inline-flex;align-items:center;box-sizing:border-box}
 a.fa-row,a.fa-tab{text-decoration:none;color:inherit}
 

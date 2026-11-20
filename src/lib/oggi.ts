@@ -3,16 +3,34 @@ import { gradi } from './formati'
 import { daysBetween } from './dates'
 import { weatherLabel, type DayWeather, type HourWeather } from './weather'
 import type { Trip } from '../types'
-import type { DaySun } from './sun'
+import { tzOffsetMinutes, type DaySun } from './sun'
 import { t as tt } from '../i18n'
 
 export type FaseViaggio = 'pre' | 'during' | 'post'
 
-/** Prima, durante o dopo il viaggio, dalle date nel fuso del viaggio (FRD BR-01). */
-export function faseViaggio(trip: Pick<Trip, 'startDate' | 'endDate'>, today: string): FaseViaggio {
-  if (daysBetween(today, trip.startDate) > 0) return 'pre'
+/** Ore prima del primo volo in cui Oggi mostra già il viaggio (una partenza all'una di notte si vede la sera prima). */
+export const ORE_PRIMA_PARTENZA = 6
+
+/** Il momento da cui il viaggio è «in corso»: la mezzanotte del giorno di partenza a casa, o 6 ore prima del primo volo se viene prima. */
+export function inizioViaggio(trip: Pick<Trip, 'startDate' | 'flights'>, homeTz: string): number {
+  const [y, m, d] = trip.startDate.split('-').map(Number)
+  const wall = Date.UTC(y, m - 1, d)
+  let mezzanotte = wall - tzOffsetMinutes(new Date(wall), homeTz) * 60_000
+  mezzanotte = wall - tzOffsetMinutes(new Date(mezzanotte), homeTz) * 60_000
+  // il primo volo vicino alla partenza (fino a due giorni prima: un volo di notte parte il giorno prima)
+  const voli = trip.flights.flatMap((f) => f.legs.map((l) => Date.parse(l.departAt))).filter((t) => Number.isFinite(t) && t >= mezzanotte - 2 * 86_400_000)
+  const primo = voli.length ? Math.min(...voli) : null
+  return primo === null ? mezzanotte : Math.min(mezzanotte, primo - ORE_PRIMA_PARTENZA * 3_600_000)
+}
+
+/**
+ * Prima, durante o dopo il viaggio (FRD BR-01). La fine viene dalle date nel fuso del viaggio; l'inizio dal momento di
+ * partenza (`inizioViaggio`): il giorno prima, a casa, resta la Home di prima anche se alla destinazione è già il giorno dopo.
+ */
+export function faseViaggio(trip: Pick<Trip, 'startDate' | 'endDate' | 'flights'>, today: string, now: Date = new Date(), homeTz?: string): FaseViaggio {
   if (daysBetween(today, trip.endDate) < 0) return 'post'
-  return 'during'
+  if (homeTz) return now.getTime() < inizioViaggio(trip, homeTz) ? 'pre' : 'during'
+  return daysBetween(today, trip.startDate) > 0 ? 'pre' : 'during'
 }
 
 const pad = (n: number) => String(n).padStart(2, '0')
