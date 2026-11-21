@@ -35,7 +35,7 @@ async function copia(testo: string, fatto: string) {
   }
 }
 
-/** Codice d'accesso e Wi-Fi (0052): righe con «Copia», nella card e nella riga del giorno. */
+/** Codice d'accesso e Wi-Fi (0052): righe con la sola icona «copia» (area da 44 px, nome per il lettore di schermo), nella card e nella riga del giorno. */
 function RigheAccesso({ s }: { s: Stay }) {
   const riga = (k: string, v: string | undefined, nomeCopia: string, fatto: string) =>
     v ? (
@@ -44,8 +44,7 @@ function RigheAccesso({ s }: { s: Stay }) {
         <dd className="cpy">
           <span className="v">{v}</span>
           <button type="button" className="fa-lnk" aria-label={nomeCopia} onClick={() => void copia(v, fatto)}>
-            <Sv name="copy" size={16} />
-            {t('Copia')}
+            <Sv name="copy" size={20} />
           </button>
         </dd>
       </div>

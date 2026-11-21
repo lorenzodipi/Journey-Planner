@@ -277,17 +277,17 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
               ) : null}
             </div>
           ))}
-          <Pulsante
-            color="secondary"
-            size="sm"
-            iconLeading="plus"
-            onPress={() => {
+          <button
+            type="button"
+            className="fa-lnk"
+            style={{ justifySelf: 'start', paddingLeft: 0 }}
+            onClick={() => {
               setConNomi(true)
               setCodici((v) => [...v, { k: chiaveCodice.current++, nome: '', codice: '', nuovo: true }])
             }}
           >
             {t('Aggiungi un altro codice d\'ingresso')}
-          </Pulsante>
+          </button>
           <Campo label={t('Rete Wi-Fi')} value={wifi} onChange={setWifi} autoComplete="off" placeholder={t('es. Nome della rete')} />
           <Campo label={t('Password del Wi-Fi')} value={wifiPw} onChange={setWifiPw} autoComplete="off" placeholder={t('es. Password della rete')} />
           <p className="fa-help">{t('Li vedono solo i viaggiatori, non chi segue il viaggio.')}</p>

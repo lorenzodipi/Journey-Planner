@@ -858,7 +858,7 @@ dialog.fa-mod:focus{outline:none}
 /* Alloggio: codice d'accesso e Wi-Fi con «Copia» a destra (area di tocco da 44 px senza allungare la riga) */
 :is(.fa-stay .dl,.fa-dlc) dd.cpy{display:flex;flex-wrap:wrap;align-items:center;column-gap:var(--space-sm)}
 :is(.fa-stay .dl,.fa-dlc) dd.cpy .v{min-width:0;overflow-wrap:anywhere}
-:is(.fa-stay .dl,.fa-dlc) dd.cpy .fa-lnk{display:inline-flex;align-items:center;gap:8px;margin:-12px 0 -12px auto;padding-right:0;font-weight:600}
+:is(.fa-stay .dl,.fa-dlc) dd.cpy .fa-lnk{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:44px;margin:-12px -12px -12px auto;padding:0}
 
 /* Link nelle note (TestoConLink): una riga sola, tre puntini se non ci sta, mai fuori dalla card */
 .fa-url{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;padding:0;min-height:0}
