@@ -253,10 +253,21 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const queueRef = useRef<Entry[]>(queue)
   const tripsRef = useRef<Trip[]>([])
   const flushing = useRef(false)
+  // posizioni delle tappe spostate a mano (trascinamento) in attesa della risposta del server: la tappa resta subito dove la si lascia
+  const [posLocali, setPosLocali] = useState<ReadonlyMap<string, number>>(() => new Map())
   // le tappe di ogni giorno sono sempre nell'ordine mostrato (posizione + orario)
   const trips = useMemo(
-    () => applyQueue(serverTrips, queue).map((t) => ({ ...t, center: tripCenter(t), days: t.days.map((d) => ({ ...d, city: d.city || cittaDaAlloggi(t.stays, d.date), items: orderItems(d.items) })) })),
-    [serverTrips, queue],
+    () =>
+      applyQueue(serverTrips, queue).map((t) => ({
+        ...t,
+        center: tripCenter(t),
+        days: t.days.map((d) => ({
+          ...d,
+          city: d.city || cittaDaAlloggi(t.stays, d.date),
+          items: orderItems(posLocali.size ? d.items.map((i) => (posLocali.has(i.id) ? { ...i, position: posLocali.get(i.id) } : i)) : d.items),
+        })),
+      })),
+    [serverTrips, queue, posLocali],
   )
   const [status, setStatus] = useState<TripsStatus>(demo ? 'ready' : 'loading')
   const [stale, setStale] = useState(false)
@@ -654,7 +665,18 @@ export function TripProvider({ children }: { children: ReactNode }) {
     moveItemTo: async (dayId, itemId, to) => {
       const items = trips.flatMap((t) => t.days).find((d) => d.id === dayId)?.items ?? []
       const changed = planMove(items, items.findIndex((i) => i.id === itemId), to)
-      return changed ? run(() => api.setItemPositions(changed), ['items']) : null
+      if (!changed) return null
+      if (demo) return run(() => api.setItemPositions(changed), ['items'])
+      // si sposta subito (prima della risposta); se il server dice di no torna dov'era e lo si dice
+      const mie = new Map(changed.map((c) => [c.id, c.position]))
+      setPosLocali((m) => new Map([...m, ...mie]))
+      const err = await run(() => api.setItemPositions(changed), ['items'])
+      setPosLocali((m) => {
+        const n = new Map(m)
+        for (const [id, pos] of mie) if (n.get(id) === pos) n.delete(id)
+        return n
+      })
+      return err ? tt('C\'è stato un problema e la tappa è tornata dov\'era. {v0}', { v0: err }) : null
     },
     setItemPositions: (list) => (list.length === 0 ? Promise.resolve(null) : run(() => api.setItemPositions(list), ['items'])),
     setItemStatus: async (tripId, id, status) => {

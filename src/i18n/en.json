@@ -2259,5 +2259,6 @@
  "Aggiungi un altro codice d'ingresso": "Add another entry code",
  "Copia il codice: {v0}": "Copy the code: {v0}",
  "Durata del volo": "Flight time",
- "Apri la mappa a schermo intero": "Open the map full screen"
+ "Apri la mappa a schermo intero": "Open the map full screen",
+ "C'è stato un problema e la tappa è tornata dov'era. {v0}": "Something went wrong and the stop went back where it was. {v0}"
 }
