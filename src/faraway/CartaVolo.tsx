@@ -11,7 +11,7 @@ import { imageUrl } from '../lib/bookingFiles'
 import { bigliettoPersona, passeggeriVolo, linkFlightradar, modoPersone, nomiCorti, postoPersona, scaloDopo, statoCheckin, type StatoCheckin } from '../lib/cartaImbarco'
 import { checkImmagine, codiceAltraTratta, codiciDi, codicePer } from '../lib/codici'
 import { formatMoney } from '../lib/money'
-import { durataLunga, fasciaScali, riepilogoVolo } from '../lib/voli'
+import { durataLunga, fasciaScali, orariTratta, riepilogoVolo } from '../lib/voli'
 import { discOf, initials, useMe } from '../state/me'
 import { showToast } from '../state/toast'
 import { useTrips } from '../state/trip'
@@ -152,6 +152,8 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
   })()
   const senzaPosto = !posto && stato.tipo === 'aprira'
   const dopo = scaloDopo(flight, li, durataLunga)
+  // con uno scalo, orari e durata di questa tratta (la carta chiusa mostra solo il totale)
+  const orari = multiLeg ? orariTratta(flight, li) : null
   const note = [flight.notes, leg.notes].map((x) => x?.trim()).filter(Boolean).join('\n')
   const prezzo = bigliettoPersona(flight, names.length || 1)
   const radar = linkFlightradar(leg.flightNumber)
@@ -350,6 +352,23 @@ export function CartaVolo({ trip, flight, open, onToggle, onEdit, onDelete, onCo
             ) : null}
 
             <div>
+              {orari ? (
+                <div className="grid ci-grid tre" data-adatta="celle">
+                  {[
+                    [t('Partenza'), orari.departTime, orari.departPlus],
+                    [t('Arrivo'), orari.arriveTime, orari.arrivePlus],
+                    [t('Durata del volo'), orari.duration, 0],
+                  ].map(([k, v, piu]) => (
+                    <div className="f" key={k}>
+                      <div className="k">{k}</div>
+                      <div className="v">
+                        {v}
+                        {piu ? <sup style={{ marginLeft: 2, fontSize: 12 }}>+{piu}</sup> : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               <div className="grid ci-grid" data-adatta="celle">
                 {[
                   [t('Terminal'), leg.terminal],

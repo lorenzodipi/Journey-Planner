@@ -2258,5 +2258,6 @@
  "Codice d'accesso {n}": "Access code {n}",
  "Togli il codice {n}": "Remove code {n}",
  "Aggiungi un altro codice d'ingresso": "Add another entry code",
- "Copia il codice: {v0}": "Copy the code: {v0}"
+ "Copia il codice: {v0}": "Copy the code: {v0}",
+ "Durata del volo": "Flight time"
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Flight, FlightLeg } from '../types'
-import { fasciaScali, raggruppaVoli, riepilogoVolo, durataLunga } from './voli'
+import { fasciaScali, raggruppaVoli, riepilogoVolo, durataLunga, orariTratta } from './voli'
 
 const leg = (n: string, from: string, to: string, departAt: string, arriveAt: string, fromTz: string, toTz: string, seq = 1): FlightLeg => ({ id: n + seq, seq, flightNumber: n, from, to, departAt, arriveAt, fromTz, toTz })
 const fl = (id: string, legs: FlightLeg[]): Flight => ({ id, title: id, currency: 'EUR', scope: 'per_person', paid: true, legs })
@@ -32,5 +32,18 @@ describe('voli', () => {
   it('più scali', () => {
     expect(fasciaScali([{ city: 'A', minutes: 60 }, { city: 'B', minutes: 70 }])).toEqual({ titolo: '2 scali', resto: '2 h 10 di attesa in tutto' })
     expect(durataLunga(45)).toBe('45 min')
+  })
+  it('orari e durata di ogni tratta, nel fuso dei suoi aeroporti', () => {
+    // MXP 12:40 → DXB 21:50 (6 h 10 di volo); DXB 23:40 → KIX 13:20 del giorno dopo (8 h 40 di volo)
+    expect(orariTratta(andata, 0)).toEqual({ departTime: '12:40', arriveTime: '21:50', departPlus: 0, arrivePlus: 0, duration: '6 h 10' })
+    expect(orariTratta(andata, 1)).toEqual({ departTime: '23:40', arriveTime: '13:20', departPlus: 0, arrivePlus: 1, duration: '8 h 40' })
+    expect(orariTratta(andata, 2)).toBeNull()
+  })
+  it('una tratta che parte il giorno dopo la prima ha il suo «+1» anche alla partenza', () => {
+    const notte = fl('n', [
+      leg('X 1', 'MXP', 'DXB', '2026-11-21T20:00:00Z', '2026-11-22T02:00:00Z', 'Europe/Rome', 'Asia/Dubai'),
+      leg('X 2', 'DXB', 'KIX', '2026-11-22T08:00:00Z', '2026-11-22T17:00:00Z', 'Asia/Dubai', 'Asia/Tokyo', 2),
+    ])
+    expect(orariTratta(notte, 1)).toMatchObject({ departTime: '12:00', departPlus: 1, arriveTime: '02:00', arrivePlus: 2 })
   })
 })

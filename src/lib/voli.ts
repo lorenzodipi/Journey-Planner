@@ -2,7 +2,7 @@
 import type { Flight, FlightLeg, Trip } from '../types'
 import { airportCity } from './airports'
 import { zonesOf } from './countries'
-import { dateInZone, dayOffset, formatDateInZone, formatInZone, layover, minutesBetween, totalTravelTime } from './flights'
+import { dateInZone, dayOffset, formatDateInZone, formatInZone, layover, legDuration, minutesBetween, totalTravelTime } from './flights'
 import { t } from '../i18n'
 
 export interface GruppoVoli {
@@ -76,6 +76,31 @@ export function riepilogoVolo(f: Flight): RiepilogoVolo {
     numeri: f.legs.map((l) => l.flightNumber?.trim()).filter((n): n is string => Boolean(n)),
     scali,
     date: formatDateInZone(a.departAt, a.fromTz).replace(/\./g, ''),
+  }
+}
+
+export interface OrariTratta {
+  departTime: string
+  arriveTime: string
+  /** giorni dopo la partenza del volo (la prima tratta), come il «+1» della carta chiusa: 0 = stesso giorno */
+  departPlus: number
+  arrivePlus: number
+  /** durata del solo volo della tratta, senza gli scali: «3 h 45» */
+  duration: string
+}
+
+/** Orari della tratta `i` nel fuso dei suoi aeroporti, per la carta aperta di un volo con scalo. */
+export function orariTratta(f: Flight, i: number): OrariTratta | null {
+  const l = f.legs[i]
+  if (!l) return null
+  const a = primo(f)
+  const giorni = (iso: string, tz: string) => Math.max(0, dayOffset({ depart: a.departAt, arrive: iso }, a.fromTz, tz))
+  return {
+    departTime: formatInZone(l.departAt, l.fromTz),
+    arriveTime: formatInZone(l.arriveAt, l.toTz),
+    departPlus: giorni(l.departAt, l.fromTz),
+    arrivePlus: giorni(l.arriveAt, l.toTz),
+    duration: durataLunga(legDuration({ depart: l.departAt, arrive: l.arriveAt })),
   }
 }
 
