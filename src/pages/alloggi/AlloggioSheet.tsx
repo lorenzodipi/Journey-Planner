@@ -289,7 +289,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
             {t('Aggiungi un altro codice d\'ingresso')}
           </button>
           <Campo label={t('Rete Wi-Fi')} value={wifi} onChange={setWifi} autoComplete="off" placeholder={t('es. Nome della rete')} />
-          <Campo label={t('Password del Wi-Fi')} value={wifiPw} onChange={setWifiPw} autoComplete="off" placeholder={t('es. Password della rete')} />
+          <Campo label={t('Password Wi-Fi')} value={wifiPw} onChange={setWifiPw} autoComplete="off" placeholder={t('es. Password della rete')} />
           <p className="fa-help">{t('Li vedono solo i viaggiatori, non chi segue il viaggio.')}</p>
         </Gruppo>
         <AltriDettagli pieni={altri} contenuto={trip.travelers.length > 1 ? t('Persone, telefono, email, chi dorme qui') : t('Persone, telefono, email')} errore={errors.email || errors.guests ? errors : undefined}>

@@ -59,7 +59,7 @@ function RigheAccesso({ s }: { s: Stay }) {
         </Fragment>
       ))}
       {riga(t('Rete Wi-Fi'), s.wifiName, t('Copia il nome della rete Wi-Fi'), t('Nome della rete copiato'))}
-      {riga(t('Password del Wi-Fi'), s.wifiPassword, t('Copia la password del Wi-Fi'), t('Password del Wi-Fi copiata'))}
+      {riga(t('Password Wi-Fi'), s.wifiPassword, t('Copia la password del Wi-Fi'), t('Password del Wi-Fi copiata'))}
     </>
   )
 }
