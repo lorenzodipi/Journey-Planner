@@ -80,6 +80,7 @@
 - Ordine: scelta a mano → trasporto del giorno che copre il tratto → a piedi se breve → mezzo del viaggio. La logica sta in `src/lib/spostamenti.ts`.
 - Taxi e auto sono un mezzo solo, «Auto», negli spostamenti e nei trasporti; i dati salvati prima come taxi si leggono come auto (`senzaTaxi` in `src/lib/mezzi.ts`), senza riscriverli.
 - Sulla mappa a piedi e in auto si va lungo le strade (OSRM, profili `foot` e `car`); con i mezzi e i trasporti del giorno in linea d'aria tratteggiata.
+- **Mappa del giorno a schermo intero**: in basso a destra della mappa nella pagina del giorno c'è il pulsante con l'icona «espandi» (`aria-label` «Apri la mappa a schermo intero»). Apre un `Foglio` a tutta altezza (`MappaGrande` in `src/ui/DayMapPanel.tsx`, classe `.fa-mgrande`) con la stessa mappa: tasto indietro ed Esc lo chiudono, come l'icona «riduci» nello stesso angolo e la «X» in alto, e il focus torna sul pulsante. Toccando un pin si evidenzia e compare il nome della tappa in alto a sinistra; non scorre la lista sotto.
 
 ## Allerte di viaggio
 

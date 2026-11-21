@@ -2259,5 +2259,6 @@
  "Togli il codice {n}": "Remove code {n}",
  "Aggiungi un altro codice d'ingresso": "Add another entry code",
  "Copia il codice: {v0}": "Copy the code: {v0}",
- "Durata del volo": "Flight time"
+ "Durata del volo": "Flight time",
+ "Apri la mappa a schermo intero": "Open the map full screen"
 }
