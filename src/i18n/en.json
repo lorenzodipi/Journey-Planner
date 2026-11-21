@@ -2209,7 +2209,7 @@
  "Senza una cifra conta la tua quota, {v0}, calcolata dai costi inseriti.": "Without an amount, your share counts: {v0}, worked out from the costs entered.",
  "Senza una cifra conta la sua quota, {v0}, calcolata dai costi inseriti.": "Without an amount, their share counts: {v0}, worked out from the costs entered.",
  "Quanto pensi di spendere tu per questa categoria.": "How much you plan to spend on this category.",
- "Quanto pensi che spender\u00e0 per questa categoria.": "How much you think they will spend on this category.",
+ "Quanto pensi che spenderà per questa categoria.": "How much you think they will spend on this category.",
  "Il tuo previsto": "Your planned amount",
  "Previsto di {nome}": "Planned by {nome}",
  "Il tuo previsto di {label} torna alla stima dai costi": "Your planned {label} is back to the estimate from the costs",
@@ -2251,5 +2251,12 @@
  "Terremoto M{mag} alle {ora}": "M{mag} earthquake at {ora}",
  "Magnitudo": "Magnitude",
  "A circa {km} km da {city}": "About {km} km from {city}",
- "USGS, catalogo dei terremoti": "USGS earthquake catalogue"
+ "USGS, catalogo dei terremoti": "USGS earthquake catalogue",
+ "Nome del codice {n}": "Name of code {n}",
+ "es. Portone": "e.g. Main door",
+ "es. Stanza": "e.g. Room",
+ "Codice d'accesso {n}": "Access code {n}",
+ "Togli il codice {n}": "Remove code {n}",
+ "Aggiungi un altro codice d'ingresso": "Add another entry code",
+ "Copia il codice: {v0}": "Copy the code: {v0}"
 }

@@ -2,7 +2,9 @@
 // nome grande, indirizzo · città; dopo la perforazione Check-in, Check-out e Camera, il codice di prenotazione e «Apri sulla mappa».
 // Al tocco si apre in linea: costo e chi ha pagato, persone, contatti, codice d'accesso e Wi-Fi (da copiare), pasti, note,
 // Modifica, Elimina.
+import { Fragment } from 'react'
 import { cameraDi, inclusi, notti, orarioCheck } from '../lib/alloggi'
+import { leggiCodici } from '../lib/codiciAccesso'
 import { formatShort } from '../lib/dates'
 import { convert, formatMoney, rateFor } from '../lib/money'
 import { nightsOf } from '../lib/stays'
@@ -48,9 +50,15 @@ function RigheAccesso({ s }: { s: Stay }) {
         </dd>
       </div>
     ) : null
+  // più codici (portone, stanza…): ognuno con il suo nome, e «Copia» copia solo quello
+  const codici = leggiCodici(s.accessCode)
   return (
     <>
-      {riga(t('Codice d\'accesso'), s.accessCode, t('Copia il codice d\'accesso'), t('Codice d\'accesso copiato'))}
+      {codici.map((c, i) => (
+        <Fragment key={i}>
+          {riga(c.nome || t('Codice d\'accesso'), c.codice, c.nome ? t('Copia il codice: {v0}', { v0: c.nome }) : t('Copia il codice d\'accesso'), t('Codice d\'accesso copiato'))}
+        </Fragment>
+      ))}
       {riga(t('Rete Wi-Fi'), s.wifiName, t('Copia il nome della rete Wi-Fi'), t('Nome della rete copiato'))}
       {riga(t('Password del Wi-Fi'), s.wifiPassword, t('Copia la password del Wi-Fi'), t('Password del Wi-Fi copiata'))}
     </>

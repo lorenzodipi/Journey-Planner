@@ -171,8 +171,7 @@ export function DecidiSheet({ trip, r, onClose }: { trip: Trip; r: Rimborso; onC
 
 /**
  * Avvisi sui pagamenti che altri hanno registrato per me: «Controlla» apre il Bilancio sulle card che il pagamento copre
- * (dove si può contestare) e lo segna visto, «Ho visto»
- * li toglie. Da due in su c'è una riga sola di riepilogo con «Ho visto tutti»; toccandola si apre l'elenco.
+ * (dove si può contestare) e l'avviso resta dov'è; solo «Ho visto» lo toglie. Da due in su c'è una riga sola di riepilogo con «Ho visto tutti»; toccandola si apre l'elenco.
  */
 function AvvisiNovita({ trip, aperti = false }: { trip: Trip; /** elenco già aperto (nel Bilancio) */ aperti?: boolean }) {
   const { nuovi, visto } = useNovitaRimborsi(trip)
@@ -187,7 +186,7 @@ function AvvisiNovita({ trip, aperti = false }: { trip: Trip; /** elenco già ap
       azioniSotto
       action={
         <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <Link href={`/spese/bilancio?voce=${encodeURIComponent(n.key)}`} className="fa-btn sm sott" onClick={() => visto([n.key])}>{tt('Controlla')}</Link>
+          <Link href={`/spese/bilancio?voce=${encodeURIComponent(n.key)}`} className="fa-btn sm sott">{tt('Controlla')}</Link>
           <Pulsante size="sm" color="secondary" onPress={() => visto([n.key])}>{tt('Ho visto')}</Pulsante>
         </span>
       }
@@ -238,7 +237,7 @@ function AvvisiNovita({ trip, aperti = false }: { trip: Trip; /** elenco già ap
                 ) : null}
               </span>
               <span className="fa-novita-ra">
-                <Link href={`/spese/bilancio?voce=${encodeURIComponent(n.key)}`} className="fa-btn sm sott" onClick={() => visto([n.key])}>{tt('Controlla')}</Link>
+                <Link href={`/spese/bilancio?voce=${encodeURIComponent(n.key)}`} className="fa-btn sm sott">{tt('Controlla')}</Link>
                 <Pulsante size="sm" color="secondary" onPress={() => visto([n.key])}>{tt('Ho visto')}</Pulsante>
               </span>
             </li>

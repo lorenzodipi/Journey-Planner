@@ -3,8 +3,9 @@
 // prenotazione, telefono, email, chi dorme qui).
 import { useConflitto } from '../../faraway/useConflitto'
 import { DocumentiCollegati } from '../documenti/DocumentiCollegati'
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import type { StayInput } from '../../lib/logistics'
+import { leggiCodici, scriviCodici } from '../../lib/codiciAccesso'
 import { amountToText, formatMoney, parseAmount, tripCurrencies } from '../../lib/money'
 import { compilati, nottiTesto } from '../../lib/moduli'
 import { useMe } from '../../state/me'
@@ -78,7 +79,15 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
   const [guests, setGuests] = useState(s?.guests ? String(s.guests) : '')
   const [phone, setPhone] = useState(s?.phone ?? '')
   const [email, setEmail] = useState(s?.email ?? '')
-  const [accesso, setAccesso] = useState(s?.accessCode ?? '')
+  // più codici d'ingresso (portone, stanza…): `nuovo` dà il focus al campo appena aggiunto
+  const chiaveCodice = useRef(0)
+  const [codici, setCodici] = useState<{ k: number; nome: string; codice: string; nuovo?: boolean }[]>(() => {
+    const letti = leggiCodici(s?.accessCode)
+    return (letti.length > 0 ? letti : [{ nome: '', codice: '' }]).map((c) => ({ ...c, k: chiaveCodice.current++ }))
+  })
+  // il nome del codice si chiede quando ce n'è più d'uno (o uno ha già il suo nome) e non sparisce più mentre si scrive
+  const [conNomi, setConNomi] = useState(() => codici.length > 1 || Boolean(codici[0]?.nome))
+  const cambiaCodice = (k: number, cambia: { nome?: string; codice?: string }) => setCodici((v) => v.map((c) => (c.k === k ? { ...c, ...cambia, nuovo: false } : c)))
   const [wifi, setWifi] = useState(s?.wifiName ?? '')
   const [wifiPw, setWifiPw] = useState(s?.wifiPassword ?? '')
   const [dorme, setDorme] = useState<string[]>(s?.participants ?? [])
@@ -115,7 +124,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
       name, city, checkIn, checkOut, checkInInfo: inInfo, checkOutInfo: outInfo, address, mapsUrl,
       totalCost: amount, currency, breakfast, dinner, kitchen, booked: true, paid, notes,
       room, roomType, bookingCode: code, guests: ospiti, phone, email, participants: dorme,
-      accessCode: accesso, wifiName: wifi, wifiPassword: wifiPw,
+      accessCode: scriviCodici(codici), wifiName: wifi, wifiPassword: wifiPw,
       paidBy: paid && amount ? paidBy || undefined : (s?.paidBy ?? undefined),
       forTravelers: all.every((id) => people.includes(id)) ? [] : people,
     }
@@ -248,7 +257,37 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
           <Campo label={t('Note')} textarea value={notes} onChange={setNotes} placeholder={t('es. Deposito bagagli dopo il check-out')} />
         </Gruppo>
         <Gruppo titolo={t('Accesso e Wi-Fi')}>
-          <Campo label={t('Codice d\'accesso')} value={accesso} onChange={setAccesso} autoComplete="off" placeholder={t('es. 4821')} hint={t('Della porta o della cassetta delle chiavi.')} />
+          {codici.map((c, i) => (
+            <div key={c.k} style={{ display: 'grid', gap: 16 }}>
+              {conNomi ? (
+                <Campo label={t('Nome del codice {n}', { n: i + 1 })} value={c.nome} onChange={(v) => cambiaCodice(c.k, { nome: v })} autoComplete="off" placeholder={i === 0 ? t('es. Portone') : t('es. Stanza')} autoFocus={c.nuovo} />
+              ) : null}
+              <Campo
+                label={conNomi ? t('Codice d\'accesso {n}', { n: i + 1 }) : t('Codice d\'accesso')}
+                value={c.codice}
+                onChange={(v) => cambiaCodice(c.k, { codice: v })}
+                autoComplete="off"
+                placeholder={t('es. 4821')}
+                hint={conNomi ? undefined : t('Della porta o della cassetta delle chiavi.')}
+              />
+              {codici.length > 1 ? (
+                <button type="button" className="fa-lnk" style={{ color: 'var(--danger)', justifySelf: 'start', paddingLeft: 0 }} aria-label={t('Togli il codice {n}', { n: i + 1 })} onClick={() => setCodici((v) => v.filter((x) => x.k !== c.k))}>
+                  {t('Togli')}
+                </button>
+              ) : null}
+            </div>
+          ))}
+          <Pulsante
+            color="secondary"
+            size="sm"
+            iconLeading="plus"
+            onPress={() => {
+              setConNomi(true)
+              setCodici((v) => [...v, { k: chiaveCodice.current++, nome: '', codice: '', nuovo: true }])
+            }}
+          >
+            {t('Aggiungi un altro codice d\'ingresso')}
+          </Pulsante>
           <Campo label={t('Rete Wi-Fi')} value={wifi} onChange={setWifi} autoComplete="off" placeholder={t('es. Nome della rete')} />
           <Campo label={t('Password del Wi-Fi')} value={wifiPw} onChange={setWifiPw} autoComplete="off" placeholder={t('es. Password della rete')} />
           <p className="fa-help">{t('Li vedono solo i viaggiatori, non chi segue il viaggio.')}</p>
