@@ -41,7 +41,7 @@ export function SpostaSheet({ trip, current, open, title = t('Sposta in un altro
               <span style={{ display: 'grid', placeItems: 'center', width: 44, height: 44, borderRadius: 12, background: on ? 'var(--azzurro-solid)' : 'var(--surface-high)', color: on ? 'var(--on-azzurro-solid)' : 'var(--ink)', font: '600 18px/20px var(--font-sans)' }}>{n}</span>
               <span>
                 <span className="t" style={{ display: 'block' }}>
-                  {t('Giorno {n} · {v1}', { n, v1: fmt(d.date) })}
+                  {fmt(d.date)}
                 </span>
                 <span className="m" style={{ display: 'block' }}>
                   {[d.city, `${d.items.length} ${d.items.length === 1 ? t('tappa') : t('tappe')}`].filter(Boolean).join(' · ')}

@@ -209,7 +209,7 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
                   const n = trip.days.indexOf(d) + 1
                   return {
                     id: d.id,
-                    nome: tt('Giorno {n} · {v1}', { n, v1: wdm(d.date) }),
+                    nome: wdm(d.date),
                     descrizione: [d.city, `${d.items.length} ${d.items.length === 1 ? tt('tappa') : tt('tappe')}`].filter(Boolean).join(' · '),
                     segno: <span className="dn">{n}</span>,
                   }
