@@ -15,6 +15,7 @@ import { useEffect, useRef, type MutableRefObject } from 'react'
 import { pinIconSvg, type PinIcon } from '../lib/categoryIcon'
 import { isTap, type TapDown } from '../lib/mapTap'
 import { t } from '../i18n'
+import { showToast } from '../state/toast'
 
 // Questo file (e MapLibre) viene caricato solo quando serve una mappa: l'avvio dell'app resta leggero.
 setWorkerUrl(workerUrl)
@@ -244,14 +245,21 @@ export function MapView({ pins, center, selectedId, onSelect, bare, cluster, onC
 
   useEffect(() => {
     if (!el.current) return
-    const geo = new GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: false })
+    const geo = new GeolocateControl({ positionOptions: { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }, trackUserLocation: false })
+    // senza permesso o senza segnale MapLibre non dice niente: lo diciamo noi
+    geo.on('error', (e: { code?: number }) =>
+      showToast(e?.code === 1 ? t('Per mostrare dove sei serve il permesso della posizione: attivalo nelle impostazioni del telefono per Journey Planner.') : t('Non riesco a trovare dove sei. Controlla che la posizione sia attiva e riprova.')),
+    )
     const m = bare ? newMap(el.current, center, 11, false, false, geo, false) : newMap(el.current, center, 11, true, false, true)
     map.current = m
     m.on('click', () => onSelectRef.current(null))
     if (cluster) m.on('zoomend', () => drawPins())
     if (apiRef) {
       apiRef.current = {
-        locate: () => void geo.trigger(),
+        locate: () => {
+          if (!navigator.geolocation) return showToast(t('Non riesco a trovare dove sei. Controlla che la posizione sia attiva e riprova.'))
+          if (!geo.trigger()) showToast(t('Non riesco a trovare dove sei. Controlla che la posizione sia attiva e riprova.'))
+        },
         flyTo: (id) => {
           const p = pinsRef.current.find((x) => x.id === id)
           if (p) m.easeTo({ center: [p.lng, p.lat], zoom: Math.max(m.getZoom(), 15) })

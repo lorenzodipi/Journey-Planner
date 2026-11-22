@@ -48,6 +48,18 @@ export interface ItemCost {
   shares?: ExpenseShare[]
 }
 
+/** Le preferenze del viaggio con quelle appena toccate sopra (solo per i luoghi di questo viaggio). */
+function conPrefLocali(base: Trip['placePrefs'], locali: ReadonlyMap<string, PlacePref | null>, places: readonly { id: string }[]): Trip['placePrefs'] {
+  const out: Record<string, PlacePref> = { ...(base ?? {}) }
+  for (const p of places) {
+    if (!locali.has(p.id)) continue
+    const v = locali.get(p.id)
+    if (v) out[p.id] = v
+    else delete out[p.id]
+  }
+  return out
+}
+
 /** Tappa segnata «Fatta» (con o senza la migrazione 0017). */
 const fatta = (i: Pick<DayItem, 'status' | 'done'>): boolean => (i.status ?? (i.done ? 'done' : 'todo')) === 'done'
 
@@ -261,11 +273,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const flushing = useRef(false)
   // posizioni delle tappe spostate a mano (trascinamento) in attesa della risposta del server: la tappa resta subito dove la si lascia
   const [posLocali, setPosLocali] = useState<ReadonlyMap<string, number>>(() => new Map())
+  // preferenze sui luoghi («Da non perdere», «Se c'è tempo») appena toccate: si vedono subito, prima della risposta del server
+  const [prefLocali, setPrefLocali] = useState<ReadonlyMap<string, PlacePref | null>>(() => new Map())
   // le tappe di ogni giorno sono sempre nell'ordine mostrato (posizione + orario)
   const trips = useMemo(
     () =>
       applyQueue(serverTrips, queue).map((t) => ({
         ...t,
+        ...(prefLocali.size ? { placePrefs: conPrefLocali(t.placePrefs, prefLocali, t.places) } : {}),
         center: tripCenter(t),
         days: t.days.map((d) => ({
           ...d,
@@ -273,7 +288,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
           items: orderItems(posLocali.size ? d.items.map((i) => (posLocali.has(i.id) ? { ...i, position: posLocali.get(i.id) } : i)) : d.items),
         })),
       })),
-    [serverTrips, queue, posLocali],
+    [serverTrips, queue, posLocali, prefLocali],
   )
   const [status, setStatus] = useState<TripsStatus>(demo ? 'ready' : 'loading')
   const [stale, setStale] = useState(false)
@@ -582,7 +597,19 @@ export function TripProvider({ children }: { children: ReactNode }) {
     updateTrip: (id, input) => run(() => api.updateTrip(id, input)),
     deleteTrip: (id) => run(() => api.deleteTrip(id)),
     archivePlace: (id, archived) => run(() => api.archivePlace(id, archived), ['places']),
-    setPlacePref: (placeId, pref) => run(() => api.setPlacePref(placeId, pref), ['planning']),
+    setPlacePref: async (placeId, pref) => {
+      if (demo) return run(() => api.setPlacePref(placeId, pref), ['planning'])
+      setPrefLocali((m) => new Map(m).set(placeId, pref))
+      const err = await run(() => api.setPlacePref(placeId, pref), ['planning'])
+      // a risposta arrivata (e dati ricaricati) vale quella del server; se è andata male torna com'era
+      setPrefLocali((m) => {
+        if (m.get(placeId) !== pref) return m
+        const n = new Map(m)
+        n.delete(placeId)
+        return n
+      })
+      return err
+    },
     archiveTrip: (id, archived) => run(() => api.archiveTrip(id, archived)),
     duplicateTripAsTemplate: (source, input, people, conLogistica) =>
       run(async () => {

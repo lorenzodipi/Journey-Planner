@@ -64,5 +64,7 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Journey Planner usa la tua posizione solo per mostrarti dove sei sulla mappa.</string>
 </dict>
 </plist>
