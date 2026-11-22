@@ -21,6 +21,9 @@ const fetchWithTimeout: typeof fetch = (input, init) => {
 
 export const isSupabaseConfigured = Boolean(url && key)
 
+/** Chiave con cui supabase-js salva la sessione sul telefono (predefinita: `sb-<progetto>-auth-token`). */
+export const CHIAVE_SESSIONE = url ? `sb-${new URL(url).hostname.split('.')[0]}-auth-token` : ''
+
 export const supabase: SupabaseClient | null =
   url && key
     ? createClient(url, key, {

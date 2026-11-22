@@ -85,4 +85,14 @@ describe('terremoti', () => {
     ])
     expect(tutte.map((a) => a.livello)).toEqual(['pericolo', 'attenzione', 'info'])
   })
+
+  it('più terremoti: resta solo il più recente; tipi diversi restano tutti', () => {
+    const tre = allerteTerremoti([scossa({ id: 'vecchio', time: adesso - 6 * 3600_000 }), scossa({ id: 'nuovo', time: adesso - 3600_000 }), scossa({ id: 'medio', time: adesso - 3 * 3600_000 })], [tokyo], adesso, 'Asia/Tokyo')
+    expect(tre.map((a) => a.id)).toEqual(['terremoto:nuovo'])
+    // il più recente lontano non conta: resta il più recente tra quelli vicini
+    expect(allerteTerremoti([scossa({ id: 'lontano', time: adesso - 600_000, lat: -33, lng: 151 }), scossa({ id: 'vicino' })], [tokyo], adesso, 'Asia/Tokyo').map((a) => a.id)).toEqual(['terremoto:vicino'])
+    const tutte = ordinaAllerte([...allerteMeteo([ora(13, { rain: 80, mm: 1 })], '2026-11-24', 'Tokyo'), ...tre, ...allerteTerremoti([scossa({ id: 'altro' })], [tokyo], adesso, 'Asia/Tokyo')])
+    expect(tutte.map((a) => a.tipo).sort()).toEqual(['pioggia', 'terremoto'])
+    expect(tutte.find((a) => a.tipo === 'terremoto')?.id).toBe('terremoto:nuovo')
+  })
 })

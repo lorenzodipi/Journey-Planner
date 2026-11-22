@@ -29,9 +29,11 @@ export interface Allerta {
 const pad = (n: number) => String(n).padStart(2, '0')
 const ORDINE: Record<LivelloAllerta, number> = { pericolo: 0, attenzione: 1, info: 2 }
 
-/** Le allerte dalla più grave; a parità, nell'ordine in cui arrivano. */
+/** Le allerte dalla più grave; a parità, nell'ordine in cui arrivano. Una sola per tipo (la prima che arriva: per i terremoti la più recente). */
 export function ordinaAllerte(a: Allerta[]): Allerta[] {
-  return a.map((x, i) => ({ x, i })).sort((p, q) => ORDINE[p.x.livello] - ORDINE[q.x.livello] || p.i - q.i).map((p) => p.x)
+  const visti = new Set<TipoAllerta>()
+  const una = a.filter((x) => (visti.has(x.tipo) ? false : (visti.add(x.tipo), true)))
+  return una.map((x, i) => ({ x, i })).sort((p, q) => ORDINE[p.x.livello] - ORDINE[q.x.livello] || p.i - q.i).map((p) => p.x)
 }
 
 /** Soglie (km/h, mm/h, °C percepiti). Prudenti: un'allerta in più costa meno di una in meno, ma non deve suonare a ogni nuvola. */
@@ -200,10 +202,14 @@ const fa = (ms: number) => {
   return h === 1 ? tt('1 ora fa') : tt('{n} ore fa', { n: h })
 }
 
-/** Terremoti delle ultime 24 ore vicino a una delle città, uno per evento, il più vicino per città. */
+/**
+ * Terremoti delle ultime 24 ore vicino a una delle città, riferiti alla città più vicina. Se ce ne sono più d'uno se ne
+ * mostra solo il più recente: due o tre avvisi sullo stesso tipo, a poche ore di distanza, sono rumore.
+ */
 export function allerteTerremoti(eventi: Terremoto[], punti: PuntoAllerta[], adesso: number, timeZone: string): Allerta[] {
   const out: Allerta[] = []
-  for (const e of eventi) {
+  for (const e of [...eventi].sort((x, y) => y.time - x.time)) {
+    if (out.length > 0) break
     if (e.mag < MAG_MINIMA || adesso - e.time > 24 * 3600_000 || e.time > adesso + 60_000) continue
     let vicino: { p: PuntoAllerta; km: number } | null = null
     for (const p of punti) {

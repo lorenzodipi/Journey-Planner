@@ -2,9 +2,9 @@ import { createContext } from 'react'
 import { describeError } from './db'
 import { useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import type { Session } from '@supabase/supabase-js'
+import { isAuthRetryableFetchError, type Session } from '@supabase/supabase-js'
 import { cancellaDatiLocali } from './datiLocali'
-import { isSupabaseConfigured, supabase } from './supabase'
+import { CHIAVE_SESSIONE, isSupabaseConfigured, supabase } from './supabase'
 import { t } from '../i18n'
 
 /** Segnata all'accesso, tolta quando si sceglie il viaggio: l'app apre «Tutti i viaggi» invece dell'ultima pagina. */
@@ -80,6 +80,22 @@ function translateError(message: string): string {
   return describeError({ message })
 }
 
+/**
+ * La sessione ancora salvata sul telefono, anche col token scaduto. Offline, con il token d'accesso scaduto (dopo un'ora),
+ * supabase-js non riesce a rinnovarlo e risponde «nessuna sessione» pur tenendola salvata: non è un'uscita. Si resta dentro
+ * con i dati del telefono e il token si rinnova da solo appena torna la rete.
+ */
+export function sessioneSalvata(): Session | null {
+  if (!CHIAVE_SESSIONE) return null
+  try {
+    const raw = localStorage.getItem(CHIAVE_SESSIONE)
+    const s = raw ? (JSON.parse(raw) as Partial<Session> | null) : null
+    return s && typeof s.access_token === 'string' && typeof s.refresh_token === 'string' && s.user?.id ? (s as Session) : null
+  } catch {
+    return null
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   // Senza variabili Supabase l'app parte in modalità demo (dati fittizi).
   const [status, setStatus] = useState<AuthStatus>(isSupabaseConfigured ? 'loading' : 'demo')
@@ -98,19 +114,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     supabase.auth
       .getSession()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         settled = true
         if (!active) return
-        setSession(data.session)
-        setStatus(data.session ? 'signed-in' : 'signed-out')
+        // offline col token scaduto: la sessione è ancora salvata, quindi si è ancora dentro (non si cancella niente)
+        const tenuta = !data.session && error && isAuthRetryableFetchError(error) ? sessioneSalvata() : null
+        const s = data.session ?? tenuta
+        setSession(s)
+        setStatus(s ? 'signed-in' : 'signed-out')
       })
       .catch(() => {
         settled = true
         if (active) setStatus((cur) => (cur === 'loading' ? 'unreachable' : cur))
       })
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
       settled = true
+      // si esce solo con un'uscita vera (SIGNED_OUT): una sessione «vuota» per la rete assente, con la sessione ancora salvata, non conta
+      if (!next && event !== 'SIGNED_OUT' && sessioneSalvata()) return
       setSession(next)
       setStatus(next ? 'signed-in' : 'signed-out')
     })
