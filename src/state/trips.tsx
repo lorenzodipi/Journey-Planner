@@ -28,7 +28,7 @@ import type { BookingInput, ChecklistInput } from '../lib/planningData'
 import type { BudgetInput, ExpenseInput } from '../lib/moneyData'
 import type { FlightInput, StayInput, TransportInput } from '../lib/logistics'
 import type { InvitedInput, ItemInput, PlaceInput, TravelerInput, TripInput, TripPeople } from '../lib/tripApi'
-import type { Booking, BudgetItem, DocKind, Visibilita, ChecklistItem, Expense, ExpenseShare, Flight, ItemStatus, MezzoTratto, PlacePref, PlaceStatus, ReceivedInvite, SplitMode, Trip, Stay, TicketCode, TicketKind } from '../types'
+import type { Booking, BudgetItem, DocKind, Visibilita, ChecklistItem, DayItem, Expense, ExpenseShare, Flight, ItemStatus, MezzoTratto, PlacePref, PlaceStatus, ReceivedInvite, SplitMode, Trip, Stay, TicketCode, TicketKind } from '../types'
 import { schema } from '../lib/schema'
 import { t as tt } from '../i18n'
 
@@ -47,6 +47,9 @@ export interface ItemCost {
   splitMode?: SplitMode
   shares?: ExpenseShare[]
 }
+
+/** Tappa segnata «Fatta» (con o senza la migrazione 0017). */
+const fatta = (i: Pick<DayItem, 'status' | 'done'>): boolean => (i.status ?? (i.done ? 'done' : 'todo')) === 'done'
 
 /** Ogni azione restituisce `null` se è andata bene, altrimenti il messaggio d'errore da mostrare. */
 type Result = Promise<string | null>
@@ -546,6 +549,18 @@ export function TripProvider({ children }: { children: ReactNode }) {
     [demo, load],
   )
 
+  /**
+   * Il luogo era diventato «Visitato» per una tappa fatta che ora non lo è più (eliminata o tornata da fare): torna
+   * «In programma» (o «Da visitare» se non è più in nessuna tappa), a meno che un'altra tappa fatta dello stesso luogo lo tenga visitato.
+   */
+  const luogoNonPiuVisitato = (tripId: string, item: DayItem): Promise<string | null> => {
+    const trip = trips.find((t) => t.id === tripId)
+    const place = item.placeId ? trip?.places.find((p) => p.id === item.placeId) : undefined
+    if (!trip || !place || place.status !== 'done') return Promise.resolve(null)
+    if (trip.days.some((d) => d.items.some((i) => i.id !== item.id && i.placeId === place.id && fatta(i)))) return Promise.resolve(null)
+    return queued(tt('Stato del luogo'), [{ k: 'update', table: 'places', id: place.id, patch: { status: 'planned' } }], { t: 'place.status', id: place.id, status: 'planned' })
+  }
+
   const value: TripsValue = {
     inCorso: attese > 0,
     status,
@@ -686,8 +701,11 @@ export function TripProvider({ children }: { children: ReactNode }) {
       const at = new Date().toISOString()
       const patch = schema.itemStatus ? { status, status_changed_at: at, done: status === 'done' } : { done: status === 'done' }
       if (!schema.itemStatus && status !== 'done' && status !== 'todo') return Promise.resolve(api.MIGRATION_0017)
+      const prima = trips.find((t) => t.id === tripId)?.days.flatMap((d) => d.items).find((i) => i.id === id)
       const err = await queued(tt('Stato della tappa'), [{ k: 'update', table: 'day_items', id, patch }], { t: 'item.status', id, status, at })
-      if (err || status !== 'done') return err
+      if (err) return err
+      // tolta la «Fatta», il luogo non è più «Visitato» (se nessun'altra tappa fatta lo tiene tale)
+      if (status !== 'done') return prima && fatta(prima) ? luogoNonPiuVisitato(tripId, prima) : null
       // la tappa fatta segna il luogo collegato come «Visitato»
       const trip = trips.find((t) => t.id === tripId)
       const item = trip?.days.flatMap((d) => d.items).find((i) => i.id === id)
@@ -734,7 +752,13 @@ export function TripProvider({ children }: { children: ReactNode }) {
     setItemArrive: (id, mode, minutes) => run(() => api.setItemArrive(id, mode, minutes), ['items']),
     setItemParticipants: (id, participants) => run(() => api.setItemParticipants(id, participants), ['items']),
     setItemDone: (id, done) => queued(tt('Tappa fatta'), [{ k: 'update', table: 'day_items', id, patch: { done } }], { t: 'item.done', id, done }),
-    setItemDeleted: (id, deleted) => run(() => api.setItemDeleted(id, deleted), ['items']),
+    setItemDeleted: async (id, deleted) => {
+      const trip = trips.find((t) => t.days.some((d) => d.items.some((i) => i.id === id)))
+      const item = trip?.days.flatMap((d) => d.items).find((i) => i.id === id)
+      const err = await run(() => api.setItemDeleted(id, deleted), ['items'])
+      // eliminata una tappa fatta, il suo luogo non resta «Visitato» per sbaglio
+      return !err && deleted && trip && item && fatta(item) ? luogoNonPiuVisitato(trip.id, item) : err
+    },
     createStay: (tripId, input) => run(() => logistics.createStay(tripId, input), ['logistics']),
     updateStay: (id, input, old) => run(() => logistics.updateStay(id, input, old), ['logistics']),
     setStayFlag: (id, flag, value) => run(() => logistics.setStayFlag(id, flag, value), ['logistics']),

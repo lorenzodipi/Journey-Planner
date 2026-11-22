@@ -52,6 +52,8 @@ La barra in basso ha cinque schede. Ogni pagina interna appartiene a una scheda,
 | Documento | Un file caricato, visibile a tutti, ad alcuni o solo a chi lo carica |
 | Persone | **Creatore** (invita chiunque, toglie le persone), **partecipante** (viaggiatore, modifica tutto, invita solo visualizzatori) e **visualizzatore** (vede il viaggio in sola lettura, non è un viaggiatore: niente conti, niente checklist; si può rendere partecipante) |
 
+**Stato del luogo e tappe.** «In programma» se il luogo è in una tappa non annullata (si calcola, `statoLuogo`); una tappa segnata «Fatta» lo salva «Visitato». Se quella tappa si elimina o torna da fare (o «Saltata», «Rimandata»…), il luogo torna «In programma» (o «Da visitare» se non è più in nessuna tappa), a meno che un'altra tappa fatta dello stesso luogo lo tenga visitato (`luogoNonPiuVisitato` in `src/state/trips.tsx`). Un «Visitato» messo a mano senza tappe fatte non si tocca.
+
 ## Voce e tono
 
 - Sempre **in italiano**, con il **tu**, frasi brevi e verbi concreti.
