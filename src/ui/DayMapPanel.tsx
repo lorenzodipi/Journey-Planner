@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Foglio } from '../faraway/Foglio'
 import { Sv } from '../faraway/icons'
 import { Loader } from '../faraway/Loader'
@@ -15,12 +15,16 @@ type PuntoMappa = Parameters<DayMapComponent>[0]['stops'][number]
 function MappaGrande({ View, stops, route, center, selectedId, onClose }: { View: DayMapComponent; stops: PuntoMappa[]; route: DayRoute; center: Trip['center']; selectedId?: string | null; onClose: () => void }) {
   const [sel, setSel] = useState<string | null>(selectedId ?? null)
   const scelta = stops.find((x) => x.id === sel)
+  const comandi = useRef<{ locate: () => void } | null>(null)
   return (
     <Foglio open title={tt('Mappa del giorno')} onClose={onClose} full className="fa-mgrande">
       <div className="fa-dmg">
-        <View stops={stops} lines={route.lines} ends={route.ends} center={center} selectedId={sel} onSelect={setSel} />
+        <View stops={stops} lines={route.lines} ends={route.ends} center={center} selectedId={sel} onSelect={setSel} apiRef={comandi} />
         {scelta ? <span className="fa-mapchip">{`${scelta.n} · ${scelta.name}`}</span> : null}
         <div className="fa-mapctl giu">
+          <button type="button" className="fa-ib" aria-label={tt('La mia posizione')} onClick={() => comandi.current?.locate()}>
+            <Sv name="pin" size={22} />
+          </button>
           <button type="button" className="fa-ib" aria-label={tt('Riduci la mappa')} onClick={onClose}>
             <Sv name="riduci" size={22} />
           </button>
@@ -53,6 +57,7 @@ export function DayMapPanel({
   const [View, setView] = useState<DayMapComponent | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [grande, setGrande] = useState(false)
+  const comandi = useRef<{ locate: () => void } | null>(null)
 
   useEffect(() => {
     let active = true
@@ -89,8 +94,11 @@ export function DayMapPanel({
       <div className="map" style={bare ? { height: `${height}px`, borderRadius: 0 } : { height: `${height}px`, border: '1.5px solid var(--border-strong)' }}>
         {View ? (
           <>
-            <View stops={punti} lines={lines} ends={ends} center={centro} selectedId={selectedId} onSelect={onSelect} />
+            <View stops={punti} lines={lines} ends={ends} center={centro} selectedId={selectedId} onSelect={onSelect} apiRef={comandi} />
             <div className="fa-mapctl giu">
+              <button type="button" className="fa-ib" aria-label={tt('La mia posizione')} onClick={() => comandi.current?.locate()}>
+                <Sv name="pin" size={22} />
+              </button>
               <button type="button" className="fa-ib" aria-label={tt('Apri la mappa a schermo intero')} aria-haspopup="dialog" onClick={() => setGrande(true)}>
                 <Sv name="espandi" size={22} />
               </button>

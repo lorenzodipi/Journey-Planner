@@ -181,6 +181,22 @@ export interface MapPin {
   ring?: string
 }
 
+const NIENTE_POSIZIONE = () => t('Non riesco a trovare dove sei. Controlla che la posizione sia attiva e riprova.')
+
+/** «La mia posizione»: il controllo di MapLibre (senza pulsante suo) che dice con un toast se manca il permesso o il segnale. */
+function controlloPosizione(): GeolocateControl {
+  const geo = new GeolocateControl({ positionOptions: { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }, trackUserLocation: false })
+  // senza permesso o senza segnale MapLibre non dice niente: lo diciamo noi
+  geo.on('error', (e: { code?: number }) =>
+    showToast(e?.code === 1 ? t('Per mostrare dove sei serve il permesso della posizione: attivalo nelle impostazioni del telefono per Journey Planner.') : NIENTE_POSIZIONE()),
+  )
+  return geo
+}
+
+function localizza(geo: GeolocateControl) {
+  if (!navigator.geolocation || !geo.trigger()) showToast(NIENTE_POSIZIONE())
+}
+
 /** Comandi della mappa per i pulsanti della pagina (design system: «La mia posizione», «Ingrandisci»). */
 export interface MapApi {
   locate: () => void
@@ -245,21 +261,14 @@ export function MapView({ pins, center, selectedId, onSelect, bare, cluster, onC
 
   useEffect(() => {
     if (!el.current) return
-    const geo = new GeolocateControl({ positionOptions: { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }, trackUserLocation: false })
-    // senza permesso o senza segnale MapLibre non dice niente: lo diciamo noi
-    geo.on('error', (e: { code?: number }) =>
-      showToast(e?.code === 1 ? t('Per mostrare dove sei serve il permesso della posizione: attivalo nelle impostazioni del telefono per Journey Planner.') : t('Non riesco a trovare dove sei. Controlla che la posizione sia attiva e riprova.')),
-    )
+    const geo = controlloPosizione()
     const m = bare ? newMap(el.current, center, 11, false, false, geo, false) : newMap(el.current, center, 11, true, false, true)
     map.current = m
     m.on('click', () => onSelectRef.current(null))
     if (cluster) m.on('zoomend', () => drawPins())
     if (apiRef) {
       apiRef.current = {
-        locate: () => {
-          if (!navigator.geolocation) return showToast(t('Non riesco a trovare dove sei. Controlla che la posizione sia attiva e riprova.'))
-          if (!geo.trigger()) showToast(t('Non riesco a trovare dove sei. Controlla che la posizione sia attiva e riprova.'))
-        },
+        locate: () => localizza(geo),
         flyTo: (id) => {
           const p = pinsRef.current.find((x) => x.id === id)
           if (p) m.easeTo({ center: [p.lng, p.lat], zoom: Math.max(m.getZoom(), 15) })
@@ -575,10 +584,12 @@ interface DayMapProps {
   selectedId?: string | null
   /** Tocco su un pin (già filtrato: non scatta se si sta trascinando o zoomando la mappa). */
   onSelect?: (stopId: string) => void
+  /** Comandi per i pulsanti della pagina: «La mia posizione». */
+  apiRef?: MutableRefObject<{ locate: () => void } | null>
 }
 
 /** Mappa di una giornata: pin numerati nell'ordine delle tappe, linee tra le tappe e partenze/arrivi dei mezzi. */
-export function DayMapView({ stops, lines, ends, center, selectedId, onSelect }: DayMapProps) {
+export function DayMapView({ stops, lines, ends, center, selectedId, onSelect, apiRef }: DayMapProps) {
   const el = useRef<HTMLDivElement>(null)
   const map = useRef<MLMap | null>(null)
   const markers = useRef<Marker[]>([])
@@ -629,6 +640,10 @@ export function DayMapView({ stops, lines, ends, center, selectedId, onSelect }:
     if (!el.current) return
     const m = newMap(el.current, center, 12, true, false)
     map.current = m
+    // «La mia posizione» dal pulsante della pagina (il controllo di MapLibre sta in basso a destra, nascosto)
+    const geo = controlloPosizione()
+    m.addControl(geo, 'bottom-right')
+    if (apiRef) apiRef.current = { locate: () => localizza(geo) }
     // il tocco su un pin vale solo se la mappa è ferma e il dito è uno solo
     m.on('move', () => {
       lastMove.current = performance.now()

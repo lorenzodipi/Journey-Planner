@@ -701,6 +701,8 @@ dialog.fa-mod:focus{outline:none}
 .fa-mapgrande .fa-map{margin-bottom:0}
 /* Mappa del giorno: pulsante «schermo intero» in basso a destra e la mappa a tutta altezza in un foglio */
 .fa-mapctl.giu{top:auto;bottom:16px}
+/* il controllo «posizione» di MapLibre nella mappa del giorno serve solo da motore: il pulsante è quello della pagina */
+.fa-dm .maplibregl-ctrl-bottom-right,.fa-dmg .maplibregl-ctrl-bottom-right{display:none}
 .fa-sheet.fa-mgrande{padding:8px 0 0}
 .fa-sheet.fa-mgrande>.hd{padding:0 16px}
 .fa-sheet.fa-mgrande>.fb{display:flex;padding:0;margin:0}
