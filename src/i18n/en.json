@@ -1056,7 +1056,6 @@
  "Per avvisarti prima di una tappa o quando piove, il telefono ti chiede il permesso di mostrare le notifiche. Gli avvisi restano su questo telefono.": "To remind you before a stop or when it rains, the phone asks permission to show notifications. Reminders stay on this phone.",
  "Per caricare il viaggio la prima volta serve la rete. Collegati e tocca Riprova.": "To load the trip the first time you need a connection. Connect and tap Retry.",
  "Per categoria": "By category",
- "Per chi": "For whom",
  "Per esempio {v0}": "For example {v0}",
  "Per esempio, con 15 min e 20 minuti di strada, tra la fine di una tappa e l’inizio della prossima ne devono restare almeno 35; se sono meno, il giorno lo segnala.": "For example, with 15 min and 20 minutes of travel, at least 35 minutes must be left between the end of one stop and the start of the next; if there are fewer, the day flags it.",
  "Per gli stati delle tappe esegui la migrazione 0017_tappe_stati.sql nello SQL Editor di Supabase.": "For stop statuses run migration 0017_tappe_stati.sql in the Supabase SQL Editor.",

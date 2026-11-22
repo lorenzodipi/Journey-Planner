@@ -8,10 +8,12 @@ import { formatDuration, parseDuration } from '../../lib/duration'
 import { formatMoney, parseAmount, round2, tripCurrencies } from '../../lib/money'
 import type { ItemInput } from '../../lib/tripApi'
 import { categoriaDaTappa } from '../../lib/ricevuta'
+import { checkSplit } from '../../lib/ripartizione'
+import { DivisioneEditor, sharesFrom } from '../spese/SpesaAvanzata'
 import { durata } from '../../lib/tappa'
 import { useTrips } from '../../state/trip'
 import { useMe } from '../../state/me'
-import type { Day, DayItem, ItemKind, Trip } from '../../types'
+import type { Day, DayItem, ItemKind, SplitMode, Trip } from '../../types'
 import { schema } from '../../lib/schema'
 import { disallineamenti, prenotazioniFisse } from '../../lib/vincoli'
 import { Banner, Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
@@ -52,7 +54,14 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
   const [cost, setCost] = useState(linked ? String(linked.amount).replace('.', ',') : '')
   const [currency, setCurrency] = useState(linked?.currency ?? trip.localCurrency ?? trip.baseCurrency)
   const [paidBy, setPaidBy] = useState(linked?.paidBy ?? me?.id ?? trip.travelers[0]?.id ?? '')
-  const [who, setWho] = useState<string[]>(item?.participants ?? [])
+  // per chi e come si divide il costo, come in Spese (uguali, in %, a importi): `who` è l'elenco esplicito, tutti = nessuna scelta
+  const tutti = trip.travelers.map((p) => p.id)
+  const [who, setWho] = useState<string[]>(item?.participants?.length ? item.participants : tutti)
+  const [mode, setMode] = useState<SplitMode>(linked?.splitMode ?? 'equal')
+  const [vals, setVals] = useState<Record<string, string>>(() =>
+    linked?.splitMode && linked.splitMode !== 'equal' ? Object.fromEntries(linked.shares.map((x) => [x.travelerId, String(linked.splitMode === 'percent' ? (x.percent ?? 0) : (x.amount ?? 0)).replace('.', ',')])) : {},
+  )
+  const partecipanti = who.length >= tutti.length && tutti.every((id) => who.includes(id)) ? [] : who
   const [error, setError] = useState<string | null>(null)
   const [kind, setKind] = useState<ItemKind>(item?.kind ?? 'visit')
   const [vincolata, setVincolata] = useState(item?.timeLock === 'locked')
@@ -74,6 +83,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
 
   const amount = cost.trim() ? parseAmount(cost) : null
   const people = who.length > 0 ? who.length : trip.travelers.length
+  const divisa = mode !== 'equal' && who.length > 1
   const each = amount && people > 0 ? round2(amount / people) : null
 
   function pickPlace(id: string) {
@@ -92,6 +102,11 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
     if (Number.isNaN(minutes)) return setError(tt('La durata non è chiara: scrivi per esempio 45min o 1h 30min.'))
     if (cost.trim() && (amount === null || amount < 0)) return setError(tt('Il costo non è chiaro: scrivi un importo, per esempio 12,50.'))
     if (amount && !paidBy) return setError(tt('Manca chi ha pagato. Scegli una persona.'))
+    if (trip.travelers.length > 1 && who.length === 0) return setError(tt('Scegli almeno una persona.'))
+    if (amount && divisa) {
+      // il motivo è già scritto (in rosso) sotto le quote: non lo ripeto in fondo
+      if (!checkSplit(mode, amount, sharesFrom(mode, who, vals), currency).ok) return setError(null)
+    }
     if (!(await procediConflitto())) return
     setBusy(true)
     setError(null)
@@ -106,20 +121,18 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
       placeId: keepPlace,
       durationMinutes: minutes === null && !item?.durationMinutes ? undefined : minutes,
       categoryId: categoryId || null,
-      ...(editing ? { participants: who } : {}),
+      ...(editing ? { participants: partecipanti } : {}),
     }
     let message = item ? await t.updateItem(item.id, input) : await t.createItem(trip.id, day.id, input)
     if (!message && item && schema.timeLock && vincolata !== (item.timeLock === 'locked')) message = await t.setItemLock(item.id, vincolata && time ? 'locked' : 'flexible', 'manual')
     if (!message && item && (amount || linked)) {
       const catLabel = linked?.category || categoriaDaTappa(trip.categories.find((c) => c.id === categoryId)?.label ?? '')
-      message = await t.saveItemCost(trip.id, item.id, amount ? { amount, currency, paidBy, travelerIds: who, category: catLabel, notes: linked?.notes } : null)
+      message = await t.saveItemCost(trip.id, item.id, amount ? { amount, currency, paidBy, travelerIds: partecipanti, category: catLabel, notes: linked?.notes, splitMode: divisa ? mode : 'equal', ...(divisa ? { shares: sharesFrom(mode, who, vals) } : {}) } : null)
     }
     setBusy(false)
     if (message) setError(message)
     else onClose()
   }
-
-  const toggleWho = (id: string) => setWho((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]))
 
   return (
     <Foglio
@@ -255,23 +268,11 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
               </div>
             </div>
             {trip.travelers.length > 1 ? (
-              <div className="fa-fld" role="group" aria-label={tt('Per chi')}>
-                {tt('Per chi')}
-                <div className="fa-chips wrap">
-                  <Chip on={who.length === 0} onPress={() => setWho([])}>
-                    {tt('Tutti')}
-                  </Chip>
-                  {trip.travelers.map((p) => (
-                    <Chip key={p.id} on={who.includes(p.id)} onPress={() => toggleWho(p.id)}>
-                      {p.name}
-                    </Chip>
-                  ))}
-                </div>
-              </div>
+              <DivisioneEditor trip={trip} meId={me?.id} mode={mode} onMode={setMode} who={who} onWho={setWho} vals={vals} onVals={setVals} total={amount} currency={currency} />
             ) : null}
             {each !== null && amount ? (
               <span className="fa-m" style={{ color: 'var(--ink-muted)' }}>
-                {tt('{v0}La spesa si aggiorna anche in Spese.', { v0: people > 1 ? tt('Diviso {v0}: {v1} a testa. ', { v0: inQuanti(people), v1: formatMoney(each, currency) }) : '' })}
+                {tt('{v0}La spesa si aggiorna anche in Spese.', { v0: people > 1 && !divisa ? tt('Diviso {v0}: {v1} a testa. ', { v0: inQuanti(people), v1: formatMoney(each, currency) }) : '' })}
               </span>
             ) : null}
           </>

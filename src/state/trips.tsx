@@ -28,7 +28,7 @@ import type { BookingInput, ChecklistInput } from '../lib/planningData'
 import type { BudgetInput, ExpenseInput } from '../lib/moneyData'
 import type { FlightInput, StayInput, TransportInput } from '../lib/logistics'
 import type { InvitedInput, ItemInput, PlaceInput, TravelerInput, TripInput, TripPeople } from '../lib/tripApi'
-import type { Booking, BudgetItem, DocKind, Visibilita, ChecklistItem, Expense, Flight, ItemStatus, MezzoTratto, PlacePref, PlaceStatus, ReceivedInvite, Trip, Stay, TicketCode, TicketKind } from '../types'
+import type { Booking, BudgetItem, DocKind, Visibilita, ChecklistItem, Expense, ExpenseShare, Flight, ItemStatus, MezzoTratto, PlacePref, PlaceStatus, ReceivedInvite, SplitMode, Trip, Stay, TicketCode, TicketKind } from '../types'
 import { schema } from '../lib/schema'
 import { t as tt } from '../i18n'
 
@@ -43,6 +43,9 @@ export interface ItemCost {
   travelerIds: string[]
   category: string
   notes?: string
+  /** come si divide (uguali, in %, a importi), come in Spese; con `percent`/`fixed` le quote in `shares` */
+  splitMode?: SplitMode
+  shares?: ExpenseShare[]
 }
 
 /** Ogni azione restituisce `null` se è andata bene, altrimenti il messaggio d'errore da mostrare. */
@@ -719,6 +722,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
         spentDate: day.date,
         notes: cost.notes ?? '',
         travelerIds: cost.travelerIds.length > 0 ? cost.travelerIds : trip.travelers.map((t) => t.id),
+        ...(cost.splitMode ? { splitMode: cost.splitMode } : {}),
+        ...(cost.shares?.length ? { shares: cost.shares } : {}),
         source: { kind: 'day_item', id: itemId },
       }
       const e = expenseEntry(trip, input, linked)
