@@ -2,7 +2,7 @@
 // valuta e si legge l'altra), «Pagata da» obbligatorio, «Diviso tra» a riquadri e «Come dividere», categoria a riquadri.
 // Di base: pagata da me, divisa tra tutti, nella valuta del paese.
 import { leggiImporto } from '../../lib/calcolo'
-import { risultato, Tastierino, useTastierino } from '../../faraway/Tastierino'
+import { dentroTastierino, risultato, Tastierino, useTastierino } from '../../faraway/Tastierino'
 import { describeError } from '../../lib/db'
 import { SceltaIcona } from '../../faraway/SceltaIcona'
 import { glifoCategoria, iconaDalNome } from '../../lib/categoryIcon'
@@ -82,7 +82,7 @@ function Importo({ base, other, rate, side, text, onSide, onText, label, cambioS
             value={attivo ? text : convTesto}
             placeholder={attivo ? '0' : '—'}
             onFocus={() => (attivo ? undefined : onSide(cur, convTesto), touch && setTastiera(true))}
-            onBlur={(e) => (e.relatedTarget instanceof Node && e.currentTarget.closest('.k-ValutaPiccola')?.contains(e.relatedTarget) ? undefined : chiudi())}
+            onBlur={(e) => ((e.relatedTarget instanceof Node && e.currentTarget.closest('.k-ValutaPiccola')?.contains(e.relatedTarget)) || dentroTastierino(e.relatedTarget, e.currentTarget) ? undefined : chiudi())}
             onKeyDown={(e) => (e.key === 'Enter' && risultato(text) !== null ? (e.preventDefault(), onText(risultato(text) as string)) : undefined)}
             onChange={(e) => onText(e.currentTarget.value)}
             aria-label={attivo ? tt('{label} in {v1}', { label, v1: nome(cur) }) : tt('Scrivi in {v0}', { v0: nome(cur) })}

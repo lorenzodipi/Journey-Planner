@@ -1,7 +1,7 @@
 // Componenti di Oggi (mock Fa-03…Fa-07, Fa-52…Fa-55): Copertina (saluto), conto alla rovescia (Ticket),
 // ChecklistHome, Orologio, Meteo, Biglietto, ValutaPiccola, Riepilogo.
 import { leggiImporto } from '../lib/calcolo'
-import { risultato, Tastierino, useTastierino } from './Tastierino'
+import { dentroTastierino, risultato, Tastierino, useTastierino } from './Tastierino'
 import { gradi } from '../lib/formati'
 import type { CSSProperties, ReactNode } from 'react'
 import { useLayoutEffect, useRef, useState } from 'react'
@@ -510,7 +510,7 @@ export function ValutaPiccola({ base, local, rate, baseName, localName }: { base
             placeholder="0"
             onChange={(e) => setText(e.currentTarget.value)}
             onFocus={() => touch && setTastiera(true)}
-            onBlur={(e) => (e.relatedTarget instanceof Node && e.currentTarget.closest('.k-ValutaPiccola')?.contains(e.relatedTarget) ? undefined : chiudi())}
+            onBlur={(e) => ((e.relatedTarget instanceof Node && e.currentTarget.closest('.k-ValutaPiccola')?.contains(e.relatedTarget)) || dentroTastierino(e.relatedTarget, e.currentTarget) ? undefined : chiudi())}
             onKeyDown={(e) => (e.key === 'Enter' && risultato(text) !== null ? (e.preventDefault(), setText(risultato(text) as string)) : undefined)}
             aria-label={tt('Importo in {name}', { name })}
           />
