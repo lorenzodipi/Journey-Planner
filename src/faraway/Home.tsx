@@ -452,7 +452,7 @@ export function BigliettoPiccolo({ glyph, title, sub, right, rightSub, tint = 'r
       {right || rightSub ? (
         <div className="cr">
           {right ? <b>{right}</b> : null}
-          {rightSub ? <span>{rightSub}</span> : null}
+          {rightSub ? <span title={rightSub}>{rightSub}</span> : null}
         </div>
       ) : null}
     </article>

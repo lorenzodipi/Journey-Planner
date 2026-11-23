@@ -1004,3 +1004,8 @@ dialog.fa-mod:focus{outline:none}
 @keyframes fa-calc-fade{from{opacity:0}to{opacity:1}}
 /* schermi bassi (iPhone SE): tasti da 44 px, così sopra resta anche l'altra valuta */
 @media (max-height:700px){.fa-calc{padding-top:8px}.fa-calc button{min-height:44px}}
+/* Biglietto piccolo («Prossima prenotazione»): la matrice a destra si allarga quanto serve a orario e codice (da 96 a 136 px);
+   oltre, puntini. Prima era fissa a 96 px e un codice lungo («49KEN7N4YJ») usciva dalla card. */
+.k-Biglietto .ct{grid-template-columns:minmax(0,1fr) minmax(96px,max-content)}
+.k-Biglietto .cr{min-width:0;max-width:136px;box-sizing:border-box}
+.k-Biglietto .cr>b,.k-Biglietto .cr>span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
