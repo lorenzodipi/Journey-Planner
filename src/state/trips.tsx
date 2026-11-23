@@ -119,7 +119,8 @@ interface TripsValue {
   setPlaceStatus: (id: string, status: PlaceStatus) => Result
   setPlaceDeleted: (id: string, deleted: boolean) => Result
   /** Più luoghi insieme: una sola richiesta e un solo aggiornamento. */
-  setPlacesDeleted: (ids: string[], deleted: boolean) => Result
+  /** `tappe`: le tappe dei giorni che usano questi luoghi, eliminate (o ripristinate) insieme. */
+  setPlacesDeleted: (ids: string[], deleted: boolean, tappe?: string[]) => Result
   importPlaces: (tripId: string, plan: ImportPlan) => Promise<{ error: string | null; undo: () => Result }>
   /** Il viaggio com'è adesso (non quello dell'ultimo disegno): serve ai lavori lunghi in background. */
   getTrip: (id: string) => Trip | undefined
@@ -668,7 +669,16 @@ export function TripProvider({ children }: { children: ReactNode }) {
       ),
     setPlaceStatus: (id, status) => queued(tt('Stato del luogo'), [{ k: 'update', table: 'places', id, patch: { status } }], { t: 'place.status', id, status }),
     setPlaceDeleted: (id, deleted) => run(() => api.setPlaceDeleted(id, deleted), ['places']),
-    setPlacesDeleted: (ids, deleted) => (ids.length === 0 ? Promise.resolve(null) : run(() => api.setPlacesDeleted(ids, deleted), ['places'])),
+    setPlacesDeleted: (ids, deleted, tappe = []) =>
+      ids.length === 0
+        ? Promise.resolve(null)
+        : run(
+            async () => {
+              await api.setPlacesDeleted(ids, deleted)
+              if (tappe.length) await api.setItemsDeleted(tappe, deleted)
+            },
+            tappe.length ? ['places', 'items'] : ['places'],
+          ),
     getTrip: (id) => tripsRef.current.find((t) => t.id === id),
     setPlacePositions: (tripId, updates) => {
       const current = tripsRef.current.find((t) => t.id === tripId)?.places ?? []

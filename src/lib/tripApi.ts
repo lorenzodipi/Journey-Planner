@@ -1336,6 +1336,15 @@ export async function setItemParticipants(id: string, participants: string[]): P
   if (error) throw needs0017(error)
 }
 
+/** Elimina (o ripristina) più tappe insieme: quelle dei luoghi eliminati. */
+export async function setItemsDeleted(ids: string[], deleted: boolean): Promise<void> {
+  const at = deleted ? new Date().toISOString() : null
+  for (let i = 0; i < ids.length; i += 200) {
+    const { error } = await client().from('day_items').update({ deleted_at: at }).in('id', ids.slice(i, i + 200))
+    if (error) throw error
+  }
+}
+
 export async function setItemDeleted(id: string, deleted: boolean): Promise<void> {
   const { error } = await client()
     .from('day_items')

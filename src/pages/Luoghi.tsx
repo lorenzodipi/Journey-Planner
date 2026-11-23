@@ -29,7 +29,7 @@ import { SpostaSheet } from './giorno/SpostaSheet'
 import { FiltriSheet } from './luoghi/FiltriSheet'
 import { LuogoSheet } from './luoghi/LuogoSheet'
 import { TrovaPosizioni } from './luoghi/TrovaPosizioni'
-import { t as tt } from '../i18n'
+import { elenco, t as tt } from '../i18n'
 
 type Vista = 'elenco' | 'mappa'
 type MapViewComponent = typeof import('../ui/MapView').MapView
@@ -84,23 +84,36 @@ function useAzioniLuogo(trip: Trip) {
 
   async function remove(list: Place[]): Promise<boolean> {
     if (list.length === 0) return false
-    const used = list.filter((p) => tappaDelLuogo(trip, p.id)).length
+    // le tappe dei giorni che usano questi luoghi spariscono con loro (una tappa senza il suo luogo resterebbe a metà)
+    const ids0 = new Set(list.map((p) => p.id))
+    const tappe = trip.days.flatMap((d, i) => d.items.filter((it) => it.placeId && ids0.has(it.placeId)).map((it) => ({ id: it.id, giorno: i + 1, costo: trip.expenses.some((e) => e.source?.kind === 'day_item' && e.source.id === it.id) })))
+    const giorni = [...new Set(tappe.map((x) => x.giorno))].sort((a, b) => a - b).map((g) => tt('Giorno {v0}', { v0: g }))
     const one = list.length === 1
     const ok = await ask({
       title: one ? tt('Eliminare «{name}»?', { name: list[0].name }) : tt('Eliminare {length} luoghi?', { length: list.length }),
-      message: conDipendenze(used > 0 ? tt('{v0}, ma senza il luogo collegato. Puoi annullare subito dopo.', { v0: one ? tt('Resta nelle tappe dei giorni') : tt('Le tappe dei giorni restano') }) : tt('Puoi annullare subito dopo.'), one ? dipendenze(trip, 'luogo', list[0].id) : []),
+      message: conDipendenze(
+        tappe.length > 0
+          ? tt('Si elimina anche dal programma: {v0}.{v1} Puoi annullare subito dopo.', {
+              v0: tappe.length === 1 ? tt('la tappa nel {v0}', { v0: giorni[0] }) : tt('{n} tappe ({v0})', { n: tappe.length, v0: elenco(giorni) }),
+              v1: tappe.some((x) => x.costo) ? tt(' Le spese collegate restano in Spese.') : '',
+            })
+          : tt('Puoi annullare subito dopo.'),
+        // le tappe le dice già il messaggio: dalle dipendenze (la prima voce sono le tappe) restano i documenti
+        one ? dipendenze(trip, 'luogo', list[0].id).slice(tappe.length > 0 ? 1 : 0) : [],
+      ),
       confirm: one ? tt('Elimina il luogo') : tt('Elimina {length} luoghi', { length: list.length }),
       cancel: one ? tt('Tieni il luogo') : tt('Tieni i luoghi'),
       destructive: true,
     })
     if (!ok) return false
     const ids = list.map((p) => p.id)
-    const message = await t.setPlacesDeleted(ids, true) // una sola richiesta per tutti
+    const idTappe = tappe.map((x) => x.id)
+    const message = await t.setPlacesDeleted(ids, true, idTappe) // una richiesta per i luoghi, una per le loro tappe
     if (message) {
       showToast(message)
       return false
     }
-    showToast(one ? tt('Luogo eliminato') : tt('{length} luoghi eliminati', { length: list.length }), { label: tt('Annulla'), run: () => void t.setPlacesDeleted(ids, false) })
+    showToast(one ? tt('Luogo eliminato') : tt('{length} luoghi eliminati', { length: list.length }), { label: tt('Annulla'), run: () => void t.setPlacesDeleted(ids, false, idTappe) })
     return true
   }
 

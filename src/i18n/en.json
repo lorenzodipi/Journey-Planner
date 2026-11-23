@@ -742,7 +742,6 @@
  "Le prime sono le tappe dello stesso giorno o luogo.": "First come the stops of the same day or place.",
  "Le quote fanno {v0}%: mancano {v1} punti": "The shares add up to {v0}%: {v1} points missing",
  "Le quote fanno {v0}%: {v1} punti in più": "The shares add up to {v0}%: {v1} points too many",
- "Le tappe dei giorni restano": "The stops in the days remain",
  "Le voci comuni spariscono per tutti. Puoi annullare subito dopo.": "Shared items disappear for everyone. You can undo right after.",
  "Leggo il file…": "Reading the file…",
  "Leggo l’indirizzo…": "Reading the address…",
@@ -1180,7 +1179,6 @@
  "Rendere {nome} partecipante?": "Make {nome} a participant?",
  "Rendi partecipante": "Make participant",
  "Resta": "Stay",
- "Resta nelle tappe dei giorni": "It stays in the stops of the days",
  "Rettifica: ": "Correction: ",
  "Ricerca delle posizioni interrotta": "Position search stopped",
  "Ricerca in corso": "Searching",
@@ -1999,7 +1997,6 @@
  "{v0}% di {v1}": "{v0}% of {v1}",
  "{v0}(da «{title}»)": "{v0}(from «{title}»)",
  "{v0}, come previsto": "{v0}, as planned",
- "{v0}, ma senza il luogo collegato. Puoi annullare subito dopo.": "{v0}, but without the linked place. You can undo right after.",
  "{v0}. Niente viene eliminato: i giorni tolti tornano se rimetti le date.": "{v0}. Nothing is deleted: the removed days come back if you restore the dates.",
  "{v0}. Puoi salvare lo stesso.": "{v0}. You can save anyway.",
  "{v0}: arrivo {toName}": "{v0}: arrival {toName}",
@@ -2270,5 +2267,9 @@
  "Cancella": "Delete",
  "Uguale": "Equals",
  "Tastierino con le operazioni": "Calculator keypad",
- "Il calcolo non torna": "This calculation doesn't work"
+ "Il calcolo non torna": "This calculation doesn't work",
+ "Si elimina anche dal programma: {v0}.{v1} Puoi annullare subito dopo.": "It is also removed from the plan: {v0}.{v1} You can undo right after.",
+ "la tappa nel {v0}": "the stop on {v0}",
+ "{n} tappe ({v0})": "{n} stops ({v0})",
+ " Le spese collegate restano in Spese.": " Linked expenses stay in Expenses."
 }
