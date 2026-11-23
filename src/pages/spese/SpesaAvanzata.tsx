@@ -1,12 +1,13 @@
 // Parti avanzate del foglio spesa (#50): più paganti, divisione per percentuali o importi fissi, cambio con fonte e ricevute.
 import { describeError } from '../../lib/db'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { cx } from '../../faraway/cx'
 import { Campo, Chip, Pulsante, PulsanteIcona, Segmenti } from '../../faraway/base'
 import { Sv } from '../../faraway/icons'
 import { PerChi } from '../../faraway/Moduli'
 import { checkFile, openBookingFile, safeFileName, uploadBookingFile } from '../../lib/bookingFiles'
 import { parseAmount } from '../../lib/money'
+import { adattaQuote } from '../../lib/quoteAdattive'
 import { checkPayers, checkSplit, fxTrace, splitAmounts } from '../../lib/ripartizione'
 import { showToast } from '../../state/toast'
 import { discOf, initials } from '../../state/me'
@@ -148,25 +149,46 @@ export function DivisioneEditor({ trip, meId, mode, onMode, who, onWho, vals, on
   hint?: string
 }) {
   const check = who.length === 0 ? { ok: false, message: t('Scegli almeno una persona.'), missing: 0 } : checkSplit(mode, total ?? 0, sharesFrom(mode, who, vals), currency)
+  // quote scritte a mano: le altre si adattano al resto (due persone: l'altra è il resto); quelle scritte non si cambiano più
+  const [toccate, setToccate] = useState<ReadonlySet<string>>(() => new Set())
   const scegli = (next: string[]) => {
     onWho(next)
+    setToccate(new Set())
     if (next.length < 2 && mode !== 'equal') {
       onMode('equal')
       onVals({})
     } else if (mode !== 'equal') onVals(defaultVals(mode, next, total))
   }
+  const scrivi = (id: string, v: string) => {
+    const t2 = new Set(toccate).add(id)
+    setToccate(t2)
+    onVals(adattaQuote(mode, who, { ...vals, [id]: v }, t2, total))
+  }
+  // cambia l'importo (a importi): le quote non scritte seguono. Se nessuna è scritta e le quote erano già diverse dalle parti
+  // uguali (una spesa salvata così), non si tocca niente: la divisione scelta non si perde.
+  const totalePrima = useRef(total)
+  useEffect(() => {
+    const prima = totalePrima.current
+    totalePrima.current = total
+    if (mode !== 'fixed' || prima === total || who.length < 2) return
+    const uguali = defaultVals('fixed', who, prima)
+    const eraUguale = who.every((id) => (parseAmount(vals[id] ?? '') ?? 0) === (parseAmount(uguali[id] ?? '') ?? 0))
+    if (toccate.size === 0 && !eraUguale) return
+    onVals(adattaQuote(mode, who, vals, toccate, total))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo quando cambia l'importo
+  }, [total])
   return (
     <>
       <PerChi trip={trip} meId={meId} value={who} onChange={scegli} />
       {who.length > 1 ? (
         <div className="fa-fld">
           {t('Come dividere')}
-          <Segmenti<SplitMode> label={t('Come dividere')} value={mode} onChange={(m) => (onMode(m), onVals(defaultVals(m, who, total)))} options={(['equal', 'percent', 'fixed'] as SplitMode[]).map((m) => ({ value: m, label: SPLIT_BREVE[m] }))} />
+          <Segmenti<SplitMode> label={t('Come dividere')} value={mode} onChange={(m) => (onMode(m), setToccate(new Set()), onVals(defaultVals(m, who, total)))} options={(['equal', 'percent', 'fixed'] as SplitMode[]).map((m) => ({ value: m, label: SPLIT_BREVE[m] }))} />
         </div>
       ) : null}
       {mode !== 'equal' && who.length > 1
         ? who.map((id) => (
-            <Campo key={id} label={first(trip.travelers.find((p) => p.id === id)?.name ?? '')} inputMode="decimal" value={vals[id] ?? ''} onChange={(v) => onVals({ ...vals, [id]: v })} placeholder="0" trailing={<span>{mode === 'percent' ? '%' : currency}</span>} />
+            <Campo key={id} label={first(trip.travelers.find((p) => p.id === id)?.name ?? '')} inputMode="decimal" value={vals[id] ?? ''} onChange={(v) => scrivi(id, v)} placeholder="0" trailing={<span>{mode === 'percent' ? '%' : currency}</span>} />
           ))
         : null}
       <Help check={check} />

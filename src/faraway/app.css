@@ -986,3 +986,17 @@ dialog.fa-mod:focus{outline:none}
 
 /* avvio: solo l'indicatore, al centro dello schermo (SchermataCaricamento) */
 .fa-avvio{min-height:calc(100dvh - 160px);display:grid;place-items:center;color:var(--azzurro-ink)}
+
+/* Tastierino con le operazioni (campi degli importi, solo touch): sotto il campo attivo, in flusso (niente fixed: dentro un
+   foglio trascinabile la posizione fissa seguirebbe il foglio). Tasti da 48 px, operazioni in azzurro, «Fatto» pieno. */
+.fa-calc{display:grid;gap:8px;margin-top:8px}
+.fa-calc .ris{min-height:24px;text-align:right;font:600 16px/24px var(--font-sans);color:var(--ink-muted);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.fa-calc .tasti{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.fa-calc button{min-height:48px;padding:0;border:0;border-radius:12px;background:var(--surface-high);color:var(--ink);font:600 22px/1 var(--font-sans);display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;transition:transform 100ms cubic-bezier(.23,1,.32,1),background-color 100ms}
+.fa-calc button:active{transform:scale(.97)}
+.fa-calc button.op{background:var(--azzurro-soft);color:var(--azzurro-ink)}
+.fa-calc button.uguale,.fa-calc button.fatto{grid-column:span 2}
+.fa-calc button.fatto{background:var(--azzurro);color:var(--on-azzurro);font-size:17px}
+.fa-calc button:disabled{opacity:.45;cursor:default}
+.fa-calc button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.fa-calc button{transition:none}.fa-calc button:active{transform:none}}

@@ -1,6 +1,8 @@
 // Fogli «Nuova spesa» e «Modifica spesa» (mock Fa-30, #34): nome, importo con il convertitore (si scrive in una
 // valuta e si legge l'altra), «Pagata da» obbligatorio, «Diviso tra» a riquadri e «Come dividere», categoria a riquadri.
 // Di base: pagata da me, divisa tra tutti, nella valuta del paese.
+import { leggiImporto } from '../../lib/calcolo'
+import { risultato, Tastierino, useTastierino } from '../../faraway/Tastierino'
 import { describeError } from '../../lib/db'
 import { SceltaIcona } from '../../faraway/SceltaIcona'
 import { glifoCategoria, iconaDalNome } from '../../lib/categoryIcon'
@@ -10,7 +12,7 @@ import { removeBookingFile } from '../../lib/bookingFiles'
 import { decimalsOf } from '../../lib/fx'
 import { fetchFxQuote } from '../../lib/moneyApi'
 import { checkPayers, checkSplit } from '../../lib/ripartizione'
-import { currencyName, formatMoney, parseAmount, rateFor, round2, tripCurrencies } from '../../lib/money'
+import { currencyName, formatMoney, rateFor, round2, tripCurrencies } from '../../lib/money'
 import type { ExpenseInput } from '../../lib/moneyData'
 import { CATEGORIE_BASE, catKey } from '../../lib/ricevuta'
 import { valutaDelGiorno } from '../../lib/paesi'
@@ -40,7 +42,8 @@ const nome = (cur: string) => {
   return n ? n.charAt(0).toUpperCase() + n.slice(1) : cur
 }
 const scrivi = (v: number, cur: string) => v.toLocaleString(LOCALE, { maximumFractionDigits: decimalsOf(cur), minimumFractionDigits: 0 })
-const leggi = (t: string) => parseAmount(t)
+// un calcolo («120+35,50») vale il suo risultato
+const leggi = (t: string) => leggiImporto(t)
 const NUOVA = '__nuova__'
 /** Glifo della categoria di spesa: quello delle categorie base, altrimenti dall'icona scelta o dedotta dal nome. */
 function glifoSpesa(label: string): string {
@@ -51,6 +54,15 @@ function glifoSpesa(label: string): string {
 /** Importo con il convertitore (ValutaPiccola): il campo attivo è quello in cui si scrive. */
 function Importo({ base, other, rate, side, text, onSide, onText, label, cambioSotto }: { base: string; other: string | null; rate: number | undefined; side: string; text: string; onSide: (cur: string, text: string) => void; onText: (t: string) => void; label: string; /** sotto c'è già la riga del cambio con la fonte: qui non si ripete */ cambioSotto?: boolean }) {
   const n = leggi(text)
+  // sui touch: tastierino con le operazioni al posto della tastiera del telefono
+  const touch = useTastierino()
+  const [tastiera, setTastiera] = useState(false)
+  // lasciando il campo il calcolo diventa il suo risultato
+  const chiudi = () => {
+    const r = risultato(text)
+    if (r !== null) onText(r)
+    setTastiera(false)
+  }
   // i due lati sono sempre campi veri: un tocco sul lato spento lo accende e apre subito la tastiera (prima era un
   // pulsante che diventava campo, e su iOS serviva un secondo tocco). Stessa struttura: React tiene lo stesso <input>.
   const field = (cur: string) => {
@@ -66,10 +78,12 @@ function Importo({ base, other, rate, side, text, onSide, onText, label, cambioS
           <input
             id={`imp-${cur}`}
             className="n"
-            inputMode="decimal"
+            inputMode={touch ? 'none' : 'decimal'}
             value={attivo ? text : convTesto}
             placeholder={attivo ? '0' : '—'}
-            onFocus={attivo ? undefined : () => onSide(cur, convTesto)}
+            onFocus={() => (attivo ? undefined : onSide(cur, convTesto), touch && setTastiera(true))}
+            onBlur={(e) => (e.relatedTarget instanceof Node && e.currentTarget.closest('.k-ValutaPiccola')?.contains(e.relatedTarget) ? undefined : chiudi())}
+            onKeyDown={(e) => (e.key === 'Enter' && risultato(text) !== null ? (e.preventDefault(), onText(risultato(text) as string)) : undefined)}
             onChange={(e) => onText(e.currentTarget.value)}
             aria-label={attivo ? tt('{label} in {v1}', { label, v1: nome(cur) }) : tt('Scrivi in {v0}', { v0: nome(cur) })}
           />
@@ -78,7 +92,18 @@ function Importo({ base, other, rate, side, text, onSide, onText, label, cambioS
       </div>
     )
   }
-  if (!other) return <div className="k-ValutaPiccola"><div className="vc sm"><div className="io">{field(base)}</div></div></div>
+  const tasti = tastiera ? (
+    <Tastierino value={text} onChange={onText} decimali={decimalsOf(side)} unita={sym(side)} onFatto={() => ((document.activeElement as HTMLElement | null)?.blur(), setTastiera(false))} />
+  ) : null
+  if (!other)
+    return (
+      <div className="k-ValutaPiccola">
+        <div className="vc sm">
+          <div className="io">{field(base)}</div>
+        </div>
+        {tasti}
+      </div>
+    )
   return (
     <div className="k-ValutaPiccola">
       <div className="vc sm">
@@ -91,6 +116,7 @@ function Importo({ base, other, rate, side, text, onSide, onText, label, cambioS
         </div>
         {rate && cambioSotto ? null : <div className="rr">{rate ? `1 ${sym(base)} = ${scrivi(1 / rate, other)} ${sym(other)}` : tt('Manca il cambio tra {base} e {other}: la spesa non conta nei totali finché non lo imposti.', { base, other })}</div>}
       </div>
+      {tasti}
     </div>
   )
 }

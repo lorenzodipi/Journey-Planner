@@ -1,5 +1,7 @@
 // Componenti di Oggi (mock Fa-03…Fa-07, Fa-52…Fa-55): Copertina (saluto), conto alla rovescia (Ticket),
 // ChecklistHome, Orologio, Meteo, Biglietto, ValutaPiccola, Riepilogo.
+import { leggiImporto } from '../lib/calcolo'
+import { risultato, Tastierino, useTastierino } from './Tastierino'
 import { gradi } from '../lib/formati'
 import type { CSSProperties, ReactNode } from 'react'
 import { useLayoutEffect, useRef, useState } from 'react'
@@ -472,8 +474,17 @@ export function BigliettoPiccolo({ glyph, title, sub, right, rightSub, tint = 'r
 export function ValutaPiccola({ base, local, rate, baseName, localName }: { base: string; local: string; rate: number; baseName: string; localName: string }) {
   const [side, setSide] = useState<'base' | 'local'>('base')
   const [text, setText] = useState('100')
-  const n = Number(text.replace(/\./g, '').replace(',', '.'))
-  const valid = Number.isFinite(n)
+  // si può scrivere un calcolo («100+35»): vale il suo risultato; sui touch c'è il tastierino con le operazioni
+  const letto = leggiImporto(text)
+  const n = letto ?? Number.NaN
+  const valid = letto !== null
+  const touch = useTastierino()
+  const [tastiera, setTastiera] = useState(false)
+  const chiudi = () => {
+    const r = risultato(text)
+    if (r !== null) setText(r)
+    setTastiera(false)
+  }
   const other = valid ? (side === 'base' ? n / rate : n * rate) : 0
   const fmt = (v: number, cur: string) => v.toLocaleString(LOCALE, { maximumFractionDigits: decimalsOf(cur), minimumFractionDigits: 0 })
   const sym = (cur: string) => {
@@ -491,7 +502,18 @@ export function ValutaPiccola({ base, local, rate, baseName, localName }: { base
           {name} · {cur}
         </label>
         <div className="fv2">
-          <input id={`vp-${which}`} className="n" inputMode="decimal" value={text} placeholder="0" onChange={(e) => setText(e.currentTarget.value)} aria-label={tt('Importo in {name}', { name })} />
+          <input
+            id={`vp-${which}`}
+            className="n"
+            inputMode={touch ? 'none' : 'decimal'}
+            value={text}
+            placeholder="0"
+            onChange={(e) => setText(e.currentTarget.value)}
+            onFocus={() => touch && setTastiera(true)}
+            onBlur={(e) => (e.relatedTarget instanceof Node && e.currentTarget.closest('.k-ValutaPiccola')?.contains(e.relatedTarget) ? undefined : chiudi())}
+            onKeyDown={(e) => (e.key === 'Enter' && risultato(text) !== null ? (e.preventDefault(), setText(risultato(text) as string)) : undefined)}
+            aria-label={tt('Importo in {name}', { name })}
+          />
           <span className="u">{sym(cur)}</span>
         </div>
       </div>
@@ -520,6 +542,7 @@ export function ValutaPiccola({ base, local, rate, baseName, localName }: { base
           1 {sym(base)} = {fmt(perOne, local)} {sym(local)}
         </div>
       </div>
+      {tastiera ? <Tastierino value={text} onChange={setText} decimali={decimalsOf(side === 'base' ? base : local)} unita={sym(side === 'base' ? base : local)} onFatto={() => ((document.activeElement as HTMLElement | null)?.blur(), setTastiera(false))} /> : null}
     </div>
   )
 }
