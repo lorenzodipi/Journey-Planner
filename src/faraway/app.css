@@ -562,11 +562,12 @@ sup{margin-left:0}
 .k-TicketOrizzontale .tv .ti .pl3b.td{color:var(--on-corallo-solid)}
 
 /* Checklist: più e meno delle quantità più piccoli (32px visibili, bersaglio 44px senza allargare la riga) */
-.fa-qta{display:inline-flex;align-items:center;gap:4px}
-.fa-qta b{min-width:40px;text-align:center;font-variant-numeric:tabular-nums}
-.fa-qta .fa-ib{width:32px;height:32px;position:relative}
-.fa-qta .fa-ib svg{width:18px;height:18px}
-.fa-qta .fa-ib::after{content:"";position:absolute;inset:-6px}
+.fa-qta{display:inline-flex;align-items:center;gap:8px}
+.fa-qta b{min-width:48px;text-align:center;font-variant-numeric:tabular-nums}
+/* − e + più piccoli (28 px) e staccati dal numero; l'area di tocco resta da 44 (::after) */
+.fa-qta .fa-ib{width:28px;height:28px;position:relative}
+.fa-qta .fa-ib svg{width:16px;height:16px}
+.fa-qta .fa-ib::after{content:"";position:absolute;inset:-8px}
 /* Ricevuta: le righe sotto il nome della categoria (spese e pagate · previsto) stanno attaccate */
 .k-Ricevuta .cat .sub{margin:2px 0 0}
 
@@ -1011,3 +1012,10 @@ dialog.fa-mod:focus{outline:none}
 .k-Biglietto .cr>b,.k-Biglietto .cr>span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* scelta del giorno di un luogo: il giorno di oggi ha il cerchio pieno (colori invertiti) */
 .k-Luoghi .op .dn.oggi{background:var(--azzurro);color:var(--on-azzurro)}
+
+/* Contatore (− n +) nei fogli: pulsanti da 36 px (area di tocco 44 con ::after), staccati dal numero; senza numero si vede
+   «—» in grigio e il «−» resta al suo posto, spento */
+.fa-cont .ctl{grid-template-columns:44px 56px 44px}
+.fa-cont .ctl .fa-ib{width:36px;height:36px;justify-self:center}
+.fa-cont .ctl .fa-ib svg{width:18px;height:18px}
+.fa-cont .ctl .fa-ib::after{content:"";position:absolute;inset:-4px}

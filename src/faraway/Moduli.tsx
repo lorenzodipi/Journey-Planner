@@ -222,7 +222,7 @@ export function IlCostoE({ value, onChange, amount, persone, currency }: { value
   )
 }
 
-/** Contatore − n + per numeri piccoli. Con `vuoto` il numero si può togliere (sotto 1 torna «—», non indicato). */
+/** Contatore − n + per numeri piccoli. Senza numero mostra «—» (non indicato); con `vuoto` il numero si può togliere (sotto 1 torna «—»). */
 export function Contatore({ label, hint, value, onChange, min = 1, max = 99, vuoto }: { label: string; hint?: string; value: number | null; onChange: (n: number | null) => void; min?: number; max?: number; vuoto?: boolean }) {
   const meno = value === null ? null : value <= min ? (vuoto ? null : min) : value - 1
   const piu = value === null ? min : Math.min(max, value + 1)
@@ -234,12 +234,12 @@ export function Contatore({ label, hint, value, onChange, min = 1, max = 99, vuo
         {hint ? <span>{hint}</span> : null}
       </span>
       <span className="ctl">
-        <button type="button" className="fa-ib" aria-label={t('{label}: uno in meno', { label })} disabled={value === null || (!vuoto && value <= min)} hidden={value === null} onClick={() => onChange(meno)}>
+        <button type="button" className="fa-ib" aria-label={t('{label}: uno in meno', { label })} disabled={value === null || (!vuoto && value <= min)} onClick={() => onChange(meno)}>
           <Sv name="minus" size={20} />
         </button>
         <output aria-live="polite" className={value === null ? 'vuoto' : undefined} aria-label={value === null ? t('{label}: non indicato', { label }) : undefined}>
-          {/* senza numero resta solo «+», al suo posto di sempre: niente trattino che sembra un «−» */}
-          {value === null ? <span className="sr-only">—</span> : value}
+          {/* senza numero: «—» in grigio (non è il pulsante «−», che resta spento al suo posto) */}
+          {value === null ? <span aria-hidden="true">—</span> : value}
         </output>
         <button type="button" className="fa-ib" aria-label={t('{label}: uno in più', { label })} disabled={value !== null && value >= max} onClick={() => onChange(piu)}>
           <Sv name="plus" size={20} />
