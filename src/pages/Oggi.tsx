@@ -16,7 +16,7 @@ import { soloLettura } from '../lib/ruolo'
 import { StepperViaggio, type TappaViaggio } from '../faraway/StepperViaggio'
 import { AvvisoNotti } from '../faraway/AvvisoNotti'
 import { dateInZone } from '../lib/flights'
-import { faseViaggio, notteAlle, prossimeOre } from '../lib/oggi'
+import { faseViaggio, giornataFinita, notteAlle, prossimeOre } from '../lib/oggi'
 import { allerteMeteo, allerteTerremoti, ordinaAllerte } from '../lib/allerte'
 import { useTerremoti } from '../state/terremoti'
 import { Allerte } from '../faraway/Allerte'
@@ -238,8 +238,8 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
   }, [day?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   void current
 
-  const lastEnd = items.reduce((m, i) => Math.max(m, toMin(i.endTime) ?? toMin(i.time) ?? 0), 0)
-  const finished = items.length > 0 && (items.every(isClosed) || (lastEnd > 0 && nowMin > lastEnd + 60))
+  // le tappe senza orario ancora da fare tengono aperta la giornata fino a mezzanotte
+  const finished = giornataFinita(items, nowMin)
   const tomorrow = trip.days.find((d) => d.date === dateAddDays(today, 1))
   const firstTomorrow = tomorrow?.items.find((i) => i.time)
 

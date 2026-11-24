@@ -2,7 +2,8 @@
 import { gradi } from './formati'
 import { daysBetween } from './dates'
 import { weatherLabel, type DayWeather, type HourWeather } from './weather'
-import type { Trip } from '../types'
+import type { DayItem, Trip } from '../types'
+import { isClosed, toMin } from './tappa'
 import { tzOffsetMinutes, type DaySun } from './sun'
 import { t as tt } from '../i18n'
 
@@ -120,3 +121,16 @@ export function avvisoPioggia(hours: OraPrevista[]): { title: string; text: stri
   }
 }
 
+
+/**
+ * «Giornata finita» in Oggi: tutte le tappe chiuse (fatte, saltate…), oppure passata un'ora dalla fine dell'ultima tappa con
+ * l'orario **e** nessuna tappa senza orario ancora da fare. Le tappe senza orario non hanno un'ora di fine: restano in programma
+ * fino alla fine della giornata, quindi finché ce n'è una aperta la giornata non è finita.
+ */
+export function giornataFinita(items: readonly Pick<DayItem, 'status' | 'done' | 'time' | 'endTime'>[], nowMin: number): boolean {
+  if (items.length === 0) return false
+  if (items.every(isClosed)) return true
+  if (items.some((i) => !isClosed(i) && toMin(i.time ?? undefined) === null)) return false
+  const ultima = items.reduce((m, i) => Math.max(m, toMin(i.endTime ?? undefined) ?? toMin(i.time ?? undefined) ?? 0), 0)
+  return ultima > 0 && nowMin > ultima + 60
+}
