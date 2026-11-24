@@ -1,5 +1,6 @@
 // Giorni (mock Fa-08, issue #31): riga meteo per città, gruppi per città/viaggio/rientro,
 // calendarietti del componente SelettoreGiorni (passato grigio, oggi, futuro, libero).
+import { corrisponde } from '../lib/cerca'
 import { paesiDi, paeseDelGiorno } from '../lib/paesi'
 import { gradi } from '../lib/formati'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -106,7 +107,7 @@ function ElencoGiorni({ scelto }: { scelto?: string }) {
   const q = query.trim().toLowerCase()
   const shown = q
     ? groups
-        .map((g) => ({ ...g, cells: g.cells.filter((c) => [g.title, c.label, c.day.city, c.day.title, ...c.day.items.map((i) => i.title)].join(' ').toLowerCase().includes(q)) }))
+        .map((g) => ({ ...g, cells: g.cells.filter((c) => corrisponde(q, g.title, c.label, c.day.city, c.day.title, ...c.day.items.map((i) => i.title))) }))
         .filter((g) => g.cells.length > 0)
     : groups
 

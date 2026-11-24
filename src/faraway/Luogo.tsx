@@ -7,6 +7,7 @@ import type { ReactNode } from 'react'
 import { useRef, useState } from 'react'
 import { categoryIcon } from '../lib/categoryIcon'
 import { parseYmd } from '../lib/dates'
+import { oggiNelViaggio } from '../lib/paesi'
 import { mapsLinkFor } from '../lib/mapsUrl'
 import { openingParts } from '../lib/opening'
 import { durata } from '../lib/tappa'
@@ -207,11 +208,13 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
                 spunta={<G name="g-check" />}
                 voci={days.map((d) => {
                   const n = trip.days.indexOf(d) + 1
+                  // il giorno di oggi (durante il viaggio): cerchio pieno e «Oggi» scritto, per ritrovarlo a colpo d'occhio
+                  const oggi = d.date === oggiNelViaggio(trip).today
                   return {
                     id: d.id,
                     nome: wdm(d.date),
-                    descrizione: [d.city, `${d.items.length} ${d.items.length === 1 ? tt('tappa') : tt('tappe')}`].filter(Boolean).join(' · '),
-                    segno: <span className="dn">{n}</span>,
+                    descrizione: [oggi ? tt('Oggi') : '', d.city, `${d.items.length} ${d.items.length === 1 ? tt('tappa') : tt('tappe')}`].filter(Boolean).join(' · '),
+                    segno: <span className={cx('dn', oggi && 'oggi')}>{n}</span>,
                   }
                 })}
               />

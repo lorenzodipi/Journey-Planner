@@ -1,5 +1,6 @@
 // Ricerca nei campi «scrivibili» (CampoCerca): aeroporti, paesi, valute, fusi orari.
 // Senza accenti e maiuscole; prima il codice esatto, poi chi comincia con il testo, poi chi lo contiene.
+// `corrisponde` è la regola di tutte le altre ricerche dell'app (luoghi, tappe, ricerca generale, elenchi).
 
 export interface VoceCerca {
   id: string
@@ -49,4 +50,16 @@ export function cercaVoci<T extends VoceCerca>(voci: readonly T[], testo: string
     .sort((a, b) => a.p - b.p || a.i - b.i)
     .slice(0, max)
     .map((x) => x.v)
+}
+
+/**
+ * La regola di ricerca dell'app: senza accenti e maiuscole, ogni parola scritta deve comparire in uno dei campi, in
+ * qualsiasi ordine e in qualsiasi punto («head» trova «Godzilla Head», «valigia» trova un luogo con «valigia» nelle note,
+ * «tokyo sushi» trova un sushi a Tokyo). Testo vuoto: tutto corrisponde.
+ */
+export function corrisponde(testo: string, ...campi: (string | null | undefined)[]): boolean {
+  const q = normalizza(testo)
+  if (!q) return true
+  const tutto = normalizza(campi.filter(Boolean).join(' '))
+  return q.split(' ').every((p) => tutto.includes(p))
 }

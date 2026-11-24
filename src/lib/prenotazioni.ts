@@ -1,4 +1,5 @@
 // Prenotazioni (#40): pillole per tipo, gruppi per giorno, orario e righe compatte.
+import { corrisponde } from './cerca'
 import type { Booking, BookingStatus, BookingType, Trip } from '../types'
 import { dateInZone, formatInZone } from './flights'
 import { LINGUA, t as tt } from '../i18n'
@@ -138,7 +139,7 @@ export function filtraArchivio(bookings: Booking[], f: FiltriArchivio): Booking[
     (b) =>
       (f.stato === 'all' || statoDi(b) === f.stato) &&
       (f.allegati === 'all' || (f.allegati === 'con') === !!b.filePath) &&
-      (!q || [b.title, b.place, b.provider, b.code, b.detail, b.notes].some((x) => x?.toLowerCase().includes(q))),
+      corrisponde(q, b.title, b.place, b.provider, b.code, b.detail, b.notes),
   )
 }
 

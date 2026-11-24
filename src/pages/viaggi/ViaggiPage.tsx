@@ -1,5 +1,6 @@
 // Viaggi (mock Fa-12, #43): copertine illustrate, stato, avatar, date e riga finale; FAB «+ Viaggio»; stato vuoto.
 // Senza barra delle schede né «indietro», con il profilo in alto a destra: si esce scegliendo un viaggio (dopo l’accesso è la scelta del viaggio).
+import { corrisponde as trova } from '../../lib/cerca'
 import { useEffect, useState } from 'react'
 import { useInCorso } from '../../faraway/Attesa'
 import { useLocation } from 'wouter'
@@ -50,7 +51,7 @@ export function ViaggiPage({ onChosen }: { onChosen?: () => void }) {
   const tutti = ordinaViaggi(t.trips)
   const [cerca, setCerca] = useState('')
   const q = cerca.trim().toLowerCase()
-  const corrisponde = (x: Trip) => !q || `${x.title} ${x.destination}`.toLowerCase().includes(q)
+  const corrisponde = (x: Trip) => trova(q, x.title, x.destination)
   const lista = tutti.filter((x) => !x.archivedAt && corrisponde(x))
   const archiviati = tutti.filter((x) => x.archivedAt && corrisponde(x))
   const conRicerca = tutti.length >= 3

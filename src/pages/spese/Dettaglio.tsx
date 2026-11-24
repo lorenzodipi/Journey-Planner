@@ -1,6 +1,7 @@
 // Dettaglio spese (mock Fa-27, #34): Di tutti | Mie, pillole per categoria, gruppi per giorno d'acquisto con il totale,
 // righe che si aprono in linea (pagata da, divisione, categoria, Modifica / Elimina). Le spese che non mi
 // riguardano non compaiono in nessuna lista (ma contano nei totali della pagina Spese).
+import { corrisponde } from '../../lib/cerca'
 import { useMemo, useState } from 'react'
 import { useLocation } from 'wouter'
 import { formatMoney, round2 } from '../../lib/money'
@@ -67,7 +68,7 @@ export function Dettaglio() {
     const d = giornoAcquisto(e, trip.timezone)
     return d >= date.dal && d <= date.al
   }
-  const shown = inVista.filter((e) => (!cat || catKey(categoriaDi(e)) === catKey(cat)) && nelleDate(e) && (!q || `${e.label} ${e.category ?? ''}`.toLowerCase().includes(q)))
+  const shown = inVista.filter((e) => (!cat || catKey(categoriaDi(e)) === catKey(cat)) && nelleDate(e) && corrisponde(q, e.label, e.category, e.notes))
   const testoDate = date ? rangeText(date.dal, date.al) : ''
   const giorni = useMemo(() => {
     const m = new Map<string, SpesaVista[]>()

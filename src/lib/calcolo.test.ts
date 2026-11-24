@@ -78,3 +78,34 @@ describe('quote che si adattano (in % o a importi)', () => {
     expect(adattaQuote('fixed', due, { io: '500', gaia: '500' }, new Set(), 1200)).toEqual({ io: '600', gaia: '600' })
   })
 })
+
+import { corrisponde } from './cerca'
+import { filterPlaces } from './placeFilter'
+import type { Place } from '../types'
+
+describe('ricerca nell\'app: ogni parola, in qualsiasi punto e ordine', () => {
+  it('una parola in mezzo al nome, senza accenti e maiuscole', () => {
+    expect(corrisponde('head', 'Godzilla Head')).toBe(true)
+    expect(corrisponde('HEAD', 'Godzilla Head')).toBe(true)
+    expect(corrisponde('zilla', 'Godzilla Head')).toBe(true)
+    expect(corrisponde('caffe', 'Caffè Ōmori')).toBe(true)
+    expect(corrisponde('omori', 'Caffè Ōmori')).toBe(true)
+  })
+  it('più parole in qualsiasi ordine e in campi diversi', () => {
+    expect(corrisponde('head godzilla', 'Godzilla Head')).toBe(true)
+    expect(corrisponde('tokyo sushi', 'Sushi Dai', 'Tokyo')).toBe(true)
+    expect(corrisponde('osaka sushi', 'Sushi Dai', 'Tokyo')).toBe(false)
+    expect(corrisponde('', 'qualsiasi')).toBe(true)
+  })
+  it('i luoghi si trovano anche per le note e l\'indirizzo', () => {
+    const base = { city: 'Tokyo', category: 'Da vedere', status: 'idea' } as const
+    const luoghi = [
+      { ...base, id: 'a', name: 'Godzilla Head', note: 'Portare la valigia piccola' },
+      { ...base, id: 'b', name: 'Tempio', address: 'Asakusa 2-3-1' },
+    ] as unknown as Place[]
+    const f = { cities: [], categories: [], statuses: [] }
+    expect(filterPlaces(luoghi, f, 'valigia').map((p) => p.id)).toEqual(['a'])
+    expect(filterPlaces(luoghi, f, 'head').map((p) => p.id)).toEqual(['a'])
+    expect(filterPlaces(luoghi, f, 'asakusa').map((p) => p.id)).toEqual(['b'])
+  })
+})

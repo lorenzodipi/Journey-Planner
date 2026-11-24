@@ -1,5 +1,6 @@
 // Scheda Luoghi (mock Fa-16…Fa-21, Fa-56, issue #33): Elenco | Mappa con filtri separati, pillole di stato,
 // card aperta in linea con «Aggiungi a una tappa», selezione multipla, FAB «+ Luogo».
+import { corrisponde } from '../lib/cerca'
 import { Loader } from '../faraway/Loader'
 import { conDipendenze, dipendenze } from '../lib/registro'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -589,7 +590,7 @@ function Mappa({ setVista, grande }: { setVista: (v: Vista) => void; grande?: bo
   }
 
   const q = text.trim().toLowerCase()
-  const results = searchOpen && q ? visible.filter((p) => `${p.name} ${p.nameLocal ?? ''} ${p.city} ${p.category}`.toLowerCase().includes(q)).slice(0, 6) : []
+  const results = searchOpen && q ? visible.filter((p) => corrisponde(q, p.name, p.nameLocal, p.city, p.category, p.address, p.note)).slice(0, 6) : []
   const np = nopos ? original(nopos.ids[Math.min(nopos.i, nopos.ids.length - 1)]) : undefined
   const fabHidden = (cardOpen && Boolean(selected)) || trip.places.length === 0
 
