@@ -109,3 +109,32 @@ describe('ricerca nell\'app: ogni parola, in qualsiasi punto e ordine', () => {
     expect(filterPlaces(luoghi, f, 'asakusa').map((p) => p.id)).toEqual(['b'])
   })
 })
+
+import { cercaPerRilevanza, gradino } from './cerca'
+
+describe('ordine dei risultati per rilevanza', () => {
+  const luoghi = [
+    { name: 'Shibuya Sky', city: 'Tokyo' },
+    { name: 'Casa Tokyo', city: 'Osaka' },
+    { name: 'Tokyo casa', city: 'Kyoto' },
+    { name: 'Tokyo Tower', city: 'Tokyo' },
+    { name: 'Museo di Tokyochic', city: 'Roma' },
+    { name: 'Tokyo', city: 'Tokyo' },
+  ]
+  const ordina = (q: string) => cercaPerRilevanza(luoghi, q, (p) => p.name, (p) => [p.city]).map((p) => p.name)
+  it('«tokyo»: nome uguale, poi chi comincia con Tokyo, poi chi lo ha dopo, poi chi è solo a Tokyo', () => {
+    expect(ordina('tokyo')).toEqual(['Tokyo', 'Tokyo casa', 'Tokyo Tower', 'Casa Tokyo', 'Museo di Tokyochic', 'Shibuya Sky'])
+  })
+  it('la scaletta', () => {
+    expect(gradino('tokyo', 'Tokyo')).toBe(0)
+    expect(gradino('tokyo', 'Tokyo Tower')).toBe(1)
+    expect(gradino('tower tokyo', 'Tokyo Tower')).toBe(3)
+    expect(gradino('tok tow', 'Tokyo Tower')).toBe(2)
+    expect(gradino('tokyo', 'Casa Tokyo')).toBe(3)
+    expect(gradino('kyo', 'Casa Tokyo')).toBe(4)
+    expect(gradino('tokyo', 'Shibuya Sky')).toBe(5)
+  })
+  it('senza testo resta l\'ordine di partenza', () => {
+    expect(ordina('')).toEqual(luoghi.map((p) => p.name))
+  })
+})

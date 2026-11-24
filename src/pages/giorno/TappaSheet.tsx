@@ -1,7 +1,7 @@
 // Fogli «Aggiungi tappa» e «Modifica tappa» (mock Fa-14, issue #32): luogo o attività (luoghi salvati o
 // testo libero), ora, durata, categoria a pillole, note; in modifica anche costo, «Pagato da» e per chi:
 // il costo diventa la spesa collegata in Spese.
-import { corrisponde, normalizza } from '../../lib/cerca'
+import { cercaPerRilevanza, normalizza } from '../../lib/cerca'
 import { useConflitto } from '../../faraway/useConflitto'
 import { useMemo, useState } from 'react'
 import { Autocomplete, Input as AriaInput, Label as AriaLabel, ListBox, ListBoxItem, Text, TextField as AriaTextField } from 'react-aria-components'
@@ -83,7 +83,8 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
   // ogni parola, in qualsiasi punto, anche nella città, categoria e note («head» trova «Godzilla Head»); si nasconde solo il
   // luogo già scelto finché il campo ha ancora il suo nome
   const scelto = place && normalizza(place.name) === normalizza(title) ? place.id : ''
-  const suggestions = focusTitle && q.length >= 1 ? trip.places.filter((p) => p.id !== scelto && corrisponde(q, p.name, p.nameLocal, p.city, p.category, p.note)).slice(0, 5) : []
+  // prima chi ha il testo nel nome (all'inizio meglio), poi chi lo ha solo in città, categoria o note
+  const suggestions = focusTitle && q.length >= 1 ? cercaPerRilevanza(trip.places.filter((p) => p.id !== scelto), q, (p) => p.name, (p) => [p.nameLocal, p.city, p.category, p.note]).slice(0, 5) : []
 
   const amount = cost.trim() ? parseAmount(cost) : null
   const people = who.length > 0 ? who.length : trip.travelers.length

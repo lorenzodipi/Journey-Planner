@@ -63,3 +63,43 @@ export function corrisponde(testo: string, ...campi: (string | null | undefined)
   const tutto = normalizza(campi.filter(Boolean).join(' '))
   return q.split(' ').every((p) => tutto.includes(p))
 }
+
+/**
+ * Quanto un nome risponde a ciò che si è scritto (più basso = più in alto nell'elenco). La scaletta:
+ * 0 nome uguale · 1 il nome comincia con il testo · 2 la prima parola del nome comincia con la prima parola scritta e
+ * le altre parole scritte sono inizi di parole del nome · 3 tutte le parole scritte sono inizi di parole del nome ·
+ * 4 tutte le parole sono nel nome (anche a metà parola) · 5 trovato solo negli altri campi (città, categoria, note…).
+ */
+export function gradino(testo: string, nome: string): number {
+  const q = normalizza(testo)
+  const n = normalizza(nome)
+  if (!q) return 5
+  if (n === q) return 0
+  if (n.startsWith(q)) return 1
+  const parole = q.split(' ')
+  const pn = n.split(/[\s\-/·,.()]+/).filter(Boolean)
+  const inizio = (p: string) => pn.some((w) => w.startsWith(p))
+  if (parole.every(inizio)) return pn[0]?.startsWith(parole[0]) ? 2 : 3
+  if (parole.every((p) => n.includes(p))) return 4
+  return 5
+}
+
+/**
+ * Filtra con `corrisponde` (nome e altri campi) e ordina per rilevanza: prima il gradino, poi dove compare la prima parola
+ * nel nome (prima è meglio), poi il nome più corto, poi l'ordine alfabetico. «tokyo» → «Tokyo Tower», «Tokyo casa»,
+ * «Casa Tokyo», e solo dopo i posti che sono a Tokyo ma non lo hanno nel nome.
+ */
+export function cercaPerRilevanza<T>(voci: readonly T[], testo: string, nome: (v: T) => string, altri: (v: T) => (string | null | undefined)[] = () => []): T[] {
+  const q = normalizza(testo)
+  if (!q) return [...voci]
+  const prima = q.split(' ')[0]
+  return voci
+    .filter((v) => corrisponde(testo, nome(v), ...altri(v)))
+    .map((v) => {
+      const n = normalizza(nome(v))
+      const pos = n.indexOf(prima)
+      return { v, g: gradino(testo, nome(v)), pos: pos < 0 ? 1e6 : pos, len: n.length, n }
+    })
+    .sort((a, b) => a.g - b.g || a.pos - b.pos || a.len - b.len || a.n.localeCompare(b.n))
+    .map((x) => x.v)
+}
