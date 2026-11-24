@@ -123,14 +123,27 @@ export function avvisoPioggia(hours: OraPrevista[]): { title: string; text: stri
 
 
 /**
- * «Giornata finita» in Oggi: tutte le tappe chiuse (fatte, saltate…), oppure passata un'ora dalla fine dell'ultima tappa con
- * l'orario **e** nessuna tappa senza orario ancora da fare. Le tappe senza orario non hanno un'ora di fine: restano in programma
- * fino alla fine della giornata, quindi finché ce n'è una aperta la giornata non è finita.
+ * «Giornata finita» in Oggi: tutte le tappe chiuse (fatte, saltate…), oppure finite tutte le tappe con l'orario **e** nessuna
+ * tappa senza orario ancora da fare. Una tappa con l'orario finisce all'ora di fine, se c'è; se no all'inizio più la sua durata
+ * (la sua o quella del luogo: `durata`); se non ha durata, un'ora dopo l'inizio. Le tappe senza orario non hanno una fine:
+ * finché ce n'è una aperta la giornata non è finita.
  */
-export function giornataFinita(items: readonly Pick<DayItem, 'status' | 'done' | 'time' | 'endTime'>[], nowMin: number): boolean {
+export function giornataFinita(
+  items: readonly Pick<DayItem, 'status' | 'done' | 'time' | 'endTime' | 'durationMinutes' | 'placeId'>[],
+  nowMin: number,
+  durata: (i: Pick<DayItem, 'durationMinutes' | 'placeId'>) => number | undefined = (i) => i.durationMinutes,
+): boolean {
   if (items.length === 0) return false
   if (items.every(isClosed)) return true
   if (items.some((i) => !isClosed(i) && toMin(i.time ?? undefined) === null)) return false
-  const ultima = items.reduce((m, i) => Math.max(m, toMin(i.endTime ?? undefined) ?? toMin(i.time ?? undefined) ?? 0), 0)
-  return ultima > 0 && nowMin > ultima + 60
+  const fine = (i: (typeof items)[number]) => {
+    const inizio = toMin(i.time ?? undefined)
+    if (inizio === null) return 0
+    const f = toMin(i.endTime ?? undefined)
+    if (f !== null) return f < inizio ? f + 24 * 60 : f
+    const d = durata(i)
+    return inizio + (d && d > 0 ? d : 60)
+  }
+  const ultima = items.reduce((m, i) => Math.max(m, fine(i)), 0)
+  return ultima > 0 && nowMin >= ultima
 }

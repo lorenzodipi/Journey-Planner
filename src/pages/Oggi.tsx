@@ -1,4 +1,5 @@
 // Oggi (mock Fa-03…Fa-07, Fa-52…Fa-55; issue #28, #29, #30): prima, durante e dopo il viaggio.
+import { itemDuration } from '../lib/duration'
 import { doneCount } from '../lib/checklist'
 import { MeteoGiornoCard } from './giorno/MeteoGiornoCard'
 import { cittaDelGiorno, indiceCittaAdesso } from '../lib/meteoGiorno'
@@ -239,7 +240,8 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
   void current
 
   // le tappe senza orario ancora da fare tengono aperta la giornata fino a mezzanotte
-  const finished = giornataFinita(items, nowMin)
+  // e una tappa con l'orario finisce dopo la sua durata (o un'ora dopo l'inizio, se non ne ha)
+  const finished = giornataFinita(items, nowMin, (i) => itemDuration(i, i.placeId ? trip.places.find((p) => p.id === i.placeId) : undefined))
   const tomorrow = trip.days.find((d) => d.date === dateAddDays(today, 1))
   const firstTomorrow = tomorrow?.items.find((i) => i.time)
 
