@@ -2271,5 +2271,6 @@
  "Si elimina anche dal programma: {v0}.{v1} Puoi annullare subito dopo.": "It is also removed from the plan: {v0}.{v1} You can undo right after.",
  "la tappa nel {v0}": "the stop on {v0}",
  "{n} tappe ({v0})": "{n} stops ({v0})",
- " Le spese collegate restano in Spese.": " Linked expenses stay in Expenses."
+ " Le spese collegate restano in Spese.": " Linked expenses stay in Expenses.",
+ "es. Pagato in contanti, scontrino nella borsa": "e.g. Paid in cash, receipt in the bag"
 }

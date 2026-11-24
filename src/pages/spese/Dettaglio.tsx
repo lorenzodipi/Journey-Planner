@@ -21,6 +21,7 @@ import { Foglio, useConferma } from '../../faraway/Foglio'
 import { CalendarioIntervallo, type Intervallo } from '../../faraway/CalendarioIntervallo'
 import { rangeText } from '../../lib/dayGroups'
 import { Sv } from '../../faraway/icons'
+import { TestoConLink } from '../../faraway/TestoConLink'
 import { useUnaAperta } from '../../faraway/Righe'
 import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { VuotoFiltro } from '../../faraway/Stati'
@@ -268,6 +269,16 @@ export function Dettaglio() {
                           )}
                         </div>
                       </div>
+                      {e.notes?.trim() ? (
+                        <div className="kv">
+                          <Sv name="righe" size={20} />
+                          <div>
+                            <div className="s" style={{ whiteSpace: 'pre-line', overflowWrap: 'anywhere' }}>
+                              <TestoConLink testo={e.notes.trim()} />
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
                       {multi && paid ? (
                         <div className="kv">
                           <Sv name="user" size={20} />

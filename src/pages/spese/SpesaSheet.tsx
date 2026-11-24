@@ -142,6 +142,8 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
   const [side, setSide] = useState(expense?.currency ?? other ?? base)
   const [text, setText] = useState(expense ? scrivi(expense.amount, expense.currency) : '')
   const [label, setLabel] = useState(expense?.label ?? '')
+  // note libere sulla spesa (le spese di prima non ne hanno: il campo parte vuoto)
+  const [notes, setNotes] = useState(expense?.notes ?? '')
   const [paidBy, setPaidBy] = useState(expense ? (expense.paidBy ?? '') : (me?.id ?? (trip.travelers.length === 1 ? trip.travelers[0].id : '')))
   const all = trip.travelers.map((p) => p.id)
   const shared = expense ? expense.shares.filter((s) => s.weight > 0).map((s) => s.travelerId) : []
@@ -252,7 +254,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
       shares: sharesFrom(mode, who, vals),
       ...(added.length > 0 ? { newFiles: added } : {}),
       spentDate: expense ? dateInZone(expense.spentAt, trip.timezone) : tripToday(trip),
-      notes: expense?.notes ?? '',
+      notes: notes.trim(),
       travelerIds: people,
       ...(expense?.source ? { source: expense.source } : {}),
     }
@@ -341,6 +343,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
           {newCat ? <Campo label={tt('Nuova categoria')} hideLabel value={category} onChange={setCategory} placeholder={tt('es. Souvenir')} maxLength={40} autoFocus /> : null}
           {newCat ? <SceltaIcona value={icona ?? iconaDalNome(category)} onChange={setIcona} /> : null}
         </Riquadri>
+        <Campo label={tt('Note')} textarea value={notes} onChange={setNotes} placeholder={tt('es. Pagato in contanti, scontrino nella borsa')} maxLength={1000} />
         <RicevuteEditor trip={trip} expenseId={spesaId} files={(expense?.files ?? []).filter((f) => !gone.includes(f.id))} added={added} onAdded={setAdded} onRemove={(f) => void removeFile(f)} />
         {errors.form ? (
           <span className="fa-help bad" role="alert">
