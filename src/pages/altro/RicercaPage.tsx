@@ -23,7 +23,7 @@ export function RisultatiRicerca({ trip, q }: { trip: Trip; q: string }) {
           <h2 className="fa-h3" style={{ margin: 0 }}>{tv(g)}</h2>
           <div className="fa-list">
             {risultati.filter((r) => r.gruppo === g).map((r) => (
-              <Riga key={r.id} title={r.titolo} sub={r.sotto} chevron onPress={() => navigate(r.to)} />
+              <Riga key={r.id} icon={r.icona} title={r.titolo} sub={r.sotto} chevron onPress={() => navigate(r.to)} />
             ))}
           </div>
         </section>

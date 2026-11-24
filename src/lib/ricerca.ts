@@ -1,6 +1,7 @@
 // Ricerca in tutto il viaggio (#63, SET-008) ed esportazione del riepilogo (SET-010).
 // I dati del viaggio sono già quelli che l'utente può vedere (RLS): niente da filtrare in più,
 // ma i documenti e i codici restano fuori dalla ricerca.
+import { categoryIcon } from './categoryIcon'
 import { corrisponde } from './cerca'
 import type { Trip } from '../types'
 import { expenseBase } from './budget'
@@ -16,7 +17,12 @@ export interface RisultatoRicerca {
   titolo: string
   sotto?: string
   to: string
+  /** disco dello sprite accanto al risultato (come nelle card: la categoria del luogo, un letto, un aereo…) */
+  icona: string
 }
+
+/** Il disco di una categoria di luogo, come nella card del luogo. */
+const discoCategoria = (c: string | undefined) => `i-cat-${categoryIcon(c ?? '')}`
 
 export function cercaNelViaggio(trip: Trip, q: string, max = 8): RisultatoRicerca[] {
   const k = norm(q.trim())
@@ -26,12 +32,13 @@ export function cercaNelViaggio(trip: Trip, q: string, max = 8): RisultatoRicerc
   const out: RisultatoRicerca[] = []
   const add = (_g: GruppoRicerca, list: RisultatoRicerca[]) => out.push(...list.slice(0, max))
 
-  add('Luoghi', trip.places.filter((p) => hit(p.name, p.nameLocal, p.city, p.category, p.address, p.note)).map((p) => ({ gruppo: 'Luoghi' as const, id: p.id, titolo: p.name, sotto: [p.city, p.category].filter(Boolean).join(' · '), to: '/luoghi' })))
-  add('Tappe', trip.days.flatMap((d, i) => d.items.filter((it) => hit(it.title, it.note)).map((it) => ({ gruppo: 'Tappe' as const, id: it.id, titolo: it.title, sotto: t('Giorno {v0} · {city}', { v0: i + 1, city: d.city }), to: `/giorni/${d.id}` }))))
-  add('Prenotazioni', trip.bookings.filter((b) => hit(b.title, b.place, b.provider, b.notes)).map((b) => ({ gruppo: 'Prenotazioni' as const, id: b.id, titolo: b.title, to: '/altro/prenotazioni' })))
-  add('Alloggi', trip.stays.filter((s) => hit(s.name, s.city, s.address)).map((s) => ({ gruppo: 'Alloggi' as const, id: s.id, titolo: s.name, sotto: s.city, to: '/altro/alloggi' })))
-  add('Trasporti', trip.transports.filter((x) => hit(x.from, x.to, x.operator, x.notes)).map((x) => ({ gruppo: 'Trasporti' as const, id: x.id, titolo: `${x.from} → ${x.to}`, to: '/altro/trasporti' })))
-  add('Voli', trip.flights.filter((f) => hit(f.title, f.airline)).map((f) => ({ gruppo: 'Voli' as const, id: f.id, titolo: f.title, sotto: f.airline, to: '/altro/voli' })))
+  const categoriaLuogo = (id: string | undefined) => (id ? trip.places.find((p) => p.id === id)?.category : undefined)
+  add('Luoghi', trip.places.filter((p) => hit(p.name, p.nameLocal, p.city, p.category, p.address, p.note)).map((p) => ({ gruppo: 'Luoghi' as const, id: p.id, titolo: p.name, sotto: [p.city, p.category].filter(Boolean).join(' · '), to: '/luoghi', icona: discoCategoria(p.category) })))
+  add('Tappe', trip.days.flatMap((d, i) => d.items.filter((it) => hit(it.title, it.note)).map((it) => ({ gruppo: 'Tappe' as const, id: it.id, titolo: it.title, sotto: t('Giorno {v0} · {city}', { v0: i + 1, city: d.city }), to: `/giorni/${d.id}`, icona: discoCategoria(categoriaLuogo(it.placeId) ?? it.title) }))))
+  add('Prenotazioni', trip.bookings.filter((b) => hit(b.title, b.place, b.provider, b.notes)).map((b) => ({ gruppo: 'Prenotazioni' as const, id: b.id, titolo: b.title, to: '/altro/prenotazioni', icona: 'i-sez-ticket' })))
+  add('Alloggi', trip.stays.filter((s) => hit(s.name, s.city, s.address)).map((s) => ({ gruppo: 'Alloggi' as const, id: s.id, titolo: s.name, sotto: s.city, to: '/altro/alloggi', icona: 'i-cat-stay' })))
+  add('Trasporti', trip.transports.filter((x) => hit(x.from, x.to, x.operator, x.notes)).map((x) => ({ gruppo: 'Trasporti' as const, id: x.id, titolo: `${x.from} → ${x.to}`, to: '/altro/trasporti', icona: 'i-cat-train' })))
+  add('Voli', trip.flights.filter((f) => hit(f.title, f.airline)).map((f) => ({ gruppo: 'Voli' as const, id: f.id, titolo: f.title, sotto: f.airline, to: '/altro/voli', icona: 'i-cat-airport' })))
   return out
 }
 
