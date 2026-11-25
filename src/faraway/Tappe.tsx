@@ -126,7 +126,6 @@ function StatoMenu({ item, onPick, disabled }: { item: DayItem; onPick: (s: Item
     <MenuScelta<ItemStatus>
       label={t('Stato della tappa')}
       titolo={t('Stato della tappa')}
-      nota={t('Nuovi stati si aggiungono al registro e compaiono qui; la lista scorre dopo sei voci.')}
       value={cur.value}
       onChange={(v) => {
         if (v !== cur.value) onPick(v)
