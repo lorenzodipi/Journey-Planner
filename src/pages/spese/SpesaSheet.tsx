@@ -136,6 +136,8 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
   const me = useMe(trip)
   const base = trip.baseCurrency
   // la valuta del paese di oggi sta davanti alle altre (più paesi, #35)
+  // giorno della spesa: oggi se non lo cambi; si può scegliere qualsiasi giorno, anche passato (una spesa dimenticata ieri)
+  const [data, setData] = useState(() => (expense ? dateInZone(expense.spentAt, trip.timezone) : tripToday(trip)))
   const delGiorno = valutaDelGiorno(trip, expense ? dateInZone(expense.spentAt, trip.timezone) : tripToday(trip))
   const others = tripCurrencies(trip, expense?.currency).filter((c) => c !== base).sort((a, b) => Number(b === delGiorno) - Number(a === delGiorno))
   const [other, setOther] = useState<string | null>(expense && expense.currency !== base ? expense.currency : (others[0] ?? null))
@@ -253,7 +255,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
       splitMode: mode,
       shares: sharesFrom(mode, who, vals),
       ...(added.length > 0 ? { newFiles: added } : {}),
-      spentDate: expense ? dateInZone(expense.spentAt, trip.timezone) : tripToday(trip),
+      spentDate: data || tripToday(trip),
       notes: notes.trim(),
       travelerIds: people,
       ...(expense?.source ? { source: expense.source } : {}),
@@ -284,6 +286,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
     >
       <form id="spesa-form" className="frm" onSubmit={submit} noValidate>
         <Campo label={tt('Nome della spesa')} value={label} onChange={setLabel} placeholder={tt('es. Cena al ristorante')} maxLength={120} error={errors.label} />
+        <Campo label={tt('Data')} type="date" value={data} onChange={setData} />
         <div className="fa-fld">
           <span>{tt('Importo')}</span>
           {others.length > 1 ? (
