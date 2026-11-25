@@ -86,20 +86,14 @@ describe('ricevuta', () => {
     expect(sezioneSpesa({ shares: [{ travelerId: 'c', weight: 1 }], paidBy: 'c' }, tre, 'a')).toBe(null)
   })
 
-  it('icona della spesa dal nome o dalla categoria', () => {
-    expect(iconaSpesa({ label: 'Caffè al mercato', category: 'Cibo' })).toBe('i-cat-cafe')
-    expect(iconaSpesa({ label: 'Ingresso', category: 'Attività' })).toBe('i-sez-ticket')
-  })
-
-  it('comanda la categoria scelta: il nome non la scavalca', () => {
-    // il caso di Gaia: «cucina» nel nome, categoria Shopping → borsa, non forchetta e coltello
+  it('icona della spesa: solo dalla categoria, il nome non conta', () => {
+    // il caso di Gaia: «cucina» nel nome, categoria Shopping → borsa
     expect(iconaSpesa({ label: 'Bacchette e roba per la cucina', category: 'Shopping' })).toBe('i-cat-shopping')
-    expect(iconaSpesa({ label: 'Ramen', category: 'Trasporti' })).toBe('i-tra-train')
-    // dentro la stessa categoria il nome precisa
-    expect(iconaSpesa({ label: 'Treno per Kyoto', category: 'Trasporti' })).toBe('i-cat-train')
-    // con «Altro» (o senza categoria) decide il nome
-    expect(iconaSpesa({ label: 'Ramen', category: 'Altro' })).toBe('i-cat-food')
-    expect(iconaSpesa({ label: 'Ramen' })).toBe('i-cat-food')
+    expect(iconaSpesa({ label: 'Caffè al mercato', category: 'Cibo' })).toBe('i-sez-food')
+    expect(iconaSpesa({ label: 'Treno per Kyoto', category: 'Trasporti' })).toBe('i-tra-train')
+    expect(iconaSpesa({ label: 'Ingresso', category: 'Attività' })).toBe('i-sez-ticket')
+    expect(iconaSpesa({ label: 'Ramen', category: 'Altro' })).toBe('i-sez-bag')
+    expect(iconaSpesa({ label: 'Ramen' })).toBe('i-sez-bag')
   })
 })
 
