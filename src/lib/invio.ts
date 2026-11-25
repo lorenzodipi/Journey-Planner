@@ -11,6 +11,19 @@ export function bloccaInvio(el: EventTarget | null): el is HTMLInputElement {
   return !!form && !form.hasAttribute('data-invio')
 }
 
+/**
+ * Vero se questo invio del modulo va fermato: il modulo non è dell'accesso e l'invio non viene da un suo pulsante (cioè è
+ * l'invio «implicito» del tasto Invio o «Vai»). Sul telefono Invio mentre la tastiera sta completando una parola non
+ * arriva come tasto Invio e il blocco sul tasto non basta: questo è l'ultimo controllo, sull'invio vero e proprio.
+ */
+export function bloccaInvioModulo(e: Event): boolean {
+  const form = e.target
+  if (!(form instanceof HTMLFormElement) || form.hasAttribute('data-invio')) return false
+  if (!('submitter' in e)) return false // browser vecchio: resta solo il blocco sul tasto
+  const mittente = (e as SubmitEvent).submitter
+  return !(mittente instanceof HTMLButtonElement || (mittente instanceof HTMLInputElement && (mittente.type === 'submit' || mittente.type === 'image')))
+}
+
 export function setupInvioSenzaInvio(doc: Document = document): () => void {
   const premi = (e: KeyboardEvent) => {
     if (e.key !== 'Enter' || e.isComposing || e.defaultPrevented) return
@@ -23,9 +36,18 @@ export function setupInvioSenzaInvio(doc: Document = document): () => void {
   const entra = (e: FocusEvent) => {
     if (bloccaInvio(e.target) && !e.target.hasAttribute('enterkeyhint')) e.target.setAttribute('enterkeyhint', 'done')
   }
+  const invia = (e: Event) => {
+    if (!bloccaInvioModulo(e)) return
+    e.preventDefault()
+    e.stopImmediatePropagation()
+    const campo = doc.activeElement
+    if (campo instanceof HTMLInputElement && matchMedia('(pointer: coarse)').matches) campo.blur()
+  }
   doc.addEventListener('keydown', premi, true)
+  doc.addEventListener('submit', invia, true)
   doc.addEventListener('focusin', entra, true)
   return () => {
+    doc.removeEventListener('submit', invia, true)
     doc.removeEventListener('keydown', premi, true)
     doc.removeEventListener('focusin', entra, true)
   }
