@@ -57,7 +57,7 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
   const [day, setDay] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const opening = openingParts(place.openingSpec)
-  const days = [...trip.days].sort((a, b) => Number((b.city || '').toLowerCase() === place.city.toLowerCase()) - Number((a.city || '').toLowerCase() === place.city.toLowerCase()))
+  const days = trip.days // sempre in ordine di data: Giorno 1, 2, 3…
   const chosen = trip.days.find((d) => d.id === day)
   const press = useRef<{ t: number; x: number; y: number; fired: boolean } | null>(null)
   const longPress = onLongPress && !selecting
