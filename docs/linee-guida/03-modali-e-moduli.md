@@ -52,7 +52,7 @@ Foglio, modale e messaggio usano `<dialog>` nativo aperto con `showModal()`: foc
 | `SegmentiFacoltativi` | Scelta breve che si può lasciare vuota (fermate) | La stessa scelta toccata di nuovo si toglie. |
 | `Micro` | Titolo dentro un gruppo (una tratta, l'apertura del check-in) | `h4` (o `h5` dentro una tratta). |
 
-Tra due tappe del giorno lo spostamento è un pulsante senza cornice: icona del mezzo, testo sottolineato nel colore normale («In auto · 45 min») e freccia a destra (›, perché apre un foglio; la freccia in giù resta delle card, che si aprono sul posto), staccato dalle card di 8 px sopra e sotto e con un'area di tocco di 44 px; apre il foglio «Da A a B» con i mezzi a riquadri (ognuno con il suo tempo), la durata vera e «Controlla su Maps».
+Tra due tappe del giorno lo spostamento è un pulsante senza cornice: icona del mezzo, testo sottolineato nel colore normale («In auto · 45 min») e freccia a destra (›, perché apre un foglio; la freccia in giù resta delle card, che si aprono sul posto), staccato dalle card di 8 px sopra e sotto e con un'area di tocco di 44 px; apre il foglio «Da A a B» con i mezzi a riquadri (ognuno con il suo tempo), la durata vera e «Controlla su Maps». All'apertura è sempre preselezionato il mezzo che si vede tra le tappe: se è quello del viaggio e non è tra i cinque riquadri («Con i mezzi», un traghetto del giorno) ha un riquadro suo in testa, e sceglierlo vuol dire «nessuna scelta» (vale il mezzo del viaggio).
 
 Le chip restano per le scelte multiple e le liste lunghe (pasti e servizi, «Pagato da», «Quanto ci si ferma», «L'ora è»).
 

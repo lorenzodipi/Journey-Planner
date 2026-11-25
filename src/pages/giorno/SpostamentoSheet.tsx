@@ -14,6 +14,8 @@ import { useTrips } from '../../state/trip'
 import type { DayItem } from '../../types'
 import { t as tt } from '../../i18n'
 
+type Scelta = MezzoTratto | 'viaggio' | ''
+
 const GLIFO: Record<MezzoTratto, string> = { walk: 'g-tra-walk', metro: 'g-tra-metro', bus: 'g-tra-bus', train: 'g-tra-train', car: 'g-tra-car' }
 
 export function SpostamentoSheet({ open, onClose, da, a, leg, strada, imp }: {
@@ -29,8 +31,12 @@ export function SpostamentoSheet({ open, onClose, da, a, leg, strada, imp }: {
   const t = useTrips()
   const scelto = sceltoPer(a)
   const predefinito = scegliMezzo(leg.straightM, { via: leg.via?.mode, imp }).mezzo
-  const iniziale = scelto ?? ((MEZZI_TRATTO as string[]).includes(predefinito) ? (predefinito as MezzoTratto) : '')
-  const [mezzo, setMezzo] = useState<MezzoTratto | ''>(iniziale)
+  // il mezzo che vale senza scelte non è sempre tra i riquadri («Con i mezzi», un traghetto del giorno…): allora ha un
+  // riquadro suo, «del viaggio», così quello che si vede tra le tappe è sempre preselezionato (sceglierlo = nessuna scelta)
+  const predInRiquadri = (MEZZI_TRATTO as string[]).includes(predefinito)
+  const delViaggio = spostamento(leg.straightM, { via: leg.via?.mode, imp, strada: strada && tipoSuMappa(predefinito) === leg.kind && leg.kind !== 'line' ? strada : undefined })
+  const iniziale: Scelta = scelto ?? (predInRiquadri ? (predefinito as MezzoTratto) : 'viaggio')
+  const [mezzo, setMezzo] = useState<Scelta>(iniziale)
   const [testo, setTesto] = useState(a.arriveMinutes ? formatDuration(a.arriveMinutes) : '')
   const [errore, setErrore] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -42,7 +48,8 @@ export function SpostamentoSheet({ open, onClose, da, a, leg, strada, imp }: {
   }
   const manuale = !!(scelto || a.arriveMinutes)
   const ll = (p: { lat: number; lng: number }) => encodeURIComponent(`${p.lat},${p.lng}`)
-  const modo = mezzo === 'walk' ? 'walking' : mezzo === 'car' ? 'driving' : 'transit'
+  const modoDi = mezzo === 'viaggio' ? predefinito : mezzo
+  const modo = modoDi === 'walk' ? 'walking' : modoDi === 'car' ? 'driving' : 'transit'
   const maps = `https://www.google.com/maps/dir/?api=1&origin=${ll(leg.from)}&destination=${ll(leg.to)}&travelmode=${modo}`
 
   async function salva(nuovo: MezzoTratto | null, minuti: number | null) {
@@ -58,7 +65,7 @@ export function SpostamentoSheet({ open, onClose, da, a, leg, strada, imp }: {
     const min = parseDuration(testo)
     if (min !== null && Number.isNaN(min)) return setErrore(tt('Scrivi la durata in ore e minuti, da 1 minuto a 24 ore.'))
     // scegliere il mezzo che il viaggio darebbe comunque non lo fissa: se cambia il mezzo del viaggio, lo spostamento lo segue
-    const nuovo = !mezzo ? null : scelto || mezzo !== predefinito ? mezzo : null
+    const nuovo = !mezzo || mezzo === 'viaggio' ? null : scelto || mezzo !== predefinito ? mezzo : null
     void salva(nuovo, min)
   }
 
@@ -74,12 +81,15 @@ export function SpostamentoSheet({ open, onClose, da, a, leg, strada, imp }: {
       }
     >
       <form id="spostamento-form" className="frm" onSubmit={submit} noValidate>
-        <Riquadri<MezzoTratto>
+        <Riquadri<MezzoTratto | 'viaggio'>
           label={tt('Come ci vai')}
           cols={3}
           value={mezzo}
           onChange={(m) => (setMezzo(m), setErrore(null))}
-          options={MEZZI_TRATTO.map((m) => ({ value: m, label: NOME_MEZZO[m], glifo: GLIFO[m], sub: durata(tempo(m)) }))}
+          options={[
+            ...(predInRiquadri ? [] : [{ value: 'viaggio' as const, label: etichettaMezzo(predefinito), glifo: delViaggio.icon, sub: durata(delViaggio.minutes) }]),
+            ...MEZZI_TRATTO.map((m) => ({ value: m, label: NOME_MEZZO[m], glifo: GLIFO[m], sub: durata(tempo(m)) })),
+          ]}
         >
           <span className="fa-help">
             {tt('{v0} in linea d’aria. ', { v0: formatDistance(leg.straightM) })}
