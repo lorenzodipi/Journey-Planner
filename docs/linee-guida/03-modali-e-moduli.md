@@ -90,6 +90,7 @@ Lo stesso blocco ha **lo stesso nome e lo stesso ordine** in tutti i fogli.
 - Titolo: «Nuovo …» o «Modifica …». Pulsante primario: «Salva il …» o «Aggiungi …».
 - Errori sotto il campo che li causa, con la soluzione: «Scrivi il prezzo con le cifre, es. 15,50».
 - Aiuti sotto il campo, in `.fa-help`, solo se aggiungono qualcosa («Da mostrare a un tassista»).
+- Conferma positiva sotto il campo (`positive` di `Campo`, es. «Posizione letta dal link»): solo il testo in verde (`--success`, che ha il suo valore in chiaro e in scuro), senza sfondo né pillola (`.fa-help.ok.okt`). La pillola `.fa-help.ok` resta ai controlli dei versamenti in Spese.
 
 ## Modale al centro
 

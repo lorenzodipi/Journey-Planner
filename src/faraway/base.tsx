@@ -236,7 +236,7 @@ export function Campo({ label, value, onChange, placeholder, type = 'text', inpu
           {error}
         </span>
       ) : positive ? (
-        <span id={helpId} className="fa-help ok">
+        <span id={helpId} className="fa-help ok okt">
           {positive}
         </span>
       ) : hint ? (

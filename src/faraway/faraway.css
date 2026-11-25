@@ -117,6 +117,7 @@ html{scroll-padding-top:var(--head-h,0px)}
 .fa-in.ta{height:auto;min-height:104px;align-items:flex-start;padding-top:16px}
 .fa-help{font:400 13px/18px var(--font-sans);color:var(--ink-muted);display:flex;gap:8px;align-items:center;min-width:0;overflow-wrap:anywhere}
 .fa-help.ok{background:var(--tinta-acqua);color:var(--on-tinta-muted);padding:2.0px 16px;border-radius:9999px;justify-self:start;width:fit-content}
+.fa-help.ok.okt,[data-theme] .fa-help.ok.okt{background:none;padding:0;border-radius:0;width:auto;color:var(--success);font-weight:500}
 .fa-help.bad{color:var(--danger);font-weight:600}
 .fa-help svg{width:16px;height:16px;flex:none}
 .fa-sw{display:flex;justify-content:space-between;align-items:center;min-height:44px;gap:16px;font:400 16px/24px var(--font-sans);letter-spacing:.24px}
