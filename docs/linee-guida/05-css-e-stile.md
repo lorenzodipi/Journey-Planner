@@ -143,6 +143,8 @@ Nei due riquadri affiancati di Spese («Al giorno» · «Ancora da spendere», �
 - **Categorie create a mano**: menu ⋯ (`MenuAzioni`, «Modifica» · «Elimina») sulla stessa riga del titolo, a destra, prima di «0 di 2» e della freccia (non accanto al titolo, e non sopra la freccia: due righe allungavano troppo l'intestazione). Il ⋯ non può stare dentro il pulsante che apre e chiude, quindi il pulsante è il titolo e la sua area (`::after`) copre tutta la riga; il ⋯ sta sopra (`.grp.gp`, `.gtog`, `.gdots` in `app.css`). Il conteggio resta leggibile dal lettore di schermo dentro il pulsante. Le cinque dell'app (Documenti, Valigia, Salute, Tecnologia, Altro) non hanno il menu e la loro intestazione non cambia di un pixel. Il menu non c'è mentre si scelgono le voci da eliminare.
 - **Campi ora su iOS** (`.fa-orari .f input`): il testo di un `input type="time"` resta in alto se il box è più alto della riga, quindi i 40 px li danno bordo e padding (come in `styles.css`), non `height`. La regola sta in `@supports (-webkit-touch-callout:none)`, cioè solo iOS: in Chromium il bordo da 1,5 px si arrotonda e l'altezza non tornerebbe a 40 px. Non si può provare qui (Playwright non ha WebKit): va guardato su un iPhone.
 
-### Biglietto piccolo (`BigliettoPiccolo`, «Prossima prenotazione»)
+### Biglietto piccolo (`BigliettoPiccolo`, «Prenotazioni di oggi»)
+
+In Oggi compaiono solo le prenotazioni **di oggi** che devono ancora cominciare (una per biglietto, in ordine di orario); quelle di domani non si mostrano, e senza prenotazioni la sezione non c'è.
 
 La matrice a destra (orario e codice) non è più fissa a 96 px: si allarga quanto serve fino a 136 px (`minmax(96px, max-content)`), oltre il codice finisce con i puntini (il codice intero resta nel `title`). Con un codice corto è identica a prima.

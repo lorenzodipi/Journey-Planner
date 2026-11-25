@@ -245,10 +245,10 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
   const tomorrow = trip.days.find((d) => d.date === dateAddDays(today, 1))
   const firstTomorrow = tomorrow?.items.find((i) => i.time)
 
-  // prossima prenotazione di oggi o domani
-  const nextBooking = trip.bookings
-    .filter((b) => b.validFrom && Date.parse(b.validFrom) > now.getTime() && daysBetween(today, tripToday({ timezone: trip.timezone }, new Date(b.validFrom))) <= 1)
-    .sort((a, b) => (a.validFrom as string).localeCompare(b.validFrom as string))[0]
+  // le prenotazioni di oggi che devono ancora cominciare (quelle di domani stanno nella pagina di domani)
+  const prenotazioniOggi = trip.bookings
+    .filter((b) => b.validFrom && Date.parse(b.validFrom) > now.getTime() && tripToday({ timezone: trip.timezone }, new Date(b.validFrom)) === today)
+    .sort((a, b) => (a.validFrom as string).localeCompare(b.validFrom as string))
 
   const lettura = soloLettura(trip)
 
@@ -304,7 +304,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
     <Schermata gap={16} rete={{ pill: false }} fisso fissa={<Saluto date={longIn(now, trip.timezone)} greeting={tt('Ciao')} name={firstName(me?.name || auth.profileName)} />}>
       <h1 className="sr-only">{tt('Oggi, {destination}', { destination: trip.destination })}</h1>
       <Offline />
-      {/* pieghevole aperto: a sinistra ora, meteo, prossima prenotazione e cambio; a destra il programma di oggi */}
+      {/* pieghevole aperto: a sinistra ora, meteo, prenotazioni di oggi e cambio; a destra il programma di oggi */}
       <Affianca>
       <Colonna lato="sinistra">
       {showClocks ? (
@@ -368,20 +368,26 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
       </Colonna>
 
       <Colonna lato="sinistra" mobile>
-      {nextBooking ? (
+      {prenotazioniOggi.length > 0 ? (
         <section style={{ display: 'grid', gap: 8 }}>
           <div className="fa-sech">
-            <h2 className="fa-h3">{tt('Prossima prenotazione')}</h2>
+            <h2 className="fa-h3">{tt('Prenotazioni di oggi')}</h2>
           </div>
-          <BigliettoPiccolo
-            glyph={nextBooking.type === 'hotel' ? 'g-cat-stay' : nextBooking.type === 'train' ? 'g-tra-train' : nextBooking.type === 'flight' ? 'g-tra-plane' : 'g-cat-food'}
-            title={nextBooking.title}
-            sub={nextBooking.notes?.split('\n')[0]}
-            right={ora(hhmmIn(new Date(nextBooking.validFrom as string), trip.timezone))}
-            rightSub={nextBooking.code}
-            label={`${nextBooking.title}, ${ora(hhmmIn(new Date(nextBooking.validFrom as string), trip.timezone))}`}
-            onPress={() => navigate(`/altro/prenotazioni?apri=${nextBooking.id}`)}
-          />
+          {prenotazioniOggi.map((b) => {
+            const alle = ora(hhmmIn(new Date(b.validFrom as string), trip.timezone))
+            return (
+              <BigliettoPiccolo
+                key={b.id}
+                glyph={b.type === 'hotel' ? 'g-cat-stay' : b.type === 'train' ? 'g-tra-train' : b.type === 'flight' ? 'g-tra-plane' : 'g-cat-food'}
+                title={b.title}
+                sub={b.notes?.split('\n')[0]}
+                right={alle}
+                rightSub={b.code}
+                label={`${b.title}, ${alle}`}
+                onPress={() => navigate(`/altro/prenotazioni?apri=${b.id}`)}
+              />
+            )
+          })}
         </section>
       ) : null}
 

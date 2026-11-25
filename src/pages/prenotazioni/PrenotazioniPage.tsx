@@ -51,7 +51,7 @@ export function PrenotazioniPage() {
   const shown = useMemo(() => filtraArchivio(trip.bookings, arch).filter((b) => nelFiltro(b, filtro)), [trip.bookings, filtro, arch])
   const gruppi = useMemo(() => perGiorno(shown, tz), [shown, tz])
 
-  // da un link (es. «Prossima prenotazione» in Oggi): la prenotazione indicata si apre da sola e la pagina scorre fino a lei.
+  // da un link (es. «Prenotazioni di oggi» in Oggi): la prenotazione indicata si apre da sola e la pagina scorre fino a lei.
   // Il parametro si toglie subito, anche se la prenotazione non c'è più, così ricaricando non succede di nuovo.
   const search = useSearch()
   const [, navigate] = useLocation()
