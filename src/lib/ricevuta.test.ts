@@ -90,6 +90,17 @@ describe('ricevuta', () => {
     expect(iconaSpesa({ label: 'Caffè al mercato', category: 'Cibo' })).toBe('i-cat-cafe')
     expect(iconaSpesa({ label: 'Ingresso', category: 'Attività' })).toBe('i-sez-ticket')
   })
+
+  it('comanda la categoria scelta: il nome non la scavalca', () => {
+    // il caso di Gaia: «cucina» nel nome, categoria Shopping → borsa, non forchetta e coltello
+    expect(iconaSpesa({ label: 'Bacchette e roba per la cucina', category: 'Shopping' })).toBe('i-cat-shopping')
+    expect(iconaSpesa({ label: 'Ramen', category: 'Trasporti' })).toBe('i-tra-train')
+    // dentro la stessa categoria il nome precisa
+    expect(iconaSpesa({ label: 'Treno per Kyoto', category: 'Trasporti' })).toBe('i-cat-train')
+    // con «Altro» (o senza categoria) decide il nome
+    expect(iconaSpesa({ label: 'Ramen', category: 'Altro' })).toBe('i-cat-food')
+    expect(iconaSpesa({ label: 'Ramen' })).toBe('i-cat-food')
+  })
 })
 
 describe('statoBudget', () => {

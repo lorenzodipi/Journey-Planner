@@ -41,10 +41,30 @@ export function iconaSezione(label: string): string {
   return SEZIONI[catKey(label)] ?? iconaCategoria(label)
 }
 
-/** Disco di una spesa nel Dettaglio: dal nome se dice qualcosa («Caffè», «Treno»), se no dalla categoria. */
+// a quale categoria base appartiene l'icona dedotta da un nome (per non uscire dalla categoria scelta)
+const FAMIGLIA: Partial<Record<string, string>> = {
+  food: 'cibo', cafe: 'cibo', grocery: 'cibo',
+  airport: 'voli',
+  stay: 'alloggi',
+  train: 'trasporti', transit: 'trasporti', fuel: 'trasporti',
+  fun: 'attività', museum: 'attività', temple: 'attività', castle: 'attività', viewpoint: 'attività', nature: 'attività', spa: 'attività', night: 'attività', district: 'attività',
+}
+
+/**
+ * Disco di una spesa nel Dettaglio. Comanda la **categoria scelta**: il nome serve solo a precisare dentro la stessa
+ * categoria («Caffè» in Cibo → tazzina, «Treno» in Trasporti → treno) o quando la categoria è «Altro». Così «Bacchette e
+ * cose per la cucina» in Shopping ha la borsa dello shopping, non forchetta e coltello per la parola «cucina».
+ */
 export function iconaSpesa(e: { label: string; category?: string }): string {
+  const cat = categoriaDi(e)
   const i = categoryIcon(e.label)
-  return i !== 'pin' && CAT_ICONS.has(i) ? `i-cat-${i}` : iconaSezione(categoriaDi(e))
+  const dalNome = i !== 'pin' && CAT_ICONS.has(i) ? `i-cat-${i}` : null
+  if (!dalNome) return iconaSezione(cat)
+  const k = catKey(cat)
+  if (k === 'altro') return dalNome
+  // nome e categoria dicono la stessa cosa: va bene l'icona più precisa del nome
+  if (FAMIGLIA[i] === k || categoryIcon(cat) === i) return dalNome
+  return iconaSezione(cat)
 }
 
 interface Voce {
