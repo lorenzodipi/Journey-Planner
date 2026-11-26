@@ -1,7 +1,7 @@
 // Dettaglio spese (mock Fa-27, #34): Di tutti | Mie, pillole per categoria, gruppi per giorno d'acquisto con il totale,
 // righe che si aprono in linea (pagata da, divisione, categoria, Modifica / Elimina). Le spese che non mi
 // riguardano non compaiono in nessuna lista (ma contano nei totali della pagina Spese).
-import { corrisponde } from '../../lib/cerca'
+import { corrispondeSpesa, importiDellaSpesa } from '../../lib/cercaImporto'
 import { useMemo, useState } from 'react'
 import { useLocation } from 'wouter'
 import { formatMoney, round2 } from '../../lib/money'
@@ -63,13 +63,12 @@ export function Dettaglio() {
     }
     return keys.sort((a, b) => order(a) - order(b) || a.localeCompare(b, LINGUA)).map((k) => categoriaDi(inVista.find((e) => catKey(categoriaDi(e)) === k) as SpesaVista))
   }, [inVista])
-  const q = text.trim().toLowerCase()
   const nelleDate = (e: SpesaVista) => {
     if (!date) return true
     const d = giornoAcquisto(e, trip.timezone)
     return d >= date.dal && d <= date.al
   }
-  const shown = inVista.filter((e) => (!cat || catKey(categoriaDi(e)) === catKey(cat)) && nelleDate(e) && corrisponde(q, e.label, e.category, e.notes))
+  const shown = inVista.filter((e) => (!cat || catKey(categoriaDi(e)) === catKey(cat)) && nelleDate(e) && corrispondeSpesa(text, [e.label, e.category, e.notes], importiDellaSpesa(e, r.fx)))
   const testoDate = date ? rangeText(date.dal, date.al) : ''
   const giorni = useMemo(() => {
     const m = new Map<string, SpesaVista[]>()
@@ -114,7 +113,7 @@ export function Dettaglio() {
       // nella testa: ricerca, «Di tutti | Mie» e filtri, così si nascondono e tornano con la barra
       fissa={
         <>
-          {searchOpen ? <Campo label={tt('Cerca una spesa')} hideLabel icon="search" type="search" value={text} onChange={setText} placeholder={tt('Nome o categoria')} autoFocus /> : null}
+          {searchOpen ? <Campo label={tt('Cerca una spesa')} hideLabel icon="search" type="search" value={text} onChange={setText} placeholder={tt('Nome, categoria o importo')} autoFocus /> : null}
           {gruppo ? (
             <Segmenti
               label={tt('Spese')}
