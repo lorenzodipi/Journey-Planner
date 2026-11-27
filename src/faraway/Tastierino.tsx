@@ -1,7 +1,8 @@
 // Tastierino con le operazioni per i campi degli importi (come Satispay o Revolut): cifre, virgola, + − × ÷, cancella,
 // «=» e «Fatto». Solo sui touch (puntatore grossolano): lì il campo non apre la tastiera del telefono (inputMode «none») e
 // compare questo, **come una tastiera**: fisso in basso, sopra il menu, in primo piano (portale nel foglio aperto o nel body).
-// Il campo scorre sopra il tastierino; uno spazio vuoto sotto il campo lascia scorrere anche l'ultimo campo della pagina.
+// Il campo scorre sopra il tastierino. Per lasciar scorrere anche l'ultimo campo, lo spazio in più va in fondo all'area che
+// scorre (il corpo del foglio o la pagina) come padding: il modulo resta com'è, senza un vuoto sotto il campo.
 // Con mouse e tastiera si scrive il calcolo direttamente nel campo («120+35,50»).
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent as RMouseEvent, type PointerEvent as RPointerEvent } from 'react'
 import { createPortal } from 'react-dom'
@@ -75,6 +76,17 @@ export function Tastierino({ value, onChange, onFatto, decimali = 2, unita }: { 
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
+  // spazio per scorrere: in fondo all'area che scorre (corpo del foglio, se no la pagina), non sotto il campo
+  useLayoutEffect(() => {
+    if (!alto) return
+    const area = campo?.closest<HTMLElement>('.fa-sheet > .fb') ?? campo?.closest<HTMLElement>('.fa-main') ?? null
+    if (!area) return
+    const prima = area.style.paddingBottom
+    area.style.paddingBottom = ''
+    const base = parseFloat(getComputedStyle(area).paddingBottom) || 0
+    area.style.paddingBottom = `${base + alto}px`
+    return () => void (area.style.paddingBottom = prima)
+  }, [campo, alto])
   // il campo resta visibile sopra il tastierino
   // (tutto il convertitore, con l'altra valuta, non solo il campo)
   useEffect(() => {
@@ -96,8 +108,6 @@ export function Tastierino({ value, onChange, onFatto, decimali = 2, unita }: { 
   }
   return (
     <>
-      {/* spazio per scorrere: l'ultimo campo della pagina può salire sopra il tastierino */}
-      <div aria-hidden="true" style={{ height: alto }} />
       {createPortal(
     <div ref={pannello} className="fa-calc" role="group" aria-label={t('Tastierino con le operazioni')} onPointerDown={tieniFuoco} onMouseDown={tieniFuoco} onTouchStart={segna}>
       <div className="ris" aria-live="polite">
