@@ -42,6 +42,9 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
   const [procediConflitto, nodoConflitto] = useConflitto(trip, 'day_items', item?.id)
   const t = useTrips()
   const editing = Boolean(item)
+  // la tappa nuova ha già il suo id: vincolo dell'orario e costo si salvano subito dopo, come in modifica
+  const [nuovoId] = useState(() => crypto.randomUUID())
+  const id = item?.id ?? nuovoId
   const place0 = item?.placeId ? trip.places.find((p) => p.id === item.placeId) : undefined
   const linked = item ? trip.expenses.find((e) => e.source?.kind === 'day_item' && e.source.id === item.id) : undefined
   const me = useMe(trip)
@@ -126,13 +129,14 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
       placeId: keepPlace,
       durationMinutes: minutes === null && !item?.durationMinutes ? undefined : minutes,
       categoryId: categoryId || null,
-      ...(editing ? { participants: partecipanti } : {}),
+      ...(editing || partecipanti.length > 0 ? { participants: partecipanti } : {}),
     }
-    let message = item ? await t.updateItem(item.id, input) : await t.createItem(trip.id, day.id, input)
-    if (!message && item && schema.timeLock && vincolata !== (item.timeLock === 'locked')) message = await t.setItemLock(item.id, vincolata && time ? 'locked' : 'flexible', 'manual')
-    if (!message && item && (amount || linked)) {
+    let message = item ? await t.updateItem(item.id, input) : await t.createItem(trip.id, day.id, input, id)
+    const cambiaVincolo = item ? vincolata !== (item.timeLock === 'locked') : vincolata && !!time
+    if (!message && schema.timeLock && cambiaVincolo) message = await t.setItemLock(id, vincolata && time ? 'locked' : 'flexible', 'manual')
+    if (!message && (amount || linked)) {
       const catLabel = linked?.category || categoriaDaTappa(trip.categories.find((c) => c.id === categoryId)?.label ?? '')
-      message = await t.saveItemCost(trip.id, item.id, amount ? { amount, currency, paidBy, travelerIds: partecipanti, category: catLabel, notes: linked?.notes, splitMode: divisa ? mode : 'equal', ...(divisa ? { shares: sharesFrom(mode, who, vals) } : {}) } : null)
+      message = await t.saveItemCost(trip.id, id, amount ? { amount, currency, paidBy, travelerIds: partecipanti, category: catLabel, notes: linked?.notes, splitMode: divisa ? mode : 'equal', ...(divisa ? { shares: sharesFrom(mode, who, vals) } : {}) } : null)
     }
     setBusy(false)
     if (message) setError(message)
@@ -206,7 +210,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
           <Campo da00 label={tt('Ora')} icon="clock" type="time" value={time} onChange={setTime} />
           <CampoDurata label={tt('Durata')} value={duration} onChange={setDuration} placeholder={place?.visitMinutes ? durata(place.visitMinutes) : '1h 30min'} />
         </div>
-        {editing && time && schema.timeLock ? (
+        {time && schema.timeLock ? (
           <Interruttore
             label={tt('Orario vincolato')}
             hint={vincolata ? tt('Riordino e «Ottimizza percorso» non spostano questa tappa.') : tt('Flessibile: può essere spostata dall’ottimizzazione.')}
@@ -240,50 +244,49 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
             </div>
           </div>
         ) : null}
-        {editing ? (
-          <>
-            <div className="fa-2c">
-              <Campo
-                label={tt('Costo')}
-                icon="bag"
-                importo
-                value={cost}
-                onChange={setCost}
-                placeholder="0,00"
-                trailing={
-                  <select aria-label={tt('Valuta')} value={currency} onChange={(e) => setCurrency(e.currentTarget.value)} style={{ flex: 'none', width: 'auto', fontWeight: 600 }}>
-                    {tripCurrencies(trip, currency).map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                }
-              />
-              <div className="fa-fld">
-                <label htmlFor="pagato-da">{tt('Pagato da')}</label>
-                <span className="fa-in">
-                  <Sv name="user" size={20} />
-                  <select id="pagato-da" value={paidBy} onChange={(e) => setPaidBy(e.currentTarget.value)}>
-                    {trip.travelers.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </span>
-              </div>
-            </div>
-            {trip.travelers.length > 1 ? (
-              <DivisioneEditor trip={trip} meId={me?.id} mode={mode} onMode={setMode} who={who} onWho={setWho} vals={vals} onVals={setVals} total={amount} currency={currency} />
-            ) : null}
-            {each !== null && amount ? (
-              <span className="fa-m" style={{ color: 'var(--ink-muted)' }}>
-                {tt('{v0}La spesa si aggiorna anche in Spese.', { v0: people > 1 && !divisa ? tt('Diviso {v0}: {v1} a testa. ', { v0: inQuanti(people), v1: formatMoney(each, currency) }) : '' })}
+        {/* costo, chi ha pagato e come dividere: uguali in «Aggiungi tappa» e in «Modifica tappa» */}
+        <>
+          <div className="fa-2c">
+            <Campo
+              label={tt('Costo')}
+              icon="bag"
+              importo
+              value={cost}
+              onChange={setCost}
+              placeholder="0,00"
+              trailing={
+                <select aria-label={tt('Valuta')} value={currency} onChange={(e) => setCurrency(e.currentTarget.value)} style={{ flex: 'none', width: 'auto', fontWeight: 600 }}>
+                  {tripCurrencies(trip, currency).map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              }
+            />
+            <div className="fa-fld">
+              <label htmlFor="pagato-da">{tt('Pagato da')}</label>
+              <span className="fa-in">
+                <Sv name="user" size={20} />
+                <select id="pagato-da" value={paidBy} onChange={(e) => setPaidBy(e.currentTarget.value)}>
+                  {trip.travelers.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
               </span>
-            ) : null}
-          </>
-        ) : null}
+            </div>
+          </div>
+          {trip.travelers.length > 1 ? (
+            <DivisioneEditor trip={trip} meId={me?.id} mode={mode} onMode={setMode} who={who} onWho={setWho} vals={vals} onVals={setVals} total={amount} currency={currency} />
+          ) : null}
+          {each !== null && amount ? (
+            <span className="fa-m" style={{ color: 'var(--ink-muted)' }}>
+              {tt(editing ? '{v0}La spesa si aggiorna anche in Spese.' : '{v0}La spesa compare anche in Spese.', { v0: people > 1 && !divisa ? tt('Diviso {v0}: {v1} a testa. ', { v0: inQuanti(people), v1: formatMoney(each, currency) }) : '' })}
+            </span>
+          ) : null}
+        </>
         <Campo label={tt('Note')} value={notes} onChange={setNotes} placeholder={tt('es. Scarpe comode')} />
         {item ? <UltimaModifica trip={trip} table="day_items" rowId={item.id} /> : null}
         {error ? (

@@ -1240,10 +1240,11 @@ function itemColumns(input: ItemInput) {
   }
 }
 
-export async function createItem(tripId: string, dayId: string, input: ItemInput, position: number): Promise<void> {
+/** `id`: scelto dal foglio, così vincolo e costo della tappa nuova si salvano subito dopo (come in modifica). */
+export async function createItem(tripId: string, dayId: string, input: ItemInput, position: number, id?: string): Promise<void> {
   const { error } = await client()
     .from('day_items')
-    .insert({ trip_id: tripId, day_id: dayId, position, ...itemColumns(input) })
+    .insert({ ...(id ? { id } : {}), trip_id: tripId, day_id: dayId, position, ...itemColumns(input) })
   if (error) throw needs0015(error)
 }
 

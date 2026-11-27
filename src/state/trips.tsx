@@ -126,7 +126,7 @@ interface TripsValue {
   getTrip: (id: string) => Trip | undefined
   /** Imposta la posizione di luoghi che non ne hanno (salta quelli che nel frattempo l'hanno ricevuta). */
   setPlacePositions: (tripId: string, updates: { id: string; name: string; lat: number; lng: number }[]) => Result
-  createItem: (tripId: string, dayId: string, input: ItemInput) => Result
+  createItem: (tripId: string, dayId: string, input: ItemInput, id?: string) => Result
   updateItem: (id: string, input: ItemInput) => Result
   /** «Slitta»: nuovi orari per più tappe insieme (anche per «Annulla»). */
   setItemTimes: (list: { id: string; start: string; end: string | null }[]) => Result
@@ -696,13 +696,13 @@ export function TripProvider({ children }: { children: ReactNode }) {
       }, ['places', 'categories'])
       return { error, undo: () => run(async () => (box.done ? api.undoImport(box.done) : undefined), ['places']) }
     },
-    createItem: (tripId, dayId, input) => {
+    createItem: (tripId, dayId, input, id) => {
       const day = trips.find((t) => t.id === tripId)?.days.find((d) => d.id === dayId)
       const position = positionForNew(
         (day?.items ?? []).map((i) => ({ position: i.position ?? 0, time: i.time })),
         input.startTime || undefined,
       )
-      return run(() => api.createItem(tripId, dayId, input, position), ['items'])
+      return run(() => api.createItem(tripId, dayId, input, position, id), ['items'])
     },
     updateItem: (id, input) => run(() => api.updateItem(id, input), ['items']),
     setItemTimes: (list) => run(() => api.setItemTimes(list), ['items']),
