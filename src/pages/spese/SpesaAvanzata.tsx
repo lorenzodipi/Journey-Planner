@@ -39,7 +39,7 @@ export function payersFromRows(rows: PayRow[]): ExpensePayer[] {
 }
 
 /** «Pagata da»: una persona, oppure più paganti con la cifra di ciascuno (la somma deve fare l'importo). */
-export function PagantiEditor({ trip, total, currency, rows, onRows, single, onSingle, error }: {
+export function PagantiEditor({ trip, total, currency, rows, onRows, single, onSingle, error, titolo }: {
   trip: Trip
   total: number | null
   currency: string
@@ -48,6 +48,8 @@ export function PagantiEditor({ trip, total, currency, rows, onRows, single, onS
   single: string
   onSingle: (id: string) => void
   error?: string
+  /** titolo con un solo pagante (di base «Pagata da», per la spesa) */
+  titolo?: string
 }) {
   const ppl = trip.travelers
   const disc = (id: string) => (
@@ -57,8 +59,8 @@ export function PagantiEditor({ trip, total, currency, rows, onRows, single, onS
   )
   if (!rows) {
     return (
-      <div className="fa-fld" role="group" aria-label={t('Pagata da')}>
-        {t('Pagata da')}
+      <div className="fa-fld" role="group" aria-label={titolo ?? t('Pagata da')}>
+        {titolo ?? t('Pagata da')}
         <div className="fa-chips wrap">
           {ppl.map((p) => (
             <Chip key={p.id} on={single === p.id} onPress={() => onSingle(p.id)} icon={disc(p.id)}>
@@ -135,7 +137,7 @@ export function sharesFrom(mode: SplitMode, who: string[], vals: Record<string, 
  * «Diviso tra» a riquadri (Tutti, Solo io, Solo l'altra persona o Scegli) e, se le persone sono più di una, «Come dividere»:
  * parti uguali, percentuali (somma 100) o importi fissi (somma = importo), con il controllo sotto.
  */
-export function DivisioneEditor({ trip, meId, mode, onMode, who, onWho, vals, onVals, total, currency, hint }: {
+export function DivisioneEditor({ trip, meId, mode, onMode, who, onWho, vals, onVals, total, currency, hint, perChi = true }: {
   trip: Trip
   meId?: string | null
   mode: SplitMode
@@ -147,6 +149,8 @@ export function DivisioneEditor({ trip, meId, mode, onMode, who, onWho, vals, on
   total: number | null
   currency: string
   hint?: string
+  /** false: «Per chi» è già altrove nel foglio (alloggi, voli…); qui solo «Come dividere», che segue i cambi di `who` */
+  perChi?: boolean
 }) {
   const check = who.length === 0 ? { ok: false, message: t('Scegli almeno una persona.'), missing: 0 } : checkSplit(mode, total ?? 0, sharesFrom(mode, who, vals), currency)
   // quote scritte a mano: le altre si adattano al resto (due persone: l'altra è il resto); quelle scritte non si cambiano più
@@ -164,6 +168,19 @@ export function DivisioneEditor({ trip, meId, mode, onMode, who, onWho, vals, on
     setToccate(t2)
     onVals(adattaQuote(mode, who, { ...vals, [id]: v }, t2, total))
   }
+  // «Per chi» fuori di qui: quando cambiano le persone le quote ripartono come se le avessi scelte qui
+  const chiPrima = useRef(who.join(','))
+  useEffect(() => {
+    const ora = who.join(',')
+    if (perChi || chiPrima.current === ora) return
+    chiPrima.current = ora
+    setToccate(new Set())
+    if (who.length < 2 && mode !== 'equal') {
+      onMode('equal')
+      onVals({})
+    } else if (mode !== 'equal') onVals(defaultVals(mode, who, total))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo quando cambiano le persone
+  }, [who.join(',')])
   // cambia l'importo (a importi): le quote non scritte seguono. Se nessuna è scritta e le quote erano già diverse dalle parti
   // uguali (una spesa salvata così), non si tocca niente: la divisione scelta non si perde.
   const totalePrima = useRef(total)
@@ -179,7 +196,7 @@ export function DivisioneEditor({ trip, meId, mode, onMode, who, onWho, vals, on
   }, [total])
   return (
     <>
-      <PerChi trip={trip} meId={meId} value={who} onChange={scegli} />
+      {perChi ? <PerChi trip={trip} meId={meId} value={who} onChange={scegli} /> : null}
       {who.length > 1 ? (
         <div className="fa-fld">
           {t('Come dividere')}

@@ -15,7 +15,7 @@ import type { Transport, TransportMode, Trip } from '../../types'
 import { Campo, Interruttore, Pulsante } from '../../faraway/base'
 import { AltriDettagli, Gruppo, IlCostoE, Micro, PerChi, Percorso, Riquadri, SegmentiFacoltativi } from '../../faraway/Moduli'
 import { CampoValuta } from '../../faraway/CampoValuta'
-import { ChiHaPagato } from '../../faraway/ChiHaPagato'
+import { totaleVoce, usePagamentoVoce } from '../spese/pagamentoVoce'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { t as tt } from '../../i18n'
@@ -60,8 +60,6 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
   const [currency, setCurrency] = useState(t?.currency ?? trip.localCurrency ?? trip.baseCurrency)
   const [scope, setScope] = useState<'per_person' | 'total'>(t?.scope ?? 'per_person')
   const [paid, setPaid] = useState(t?.bought ?? false)
-  const [payers, setPayers] = useState<string[]>(() => (t?.payerIds?.length ? t.payerIds : t?.paidBy ? [t.paidBy] : t ? [] : me?.id ? [me.id] : all.length === 1 ? [all[0]] : []))
-  const paidBy = payers.length === 1 ? payers[0] : ''
   const [refCode, setRefCode] = useState(t?.refCode ?? '')
   const [operator, setOperator] = useState(t?.operator ?? '')
   const [platform, setPlatform] = useState(t?.platform ?? '')
@@ -74,6 +72,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
   const [errors, setErrors] = useState<{ from?: string; to?: string; when?: string; cost?: string; paidBy?: string; form?: string }>({})
   const [busy, setBusy] = useState(false)
   const people = who.length === 0 ? all : who
+  const pag = usePagamentoVoce({ trip, voce: t, meId: me?.id, people, totale: totaleVoce(cost, scope, people.length), currency })
 
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
@@ -82,11 +81,13 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
     if (!to.trim()) err.to = tt('Scrivi dove arriva.')
     const amount = parseAmount(cost)
     if (cost.trim() && amount === null) err.cost = tt('Il costo non è chiaro: scrivi per esempio 15,50.')
-    if (paid && amount && payers.length === 0) err.paidBy = tt('Manca chi ha pagato. Scegli una persona.')
+    const pc = paid && amount ? pag.controlla() : null
+    if (pc) Object.assign(err, pc)
     if ((dt && !dd) || (at && !ad)) err.when = tt('Con l’ora serve anche la data.')
     else if (isCompleteZoned(dd, dt) && isCompleteZoned(ad, at) && Date.parse(zonedToInstant(ad, at, trip.timezone)) <= Date.parse(zonedToInstant(dd, dt, trip.timezone))) err.when = tt('L’arrivo è prima della partenza.')
     setErrors(err)
-    if (Object.keys(err).length > 0) return
+    if (Object.keys(err).length > 0 || pc === false) return
+    const v = pag.valori()
     // la posizione sulla mappa resta solo se il nome del posto non è cambiato
     const fromPos = t && t.from === from.trim() && t.fromLat != null && t.fromLng != null ? { lat: t.fromLat, lng: t.fromLng } : null
     const toPos = t && t.to === to.trim() && t.toLat != null && t.toLng != null ? { lat: t.toLat, lng: t.toLng } : null
@@ -94,8 +95,9 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
       from, to, mode, departDate: dd, departTime: dt, arriveDate: ad, arriveTime: at, fromPos, toPos,
       cost: amount, currency, scope, bought: paid, refCode, notes,
       title, stops: stops === 'nd' ? null : Number(stops), operator, platform, terminal, seats, baggage, policy,
-      paidBy: paid && amount ? (payers.length === 1 ? paidBy : undefined) : (t?.paidBy ?? undefined),
-      payerIds: paid && amount && payers.length > 1 ? payers : paid && amount ? [] : (t?.payerIds ?? []),
+      ...(paid && amount
+        ? { paidBy: v.paidBy, payerIds: v.payerIds.length > 1 ? v.payerIds : [], payerAmounts: v.payerAmounts, splitMode: v.splitMode, splitShares: v.splitShares }
+        : { paidBy: t?.paidBy ?? undefined, payerIds: t?.payerIds ?? [], payerAmounts: t?.payerAmounts, splitMode: t?.splitMode, splitShares: t?.splitShares }),
       forTravelers: all.every((id) => people.includes(id)) ? [] : people,
       checkinAt: checkin.date && checkin.time ? zonedToInstant(checkin.date, checkin.time, trip.timezone) : '',
     }
@@ -181,7 +183,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
           </div>
           <IlCostoE value={scope} onChange={setScope} amount={amountNow} persone={people.length} currency={currency} />
           <Interruttore label={tt('Pagato')} hint={paid ? tt('Con un costo, il trasporto diventa una spesa.') : tt('Non pagato')} isSelected={paid} onChange={setPaid} />
-          {paid && cost.trim() ? <ChiHaPagato travelers={trip.travelers} value={payers} onChange={setPayers} error={errors.paidBy} /> : null}
+          {paid && cost.trim() ? pag.vista(errors.paidBy) : null}
         </Gruppo>
         <Gruppo titolo={tt('Biglietto')}>
           <Campo label={tt('Operatore')} value={operator} onChange={setOperator} placeholder={tt('Nome della compagnia')} />

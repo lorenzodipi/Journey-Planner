@@ -18,6 +18,7 @@ import { reverseGeocode } from '../../lib/geocode'
 import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
 import { CampoValuta } from '../../faraway/CampoValuta'
 import { AltriDettagli, Contatore, Gruppo, PerChi, Percorso } from '../../faraway/Moduli'
+import { totaleVoce, usePagamentoVoce } from '../spese/pagamentoVoce'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { t } from '../../i18n'
@@ -95,7 +96,6 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
   const [cost, setCost] = useState(amountToText(s?.totalCost))
   const [currency, setCurrency] = useState(s?.currency ?? trip.localCurrency ?? trip.baseCurrency)
   const [paid, setPaid] = useState(s?.paid ?? false)
-  const [paidBy, setPaidBy] = useState(s?.paidBy ?? (s ? '' : (me?.id ?? (all.length === 1 ? all[0] : ''))))
   const [who, setWho] = useState<string[]>(s?.forTravelers?.length ? s.forTravelers : all)
   const [breakfast, setBreakfast] = useState(s?.breakfast ?? false)
   const [dinner, setDinner] = useState(s?.dinner ?? false)
@@ -105,6 +105,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
   const [busy, setBusy] = useState(false)
   const people = who.length === 0 ? all : who
   const nome = (id: string) => trip.travelers.find((p) => p.id === id)?.name.split(/\s+/)[0] ?? '—'
+  const pag = usePagamentoVoce({ trip, voce: s, meId: me?.id, people, totale: totaleVoce(cost, 'total', people.length), currency })
 
   async function submit(e: { preventDefault(): void }) {
     e.preventDefault()
@@ -114,18 +115,22 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
     else if (checkOut <= checkIn) err.when = t('Il check-out deve essere dopo il check-in.')
     const amount = parseAmount(cost)
     if (cost.trim() && amount === null) err.cost = t('Il costo non è chiaro: scrivi per esempio 450,00.')
-    if (paid && amount && !paidBy) err.paidBy = t('Manca chi ha pagato. Scegli una persona.')
+    const pc = paid && amount ? pag.controlla() : null
+    if (pc) Object.assign(err, pc)
     const ospiti = guests.trim() ? Number(guests) : null
     if (ospiti !== null && (!Number.isInteger(ospiti) || ospiti < 1 || ospiti > 99)) err.guests = t('Scrivi quante persone, per esempio 2.')
     if (email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim())) err.email = t('L’email non è valida: controlla la chiocciola e il dominio.')
     setErrors(err)
-    if (Object.keys(err).length > 0) return
+    if (Object.keys(err).length > 0 || pc === false) return
+    const v = pag.valori()
     const input: StayInput = {
       name, city, checkIn, checkOut, checkInInfo: inInfo, checkOutInfo: outInfo, address, mapsUrl,
       totalCost: amount, currency, breakfast, dinner, kitchen, booked: true, paid, notes,
       room, roomType, bookingCode: code, guests: ospiti, phone, email, participants: dorme,
       accessCode: scriviCodici(codici), wifiName: wifi, wifiPassword: wifiPw,
-      paidBy: paid && amount ? paidBy || undefined : (s?.paidBy ?? undefined),
+      ...(paid && amount
+        ? { paidBy: v.paidBy ?? v.payerIds[0], payerAmounts: v.payerAmounts, splitMode: v.splitMode, splitShares: v.splitShares }
+        : { paidBy: s?.paidBy ?? undefined, payerAmounts: s?.payerAmounts, splitMode: s?.splitMode, splitShares: s?.splitShares }),
       forTravelers: all.every((id) => people.includes(id)) ? [] : people,
     }
     if (!(await procediConflitto())) return
@@ -228,17 +233,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
           </div>
           <span className="fa-help" style={{ marginTop: -8 }}>{t('Per tutto il soggiorno{aTesta}.', { aTesta })}</span>
           <Interruttore label={t('Pagato')} hint={paid ? t('Con un costo, l’alloggio diventa una spesa.') : t('Non pagato')} isSelected={paid} onChange={setPaid} />
-          {paid && cost.trim() ? (
-            <div className="fa-fld" role="group" aria-label={t('Pagato da')}>
-              {t('Pagato da')}
-              <div className="fa-chips wrap">
-                {trip.travelers.map((p) => (
-                  <Chip key={p.id} on={paidBy === p.id} onPress={() => setPaidBy(p.id)}>{nome(p.id)}</Chip>
-                ))}
-              </div>
-              {errors.paidBy ? <Errore>{errors.paidBy}</Errore> : null}
-            </div>
-          ) : null}
+          {paid && cost.trim() ? pag.vista(errors.paidBy) : null}
         </Gruppo>
         <Gruppo titolo={t('Camera e contatti')}>
           <div className="fa-2c">

@@ -176,6 +176,10 @@ export interface Stay {
   wifiPassword?: string
   /** codice della porta o della cassetta delle chiavi */
   accessCode?: string
+  /** Versamenti e divisione del costo (0059), come nella spesa: vedi `src/lib/divisioneVoce.ts`. */
+  splitMode?: 'percent' | 'fixed'
+  splitShares?: ExpenseShare[]
+  payerAmounts?: ExpensePayer[]
 }
 
 export interface Transport {
@@ -218,6 +222,10 @@ export interface Transport {
   baggage?: string
   policy?: string
   checkinAt?: string
+  /** Versamenti e divisione del costo (0059), come nella spesa: vedi `src/lib/divisioneVoce.ts`. */
+  splitMode?: 'percent' | 'fixed'
+  splitShares?: ExpenseShare[]
+  payerAmounts?: ExpensePayer[]
 }
 
 export interface FlightLeg {
@@ -270,6 +278,10 @@ export interface Flight {
   policy?: string
   /** apertura del check-in online (istante ISO) */
   checkinAt?: string
+  /** Versamenti e divisione del costo (0059), come nella spesa: vedi `src/lib/divisioneVoce.ts`. */
+  splitMode?: 'percent' | 'fixed'
+  splitShares?: ExpenseShare[]
+  payerAmounts?: ExpensePayer[]
 }
 
 export interface BudgetShare {
@@ -470,6 +482,10 @@ export interface Booking {
   cancellationPolicy?: string
   participants?: string[]
   timeKind?: TimeKind
+  /** Versamenti e divisione del costo (0059), come nella spesa: vedi `src/lib/divisioneVoce.ts`. */
+  splitMode?: 'percent' | 'fixed'
+  splitShares?: ExpenseShare[]
+  payerAmounts?: ExpensePayer[]
 }
 
 export type TimeKind = 'fixed' | 'window' | 'indicative' | 'unspecified'

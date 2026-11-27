@@ -1091,6 +1091,38 @@ await asUser(null, 'postgres')
   await asUser(A)
 }
 
+// posti dei trasporti (0058) e versamenti e divisione delle voci (0059): privati per alloggi, voli e trasporti
+{
+  await asUser(null, 'postgres')
+  await runMigration('0058_trasporti_posti.sql')
+  await runMigration('0059_versamenti_divisione_voci.sql')
+  await runMigration('0059_versamenti_divisione_voci.sql') // si può rilanciare
+  const tr = (await db.query(`select id from trips limit 1`)).rows[0].id
+  const quote = JSON.stringify([{ travelerId: 'a', percent: 70 }, { travelerId: 'b', percent: 30 }])
+  const versati = JSON.stringify([{ travelerId: 'a', amount: 300 }, { travelerId: 'b', amount: 100 }])
+  const tp = (await db.query(`insert into transports (trip_id,from_label,to_label,mode,currency,scope,bought,cost,seats,split_mode,split_shares,payer_amounts) values ($1,'A','B','train','EUR','total',true,400,'12A','percent',$2::jsonb,$3::jsonb) returning id`, [tr, quote, versati])).rows[0].id
+  const dati = async (kind, id) => (await db.query(`select data from trip_costs where kind=$1 and ref_id=$2`, [kind, id])).rows[0]?.data
+  const riga = (await db.query(`select seats, split_mode, split_shares, payer_amounts from transports where id=$1`, [tp])).rows[0]
+  const d = await dati('transport', tp)
+  check('0058 i posti restano nella riga (non sono privati)', riga.seats === '12A')
+  check('0059 versamenti e divisione finiscono nei dati privati', d?.split_mode === 'percent' && d?.split_shares?.[0]?.percent === 70 && d?.payer_amounts?.[1]?.amount === 100)
+  const separati = (await db.query(`select public.costi_separati() s`)).rows[0].s
+  check('0059 e nella riga restano vuoti', !separati || (riga.split_mode === null && riga.split_shares === null && riga.payer_amounts === null))
+  await db.query(`update transports set payer_amounts=null where id=$1`, [tp])
+  const d2 = await dati('transport', tp)
+  check('0059 svuotare i versamenti aggiorna solo loro', d2?.payer_amounts === null && d2?.split_mode === 'percent')
+  const st = (await db.query(`insert into stays (trip_id,name,check_in,check_out,total_cost,split_mode,split_shares) values ($1,'Casa','2026-11-22','2026-11-24',300,'fixed',$2::jsonb) returning id`, [tr, JSON.stringify([{ travelerId: 'a', amount: 300 }])])).rows[0].id
+  check('0059 anche per gli alloggi', (await dati('stay', st))?.split_mode === 'fixed')
+  const fl = (await db.query(`insert into flights (trip_id,title,cost,paid,payer_amounts) values ($1,'Volo',200,true,$2::jsonb) returning id`, [tr, versati])).rows[0].id
+  check('0059 anche per i voli', (await dati('flight', fl))?.payer_amounts?.length === 2)
+  // nelle prenotazioni le colonne restano nella riga (le leggono solo i partecipanti) e il vincolo vale; negli altri il valore
+  // va nei dati privati e l'app ignora un modo sconosciuto (leggiDivisione)
+  const bk = (await db.query(`insert into bookings (trip_id,type,title,split_mode,split_shares) values ($1,'restaurant','Cena','percent',$2::jsonb) returning id`, [tr, quote])).rows[0].id
+  check('0059 nelle prenotazioni restano nella riga', (await db.query(`select split_mode from bookings where id=$1`, [bk])).rows[0].split_mode === 'percent')
+  await throws('0059 un modo di divisione sconosciuto non entra', () => db.query(`update bookings set split_mode='boh' where id=$1`, [bk]))
+  await asUser(A)
+}
+
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione
 await asUser(null, 'service_role')
 const svcTrip = (await db.query(`select id from trips limit 1`)).rows

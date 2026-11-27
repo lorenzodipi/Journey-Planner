@@ -3,11 +3,12 @@ import { senzaTaxi } from './mezzi'
 import { formatDateInZone } from './flights'
 import { instantToZoned, isCompleteZoned, zonedToInstant } from './zoned'
 import { LINGUA } from '../i18n'
+import { colonneDivisione, leggiDivisione, type DivisioneRow, type DivisioneVoce } from './divisioneVoce'
 
 // Alloggi, trasporti e voli: righe del database <-> tipi dell'app, e costruzione delle colonne
 // da salvare a partire dai moduli. Funzioni pure, provate nei test.
 
-export interface StayRow {
+export interface StayRow extends DivisioneRow {
   id: string
   created_at?: string | null
   trip_id: string
@@ -44,7 +45,7 @@ export interface StayRow {
   access_code?: string | null
 }
 
-export interface TransportRow {
+export interface TransportRow extends DivisioneRow {
   id: string
   created_at?: string | null
   trip_id: string
@@ -84,7 +85,7 @@ export interface TransportRow {
   checkin_at?: string | null
 }
 
-export interface FlightRow {
+export interface FlightRow extends DivisioneRow {
   id: string
   created_at?: string | null
   trip_id: string
@@ -140,6 +141,7 @@ export function mapStays(rows: StayRow[], tripId: string): Stay[] {
     .filter((r) => r.trip_id === tripId)
     .map((r) => ({
       id: r.id,
+      ...leggiDivisione(r),
       createdAt: r.created_at ?? undefined,
       name: r.name,
       city: r.city ?? '',
@@ -178,6 +180,7 @@ export function mapTransports(rows: TransportRow[], tripId: string): Transport[]
     .filter((r) => r.trip_id === tripId)
     .map((r) => ({
       id: r.id,
+      ...leggiDivisione(r),
       createdAt: r.created_at ?? undefined,
       from: r.from_label,
       to: r.to_label,
@@ -218,6 +221,7 @@ export function mapFlights(rows: FlightRow[], legs: FlightLegRow[], tripId: stri
     .filter((r) => r.trip_id === tripId)
     .map((r) => ({
       id: r.id,
+      ...leggiDivisione(r),
       createdAt: r.created_at ?? undefined,
       title: r.title,
       airline: r.airline ?? undefined,
@@ -262,7 +266,7 @@ export function mapFlights(rows: FlightRow[], legs: FlightLegRow[], tripId: stri
 
 // ---------- moduli -> colonne ----------
 
-export interface StayInput {
+export interface StayInput extends DivisioneVoce {
   name: string
   city: string
   checkIn: string
@@ -315,6 +319,7 @@ export function stayExtras(i: StayInput, old?: Stay) {
   put('wifi_name', i.wifiName?.trim(), old?.wifiName)
   put('wifi_password', i.wifiPassword?.trim(), old?.wifiPassword)
   put('access_code', i.accessCode?.trim(), old?.accessCode)
+  Object.assign(out, colonneDivisione(i, old))
   return out
 }
 
@@ -340,7 +345,7 @@ export function stayColumns(i: StayInput, old?: Stay) {
   }
 }
 
-export interface TransportInput {
+export interface TransportInput extends DivisioneVoce {
   from: string
   to: string
   mode: TransportMode
@@ -391,6 +396,7 @@ export function transportExtras(i: TransportInput, old?: Transport) {
   put('baggage', i.baggage?.trim(), old?.baggage)
   put('policy', i.policy?.trim(), old?.policy)
   put('checkin_at', i.checkinAt, old?.checkinAt)
+  Object.assign(out, colonneDivisione(i, old))
   return out
 }
 
@@ -493,7 +499,7 @@ export interface LegInput {
   seatsBy?: Record<string, string>
 }
 
-export interface FlightInput {
+export interface FlightInput extends DivisioneVoce {
   title: string
   airline: string
   bookingRef: string
@@ -531,6 +537,7 @@ export function flightExtras(i: FlightInput, old?: Flight) {
   put('baggage', i.baggage?.trim(), old?.baggage)
   put('policy', i.policy?.trim(), old?.policy)
   put('checkin_at', i.checkinAt, old?.checkinAt)
+  Object.assign(out, colonneDivisione(i, old))
   return out
 }
 

@@ -18,6 +18,7 @@ import { formatShort } from '../../lib/dates'
 import { Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
 import { CampoValuta } from '../../faraway/CampoValuta'
 import { AltriDettagli, Contatore, Gruppo, IlCostoE, PerChi, Riquadri } from '../../faraway/Moduli'
+import { totaleVoce, usePagamentoVoce } from '../spese/pagamentoVoce'
 import { Foglio, useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { t as tt } from '../../i18n'
@@ -65,7 +66,6 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
   const [cost, setCost] = useState(amountToText(b?.cost))
   const [currency, setCurrency] = useState(b?.currency ?? trip.localCurrency ?? trip.baseCurrency)
   const [scope, setScope] = useState<'per_person' | 'total'>(b?.scope ?? 'total')
-  const [paidBy, setPaidBy] = useState(b?.paidBy ?? (b?.payerIds?.length === 1 ? b.payerIds[0] : b ? '' : (me?.id ?? (all.length === 1 ? all[0] : ''))))
   const [who, setWho] = useState<string[]>(b?.forTravelers?.length ? b.forTravelers : all)
   const [file, setFile] = useState<File | null>(null)
   const [removeFile, setRemoveFile] = useState(false)
@@ -84,7 +84,7 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
   const [errors, setErrors] = useState<{ title?: string; when?: string; url?: string; cost?: string; paidBy?: string; party?: string; file?: string; tappa?: string; form?: string }>({})
   const [busy, setBusy] = useState(false)
   const people = who.length === 0 ? all : who
-  const nome = (id: string) => trip.travelers.find((p) => p.id === id)?.name.split(/\s+/)[0] ?? '—'
+  const pag = usePagamentoVoce({ trip, voce: b, meId: me?.id, people, totale: totaleVoce(cost, scope, people.length), currency })
   const hasFile = !!b?.filePath && !removeFile
 
   async function submit(e: { preventDefault(): void }, saltaAvviso = false) {
@@ -96,18 +96,22 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
     if (url.trim() && !safeUrl(url)) err.url = tt('Il link non è valido: scrivi un indirizzo che inizia con https://')
     const amount = parseAmount(cost)
     if (cost.trim() && amount === null) err.cost = tt('Il costo non è chiaro: scrivi per esempio 45,00.')
-    if (amount && !paidBy) err.paidBy = tt('Manca chi ha pagato. Scegli una persona.')
+    const pc = amount ? pag.controlla() : null
+    if (pc) Object.assign(err, pc)
     const n = party.trim() ? Number(party) : null
     if (n !== null && (!Number.isInteger(n) || n < 1)) err.party = tt('Scrivi un numero di persone, per esempio 4.')
     if (file) err.file = checkFile(file) ?? undefined
     if (richiedeTappa && !tappa) err.tappa = tt('Scegli la tappa a cui appartiene: la prenotazione sta sempre in una tappa.')
     setErrors(err)
-    if (Object.values(err).some(Boolean)) return
+    if (Object.values(err).some(Boolean) || pc === false) return
+    const v = pag.valori()
     const input: BookingInput = {
       type, title, code, url, validFrom: date, validTo: until, keepOffline: offline, notes,
-      cost: amount, currency, scope, payerIds: amount !== null && paidBy ? [paidBy] : [], file, removeFile,
+      cost: amount, currency, scope, payerIds: amount !== null ? v.payerIds : [], file, removeFile,
       time: date ? time : '', place, detail, partySize: n,
-      paidBy: amount ? paidBy || undefined : (b?.paidBy ?? undefined),
+      ...(amount
+        ? { paidBy: v.paidBy, payerAmounts: v.payerAmounts, splitMode: v.splitMode, splitShares: v.splitShares }
+        : { paidBy: b?.paidBy ?? undefined }),
       forTravelers: all.every((id) => people.includes(id)) ? [] : people,
       status, provider, contact, timeKind: time ? timeKind : 'unspecified', cancellationPolicy: policy, participants: all.every((id) => people.includes(id)) ? [] : people,
       ...(richiedeTappa ? { itemIds: [tappa] } : {}),
@@ -214,15 +218,7 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
           </div>
           <IlCostoE value={scope} onChange={setScope} amount={amountNow} persone={people.length} currency={currency} />
           {cost.trim() ? (
-            <div className="fa-fld" role="group" aria-label={tt('Pagato da')}>
-              {tt('Pagato da')}
-              <div className="fa-chips wrap">
-                {trip.travelers.map((p) => (
-                  <Chip key={p.id} on={paidBy === p.id} onPress={() => setPaidBy(p.id)}>{nome(p.id)}</Chip>
-                ))}
-              </div>
-              {errors.paidBy ? <Errore>{errors.paidBy}</Errore> : null}
-            </div>
+            pag.vista(errors.paidBy)
           ) : (
             <span className="fa-help">{tt('Con un costo compare «Pagato da».')}</span>
           )}

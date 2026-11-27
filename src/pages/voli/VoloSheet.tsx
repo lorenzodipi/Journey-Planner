@@ -21,7 +21,7 @@ import { AltriDettagli, Gruppo, IlCostoE, Micro, PerChi, Percorso } from '../../
 import { CampoValuta } from '../../faraway/CampoValuta'
 import { CampoAeroporto } from '../../faraway/CampoAeroporto'
 import { CampoFuso } from '../../faraway/CampoFuso'
-import { ChiHaPagato } from '../../faraway/ChiHaPagato'
+import { totaleVoce, usePagamentoVoce } from '../spese/pagamentoVoce'
 import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { t as tt } from '../../i18n'
@@ -62,8 +62,6 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
   const [currency, setCurrency] = useState(flight?.currency ?? trip.baseCurrency)
   const [scope, setScope] = useState<'per_person' | 'total'>(flight?.scope ?? 'per_person')
   const [paid, setPaid] = useState(flight?.paid ?? false)
-  const [payers, setPayers] = useState<string[]>(() => (flight?.payerIds?.length ? flight.payerIds : flight?.paidBy ? [flight.paidBy] : flight ? [] : me?.id ? [me.id] : all.length === 1 ? [all[0]] : []))
-  const paidBy = payers.length === 1 ? payers[0] : ''
   const [who, setWho] = useState<string[]>(flight?.forTravelers?.length ? flight.forTravelers : all)
   // chi viaggia: a parte dalla divisione del costo (si può pagare il volo di un'altra persona)
   const [pass, setPass] = useState<string[]>(() => (flight ? passeggeriVolo(flight, trip.travelers) : all))
@@ -83,6 +81,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
   const [errors, setErrors] = useState<{ title?: string; cost?: string; paidBy?: string; who?: string; legs: Record<number, string>; form?: string }>({ legs: {} })
   const [busy, setBusy] = useState(false)
   const people = who.length === 0 ? all : who
+  const pag = usePagamentoVoce({ trip, voce: flight, meId: me?.id, people, totale: totaleVoce(cost, scope, people.length), currency })
   const passeggeri = pass.length === 0 ? all : pass
   const multi = passeggeri.length > 1
 
@@ -106,7 +105,8 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
     if (!title.trim()) err.title = tt('Dai un titolo al volo: sceglilo tu, per riconoscerlo.')
     const amount = parseAmount(cost)
     if (cost.trim() && amount === null) err.cost = tt('Il costo non è chiaro: scrivi per esempio 623.')
-    if (amount && paid && payers.length === 0) err.paidBy = tt('Manca chi ha pagato. Scegli una persona.')
+    const pc = amount && paid ? pag.controlla() : null
+    if (pc) Object.assign(err, pc)
     legs.forEach((l, i) => {
       const n = tt('Tratta {v0}: ', { v0: i + 1 })
       if (!isIata(l.from) || !isIata(l.to)) return void (err.legs[l.key] = tt('{n}scrivi i codici aeroporto di 3 lettere (es. MXP).', { n }))
@@ -117,15 +117,17 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
       if (legDuration({ depart: dep, arrive: arr }) <= 0) err.legs[l.key] = tt('{n}l\'arrivo è prima della partenza (controlla date e fusi).', { n })
     })
     setErrors(err)
-    if (err.title || err.cost || err.paidBy || Object.keys(err.legs).length > 0) return
+    if (err.title || err.cost || err.paidBy || Object.keys(err.legs).length > 0 || pc === false) return
+    const v = pag.valori()
 
     const checkinAt = checkin.date && checkin.time && firstTz !== '' ? zonedToInstant(checkin.date, checkin.time, legs[0].fromTz) : ''
     const forCosto = who.length === 0 || all.every((id) => who.includes(id)) ? [] : who
     const input: FlightInput = {
       title, airline, bookingRef, cost: amount, currency, scope, paid, notes,
       baggage, policy, checkinAt,
-      paidBy: (paid || amount) && payers.length === 1 ? paidBy : undefined,
-      payerIds: (paid || amount) && payers.length > 1 ? payers : [],
+      ...(paid && amount
+        ? { paidBy: v.paidBy, payerIds: v.payerIds.length > 1 ? v.payerIds : [], payerAmounts: v.payerAmounts, splitMode: v.splitMode, splitShares: v.splitShares }
+        : { paidBy: flight?.paidBy, payerIds: flight?.payerIds ?? [], payerAmounts: flight?.payerAmounts, splitMode: flight?.splitMode, splitShares: flight?.splitShares }),
       forTravelers: forCosto,
       passengerIds: all.every((id) => passeggeri.includes(id)) ? (forCosto.length > 0 ? all : []) : passeggeri.filter((id) => all.includes(id)),
       legs: legs.map(({ key: _k, fromTzAuto: _a, toTzAuto: _b, ...l }) => l),
@@ -291,7 +293,7 @@ export function VoloSheet({ trip, flight, open, onClose }: Props) {
           </div>
           <IlCostoE value={scope} onChange={setScope} amount={amountNow} persone={people.length} currency={currency} />
           <Interruttore label={tt('Pagato')} hint={paid ? tt('Con un costo, il volo diventa una spesa.') : tt('Non pagato')} isSelected={paid} onChange={setPaid} />
-          {paid && cost.trim() ? <ChiHaPagato travelers={trip.travelers} value={payers} onChange={setPayers} error={errors.paidBy} /> : null}
+          {paid && cost.trim() ? pag.vista(errors.paidBy) : null}
         </Gruppo>
 
         <Gruppo titolo={tt('Bagaglio e regole')}>

@@ -1,6 +1,7 @@
 import type { Attivita, Booking, BookingLink, BookingStatus, BookingType, TimeKind, ChecklistItem, ChecklistKind, DocKind, Documento, Scope, TicketCode, TicketKind } from '../types'
 import { zonedToInstant } from './zoned'
 import { LINGUA } from '../i18n'
+import { colonneDivisione, leggiDivisione, type DivisioneRow, type DivisioneVoce } from './divisioneVoce'
 
 // Checklist e prenotazioni: righe del database <-> tipi dell'app, e colonne da salvare.
 
@@ -34,7 +35,7 @@ export interface CheckRow {
   quantity_done: number | null
 }
 
-export interface BookingRow {
+export interface BookingRow extends DivisioneRow {
   id: string
   created_at?: string | null
   trip_id: string
@@ -139,6 +140,7 @@ export function mapBookings(rows: BookingRow[], tripId: string): Booking[] {
     .map((r) => ({
       id: r.id,
       createdAt: r.created_at ?? undefined,
+      ...leggiDivisione(r),
       type: r.type,
       title: r.title,
       code: r.confirmation_code ?? undefined,
@@ -237,7 +239,7 @@ export function checklistColumns(i: ChecklistInput, hadQuantity = false, hadUrl 
   }
 }
 
-export interface BookingInput {
+export interface BookingInput extends DivisioneVoce {
   type: BookingType
   title: string
   code: string
@@ -312,6 +314,7 @@ export function bookingExtras(i: BookingInput, old?: Booking) {
   put('participants', i.participants, old?.participants)
   if (i.timeKind && (i.timeKind !== 'unspecified' || (old?.timeKind && old.timeKind !== 'unspecified'))) out.time_kind = i.timeKind
   if (i.status && (i.status !== 'confirmed' || (old?.status && old.status !== 'confirmed'))) out.status = i.status
+  Object.assign(out, colonneDivisione(i.cost != null ? i : {}, old))
   return out
 }
 
