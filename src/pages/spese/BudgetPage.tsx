@@ -1,5 +1,6 @@
 // Budget (mock Fa-34 e Fa-35, #34): stato vuoto con «Imposta il budget», poi il totale con la barra,
-// «Cambia il budget», l'avviso quando è superato e le categorie con speso e previsto.
+// «Cambia il budget», l'avviso quando è superato e le categorie con speso e previsto: toccandone una si cambia il
+// previsto (il mio e, se posso, quello di chi non ha l'account), il nome e l'eliminazione delle categorie create a mano.
 // Budget a persona (0055): segue la ricevuta scelta nella pagina Spese. Con quella di tutti si vede il budget del
 // viaggio (la somma di quelli messi, «2 persone su 3»), con «La mia parte» il mio budget e la mia parte delle spese.
 // Chi può modificare il viaggio scrive anche il budget di chi non ha l'account.
@@ -20,6 +21,8 @@ import { Foglio } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { Riga } from '../../faraway/Righe'
 import { BarraIndietro, Schermata } from '../../faraway/shell'
+import { EditorPrevisto } from '../../faraway/PrevistoCategoria'
+import { useAzioniCategoria } from './azioniCategoria'
 import { nomeCategoria, t as tt } from '../../i18n'
 
 export function BudgetPage() {
@@ -30,7 +33,7 @@ export function BudgetPage() {
   const gruppo = trip.travelers.length > 1 && !!me?.id
   const [vistaScelta] = useVistaRicevuta(trip.id)
   const mia = gruppo && vistaScelta === 'mia'
-  const dati = useMemo(() => ricevuta(trip, r.spese, r.fx, mia ? me?.id : undefined), [trip, r.spese, r.fx, mia, me?.id])
+  const dati = useMemo(() => ricevuta(trip, r.spese, r.fx, mia ? me?.id : undefined, me?.id), [trip, r.spese, r.fx, mia, me?.id])
   const cur = trip.baseCurrency
   const aPersona = budgetAPersona(trip)
   const totale = budgetTotale(trip)
@@ -67,7 +70,12 @@ export function BudgetPage() {
 
   const pct = limit ? Math.round((speso / limit) * 100) : 0
   const over = limit ? round2(speso - limit) : 0
-  const cats = dati.categorie.filter((c) => c.spent > 0 || c.planned > 0)
+  // tutte le categorie, anche vuote: il previsto si mette qui (anche prima di spendere)
+  const cats = dati.categorie
+  const scrive = !soloLettura(trip)
+  const [aperto, setAperto] = useState<string | null>(null)
+  const azioni = useAzioniCategoria(trip, me?.id)
+  const nome = (id: string) => trip.travelers.find((x) => x.id === id)?.name.split(/\s+/)[0] ?? '—'
 
   const form = (
     <form onSubmit={submit} noValidate style={{ display: 'grid', gap: 16 }}>
@@ -103,6 +111,7 @@ export function BudgetPage() {
                 />
             </Foglio>
           ) : null}
+          {azioni.confirmNode}
         </>
       }
     >
@@ -153,56 +162,87 @@ export function BudgetPage() {
               </>
             )}
           </section>
-          {cats.length > 0 ? (
-            <>
-              <div className="fa-sech">
-                <h2 className="fa-h3">{tt('Per categoria')}</h2>
-              </div>
-              <section className="fa-card xl" style={{ overflow: 'hidden', padding: '8px 0' }}>
-                {cats.map((c, i) => {
-                  const ratio = c.planned > 0 ? c.spent / c.planned : 0
-                  const stato = statoBudget(c)
-                  const color = stato === 'over' ? 'var(--danger)' : 'var(--azzurro)'
-                  return (
-                    <div key={c.key}>
-                      {i > 0 ? <div className="fa-hr" /> : null}
-                      <div style={{ display: 'grid', gridTemplateColumns: '44px 1fr', gap: 16, alignItems: 'center', padding: '16px 16px' }}>
-                        <Ic name={iconaSezione(c.label)} size={44} />
-                        <div style={{ display: 'grid', gap: 8, minWidth: 0 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                            <span className="fa-b">{nomeCategoria(c.label)}</span>
-                            <span className="fa-amt">{formatMoney(c.spent, cur)}</span>
-                          </div>
-                          <div className="fa-pbar" role="progressbar" aria-label={`${nomeCategoria(c.label)}, ${Math.round(ratio * 100)}%`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(ratio * 100))}>
-                            <i style={{ width: `${Math.min(100, Math.round(ratio * 100))}%`, background: color }} />
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                            <span className="fa-c">{c.planned > 0 ? tt('Previsto {v0}', { v0: formatMoney(c.planned, cur) }) : tt('Nessun previsto')}</span>
-                            {stato === 'paid' ? (
-                              <span className="fa-st ok">
-                                <Sv name="check" size={16} />
-                                {tt('Pagati')}
-                              </span>
-                            ) : stato === 'over' ? (
-                              <span className="fa-st ba">
-                                <Sv name="err" size={16} />
-                                {tt('Oltre il limite')}
-                              </span>
-                            ) : null}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </section>
-              <p className="fa-m" style={{ textAlign: 'center' }}>
-                {tt('Il previsto di ogni categoria si cambia toccandola nella ricevuta della pagina Spese.')}
-              </p>
-            </>
-          ) : null}
         </>
       )}
+      {cats.length > 0 ? (
+        <>
+          <div className="fa-sech">
+            <h2 className="fa-h3">{tt('Per categoria')}</h2>
+          </div>
+          <section className="fa-card xl k-BudgetCat" style={{ overflow: 'hidden', padding: '8px 0' }}>
+            {cats.map((c, i) => {
+              const ratio = c.planned > 0 ? c.spent / c.planned : 0
+              const stato = statoBudget(c)
+              const color = stato === 'over' ? 'var(--danger)' : 'var(--azzurro)'
+              const aperta = aperto === c.key
+              const contenuto = (
+                <>
+                  <Ic name={iconaSezione(c.label)} size={44} />
+                  <div style={{ display: 'grid', gap: 8, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                      <span className="fa-b">{nomeCategoria(c.label)}</span>
+                      <span className="fa-amt">{formatMoney(c.spent, cur)}</span>
+                    </div>
+                    <div className="fa-pbar" role="progressbar" aria-label={`${nomeCategoria(c.label)}, ${Math.round(ratio * 100)}%`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, Math.round(ratio * 100))}>
+                      <i style={{ width: `${Math.min(100, Math.round(ratio * 100))}%`, background: color }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                      <span className="fa-c">{c.planned > 0 ? tt('Previsto {v0}', { v0: formatMoney(c.planned, cur) }) : tt('Nessun previsto')}</span>
+                      {stato === 'paid' ? (
+                        <span className="fa-st ok">
+                          <Sv name="check" size={16} />
+                          {tt('Pagati')}
+                        </span>
+                      ) : stato === 'over' ? (
+                        <span className="fa-st ba">
+                          <Sv name="err" size={16} />
+                          {tt('Oltre il limite')}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </>
+              )
+              return (
+                <div key={c.key}>
+                  {i > 0 ? <div className="fa-hr" /> : null}
+                  {scrive ? (
+                    <div className={aperta ? 'riga open' : 'riga'}>
+                      <button type="button" className="cat" aria-expanded={aperta} onClick={() => setAperto(aperta ? null : c.key)}>
+                        {contenuto}
+                      </button>
+                      {aperta ? (
+                        <EditorPrevisto
+                          key={`${c.key}:${c.planned}:${c.label}:${c.mio?.valore ?? ''}:${(c.altri ?? []).map((p) => p.valore ?? '').join(',')}`}
+                          c={c}
+                          cur={cur}
+                          onClose={() => setAperto(null)}
+                          onPlanned={azioni.onPlanned}
+                          onRename={azioni.onRename}
+                          onDelete={azioni.onDelete}
+                          nome={nome}
+                          gruppo={gruppo}
+                          scrive={scrive}
+                          soloMio={mia}
+                        />
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div className="riga">
+                      <div className="cat fisso">{contenuto}</div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </section>
+          {scrive ? (
+            <p className="fa-m" style={{ textAlign: 'center' }}>
+              {tt('Tocca una categoria per cambiarne il previsto.')}
+            </p>
+          ) : null}
+        </>
+      ) : null}
       {altri.length > 0 ? (
         <>
           <div className="fa-sech">

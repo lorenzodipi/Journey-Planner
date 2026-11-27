@@ -1,14 +1,13 @@
-// Ricevuta del riepilogo spese (componente Ricevuta, mock Fa-23…Fa-26): per categoria (toccando una riga si
-// imposta il previsto), totali, saldo a persona e «Per pareggiare», con il bordo dentellato in fondo.
+// Ricevuta del riepilogo spese (componente Ricevuta, mock Fa-23…Fa-26): per categoria, totali, saldo a persona e
+// «Per pareggiare», con il bordo dentellato in fondo. Toccando una categoria la si toglie dai totali (icona grigia) e
+// toccandola di nuovo la si rimette: si vede quanto fanno solo le categorie scelte. Il previsto si cambia in Budget.
 import { useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
-import { formatMoney, parseAmount } from '../lib/money'
-import type { Ricevuta as Dati, PrevistoPersona, RigaCategoria } from '../lib/ricevuta'
+import { formatMoney, round2 } from '../lib/money'
+import type { Ricevuta as Dati, RigaCategoria } from '../lib/ricevuta'
 import { discOf, initials } from '../state/me'
 import type { Trip } from '../types'
 import { Ic } from '../ui/Sprite'
-import { Campo, Pulsante } from './base'
 import { cx } from './cx'
-import { soloLettura } from '../lib/ruolo'
 import { nomeCategoria, t as tt } from '../i18n'
 
 // Bordo a denti in fondo alla ricevuta: un solo disegno largo 3200 px (punte ogni 16 px), centrato e tagliato dalla
@@ -23,155 +22,71 @@ interface Props {
   trip: Trip
   dati: Dati
   sub: string
-  /** `travelerId` = il previsto di quella persona (0056); senza, il previsto unico della categoria (prima della migrazione) */
-  onPlanned: (c: RigaCategoria, planned: number | null, travelerId?: string) => Promise<string | null>
-  onRename: (c: RigaCategoria, label: string) => Promise<string | null>
-  onDelete: (c: RigaCategoria) => Promise<void>
   /** «Bilancia» accanto alle righe di «Per pareggiare» che mi riguardano: `con` = le persone per cui c'è qualcosa da chiudere */
   bilancia?: { me: string; con: ReadonlySet<string>; onPress: (otherId: string) => void }
   /** chi usa l'app: sotto «Già pagato» compare «La tua quota» (la sua parte delle spese, a prescindere da chi ha pagato) */
   io?: string
-  /** solo la parte di `io` (pagina Spese, «La mia parte»): titolo suo, solo il suo previsto (modificabile), solo il suo saldo */
+  /** solo la parte di `io` (pagina Spese, «La mia parte»): titolo suo, solo il suo previsto e il suo saldo */
   mia?: boolean
+  /** le categorie (chiavi) tolte dai totali; senza, la ricevuta non si filtra */
+  escluse?: ReadonlySet<string>
+  onEscludi?: (key: string) => void
+  /** «Mostra tutte»: rimette tutte le categorie nei totali */
+  onTutte?: () => void
+  /** la mia parte per categoria (dalla ricevuta «La mia parte»): serve a «La tua quota» quando si tolgono categorie */
+  quoteMie?: ReadonlyMap<string, number>
 }
 
-function RigaFissa({ c, cur }: { c: RigaCategoria; cur: string }) {
-  return (
-    <div className="fa-rcat">
-      <div className="cat fisso">
-        <Ic name={c.icon} size={32} />
-        <div>
-          <div className="ln">
-            <span className="l">{nomeCategoria(c.label)}</span>
-            <span className="d" />
-            <span className="v">{formatMoney(c.spent, cur)}</span>
-          </div>
-          {c.sub ? <div className="sub">{c.sub}</div> : null}
-          {c.previstoTesto ? <div className="sub">{c.previstoTesto}</div> : null}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function RigaCat({ c: riga, cur, open, onToggle, onPlanned, onRename, onDelete, nome, gruppo, scrive, soloMio = false }: { c: RigaCategoria; cur: string; open: boolean; onToggle: () => void; nome: (id: string) => string; gruppo: boolean; scrive: boolean; /** «La mia parte»: solo il mio previsto, senza quello degli altri né nome ed eliminazione della categoria */ soloMio?: boolean } & Pick<Props, 'onPlanned' | 'onRename' | 'onDelete'>) {
-  // il previsto di chi non ha l'account solo se posso modificare il viaggio (e mai nella mia parte)
-  const c = scrive && !soloMio ? riga : { ...riga, altri: [], personale: soloMio ? false : riga.personale }
-  const testo = (v: number | undefined) => (v === undefined ? '' : String(v).replace('.', ','))
-  // con il previsto a persona (0056) si scrive il mio e, se posso, quello di chi non ha l'account; prima, quello della categoria
-  const persone = c.mio ? [c.mio, ...(c.altri ?? [])] : []
-  const [planned, setPlanned] = useState(c.mio ? testo(c.mio.valore) : c.plannedSet ? testo(c.planned) : '')
-  const [altri, setAltri] = useState<Record<string, string>>(() => Object.fromEntries((c.altri ?? []).map((p) => [p.travelerId, testo(p.valore)])))
-  const [label, setLabel] = useState(c.label)
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-
-  async function save() {
-    const valori = persone.length ? persone.map((p, i) => ({ p, v: i === 0 ? planned : (altri[p.travelerId] ?? '') })) : [{ p: undefined, v: planned }]
-    const letti = valori.map(({ p, v }) => ({ p, n: v.trim() ? parseAmount(v) : null, bad: !!v.trim() && (parseAmount(v) === null || (parseAmount(v) ?? 0) < 0) }))
-    if (letti.some((x) => x.bad)) return setError(tt('Il previsto non è chiaro: scrivi un importo, per esempio 600.'))
-    setBusy(true)
-    let m: string | null = null
-    if (c.personale && label.trim() && label.trim() !== c.label) m = await onRename(c, label.trim())
-    for (const { p, n } of letti) {
-      if (m) break
-      const prima = p ? (p.valore ?? null) : c.plannedSet ? c.planned : null
-      if (n !== prima) m = await onPlanned(c, n, p?.travelerId)
-    }
-    setBusy(false)
-    setError(m)
-    if (!m) onToggle()
+/** I totali della ricevuta con solo le categorie non escluse (uguali a quelli di `dati` se non se ne esclude nessuna). */
+export function totaliFiltrati(dati: Dati, escluse: ReadonlySet<string>, quotaTutta?: number, quoteMie?: ReadonlyMap<string, number>) {
+  if (escluse.size === 0) return { previsto: dati.previsto, pagato: dati.pagato, daPagare: dati.daPagare, quota: quotaTutta }
+  const dentro = dati.categorie.filter((c) => !escluse.has(c.key))
+  const somma = (f: (c: RigaCategoria) => number) => round2(dentro.reduce((t, c) => t + f(c), 0))
+  return {
+    previsto: somma((c) => c.planned),
+    pagato: somma((c) => c.spent),
+    daPagare: somma((c) => c.unpaid),
+    quota: quotaTutta === undefined || !quoteMie ? undefined : somma((c) => quoteMie.get(c.key) ?? 0),
   }
-  const suggerimento = (p: PrevistoPersona, mio: boolean) =>
-    p.valore !== undefined
-      ? undefined
-      : p.stima > 0
-        ? mio
-          ? tt('Senza una cifra conta la tua quota, {v0}, calcolata dai costi inseriti.', { v0: formatMoney(p.stima, cur) })
-          : tt('Senza una cifra conta la sua quota, {v0}, calcolata dai costi inseriti.', { v0: formatMoney(p.stima, cur) })
-        : mio
-          ? tt('Quanto pensi di spendere tu per questa categoria.')
-          : tt('Quanto pensi che spenderà per questa categoria.')
+}
 
+function RigaCat({ c, cur, fuori, onPress }: { c: RigaCategoria; cur: string; fuori: boolean; onPress?: () => void }) {
+  const dentro = (
+    <>
+      <Ic name={c.icon} size={32} />
+      <div>
+        <div className="ln">
+          <span className="l">{nomeCategoria(c.label)}</span>
+          <span className="d" />
+          <span className="v">{formatMoney(c.spent, cur)}</span>
+        </div>
+        {c.sub ? <div className="sub">{c.sub}</div> : null}
+        {c.previstoTesto ? <div className="sub">{c.previstoTesto}</div> : null}
+      </div>
+    </>
+  )
   return (
-    <div className={cx('fa-rcat', open && 'open')}>
-      <button type="button" className="cat" aria-expanded={open} onClick={onToggle}>
-        <Ic name={c.icon} size={32} />
-        <div>
-          <div className="ln">
-            <span className="l">{nomeCategoria(c.label)}</span>
-            <span className="d" />
-            <span className="v">{formatMoney(c.spent, cur)}</span>
-          </div>
-          {c.sub ? <div className="sub">{c.sub}</div> : null}
-          {c.previstoTesto ? <div className="sub">{c.previstoTesto}</div> : null}
-        </div>
-      </button>
-      {open ? (
-        <div className="fa-rcat-ed">
-          {c.personale ? <Campo label={tt('Nome della categoria')} value={label} onChange={setLabel} maxLength={40} /> : null}
-          {c.mio ? (
-            <>
-              <Campo
-                label={gruppo ? tt('Il tuo previsto') : tt('Previsto')}
-                icon="bag"
-                inputMode="decimal"
-                value={planned}
-                onChange={setPlanned}
-                placeholder={tt('Per esempio {v0}', { v0: formatMoney(c.mio.stima || 100, cur) })}
-                hint={suggerimento(c.mio, true)}
-                error={error}
-              />
-              {(c.altri ?? []).map((p) => (
-                <Campo
-                  key={p.travelerId}
-                  label={tt('Previsto di {nome}', { nome: nome(p.travelerId) })}
-                  icon="bag"
-                  inputMode="decimal"
-                  value={altri[p.travelerId] ?? ''}
-                  onChange={(v) => setAltri((a) => ({ ...a, [p.travelerId]: v }))}
-                  placeholder={tt('Per esempio {v0}', { v0: formatMoney(p.stima || 100, cur) })}
-                  hint={suggerimento(p, false)}
-                />
-              ))}
-            </>
-          ) : (
-            <Campo
-              label={tt('Previsto')}
-              icon="bag"
-              inputMode="decimal"
-              value={planned}
-              onChange={setPlanned}
-              placeholder={tt('Per esempio {v0}', { v0: formatMoney(c.planned || 100, cur) })}
-              hint={c.plannedSet ? undefined : c.planned > 0 ? tt('Senza una cifra conta {v0}, calcolato dai costi inseriti.', { v0: formatMoney(c.planned, cur) }) : tt('Quanto pensi di spendere per questa categoria.')}
-              error={error}
-            />
-          )}
-          <div className="acts">
-            <Pulsante size="sm" iconLeading="save" onPress={() => void save()} isLoading={busy}>
-              {tt('Salva')}
-            </Pulsante>
-            {c.personale && c.id ? (
-              <Pulsante size="sm" color="tertiary-destructive" iconLeading="trash" onPress={() => void onDelete(c)}>
-                {tt('Elimina')}
-              </Pulsante>
-            ) : (
-              <Pulsante size="sm" color="secondary" onPress={onToggle}>
-                {tt('Annulla')}
-              </Pulsante>
-            )}
-          </div>
-        </div>
-      ) : null}
+    <div className={cx('fa-rcat', fuori && 'off')}>
+      {onPress ? (
+        <button type="button" className="cat" aria-pressed={!fuori} onClick={onPress}>
+          {dentro}
+        </button>
+      ) : (
+        <div className="cat fisso">{dentro}</div>
+      )}
     </div>
   )
 }
 
-export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilancia, io, mia = false }: Props) {
+const NESSUNA: ReadonlySet<string> = new Set()
+
+export function Ricevuta({ trip, dati, sub, bilancia, io, mia = false, escluse = NESSUNA, onEscludi, onTutte, quoteMie }: Props) {
   const cur = trip.baseCurrency
-  const [open, setOpen] = useState<string | null>(null)
   const gruppo = trip.travelers.length > 1
   const mio = gruppo && io && !mia ? dati.persone.find((p) => p.travelerId === io) : undefined
+  const nFuori = dati.categorie.filter((c) => escluse.has(c.key)).length
+  const filtrata = nFuori > 0
+  const tot = totaliFiltrati(dati, filtrata ? escluse : NESSUNA, mio?.quota, quoteMie)
   const nome = (id: string) => trip.travelers.find((t) => t.id === id)?.name.split(/\s+/)[0] ?? '—'
   return (
     <div className="k-Ricevuta">
@@ -184,38 +99,43 @@ export function Ricevuta({ trip, dati, sub, onPlanned, onRename, onDelete, bilan
           </div>
           <div className="sc">{tt('Per categoria')}</div>
           <div className="cats">
-            {dati.categorie.map((c) =>
-              // nella mia parte si scrive il mio previsto come nel riepilogo; senza il previsto a persona (prima della 0056) resta fisso
-              mia && (!c.mio || soloLettura(trip)) ? (
-                <RigaFissa key={c.key} c={c} cur={cur} />
-              ) : (
-              <RigaCat key={`${c.key}:${c.planned}:${c.label}:${c.mio?.valore ?? ''}:${(c.altri ?? []).map((p) => p.valore ?? '').join(',')}`} c={c} cur={cur} open={open === c.key} onToggle={() => setOpen(open === c.key ? null : c.key)} onPlanned={onPlanned} onRename={onRename} onDelete={onDelete} nome={nome} gruppo={gruppo} scrive={!soloLettura(trip)} soloMio={mia} />
-              ),
-            )}
+            {dati.categorie.map((c) => (
+              <RigaCat key={c.key} c={c} cur={cur} fuori={escluse.has(c.key)} onPress={onEscludi ? () => onEscludi(c.key) : undefined} />
+            ))}
           </div>
           <div className="tot">
             <div className="ln m">
               <span className="l">{tt('Previsto')}</span>
               <span className="d" />
-              <span className="v">{formatMoney(dati.previsto, cur)}</span>
+              <span className="v">{formatMoney(tot.previsto, cur)}</span>
             </div>
             <div className="ln m">
               <span className="l">{tt('Già pagato')}</span>
               <span className="d" />
-              <span className="v">{formatMoney(dati.pagato, cur)}</span>
+              <span className="v">{formatMoney(tot.pagato, cur)}</span>
             </div>
-            {mio ? (
+            {tot.quota !== undefined ? (
               <div className="ln m">
                 <span className="l">{tt('La tua quota')}</span>
                 <span className="d" />
-                <span className="v">{formatMoney(mio.quota, cur)}</span>
+                <span className="v">{formatMoney(tot.quota, cur)}</span>
               </div>
             ) : null}
             <div className="ln b">
               <span className="l">{tt('Da pagare')}</span>
               <span className="d" />
-              <span className="v">{formatMoney(dati.daPagare, cur)}</span>
+              <span className="v">{formatMoney(tot.daPagare, cur)}</span>
             </div>
+            {filtrata ? (
+              <div className="fil" role="status">
+                <span>{tt('Solo {n} categorie su {tot}', { n: dati.categorie.length - nFuori, tot: dati.categorie.length })}</span>
+                {onTutte ? (
+                  <button type="button" onClick={onTutte}>
+                    {tt('Mostra tutte')}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
           </div>
           {gruppo ? (
             <div className="per">

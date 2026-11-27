@@ -170,9 +170,22 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .k-Ricevuta .fa-rcat .cat{all:unset;box-sizing:border-box;display:grid;grid-template-columns:32px minmax(0,1fr);gap:var(--space-md);align-items:start;width:100%;text-align:left;cursor:pointer;border-radius:8px}
 .k-Ricevuta .fa-rcat .cat:focus-visible{outline:3px solid var(--focus);outline-offset:4px}
 .k-Ricevuta .cat svg.ic,.k-Ricevuta .cat .ic{width:32px;height:32px}
-.k-Ricevuta .fa-rcat-ed{display:grid;gap:16px;margin:16px 0 0 48px}
-.k-Ricevuta .fa-rcat-ed .acts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin:0}
-.k-Ricevuta .fa-rcat-ed .fa-btn{width:100%;min-width:0;padding:0 8px;white-space:nowrap}
+/* categoria tolta dai totali (toccandola): icona grigia e testo spento, il resto della riga resta dov'è */
+.k-Ricevuta .fa-rcat.off .ic{filter:grayscale(1);opacity:.4}
+.k-Ricevuta .fa-rcat.off .ln .l,.k-Ricevuta .fa-rcat.off .ln .v{color:var(--ink-muted);font-weight:500}
+.k-Ricevuta .fa-rcat.off .ln .v{text-decoration:line-through}
+.k-Ricevuta .fil{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0 8px;font:400 13px/18px var(--font-sans);color:var(--ink-muted)}
+.k-Ricevuta .fil button{all:unset;box-sizing:border-box;min-height:44px;display:inline-flex;align-items:center;color:var(--azzurro-ink);font:600 13px/18px var(--font-sans);text-decoration:underline;cursor:pointer}
+.k-Ricevuta .fil button:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+/* Budget, «Per categoria»: toccando una riga si apre sotto il previsto */
+.k-BudgetCat .riga .cat{all:unset;box-sizing:border-box;display:grid;grid-template-columns:44px minmax(0,1fr);gap:16px;align-items:center;width:100%;padding:16px;text-align:left}
+.k-BudgetCat .riga button.cat{cursor:pointer}
+.k-BudgetCat .riga button.cat:focus-visible{outline:3px solid var(--focus);outline-offset:-3px;border-radius:16px}
+.k-BudgetCat .fa-rcat-ed{display:grid;gap:16px;padding:0 16px 16px 76px}
+.k-BudgetCat .fa-rcat-ed .acts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin:0}
+.k-BudgetCat .fa-rcat-ed .fa-btn{width:100%;min-width:0;padding:0 8px;white-space:nowrap}
+.k-BudgetCat{container-type:inline-size}
+@container (max-width:340px){.k-BudgetCat .fa-rcat-ed{padding-left:16px}}
 
 /* Stati di sistema (#25, #49) */
 .fa-errcard{border:1.5px solid var(--danger)}
