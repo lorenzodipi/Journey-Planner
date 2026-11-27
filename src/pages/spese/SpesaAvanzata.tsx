@@ -36,18 +36,21 @@ export interface PayRow {
 }
 
 /**
- * Il pagante di cui non si è scritta la cifra prende il resto: totale meno le cifre scritte a mano. Vale solo se le righe
- * da completare sono una sola (con più righe libere non si sa a chi dare il resto). Restituisce le stesse righe se non cambia niente.
+ * Come per le quote di «Come dividere»: le cifre scritte a mano non si toccano mai; il resto (totale meno quelle cifre) si
+ * divide in parti uguali tra i paganti di cui non si è scritta la cifra (uno solo: prende tutto il resto). Si ricalcola
+ * quando cambia il totale. Se il resto è zero o negativo le righe libere restano vuote. Senza totale o senza righe
+ * libere restituisce le stesse righe.
  */
 export function completaResto(rows: PayRow[], total: number | null): PayRow[] {
-  if (total === null) return rows
+  if (total === null || rows.length < 2) return rows
   const libere = rows.filter((r) => !r.manuale)
-  if (libere.length !== 1 || rows.length < 2) return rows
+  if (libere.length === 0) return rows
   const scritto = rows.reduce((somma, r) => (r.manuale ? somma + (parseAmount(r.text) ?? 0) : somma), 0)
   const resto = Math.round((total - scritto) * 100) / 100
-  const text = resto > 0 ? txt(resto) : ''
-  if (libere[0].text === text) return rows
-  return rows.map((r) => (r === libere[0] ? { ...r, text } : r))
+  const parti = resto > 0 ? splitAmounts(resto, 'equal', libere.map((_, k) => ({ travelerId: String(k), weight: 1 }))) : libere.map(() => 0)
+  const testi = new Map(libere.map((r, k) => [r, parti[k] > 0 ? txt(parti[k]) : '']))
+  if (libere.every((r) => r.text === testi.get(r))) return rows
+  return rows.map((r) => (testi.has(r) ? { ...r, text: testi.get(r) as string } : r))
 }
 
 /** Righe → versamenti (le righe senza persona o senza cifra si ignorano nel controllo, ma `rowsOk` le segnala). */

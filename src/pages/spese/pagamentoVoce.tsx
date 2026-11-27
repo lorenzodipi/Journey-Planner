@@ -33,7 +33,7 @@ export interface ValoriPagamento {
 export function usePagamentoVoce({ trip, voce, meId, people, totale, currency }: { trip: Trip; voce?: VocePagata; meId?: string; people: string[]; totale: number | null; currency: string }) {
   const all = trip.travelers.map((p) => p.id)
   const [rows, setRows] = useState<PayRow[] | null>(() => {
-    if (voce?.payerAmounts && voce.payerAmounts.length > 1) return voce.payerAmounts.map((p) => ({ id: p.travelerId, text: txt(p.amount) }))
+    if (voce?.payerAmounts && voce.payerAmounts.length > 1) return voce.payerAmounts.map((p) => ({ id: p.travelerId, text: txt(p.amount), manuale: true }))
     const ids = voce?.payerIds ?? []
     if (ids.length > 1) {
       const parti = totale ? splitAmounts(totale, 'equal', ids.map((travelerId) => ({ travelerId, weight: 1 }))) : []

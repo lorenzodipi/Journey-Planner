@@ -159,7 +159,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
   )
   // più paganti: `null` = una persona sola (quella di «Pagata da»)
   const [payRows, setPayRows] = useState<PayRow[] | null>(() =>
-    expense?.payers && expense.payers.length > 1 ? expense.payers.map((p) => ({ id: p.travelerId, text: num(p.amount) })) : null,
+    expense?.payers && expense.payers.length > 1 ? expense.payers.map((p) => ({ id: p.travelerId, text: num(p.amount), manuale: true })) : null,
   )
   // cambio scritto sulla spesa: tasso, da dove viene, quando, se a mano
   const [fx, setFx] = useState<{ rate?: number; source?: string; at?: string; manual?: boolean; setBy?: string }>(() =>
