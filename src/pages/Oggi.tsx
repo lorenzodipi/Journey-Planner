@@ -35,6 +35,7 @@ import type { DayItem, ItemStatus, Trip } from '../types'
 import { Ic } from '../ui/Sprite'
 import { OggiDopo } from './OggiDopo'
 import { TappaSheet } from './giorno/TappaSheet'
+import { SlittaSheet } from './giorno/SlittaSheet'
 import { Offline } from '../faraway/Offline'
 import { DISCHI as CITY_DISCS } from '../faraway/DopoCard'
 import { BigliettoPiccolo, ChecklistHome, ContoAllaRovescia, Orologio, Saluto, ValutaPiccola, type VoceHome } from '../faraway/Home'
@@ -198,6 +199,8 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
   const [openId, setOpenId] = useState<string | null>(null)
   // «Modifica» su una tappa: il foglio di modifica si apre qui, come nella pagina del giorno
   const [inModifica, setInModifica] = useState<DayItem | null>(null)
+  // «Slitta» su una tappa iniziata da più di 15 minuti e ancora da fare
+  const [inSlitta, setInSlitta] = useState<DayItem | null>(null)
   const autoOpened = useRef(false)
   const day = trip.days.find((d) => d.date === today)
   const [rif, setRif] = useRiferimento(trip.id)
@@ -352,6 +355,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
             onToggle={(id) => setOpenId((c) => (c === id ? null : id))}
             onStatus={(i, s) => void onStatus(i, s)}
             onEdit={(i) => setInModifica(i)}
+            onSlitta={(i) => setInSlitta(i)}
             onMove={() => navigate(`/giorni/${day.id}`)}
             onDelete={(i) => void onDelete(i)}
             onReorder={lettura ? undefined : (i, to) => void t.moveItemTo(day.id, i.id, to).then((m) => m && showToast(m))}
@@ -398,6 +402,7 @@ function OggiDurante({ trip, now, today }: { trip: Trip; now: Date; today: strin
       </Colonna>
       </Affianca>
       {confirmNode}
+      {inSlitta && day ? <SlittaSheet key={inSlitta.id} trip={trip} day={day} item={inSlitta} nowMin={nowMin} open onClose={() => setInSlitta(null)} /> : null}
       {inModifica && day ? (
         <TappaSheet key={inModifica.id} trip={trip} day={day} item={inModifica} open dayNumber={trip.days.indexOf(day) + 1} onClose={() => setInModifica(null)} />
       ) : null}

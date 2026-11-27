@@ -10,7 +10,8 @@ describe('stati della tappa', () => {
   it('ricava lo stato da done per le tappe vecchie', () => {
     expect(statusOf({ done: true })).toBe('done')
     expect(statusOf({})).toBe('todo')
-    expect(statusOf({ status: 'late', done: false })).toBe('late')
+    // «In ritardo» non c'è più (al suo posto «Slitta»): le tappe segnate così valgono «Da fare»
+    expect(statusOf({ status: 'late', done: false })).toBe('todo')
   })
   it('riepilogo: chiuse, saltate e prossima', () => {
     const items = [it0({ id: 'a', time: '08:30', status: 'done' }), it0({ id: 'b', time: '09:30', status: 'skipped' }), it0({ id: 'c', time: '12:45' }), it0({ id: 'd', time: '15:30' })]
@@ -128,11 +129,11 @@ describe('tappe passate da aggiornare', () => {
     expect(da(items, 0, h(14, 30))).toBe(false)
     expect(da(items, 0, h(15, 30))).toBe(true)
   })
-  it('mai le tappe fatte, saltate o in ritardo, mai i giorni che devono arrivare', () => {
+  it('mai le tappe fatte o saltate, mai i giorni che devono arrivare; le vecchie «in ritardo» sono da fare', () => {
     const fatta = [it0({ id: 'a', time: '08:00', status: 'done' }), it0({ id: 'b', status: 'done' })]
     expect(da(fatta, 0, h(23))).toBe(false)
     expect(da([it0({ id: 'a', time: '08:00', status: 'skipped' })], 0, h(23))).toBe(false)
-    expect(da([it0({ id: 'a', time: '08:00', durationMinutes: 30, status: 'late' })], 0, h(23))).toBe(false)
+    expect(da([it0({ id: 'a', time: '08:00', durationMinutes: 30, status: 'late' })], 0, h(23))).toBe(true)
     expect(daAggiornare([it0({ id: 'a', time: '08:00', durationMinutes: 30 })], 0, nessuno, { isToday: false, isPast: false, nowMin: h(23) })).toBe(false)
   })
 })

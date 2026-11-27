@@ -13,7 +13,8 @@ import { categoryIcon } from '../lib/categoryIcon'
 import { formatMoney, round2 } from '../lib/money'
 import { mapsLinkFor } from '../lib/mapsUrl'
 import { openingFor } from '../lib/opening'
-import { daAggiornare, durata, fase, forseInRitardo, riepilogo, rigaOrario, statoOf, statusOf, TAPPA_STATI, toMin, type Fase, type Spostamento } from '../lib/tappa'
+import { minutiDiRitardo, puoSlittare } from '../lib/slitta'
+import { daAggiornare, durata, fase, riepilogo, rigaOrario, statoOf, statusOf, TAPPA_STATI, toMin, type Fase, type Spostamento } from '../lib/tappa'
 import { itemDuration } from '../lib/duration'
 import { Sv } from './icons'
 import { discOf, initials } from '../state/me'
@@ -62,6 +63,8 @@ interface Props {
   /** Tocco sullo spostamento che porta alla tappa: si sceglie il mezzo e la durata (0045). */
   onSeg?: (item: DayItem) => void
   readOnly?: boolean
+  /** «Slitta»: la tappa di oggi è iniziata da più di 15 minuti ed è ancora da fare (al posto dello stato «In ritardo») */
+  onSlitta?: (item: DayItem) => void
 }
 
 export function placeOf(trip: Trip, item: DayItem): Place | undefined {
@@ -90,7 +93,7 @@ function metaOf(trip: Trip, item: DayItem): string {
   return [from >= 0 ? t('Rimandata dal Giorno {v0}', { v0: from + 1 }) : null, where, who > 1 ? PARTS[who] ?? t('in {who}', { who }) : null, dur ? durata(dur) : null].filter(Boolean).join(' · ')
 }
 
-function Pill({ item, f, ctx }: { item: DayItem; f: Fase; ctx: TappeCtx }) {
+function Pill({ item, f, ctx, slitta }: { item: DayItem; f: Fase; ctx: TappeCtx; slitta: boolean }) {
   const st = statusOf(item)
   if (st === 'done')
     return (
@@ -106,15 +109,11 @@ function Pill({ item, f, ctx }: { item: DayItem; f: Fase; ctx: TappeCtx }) {
         {statoOf(st).label}
       </span>
     )
-  if (st === 'late')
-    return (
-      <span className="st" style={{ color: 'var(--danger)' }}>
-        <G name="g-clock" />
-        {t('In ritardo')}
-      </span>
-    )
+  if (slitta) {
+    const m = minutiDiRitardo(item, ctx.nowMin) ?? 0
+    return <span className="rit">{t('iniziava {v0} fa', { v0: durata(m) })}</span>
+  }
   if (f === 'now') return <span className="now">{tc('Ora', 'adesso')}</span>
-  if (forseInRitardo(item, ctx)) return <span className="next">{t('In ritardo?')}</span>
   if (f === 'past') return <span className="next">{t('Da fare')}</span>
   return null
 }
@@ -177,7 +176,7 @@ function Riga({ icon, main, sub, action }: { icon: string; main: ReactNode; sub?
   )
 }
 
-export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle, onStatus, onEdit, onMove, onDelete, fromHere, meteoDi, highlight, onReorder, onSeg, readOnly }: Props) {
+export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle, onStatus, onEdit, onMove, onDelete, fromHere, meteoDi, highlight, onReorder, onSeg, readOnly, onSlitta }: Props) {
   const items = day.items
   const listRef = useRef<HTMLOListElement>(null)
   const [annuncio, setAnnuncio] = useState('')
@@ -238,6 +237,8 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
           const aperta = open && apribile && trascinata !== idx
           // passata e ancora «Da fare»: bordo e «!» perché qualcuno ne aggiorni lo stato
           const scaduta = daAggiornare(items, idx, (i) => placeOf(trip, i), ctx)
+          // iniziata da più di 15 minuti e ancora da fare: «Slitta» sposta l'orario (anche delle tappe dopo)
+          const slittabile = !readOnly && !!onSlitta && puoSlittare(trip, item, ctx)
           return (
             <Fragment key={item.id}>
               {seg && idx > 0 ? (
@@ -314,7 +315,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                           <G name="g-chev" cls="chv" />
                         </span>
                       ) : null}
-                      <Pill item={item} f={f} ctx={ctx} />
+                      <Pill item={item} f={f} ctx={ctx} slitta={slittabile} />
                     </div>
                   </div>
                   {bloccata ? (
@@ -340,6 +341,14 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                     </button>
                   ) : null}
                   </div>
+                  {slittabile ? (
+                    <div className="slt">
+                      <span>{trip.travelers.length > 1 ? t('Siete in ritardo?') : t('Sei in ritardo?')}</span>
+                      <Pulsante size="sm" color="secondary-soft" iconLeading="slitta" onPress={() => onSlitta?.(item)}>
+                        {t('Slitta')}
+                      </Pulsante>
+                    </div>
+                  ) : null}
                   {aperta && f === 'now' && exp ? (
                     <div className="foot">
                       <span className="av">

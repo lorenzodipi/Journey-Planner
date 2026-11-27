@@ -1259,6 +1259,14 @@ export async function setItemPositions(list: { id: string; position: number }[])
   if (failed?.error) throw failed.error
 }
 
+/** «Slitta»: nuovi orari di inizio (e di fine, se c'era) per più tappe insieme. */
+export async function setItemTimes(list: { id: string; start: string; end: string | null }[]): Promise<void> {
+  const db = client()
+  const results = await Promise.all(list.map((x) => db.from('day_items').update({ start_time: timeOrNull(x.start), ...(x.end !== null ? { end_time: timeOrNull(x.end) } : {}) }).eq('id', x.id)))
+  const failed = results.find((r) => r.error)
+  if (failed?.error) throw failed.error
+}
+
 export async function setItemDone(id: string, done: boolean): Promise<void> {
   const { error } = await client().from('day_items').update({ done }).eq('id', id)
   if (error) throw error

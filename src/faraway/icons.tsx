@@ -19,6 +19,8 @@ const PATHS = {
   warn: <path d="M12 4l9 16H3zM12 10v4M12 17v.5" />,
   err: <><circle cx="12" cy="12" r="9" /><path d="M12 7.5v5M12 16v.5" /></>,
   clock: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></>,
+  // «Slitta»: l'orologio con la freccia in avanti (l'orario va più tardi)
+  slitta: <><path d="M17.9 6A8.5 8.5 0 1 0 20.5 12" /><path d="M18.2 2.6V6.3h-3.7" /><path d="M12 7.5V12l3 2" /></>,
   pencil: <path d="M4 20l1-4L16 5l3 3L8 19z" />,
   trash: <path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12" />,
   share: <path d="M12 15V4M8 8l4-4 4 4M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />,

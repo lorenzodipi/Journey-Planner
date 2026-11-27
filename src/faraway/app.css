@@ -1033,3 +1033,20 @@ dialog.fa-mod:focus{outline:none}
 .fa-cont .ctl .fa-ib{width:36px;height:36px;justify-self:center}
 .fa-cont .ctl .fa-ib svg{width:18px;height:18px}
 .fa-cont .ctl .fa-ib::after{content:"";position:absolute;inset:-4px}
+
+/* «Slitta» (al posto dello stato «In ritardo»): sulla tappa iniziata da più di 15 minuti e ancora da fare, «iniziava N fa»
+   in rosso al posto della pillola e, sotto, la riga «Siete in ritardo?» con il pulsante */
+.k-Tappa .r>.rit{font:600 13px/18px var(--font-sans);color:var(--danger);white-space:nowrap}
+.k-Tappa .tw.ico .r>.rit{margin-right:24px}
+.k-Tappa .slt{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--hairline);font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
+.k-Tappa .stp.now .slt{color:var(--on-tinta-muted);border-top-color:var(--bordo-azzurro)}
+.k-Tappa .slt .fa-btn{margin-left:auto}
+/* foglio «Slitta»: gli orari di prima (barrati) e quelli nuovi */
+.k-Slitta{list-style:none;margin:0;padding:0;background:var(--surface-card);border:1px solid var(--hairline);border-radius:16px;overflow:hidden}
+.k-Slitta li{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:12px 16px;box-sizing:border-box}
+.k-Slitta li+li{border-top:1px solid var(--hairline)}
+.k-Slitta .tl{display:grid;gap:2px;min-width:0;font:500 15px/20px var(--font-sans);color:var(--ink);overflow-wrap:anywhere}
+.k-Slitta .fm{display:inline-flex;align-items:center;gap:4px;font:400 13px/18px var(--font-sans);color:var(--ink-muted)}
+.k-Slitta .or{display:inline-flex;align-items:center;gap:4px;flex:none;font:400 15px/20px var(--font-sans);font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+.k-Slitta .or s{color:var(--ink-muted)}
+.k-Slitta .or b{font-weight:600}

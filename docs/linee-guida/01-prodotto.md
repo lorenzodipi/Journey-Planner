@@ -65,6 +65,8 @@ La barra in basso ha cinque schede. Ogni pagina interna appartiene a una scheda,
 
 **Stato del luogo e tappe.** «In programma» se il luogo è in una tappa non annullata (si calcola, `statoLuogo`); una tappa segnata «Fatta» lo salva «Visitato». Se quella tappa si elimina o torna da fare (o «Saltata», «Rimandata»…), il luogo torna «In programma» (o «Da visitare» se non è più in nessuna tappa), a meno che un'altra tappa fatta dello stesso luogo lo tenga visitato (`luogoNonPiuVisitato` in `src/state/trips.tsx`). Un «Visitato» messo a mano senza tappe fatte non si tocca.
 
+**«Slitta» al posto di «In ritardo».** Lo stato «In ritardo» non c'è più (era solo un'etichetta: chi è in ritardo cambia gli orari); le tappe salvate così valgono «Da fare» (`statusOf`). Oggi, su una tappa da fare con orario iniziata da più di 15 minuti e con l'orario non fissato (vincolato o legato a una prenotazione a ora fissa), la card mostra «iniziava N fa» in rosso e la riga «Siete in ritardo?» (da soli «Sei in ritardo?») con il pulsante **Slitta** (icona `slitta`: l'orologio con la freccia in avanti). Il foglio (`SlittaSheet`, logica in `src/lib/slitta.ts`) offre «Da adesso» e +15 min, +30 min, +1 h solo se portano la tappa dopo adesso (mai oltre la mezzanotte), l'interruttore «Anche le tappe dopo» (acceso: si spostano le tappe da fare con orario che vengono dopo; vincolate e prenotate restano, segnate «Resta all'orario»; quelle senza orario o chiuse non si toccano) e l'anteprima degli orari. Salvato, un avviso «N tappe spostate di … · Annulla» per 8 secondi rimette gli orari di prima. Vale in Oggi e nella pagina del giorno (quando è oggi); il visualizzatore non lo vede.
+
 ## Voce e tono
 
 - Sempre **in italiano**, con il **tu**, frasi brevi e verbi concreti.

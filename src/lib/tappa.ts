@@ -21,15 +21,14 @@ export const TAPPA_STATI: TappaStato[] = [
   { value: 'todo', label: t('Da fare'), hint: t('Non ancora iniziata'), cls: 's-todo', icon: 'g-clock' },
   { value: 'done', label: t('Fatta'), hint: t('Completata'), cls: 's-done', icon: 'g-check' },
   { value: 'skipped', label: t('Saltata'), hint: t('Non la farete'), cls: 's-skip', icon: 'g-minus' },
-  { value: 'late', label: t('In ritardo'), hint: t('Slitta rispetto al programma'), cls: 's-late', icon: 'g-clock' },
   { value: 'postponed', label: t('Rimandata'), hint: t('Spostata a un altro giorno'), cls: 's-moved', icon: 'g-pencil' },
   { value: 'cancelled', label: t('Annullata'), hint: t('Il luogo è chiuso o la prenotazione è saltata'), cls: 's-cancel', icon: 'g-close' },
 ]
 
 export const statoOf = (s: ItemStatus | undefined): TappaStato => TAPPA_STATI.find((x) => x.value === (s ?? 'todo')) ?? TAPPA_STATI[0]
 
-/** Stato effettivo (le tappe vecchie hanno solo `done`). */
-export const statusOf = (i: Pick<DayItem, 'status' | 'done'>): ItemStatus => i.status ?? (i.done ? 'done' : 'todo')
+/** Stato effettivo (le tappe vecchie hanno solo `done`). «In ritardo» non c'è più (al suo posto «Slitta»): vale «Da fare». */
+export const statusOf = (i: Pick<DayItem, 'status' | 'done'>): ItemStatus => (i.status === 'late' ? 'todo' : (i.status ?? (i.done ? 'done' : 'todo')))
 
 const CLOSED: ItemStatus[] = ['done', 'skipped', 'cancelled', 'postponed']
 export const isClosed = (i: Pick<DayItem, 'status' | 'done'>) => CLOSED.includes(statusOf(i))
@@ -73,13 +72,6 @@ export function fase(item: DayItem, place: Pick<Place, 'visitMinutes'> | undefin
   const e = endMin(item, place) ?? s + 1
   if (ctx.nowMin >= s && ctx.nowMin < e) return 'now'
   return ctx.nowMin < s ? 'next' : 'past'
-}
-
-/** Suggerimento «In ritardo?»: oggi, passati 15 min dall'inizio, ancora da fare. Nessun cambio automatico. */
-export function forseInRitardo(item: DayItem, ctx: { isToday: boolean; nowMin: number }): boolean {
-  if (!ctx.isToday || statusOf(item) !== 'todo') return false
-  const s = toMin(item.time)
-  return s !== null && ctx.nowMin > s + 15
 }
 
 /**

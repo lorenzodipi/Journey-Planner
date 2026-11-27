@@ -128,6 +128,8 @@ interface TripsValue {
   setPlacePositions: (tripId: string, updates: { id: string; name: string; lat: number; lng: number }[]) => Result
   createItem: (tripId: string, dayId: string, input: ItemInput) => Result
   updateItem: (id: string, input: ItemInput) => Result
+  /** «Slitta»: nuovi orari per più tappe insieme (anche per «Annulla»). */
+  setItemTimes: (list: { id: string; start: string; end: string | null }[]) => Result
   moveItem: (dayId: string, itemId: string, step: -1 | 1) => Result
   /** Porta una tappa al posto `to` (trascinamento): una sola richiesta, con le sole posizioni cambiate. */
   moveItemTo: (dayId: string, itemId: string, to: number) => Result
@@ -703,6 +705,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       return run(() => api.createItem(tripId, dayId, input, position), ['items'])
     },
     updateItem: (id, input) => run(() => api.updateItem(id, input), ['items']),
+    setItemTimes: (list) => run(() => api.setItemTimes(list), ['items']),
     moveItem: async (dayId, itemId, step) => {
       const day = trips.flatMap((t) => t.days).find((d) => d.id === dayId)
       const items = day?.items ?? []

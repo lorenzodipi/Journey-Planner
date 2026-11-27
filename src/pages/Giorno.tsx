@@ -47,6 +47,7 @@ import { SpesaSheet } from './spese/SpesaSheet'
 import { iconaSpesa } from '../lib/ricevuta'
 import { TappaSheet } from './giorno/TappaSheet'
 import { SpostamentoSheet } from './giorno/SpostamentoSheet'
+import { SlittaSheet } from './giorno/SlittaSheet'
 import { alloggiDelGiorno } from '../lib/fattibilita'
 import { useInCorso } from '../faraway/Attesa'
 import { soloLettura } from '../lib/ruolo'
@@ -55,7 +56,7 @@ import { LOCALE, nomeCategoria, t as tt } from '../i18n'
 const wdm = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' })
 const fmt = (ymd: string) => wdm.format(parseYmd(ymd)).replace(/\./g, '')
 
-type Sheet = { kind: 'add' } | { kind: 'edit'; item: DayItem } | { kind: 'move'; item: DayItem; postpone: boolean } | { kind: 'seg'; item: DayItem } | null
+type Sheet = { kind: 'add' } | { kind: 'edit'; item: DayItem } | { kind: 'move'; item: DayItem; postpone: boolean } | { kind: 'seg'; item: DayItem } | { kind: 'slitta'; item: DayItem } | null
 
 export function Giorno({ params }: { params: { id: string } }) {
   const trip = useTrip()
@@ -279,6 +280,7 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
               readOnly={lettura}
               fromHere={fromHere}
               onSeg={(item) => setSheet({ kind: 'seg', item })}
+              onSlitta={(item) => setSheet({ kind: 'slitta', item })}
               meteoDi={(item) => meteoDellaTappa(previsioniCitta.get(cittaTappa(trip, day, item)), day.date, item.time)}
               highlight={highlight}
             />
@@ -417,6 +419,7 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
         const leg = da && a ? route.legs.find((l) => l.fromId === da.id && l.toId === a.id) : undefined
         return da && a && leg ? <SpostamentoSheet key={a.id} open da={da} a={a} leg={leg} strada={route.routes[leg.key]} imp={imp} onClose={() => setSheet(null)} /> : null
       })()}
+      {sheet?.kind === 'slitta' ? <SlittaSheet key={sheet.item.id} trip={trip} day={day} item={sheet.item} nowMin={ctx.nowMin} open onClose={() => setSheet(null)} /> : null}
       {stayEdit ? <AlloggioSheet key={stayEdit.id} trip={trip} stay={stayEdit} open onClose={() => setStayEdit(null)} /> : null}
       {confirmNode}
       {modificaGiorno ? <GiornoSheet key={day.id} day={day} open onClose={() => setModificaGiorno(false)} /> : null}
