@@ -283,7 +283,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
           ) : null}
           {each !== null && amount ? (
             <span className="fa-m" style={{ color: 'var(--ink-muted)' }}>
-              {tt(editing ? '{v0}La spesa si aggiorna anche in Spese.' : '{v0}La spesa compare anche in Spese.', { v0: people > 1 && !divisa ? tt('Diviso {v0}: {v1} a testa. ', { v0: inQuanti(people), v1: formatMoney(each, currency) }) : '' })}
+              {editing ? tt('{v0}La spesa si aggiorna anche in Spese.', { v0: people > 1 && !divisa ? tt('Diviso {v0}: {v1} a testa. ', { v0: inQuanti(people), v1: formatMoney(each, currency) }) : '' }) : tt('{v0}La spesa compare anche in Spese.', { v0: people > 1 && !divisa ? tt('Diviso {v0}: {v1} a testa. ', { v0: inQuanti(people), v1: formatMoney(each, currency) }) : '' })}
             </span>
           ) : null}
         </>
