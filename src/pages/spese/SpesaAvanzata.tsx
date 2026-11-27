@@ -31,6 +31,23 @@ function Help({ check }: { check: { ok: boolean; message: string } }) {
 export interface PayRow {
   id: string
   text: string
+  /** la cifra l'ha scritta chi usa l'app: non si ricalcola da sola */
+  manuale?: boolean
+}
+
+/**
+ * Il pagante di cui non si è scritta la cifra prende il resto: totale meno le cifre scritte a mano. Vale solo se le righe
+ * da completare sono una sola (con più righe libere non si sa a chi dare il resto). Restituisce le stesse righe se non cambia niente.
+ */
+export function completaResto(rows: PayRow[], total: number | null): PayRow[] {
+  if (total === null) return rows
+  const libere = rows.filter((r) => !r.manuale)
+  if (libere.length !== 1 || rows.length < 2) return rows
+  const scritto = rows.reduce((somma, r) => (r.manuale ? somma + (parseAmount(r.text) ?? 0) : somma), 0)
+  const resto = Math.round((total - scritto) * 100) / 100
+  const text = resto > 0 ? txt(resto) : ''
+  if (libere[0].text === text) return rows
+  return rows.map((r) => (r === libere[0] ? { ...r, text } : r))
 }
 
 /** Righe → versamenti (le righe senza persona o senza cifra si ignorano nel controllo, ma `rowsOk` le segnala). */
@@ -52,6 +69,12 @@ export function PagantiEditor({ trip, total, currency, rows, onRows, single, onS
   titolo?: string
 }) {
   const ppl = trip.travelers
+  // il pagante lasciato senza cifra prende il resto, anche quando cambia il totale
+  useEffect(() => {
+    if (!rows) return
+    const next = completaResto(rows, total)
+    if (next !== rows) onRows(next)
+  }, [rows, total]) // eslint-disable-line react-hooks/exhaustive-deps
   const disc = (id: string) => (
     <span className={cx('fa-av', `r${discOf(trip, id)}`)} style={{ width: 'calc(24em / 11)', height: 'calc(24em / 11)', fontSize: 11 }} aria-hidden="true">
       {initials(ppl.find((p) => p.id === id)?.name ?? '')}
@@ -94,7 +117,7 @@ export function PagantiEditor({ trip, total, currency, rows, onRows, single, onS
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
-              <Campo label={t('Versa{v0}', { v0: r.id ? ` · ${first(ppl.find((p) => p.id === r.id)?.name ?? '')}` : '' })} importo value={r.text} onChange={(v) => set(i, { text: v })} placeholder="0" trailing={<span>{currency}</span>} />
+              <Campo label={t('Versa{v0}', { v0: r.id ? ` · ${first(ppl.find((p) => p.id === r.id)?.name ?? '')}` : '' })} importo value={r.text} onChange={(v) => set(i, { text: v, manuale: true })} placeholder="0" trailing={<span>{currency}</span>} />
             </div>
             {rows.length > 1 ? (
               <PulsanteIcona icon="close" label={t('Togli questo pagante')} onPress={() => {
