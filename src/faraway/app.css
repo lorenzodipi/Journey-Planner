@@ -221,7 +221,8 @@ dialog.fa-dlg[open]>.fa-sheet{animation:fa-up 220ms cubic-bezier(.32,.72,0,1)}
 .fa-sheet>.grab,.fa-sheet>.hd,.fa-sheet>.st,.fa-sheet>.bt{flex:0 0 auto}
 .fa-sheet .frm{overflow:visible}
 .fa-sheet.full .bt{margin-top:16px}
-.fa-sheet{will-change:transform;backface-visibility:hidden}
+/* niente will-change né backface-visibility sul foglio: su iPhone (WebKit) i campi dentro un livello così perdevano il menu
+   «Incolla / Seleziona tutto» e un tocco sul campo già attivo poteva chiudere la tastiera */
 
 /* ---- v2: bottoni in una riga, elimina come bottone rosso, rotta dei trasporti, niente scorrimento laterale ---- */
 .fa-btn.del{background:color-mix(in srgb,var(--danger) 10%,var(--surface-card));border:1.5px solid var(--danger);color:var(--danger);width:auto;padding:0 16px;min-height:44px;box-shadow:none}

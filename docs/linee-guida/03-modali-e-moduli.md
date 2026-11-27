@@ -17,6 +17,7 @@ Foglio, modale e messaggio usano `<dialog>` nativo aperto con `showModal()`: foc
 
 - **Testata**: «Chiudi» a sinistra, titolo al centro («Nuovo trasporto», «Modifica alloggio»).
 - **Corpo**: scorre da solo, il resto del foglio no. Con un foglio o un modale aperto **la pagina sotto non scorre mai**, nemmeno se il foglio è corto (`useBloccaSotto` in `src/faraway/bloccaSotto.ts` e `html:has(dialog[open])`): un componente con un suo `<dialog>` lo usa anche lui.
+- **Campi nei fogli su iPhone**: un trascinamento che parte da un campo di testo non si ferma mai (`eCampoDiTesto` in `bloccaSotto.ts`), se no la pressione lunga (lente, «Incolla», «Seleziona tutto») e lo spostamento del cursore non funzionano. Il foglio non va messo su un livello a parte (`will-change`, `backface-visibility`, `transform` fisso): su WebKit i campi dentro perdono il menu di modifica e un tocco sul campo già attivo può chiudere la tastiera. Il `transform` si mette solo mentre lo si trascina.
 - **Piede**: un solo pulsante primario, fisso in basso e sempre visibile («Salva il trasporto»). Le azioni secondarie (Elimina) stanno nel corpo, in fondo.
 - Il foglio segue il contenuto fino al 90% dello schermo, poi scorre. Con la tastiera aperta sale sopra di essa.
 - Si chiude trascinandolo in basso dalla maniglia o dalla testata: queste due superfici hanno `touch-action: none`, altrimenti il browser prende il gesto come scroll, annulla il trascinamento e il foglio torna su.
