@@ -188,7 +188,7 @@ function controlloPosizione(): GeolocateControl {
   const geo = new GeolocateControl({ positionOptions: { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }, trackUserLocation: false })
   // senza permesso o senza segnale MapLibre non dice niente: lo diciamo noi
   geo.on('error', (e: { code?: number }) =>
-    showToast(e?.code === 1 ? t('Per mostrare dove sei serve il permesso della posizione: attivalo nelle impostazioni del telefono per Journey Planner.') : NIENTE_POSIZIONE()),
+    showToast(e?.code === 1 ? t('Per mostrare dove sei serve il permesso della posizione: attivalo nelle impostazioni del telefono per Faraway.') : NIENTE_POSIZIONE()),
   )
   return geo
 }

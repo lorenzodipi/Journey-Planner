@@ -65,6 +65,10 @@
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Journey Planner usa la tua posizione solo per mostrarti dove sei sulla mappa.</string>
+	<string>Faraway usa la tua posizione solo per mostrarti dove sei sulla mappa.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Faraway usa la fotocamera solo quando scegli di fotografare un biglietto, un codice o un documento da salvare nel viaggio.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
