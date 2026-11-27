@@ -103,7 +103,6 @@ export function LuogoCard({ trip, place, open, onToggle, onAddToDay, onChangeDay
             <b>{place.name}</b>
             {place.city ? (
               <span className="ct">
-                <G name="g-pin" />
                 <span className="cn">{place.city}</span>
               </span>
             ) : null}
