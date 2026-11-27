@@ -77,6 +77,7 @@ export interface TransportRow {
   stops?: number | null
   operator?: string | null
   platform?: string | null
+  seats?: string | null
   terminal?: string | null
   baggage?: string | null
   policy?: string | null
@@ -203,6 +204,7 @@ export function mapTransports(rows: TransportRow[], tripId: string): Transport[]
       stops: r.stops ?? undefined,
       operator: r.operator ?? undefined,
       platform: r.platform ?? undefined,
+      seats: r.seats ?? undefined,
       terminal: r.terminal ?? undefined,
       baggage: r.baggage ?? undefined,
       policy: r.policy ?? undefined,
@@ -363,12 +365,13 @@ export interface TransportInput {
   operator?: string
   platform?: string
   terminal?: string
+  seats?: string
   baggage?: string
   policy?: string
   checkinAt?: string
 }
 
-/** Colonne aggiunte dalle migrazioni 0019/0022: solo se servono (o se c'erano), così senza migrazione il salvataggio funziona come prima. */
+/** Colonne aggiunte dalle migrazioni 0019/0022/0058: solo se servono (o se c'erano), così senza migrazione il salvataggio funziona come prima. */
 export function transportExtras(i: TransportInput, old?: Transport) {
   const out: Record<string, unknown> = {}
   const put = (key: string, value: unknown, had: unknown) => {
@@ -384,6 +387,7 @@ export function transportExtras(i: TransportInput, old?: Transport) {
   put('operator', i.operator?.trim(), old?.operator)
   put('platform', i.platform?.trim(), old?.platform)
   put('terminal', i.terminal?.trim(), old?.terminal)
+  put('seats', i.seats?.trim(), old?.seats)
   put('baggage', i.baggage?.trim(), old?.baggage)
   put('policy', i.policy?.trim(), old?.policy)
   put('checkin_at', i.checkinAt, old?.checkinAt)

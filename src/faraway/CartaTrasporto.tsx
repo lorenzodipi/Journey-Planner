@@ -48,6 +48,7 @@ export function CartaTrasporto({ trip, transport: t, open, onToggle, onEdit, onD
     [tt('Operatore'), t.operator ?? ''],
     [tt('Terminal'), t.terminal ?? ''],
     [tt('Binario'), t.platform ?? ''],
+    [tt('Posti'), t.seats ?? ''],
     [tt('Passeggeri'), people.length ? <PersoneRiga trip={trip} ids={people.map((p) => p.id)} /> : ''],
     ...(lettura ? [] : [[tt('Prezzo'), manca ? tt('Non ancora inserito') : prezzo.persone > 1 && prezzo.aTesta !== null ? `${prezzo.persone} × ${formatMoney(prezzo.aTesta, cur)}` : formatMoney(prezzo.totale as number, cur)] as [string, ReactNode]]),
     [tt('Bagaglio'), t.baggage ?? ''],

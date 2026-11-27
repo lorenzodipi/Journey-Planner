@@ -66,6 +66,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
   const [operator, setOperator] = useState(t?.operator ?? '')
   const [platform, setPlatform] = useState(t?.platform ?? '')
   const [terminal, setTerminal] = useState(t?.terminal ?? '')
+  const [seats, setSeats] = useState(t?.seats ?? '')
   const [baggage, setBaggage] = useState(t?.baggage ?? '')
   const [policy, setPolicy] = useState(t?.policy ?? '')
   const [checkin, setCheckin] = useState(() => (t?.checkinAt ? instantToZoned(t.checkinAt, trip.timezone) : { date: '', time: '' }))
@@ -92,7 +93,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
     const input: TransportInput = {
       from, to, mode, departDate: dd, departTime: dt, arriveDate: ad, arriveTime: at, fromPos, toPos,
       cost: amount, currency, scope, bought: paid, refCode, notes,
-      title, stops: stops === 'nd' ? null : Number(stops), operator, platform, terminal, baggage, policy,
+      title, stops: stops === 'nd' ? null : Number(stops), operator, platform, terminal, seats, baggage, policy,
       paidBy: paid && amount ? (payers.length === 1 ? paidBy : undefined) : (t?.paidBy ?? undefined),
       payerIds: paid && amount && payers.length > 1 ? payers : paid && amount ? [] : (t?.payerIds ?? []),
       forTravelers: all.every((id) => people.includes(id)) ? [] : people,
@@ -185,6 +186,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
         <Gruppo titolo={tt('Biglietto')}>
           <Campo label={tt('Operatore')} value={operator} onChange={setOperator} placeholder={tt('Nome della compagnia')} />
           <Campo label={tt('Codice di prenotazione')} value={refCode} onChange={(v) => setRefCode(v.toUpperCase())} placeholder={tt('es. 4K7QX2')} autoComplete="off" />
+          <Campo label={tt('Posti a sedere')} value={seats} onChange={setSeats} maxLength={120} placeholder={tt('es. Carrozza 7, posti 12A e 12B')} autoComplete="off" />
         </Gruppo>
         <Gruppo titolo={tt('Regole e note')}>
           <Campo label={tt('Bagaglio')} value={baggage} onChange={setBaggage} placeholder={tt('es. 1 valigia grande')} />

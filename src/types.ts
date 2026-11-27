@@ -213,6 +213,8 @@ export interface Transport {
   operator?: string
   platform?: string
   terminal?: string
+  /** posti a sedere, testo libero («Carrozza 7, posti 12A e 12B»), dalla migrazione 0058 */
+  seats?: string
   baggage?: string
   policy?: string
   checkinAt?: string
