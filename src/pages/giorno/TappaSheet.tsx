@@ -246,7 +246,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
               <Campo
                 label={tt('Costo')}
                 icon="bag"
-                inputMode="decimal"
+                importo
                 value={cost}
                 onChange={setCost}
                 placeholder="0,00"

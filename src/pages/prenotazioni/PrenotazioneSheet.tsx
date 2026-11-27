@@ -209,7 +209,7 @@ export function PrenotazioneSheet({ trip, booking: b, open, onClose }: Props) {
         <Gruppo titolo={tt('Costo')}>
           <PerChi trip={trip} meId={me?.id} value={people} onChange={setWho} />
           <div className="fa-2c">
-            <Campo label={tt('Costo')} inputMode="decimal" value={cost} onChange={setCost} placeholder={tt('es. 45,00')} error={errors.cost} />
+            <Campo label={tt('Costo')} importo value={cost} onChange={setCost} placeholder={tt('es. 45,00')} error={errors.cost} />
             <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, b?.currency)} />
           </div>
           <IlCostoE value={scope} onChange={setScope} amount={amountNow} persone={people.length} currency={currency} />

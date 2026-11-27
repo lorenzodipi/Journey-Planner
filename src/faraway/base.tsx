@@ -8,6 +8,7 @@ import { cx } from './cx'
 import { apriSelettore } from '../lib/picker'
 import { Loader } from './Loader'
 import { Sv, type SvName } from './icons'
+import { dentroTastierino, risultato, Tastierino, useTastierino } from './Tastierino'
 import { t } from '../i18n'
 
 /* ---------------------------------------------------------------- Pulsante (Button) */
@@ -155,6 +156,12 @@ interface InputProps {
   /** Id di un <datalist> con i suggerimenti. */
   list?: string
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
+  /**
+   * Campo di un importo: sui telefoni apre il tastierino con le operazioni al posto della tastiera (come «Nuova spesa»);
+   * con mouse e tastiera si scrive il calcolo nel campo («120+35,50»). Lasciando il campo, o con Invio, il calcolo
+   * diventa il suo risultato. `decimali` e `unita` servono solo al risultato mostrato sopra i tasti.
+   */
+  importo?: boolean | { decimali?: number; unita?: string }
   enterKeyHint?: 'done' | 'go' | 'next' | 'search' | 'send'
   hideLabel?: boolean
   /** «i» in fondo alla riga dell'etichetta: apre un riquadro che spiega che cosa scrivere nel campo (stessa `Info` dei titoli). */
@@ -196,7 +203,17 @@ export function useFocoIniziale<T extends HTMLElement>(attivo: boolean | undefin
   return ref
 }
 
-export function Campo({ label, value, onChange, placeholder, type = 'text', inputMode, icon: ic, hint, error, positive, textarea, trailing, hideLabel, info, da00, onBlur, autoFocus, ...rest }: InputProps) {
+export function Campo({ label, value, onChange, placeholder, type = 'text', inputMode, icon: ic, hint, error, positive, textarea, trailing, hideLabel, info, da00, onBlur, autoFocus, importo, onKeyDown, ...rest }: InputProps) {
+  const touch = useTastierino()
+  const conTastierino = !!importo && touch && !textarea
+  const [tastiera, setTastiera] = useState(false)
+  const opz = typeof importo === 'object' ? importo : {}
+  // il calcolo («120+35,50») diventa il suo risultato
+  const risolvi = () => {
+    if (!importo) return
+    const r = risultato(value)
+    if (r !== null && r !== value) onChange(r)
+  }
   const id = useId()
   const foco = useFocoIniziale<HTMLInputElement>(autoFocus && !textarea)
   const focoTa = useFocoIniziale<HTMLTextAreaElement>(autoFocus && textarea)
@@ -225,11 +242,23 @@ export function Campo({ label, value, onChange, placeholder, type = 'text', inpu
         {textarea ? (
           <textarea ref={focoTa} id={id} value={value} placeholder={ph} onChange={(e) => onChange(e.currentTarget.value)} aria-invalid={error ? true : undefined} aria-describedby={described} maxLength={rest.maxLength} rows={3} />
         ) : (
-          <input ref={foco} id={id} type={type} inputMode={inputMode} value={mostrato} placeholder={ph} onChange={(e) => { setAnteprima(false); onChange(e.currentTarget.value) }} onBlur={() => { setAnteprima(false); onBlur?.() }} onClick={type === 'time' || type === 'date' ? (e) => { const el = e.currentTarget; if (da00 && type === 'time' && !value) flushSync(() => setAnteprima(true)); apriSelettore(el) } : undefined} aria-invalid={error ? true : undefined} aria-describedby={described} {...rest} />
+          <input ref={foco} id={id} type={type} inputMode={conTastierino ? 'none' : importo ? 'decimal' : inputMode} value={mostrato} placeholder={ph} onChange={(e) => { setAnteprima(false); onChange(e.currentTarget.value) }} onFocus={conTastierino ? () => setTastiera(true) : undefined} onBlur={(e) => { if (conTastierino && dentroTastierino(e.relatedTarget, e.currentTarget)) return; setAnteprima(false); risolvi(); setTastiera(false); onBlur?.() }} onKeyDown={(e) => { if (importo && e.key === 'Enter' && risultato(value) !== null) { e.preventDefault(); risolvi() } onKeyDown?.(e) }} onClick={type === 'time' || type === 'date' ? (e) => { const el = e.currentTarget; if (da00 && type === 'time' && !value) flushSync(() => setAnteprima(true)); apriSelettore(el) } : undefined} aria-invalid={error ? true : undefined} aria-describedby={described} {...rest} />
         )}
         {pickerVuoto ? <span className="ph" aria-hidden="true">{ph}</span> : null}
         {trailing}
       </span>
+      {tastiera ? (
+        <Tastierino
+          value={value}
+          onChange={onChange}
+          decimali={opz.decimali}
+          unita={opz.unita}
+          onFatto={() => {
+            setTastiera(false)
+            ;(document.activeElement as HTMLElement | null)?.blur()
+          }}
+        />
+      ) : null}
       {error ? (
         <span id={helpId} className="fa-help bad" role="alert">
           <Sv name="err" size={16} />

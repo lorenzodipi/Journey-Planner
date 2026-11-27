@@ -176,7 +176,7 @@ export function TrasportoSheet({ trip, transport: t, date, focus, open, onClose 
         <Gruppo titolo={tt('Costo')}>
           <PerChi trip={trip} meId={me?.id} value={people} onChange={setWho} />
           <div className="fa-2c">
-            <Campo label={tt('Costo')} inputMode="decimal" value={cost} onChange={setCost} placeholder={tt('es. 15,50')} error={errors.cost} autoFocus={focus === 'prezzo'} />
+            <Campo label={tt('Costo')} importo value={cost} onChange={setCost} placeholder={tt('es. 15,50')} error={errors.cost} autoFocus={focus === 'prezzo'} />
             <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, t?.currency)} />
           </div>
           <IlCostoE value={scope} onChange={setScope} amount={amountNow} persone={people.length} currency={currency} />

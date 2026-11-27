@@ -92,7 +92,7 @@ export function PagantiEditor({ trip, total, currency, rows, onRows, single, onS
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
-              <Campo label={t('Versa{v0}', { v0: r.id ? ` · ${first(ppl.find((p) => p.id === r.id)?.name ?? '')}` : '' })} inputMode="decimal" value={r.text} onChange={(v) => set(i, { text: v })} placeholder="0" trailing={<span>{currency}</span>} />
+              <Campo label={t('Versa{v0}', { v0: r.id ? ` · ${first(ppl.find((p) => p.id === r.id)?.name ?? '')}` : '' })} importo value={r.text} onChange={(v) => set(i, { text: v })} placeholder="0" trailing={<span>{currency}</span>} />
             </div>
             {rows.length > 1 ? (
               <PulsanteIcona icon="close" label={t('Togli questo pagante')} onPress={() => {
@@ -188,7 +188,7 @@ export function DivisioneEditor({ trip, meId, mode, onMode, who, onWho, vals, on
       ) : null}
       {mode !== 'equal' && who.length > 1
         ? who.map((id) => (
-            <Campo key={id} label={first(trip.travelers.find((p) => p.id === id)?.name ?? '')} inputMode="decimal" value={vals[id] ?? ''} onChange={(v) => scrivi(id, v)} placeholder="0" trailing={<span>{mode === 'percent' ? '%' : currency}</span>} />
+            <Campo key={id} label={first(trip.travelers.find((p) => p.id === id)?.name ?? '')} importo value={vals[id] ?? ''} onChange={(v) => scrivi(id, v)} placeholder="0" trailing={<span>{mode === 'percent' ? '%' : currency}</span>} />
           ))
         : null}
       <Help check={check} />

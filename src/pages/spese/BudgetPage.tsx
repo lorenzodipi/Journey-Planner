@@ -79,7 +79,7 @@ export function BudgetPage() {
 
   const form = (
     <form onSubmit={submit} noValidate style={{ display: 'grid', gap: 16 }}>
-      <Campo label={aPersona || !gruppo ? tt('Il mio budget') : tt('Budget del viaggio')} icon="bag" inputMode="decimal" value={text} onChange={setText} placeholder={tt('Per esempio {v0}', { v0: formatMoney(5000, cur) })} error={error} autoFocus={editing} />
+      <Campo label={aPersona || !gruppo ? tt('Il mio budget') : tt('Budget del viaggio')} icon="bag" importo value={text} onChange={setText} placeholder={tt('Per esempio {v0}', { v0: formatMoney(5000, cur) })} error={error} autoFocus={editing} />
       <Pulsante type="submit" isLoading={busy}>
         {mio || (!aPersona && trip.budgetLimit) ? tt('Salva il budget') : tt('Imposta il budget')}
       </Pulsante>
@@ -279,7 +279,7 @@ function BudgetAltrui({ tripId, travelerId, nome, valore, cur }: { tripId: strin
   }
   return (
     <form onSubmit={salva} noValidate style={{ display: 'grid', gap: 8, justifyItems: 'start' }}>
-      <div style={{ width: '100%' }}><Campo label={tt('Budget di {nome}', { nome })} icon="bag" inputMode="decimal" value={text} onChange={setText} placeholder={tt('Per esempio {v0}', { v0: formatMoney(1500, cur) })} error={error} /></div>
+      <div style={{ width: '100%' }}><Campo label={tt('Budget di {nome}', { nome })} icon="bag" importo value={text} onChange={setText} placeholder={tt('Per esempio {v0}', { v0: formatMoney(1500, cur) })} error={error} /></div>
       <Pulsante type="submit" size="sm" color="secondary" isLoading={busy}>
         {tt('Salva')}
       </Pulsante>

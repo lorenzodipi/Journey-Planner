@@ -411,7 +411,7 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
           <Campo
             label={tt('Il mio budget (facoltativo)')}
             icon="bag"
-            inputMode="decimal"
+            importo
             value={budget}
             onChange={setBudget}
             placeholder={tt('es. 3.000')}

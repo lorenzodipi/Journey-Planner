@@ -107,7 +107,7 @@ export function DichiaraSheet({ trip, toId, dovuto, onClose, expenseId }: { trip
         <p className="fa-m" style={{ margin: 0 }}>
           {tt('Devi {v0} a {v1}. Lo registro subito: {v2} lo vede e, se non torna, può contestarlo.', { v0: formatMoney(dovuto, cur), v1: first(trip, toId), v2: first(trip, toId) })}
         </p>
-        <Campo label={tt('Importo')} inputMode="decimal" value={text} onChange={(v) => (setText(v), setError(''))} trailing={<span>{cur}</span>} error={error || undefined} />
+        <Campo label={tt('Importo')} importo value={text} onChange={(v) => (setText(v), setError(''))} trailing={<span>{cur}</span>} error={error || undefined} />
         <Campo label={tt('Data')} type="date" value={data} onChange={setData} max={tripToday(trip)} />
       </form>
     </Foglio>

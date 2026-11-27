@@ -130,8 +130,8 @@ export function FiltriBilancio({ righe, nome, cur, filtri, onFiltri, ordine, onO
               <Campo label={t('Al')} type="date" value={filtri.al} onChange={(v) => set('al', v)} min={filtri.dal || undefined} />
             </div>
             <div className="fa-due">
-              <Campo label={t('Importo da')} inputMode="decimal" placeholder="0,00" value={filtri.min} onChange={(v) => set('min', v)} trailing={<span>{cur}</span>} />
-              <Campo label={t('Importo fino a')} inputMode="decimal" placeholder="0,00" value={filtri.max} onChange={(v) => set('max', v)} trailing={<span>{cur}</span>} />
+              <Campo label={t('Importo da')} importo placeholder="0,00" value={filtri.min} onChange={(v) => set('min', v)} trailing={<span>{cur}</span>} />
+              <Campo label={t('Importo fino a')} importo placeholder="0,00" value={filtri.max} onChange={(v) => set('max', v)} trailing={<span>{cur}</span>} />
             </div>
           </div>
         </Foglio>

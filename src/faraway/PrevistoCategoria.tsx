@@ -81,7 +81,7 @@ export function EditorPrevisto({
           <Campo
             label={gruppo ? tt('Il tuo previsto') : tt('Previsto')}
             icon="bag"
-            inputMode="decimal"
+            importo
             value={planned}
             onChange={setPlanned}
             placeholder={tt('Per esempio {v0}', { v0: formatMoney(c.mio.stima || 100, cur) })}
@@ -93,7 +93,7 @@ export function EditorPrevisto({
               key={p.travelerId}
               label={tt('Previsto di {nome}', { nome: nome(p.travelerId) })}
               icon="bag"
-              inputMode="decimal"
+              importo
               value={altri[p.travelerId] ?? ''}
               onChange={(v) => setAltri((a) => ({ ...a, [p.travelerId]: v }))}
               placeholder={tt('Per esempio {v0}', { v0: formatMoney(p.stima || 100, cur) })}
@@ -105,7 +105,7 @@ export function EditorPrevisto({
         <Campo
           label={tt('Previsto')}
           icon="bag"
-          inputMode="decimal"
+          importo
           value={planned}
           onChange={setPlanned}
           placeholder={tt('Per esempio {v0}', { v0: formatMoney(c.planned || 100, cur) })}

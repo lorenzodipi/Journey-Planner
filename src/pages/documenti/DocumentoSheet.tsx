@@ -84,7 +84,7 @@ export function CostoDocumento({ trip, value, onChange }: { trip: Trip; value: C
   const set = (p: Partial<CostoDoc>) => onChange({ ...value, ...p })
   return (
     <div className="fa-fld" role="group" aria-label={tt('Costo del documento')} style={{ gap: 16 }}>
-      <Campo label={tt('Costo (facoltativo)')} value={value.importo} onChange={(v) => set({ importo: v })} inputMode="decimal" placeholder={tt('es. 45,90')} hint={tt('Se lo scrivi, diventa una spesa del viaggio.')} />
+      <Campo label={tt('Costo (facoltativo)')} value={value.importo} onChange={(v) => set({ importo: v })} importo placeholder={tt('es. 45,90')} hint={tt('Se lo scrivi, diventa una spesa del viaggio.')} />
       {value.importo.trim() ? (
         <>
           <div className="fa-fld" role="group" aria-label={tt('Valuta')}>

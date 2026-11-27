@@ -223,7 +223,7 @@ export function AlloggioSheet({ trip, stay: s, open, onClose }: Props) {
         <Gruppo titolo={t('Costo')}>
           <PerChi trip={trip} meId={me?.id} value={people} onChange={setWho} />
           <div className="fa-2c">
-            <Campo label={t('Costo')} inputMode="decimal" value={cost} onChange={setCost} placeholder={t('es. 450,00')} error={errors.cost} />
+            <Campo label={t('Costo')} importo value={cost} onChange={setCost} placeholder={t('es. 450,00')} error={errors.cost} />
             <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, s?.currency)} />
           </div>
           <span className="fa-help" style={{ marginTop: -8 }}>{t('Per tutto il soggiorno{aTesta}.', { aTesta })}</span>
