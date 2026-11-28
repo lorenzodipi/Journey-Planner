@@ -28,7 +28,7 @@ import type { BookingInput, ChecklistInput } from '../lib/planningData'
 import type { BudgetInput, ExpenseInput } from '../lib/moneyData'
 import type { FlightInput, StayInput, TransportInput } from '../lib/logistics'
 import type { InvitedInput, ItemInput, PlaceInput, TravelerInput, TripInput, TripPeople } from '../lib/tripApi'
-import type { Booking, BudgetItem, DocKind, Visibilita, ChecklistItem, DayItem, Expense, ExpenseShare, Flight, ItemStatus, MezzoTratto, PlacePref, PlaceStatus, ReceivedInvite, SplitMode, Trip, Stay, TicketCode, TicketKind } from '../types'
+import type { Booking, BudgetItem, DocKind, Visibilita, ChecklistItem, DayItem, Expense, ExpensePayer, ExpenseShare, Flight, ItemStatus, MezzoTratto, PlacePref, PlaceStatus, ReceivedInvite, SplitMode, Trip, Stay, TicketCode, TicketKind } from '../types'
 import { schema } from '../lib/schema'
 import { t as tt } from '../i18n'
 
@@ -39,6 +39,8 @@ export interface ItemCost {
   amount: number
   currency: string
   paidBy: string | null
+  /** più paganti con la cifra di ciascuno (la somma fa l'importo); assente = un solo pagante, `paidBy` */
+  payers?: ExpensePayer[]
   /** tra chi si divide (vuoto = tutti) */
   travelerIds: string[]
   category: string
@@ -776,7 +778,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
         amount: cost.amount,
         currency: cost.currency,
         fxRate: null,
-        paidBy: cost.paidBy,
+        paidBy: cost.payers?.length ? (cost.payers[0].travelerId ?? cost.paidBy) : cost.paidBy,
+        ...(cost.payers?.length ? { payers: cost.payers } : {}),
         spentDate: day.date,
         notes: cost.notes ?? '',
         travelerIds: cost.travelerIds.length > 0 ? cost.travelerIds : trip.travelers.map((t) => t.id),

@@ -9,8 +9,8 @@ import { formatDuration, parseDuration } from '../../lib/duration'
 import { formatMoney, parseAmount, round2, tripCurrencies } from '../../lib/money'
 import type { ItemInput } from '../../lib/tripApi'
 import { categoriaDaTappa } from '../../lib/ricevuta'
-import { checkSplit } from '../../lib/ripartizione'
-import { DivisioneEditor, sharesFrom } from '../spese/SpesaAvanzata'
+import { checkPayers, checkSplit } from '../../lib/ripartizione'
+import { DivisioneEditor, PagantiEditor, payersFromRows, sharesFrom, type PayRow } from '../spese/SpesaAvanzata'
 import { durata } from '../../lib/tappa'
 import { useTrips } from '../../state/trip'
 import { useMe } from '../../state/me'
@@ -19,6 +19,7 @@ import { schema } from '../../lib/schema'
 import { disallineamenti, prenotazioniFisse } from '../../lib/vincoli'
 import { Banner, Campo, Chip, Interruttore, Pulsante } from '../../faraway/base'
 import { CampoDurata } from '../../faraway/CampoDurata'
+import { CampoValuta } from '../../faraway/CampoValuta'
 import { Foglio, useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { UltimaModifica } from '../../faraway/UltimaModifica'
@@ -58,6 +59,11 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
   const [cost, setCost] = useState(linked ? String(linked.amount).replace('.', ',') : '')
   const [currency, setCurrency] = useState(linked?.currency ?? trip.localCurrency ?? trip.baseCurrency)
   const [paidBy, setPaidBy] = useState(linked?.paidBy ?? me?.id ?? trip.travelers[0]?.id ?? '')
+  // più paganti con la cifra di ciascuno, come in Spese; `null` = una persona sola (quella di «Chi ha pagato»)
+  const [payRows, setPayRows] = useState<PayRow[] | null>(() =>
+    linked?.payers && linked.payers.length > 1 ? linked.payers.map((p) => ({ id: p.travelerId, text: String(p.amount).replace('.', ','), manuale: true })) : null,
+  )
+  const [erroreChi, setErroreChi] = useState<string | undefined>()
   // per chi e come si divide il costo, come in Spese (uguali, in %, a importi): `who` è l'elenco esplicito, tutti = nessuna scelta
   const tutti = trip.travelers.map((p) => p.id)
   const [who, setWho] = useState<string[]>(item?.participants?.length ? item.participants : tutti)
@@ -109,7 +115,12 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
     const minutes = parseDuration(duration)
     if (Number.isNaN(minutes)) return setError(tt('La durata non è chiara: scrivi per esempio 45min o 1h 30min.'))
     if (cost.trim() && (amount === null || amount < 0)) return setError(tt('Il costo non è chiaro: scrivi un importo, per esempio 12,50.'))
-    if (amount && !paidBy) return setError(tt('Manca chi ha pagato. Scegli una persona.'))
+    const paganti = payRows ? payersFromRows(payRows) : []
+    if (amount && payRows) {
+      // il motivo è scritto in rosso sotto «Chi ha pagato»
+      if (payRows.some((r) => !r.id) || !checkPayers(amount, paganti, currency).ok) return setError(null)
+    } else if (amount && !paidBy) return setErroreChi(tt('Manca chi ha pagato. Scegli una persona.'))
+    setErroreChi(undefined)
     if (trip.travelers.length > 1 && who.length === 0) return setError(tt('Scegli almeno una persona.'))
     if (amount && divisa) {
       // il motivo è già scritto (in rosso) sotto le quote: non lo ripeto in fondo
@@ -136,7 +147,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
     if (!message && schema.timeLock && cambiaVincolo) message = await t.setItemLock(id, vincolata && time ? 'locked' : 'flexible', 'manual')
     if (!message && (amount || linked)) {
       const catLabel = linked?.category || categoriaDaTappa(trip.categories.find((c) => c.id === categoryId)?.label ?? '')
-      message = await t.saveItemCost(trip.id, id, amount ? { amount, currency, paidBy, travelerIds: partecipanti, category: catLabel, notes: linked?.notes, splitMode: divisa ? mode : 'equal', ...(divisa ? { shares: sharesFrom(mode, who, vals) } : {}) } : null)
+      message = await t.saveItemCost(trip.id, id, amount ? { amount, currency, paidBy: payRows ? (paganti[0]?.travelerId ?? paidBy) : paidBy, ...(payRows ? { payers: paganti } : {}), travelerIds: partecipanti, category: catLabel, notes: linked?.notes, splitMode: divisa ? mode : 'equal', ...(divisa ? { shares: sharesFrom(mode, who, vals) } : {}) } : null)
     }
     setBusy(false)
     if (message) setError(message)
@@ -247,37 +258,14 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
         {/* costo, chi ha pagato e come dividere: uguali in «Aggiungi tappa» e in «Modifica tappa» */}
         <>
           <div className="fa-2c">
-            <Campo
-              label={tt('Costo')}
-              icon="bag"
-              importo
-              value={cost}
-              onChange={setCost}
-              placeholder="0,00"
-              trailing={
-                <select aria-label={tt('Valuta')} value={currency} onChange={(e) => setCurrency(e.currentTarget.value)} style={{ flex: 'none', width: 'auto', fontWeight: 600 }}>
-                  {tripCurrencies(trip, currency).map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              }
-            />
-            <div className="fa-fld">
-              <label htmlFor="pagato-da">{tt('Pagato da')}</label>
-              <span className="fa-in">
-                <Sv name="user" size={20} />
-                <select id="pagato-da" value={paidBy} onChange={(e) => setPaidBy(e.currentTarget.value)}>
-                  {trip.travelers.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </span>
-            </div>
+            <Campo label={tt('Costo')} icon="bag" importo value={cost} onChange={setCost} placeholder="0,00" />
+            <CampoValuta value={currency} onChange={setCurrency} valute={tripCurrencies(trip, currency)} />
           </div>
+          {cost.trim() ? (
+            <PagantiEditor trip={trip} total={amount} currency={currency} rows={payRows} onRows={setPayRows} single={paidBy} onSingle={(pid) => (setPaidBy(pid), setErroreChi(undefined))} error={erroreChi} titolo={tt('Chi ha pagato')} />
+          ) : (
+            <span className="fa-help">{tt('Con un costo compare «Chi ha pagato».')}</span>
+          )}
           {trip.travelers.length > 1 ? (
             <DivisioneEditor trip={trip} meId={me?.id} mode={mode} onMode={setMode} who={who} onWho={setWho} vals={vals} onVals={setVals} total={amount} currency={currency} />
           ) : null}
