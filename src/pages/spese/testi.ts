@@ -26,13 +26,15 @@ export function pagataDa(e: Pick<SpesaVista, 'paidBy' | 'payers'>, travelers: re
   return tt('{v0} da {who}', { v0: maiuscola ? tt('Pagata') : tt('pagata'), who })
 }
 
-/** Seconda riga della spesa: «3 notti · pagata da Giorgio · per tutti». */
-export function rigaSpesa(e: SpesaVista, trip: Pick<Trip, 'travelers' | 'stays'>, me: string | undefined): string {
+const maiuscola = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+/** Righe sotto il nome della spesa, sempre su due linee fisse (se c'è scritto qualcosa):
+ *  «Pagata da Giorgio e da te» / «Per tutti»; per un alloggio «3 notti · pagata da Giorgio» / «Per tutti». */
+export function righeSpesa(e: SpesaVista, trip: Pick<Trip, 'travelers' | 'stays'>, me: string | undefined): string[] {
   const stay = e.source?.kind === 'stay' ? trip.stays.find((s) => s.id === e.source?.id) : undefined
   const nights = stay ? daysBetween(stay.checkIn, stay.checkOut) : 0
-  const parts = [nights > 0 ? `${nights} ${nights === 1 ? tt('notte') : tt('notti')}` : '', pagataDa(e, trip.travelers, me, !nights), perChi(e, trip.travelers, me)].filter(Boolean)
-  const s = parts.join(' · ')
-  return s.charAt(0).toUpperCase() + s.slice(1)
+  const prima = [nights > 0 ? `${nights} ${nights === 1 ? tt('notte') : tt('notti')}` : '', pagataDa(e, trip.travelers, me, !nights)].filter(Boolean).join(' · ')
+  return [prima, perChi(e, trip.travelers, me)].filter(Boolean).map(maiuscola)
 }
 
 const wdm = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' })

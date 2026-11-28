@@ -27,7 +27,7 @@ import { useUnaAperta } from '../../faraway/Righe'
 import { Affianca, BarraIndietro, Schermata } from '../../faraway/shell'
 import { VuotoFiltro } from '../../faraway/Stati'
 import { SpesaSheet } from './SpesaSheet'
-import { giornoSpese, inQuanti, pagataDa, rigaSpesa, sorgente } from './testi'
+import { giornoSpese, inQuanti, pagataDa, righeSpesa, sorgente } from './testi'
 import { LINGUA, nomeCategoria, t as tt } from '../../i18n'
 
 type Vista = 'tutti' | 'mie'
@@ -218,9 +218,11 @@ export function Dettaglio() {
                       <span className="t" style={{ display: 'block' }}>
                         {e.label}
                       </span>
-                      <span className="s" style={{ display: 'block' }}>
-                        {coda ? `${attesa ? tt('In attesa di invio') : tt('Salvata')} · ${importo}` : rigaSpesa(e, trip, me?.id)}
-                      </span>
+                      {(coda ? [`${attesa ? tt('In attesa di invio') : tt('Salvata')} · ${importo}`] : righeSpesa(e, trip, me?.id)).map((riga) => (
+                        <span key={riga} className="s" style={{ display: 'block' }}>
+                          {riga}
+                        </span>
+                      ))}
                     </span>
                     <span className="end">
                       {coda ? (
