@@ -49,7 +49,7 @@ describe('dayMovements', () => {
 
 describe('dayExpenses', () => {
   const e = (id: string, spentAt: string, dayId?: string): Expense => ({ id, label: id, amount: 1, currency: 'EUR', spentAt, dayId, shares: [] })
-  it('per giorno collegato o per data nel fuso del viaggio', () => {
+  it('per giorno collegato o per data nel fuso del viaggio, le più recenti in alto', () => {
     const trip = {
       timezone: 'Asia/Tokyo',
       expenses: [
@@ -59,7 +59,7 @@ describe('dayExpenses', () => {
         e('altro-collegata', '2026-11-23T03:00:00Z', 'd3'),
       ],
     }
-    expect(dayExpenses(trip, day).map((x) => x.id)).toEqual(['per-data', 'collegata'])
+    expect(dayExpenses(trip, day).map((x) => x.id)).toEqual(['collegata', 'per-data'])
   })
 })
 

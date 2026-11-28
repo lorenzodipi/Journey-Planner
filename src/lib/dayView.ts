@@ -1,6 +1,7 @@
 // Tutto ciò che riguarda un singolo giorno: spostamenti, alloggio, spese, prenotazioni e cose da fare.
 
 import { dateInZone } from './flights'
+import { piuRecentiPrima } from './ordineSpese'
 import { eventsForDay, type DayEvent } from './today'
 import type { Booking, ChecklistItem, Day, Expense, Stay, Trip } from '../types'
 import { t as tt } from '../i18n'
@@ -42,7 +43,7 @@ export function dayStays(stays: Stay[], date: string): DayStays {
 export function dayExpenses(trip: Pick<Trip, 'timezone' | 'expenses'>, day: Pick<Day, 'id' | 'date'>): Expense[] {
   return trip.expenses
     .filter((e) => e.dayId === day.id || (!e.dayId && dateInZone(e.spentAt, trip.timezone) === day.date))
-    .sort((a, b) => a.spentAt.localeCompare(b.spentAt))
+    .sort(piuRecentiPrima)
 }
 
 /** Prenotazioni valide in quel giorno (da `validFrom` a `validTo`, o solo il giorno di inizio). */
