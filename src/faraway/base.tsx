@@ -203,6 +203,26 @@ export function useFocoIniziale<T extends HTMLElement>(attivo: boolean | undefin
   return ref
 }
 
+/** La X in fondo a un campo di ricerca con del testo: toglie tutto e rimette il cursore nel campo. */
+export function BottoneCancella({ campoId, onPulisci }: { campoId: string; onPulisci: () => void }) {
+  return (
+    <button
+      type="button"
+      className="fa-clear"
+      aria-label={t('Cancella il testo')}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={() => {
+        onPulisci()
+        document.getElementById(campoId)?.focus()
+      }}
+    >
+      <span aria-hidden="true">
+        <Sv name="close" size={14} />
+      </span>
+    </button>
+  )
+}
+
 export function Campo({ label, value, onChange, placeholder, type = 'text', inputMode, icon: ic, hint, error, positive, textarea, trailing, hideLabel, info, da00, onBlur, autoFocus, importo, onKeyDown, ...rest }: InputProps) {
   const touch = useTastierino()
   const conTastierino = !!importo && touch && !textarea
@@ -245,6 +265,7 @@ export function Campo({ label, value, onChange, placeholder, type = 'text', inpu
           <input ref={foco} id={id} type={type} inputMode={conTastierino ? 'none' : importo ? 'decimal' : inputMode} value={mostrato} placeholder={ph} onChange={(e) => { setAnteprima(false); onChange(e.currentTarget.value) }} onFocus={conTastierino ? () => setTastiera(true) : undefined} onBlur={(e) => { if (conTastierino && dentroTastierino(e.relatedTarget, e.currentTarget)) return; setAnteprima(false); risolvi(); setTastiera(false); onBlur?.() }} onKeyDown={(e) => { if (importo && e.key === 'Enter' && risultato(value) !== null) { e.preventDefault(); risolvi() } onKeyDown?.(e) }} onClick={type === 'time' || type === 'date' ? (e) => { const el = e.currentTarget; if (da00 && type === 'time' && !value) flushSync(() => setAnteprima(true)); apriSelettore(el) } : undefined} aria-invalid={error ? true : undefined} aria-describedby={described} {...rest} />
         )}
         {pickerVuoto ? <span className="ph" aria-hidden="true">{ph}</span> : null}
+        {type === 'search' && !textarea && value ? <BottoneCancella campoId={id} onPulisci={() => onChange('')} /> : null}
         {trailing}
       </span>
       {tastiera ? (

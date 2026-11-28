@@ -11,7 +11,7 @@ import { tripToday } from '../lib/today'
 import { useTrip } from '../state/trip'
 import { nowWeather, tripCities, useCityForecastsStato } from '../state/cityForecast'
 import { Ic } from '../ui/Sprite'
-import { PulsanteIcona, useFocoIniziale } from '../faraway/base'
+import { BottoneCancella, PulsanteIcona, useFocoIniziale } from '../faraway/base'
 import { soloLettura } from '../lib/ruolo'
 import { cx } from '../faraway/cx'
 import { BarraGrande, Schermata } from '../faraway/shell'
@@ -143,6 +143,7 @@ function ElencoGiorni({ scelto }: { scelto?: string }) {
             <span className="fa-in">
               <Sv name="search" size={20} />
               <input ref={focoRicerca} id="cerca-giorni" type="search" value={query} onChange={(e) => setQuery(e.currentTarget.value)} placeholder={t('Città, tappa o titolo')} enterKeyHint="search" />
+              {query ? <BottoneCancella campoId="cerca-giorni" onPulisci={() => setQuery('')} /> : null}
             </span>
           </div>
         ) : null
