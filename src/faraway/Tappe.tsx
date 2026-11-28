@@ -11,6 +11,8 @@ import { Fragment, useRef, useState } from 'react'
 import { useTrascinaTappe } from './useTrascinaTappe'
 import { categoryIcon } from '../lib/categoryIcon'
 import { formatMoney, round2 } from '../lib/money'
+import { fxOf } from '../lib/budget'
+import { personeDelleSpese, speseDellaTappa, totaleSpese } from '../lib/speseTappa'
 import { mapsLinkFor } from '../lib/mapsUrl'
 import { openingFor } from '../lib/opening'
 import { minutiDiRitardo, puoSlittare } from '../lib/slitta'
@@ -18,7 +20,7 @@ import { daAggiornare, durata, fase, riepilogo, rigaOrario, statoOf, statusOf, T
 import { itemDuration } from '../lib/duration'
 import { Sv } from './icons'
 import { discOf, initials } from '../state/me'
-import type { Day, DayItem, Expense, ItemStatus, Place, Trip } from '../types'
+import type { Day, DayItem, ItemStatus, Place, Trip } from '../types'
 import { cx } from './cx'
 import { t, tc } from '../i18n'
 
@@ -77,10 +79,6 @@ export function glyphOf(trip: Trip, item: DayItem): string {
   if (item.kind === 'meal') return 'g-cat-food'
   const icon = categoryIcon(cat)
   return icon === 'pin' ? 'g-visit' : `g-cat-${icon}`
-}
-
-export function linkedExpense(trip: Trip, item: DayItem): Expense | undefined {
-  return trip.expenses.find((e) => e.source?.kind === 'day_item' && e.source.id === item.id)
 }
 
 /** Sottotitolo della tappa: «Nishiki · 45 min», «Kitayama · in quattro». */
@@ -214,7 +212,10 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
           const open = openId === item.id
           const seg = segments.get(item.id)
           const prevF = idx > 0 ? phases[idx - 1] : null
-          const exp = linkedExpense(trip, item)
+          const spese = speseDellaTappa(trip, item.id)
+          const exp = spese.length === 1 ? spese[0] : undefined
+          const tot = spese.length > 1 ? totaleSpese(spese, fxOf(trip)) : null
+          const haSpese = spese.length > 0
           const ndCls = f === 'done' ? 'done' : f === 'skip' ? 'skip' : f === 'now' ? 'now' : 'next'
           const ndIcon = f === 'done' ? 'g-check' : f === 'skip' ? 'g-minus' : glyphOf(trip, item)
           const orario = rigaOrario(item, place, ctx)
@@ -228,11 +229,11 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
           const puoiTrascinare = !!onReorder && !readOnly && !item.time && items.length > 1
           const dy = spostamento(idx)
           const stile = trascinata !== null ? ({ transform: `translateY(${dy}px)`, transition: idx === trascinata ? 'none' : undefined } as const) : undefined
-          const people = exp ? (exp.shares.length > 0 ? exp.shares.map((s) => s.travelerId) : trip.travelers.map((p) => p.id)) : []
+          const people = haSpese ? personeDelleSpese(spese, trip.travelers.map((p) => p.id)) : []
           // in sola lettura (visualizzatore) non ci sono stato e pulsanti: se aprendo si vedrebbe solo l'ora già scritta
           // in alto, la tappa non si apre (niente freccia)
           const orarioUtile = !!orario && (orario.sub != null || opening != null || orario.main !== (item.time ?? '').slice(0, 5))
-          const apribile = !readOnly || orarioUtile || !!place || !!item.note || !!exp
+          const apribile = !readOnly || orarioUtile || !!place || !!item.note || haSpese
           // mentre si trascina, una card aperta si richiude (è piccola come le altre); al rilascio torna aperta
           const aperta = open && apribile && trascinata !== idx
           // passata e ancora «Da fare»: bordo e «!» perché qualcuno ne aggiorni lo stato
@@ -349,7 +350,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                       </Pulsante>
                     </div>
                   ) : null}
-                  {aperta && f === 'now' && exp ? (
+                  {aperta && f === 'now' && (exp || tot) ? (
                     <div className="foot">
                       <span className="av">
                         {people.slice(0, 4).map((id) => (
@@ -358,7 +359,7 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                           </span>
                         ))}
                       </span>
-                      <span className="amt">{formatMoney(exp.amount, exp.currency)}</span>
+                      <span className="amt">{exp ? formatMoney(exp.amount, exp.currency) : tot ? formatMoney(tot.amount, tot.currency) : null}</span>
                     </div>
                   ) : null}
                   {aperta ? (
@@ -387,6 +388,12 @@ export function TappeLista({ trip, day, header, ctx, segments, openId, onToggle,
                           icon="g-budget"
                           main={formatMoney(exp.amount, exp.currency)}
                           sub={[exp.paidBy ? t('Pagato da {v0}', { v0: payer.get(exp.paidBy) ?? '—' }) : null, people.length > 1 ? t('{v0} a testa', { v0: formatMoney(round2(exp.amount / people.length), exp.currency) }) : null, exp.notes].filter(Boolean).join(' · ')}
+                        />
+                      ) : spese.length > 1 && !(f === 'now' && tot) ? (
+                        <Riga
+                          icon="g-budget"
+                          main={tot ? formatMoney(tot.amount, tot.currency) : t('{n} spese', { n: spese.length })}
+                          sub={spese.map((e) => `${e.label} ${formatMoney(e.amount, e.currency)}`).join(' · ')}
                         />
                       ) : null}
                       {readOnly ? null : (

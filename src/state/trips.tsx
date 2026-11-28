@@ -1,3 +1,4 @@
+import { speseDellaTappa } from '../lib/speseTappa'
 import { impostaIconeScelte } from '../lib/categoryIcon'
 import { createContext } from 'react'
 import type { ReactNode } from 'react'
@@ -48,6 +49,9 @@ export interface ItemCost {
   /** come si divide (uguali, in %, a importi), come in Spese; con `percent`/`fixed` le quote in `shares` */
   splitMode?: SplitMode
   shares?: ExpenseShare[]
+  /** nome e giorno della spesa: assenti = quelli della tappa (una spesa collegata dal foglio spesa tiene i suoi) */
+  label?: string
+  spentDate?: string
 }
 
 /** Le preferenze del viaggio con quelle appena toccate sopra (solo per i luoghi di questo viaggio). */
@@ -769,18 +773,21 @@ export function TripProvider({ children }: { children: ReactNode }) {
       const day = trip.days.find((d) => d.items.some((i) => i.id === itemId))
       const item = day?.items.find((i) => i.id === itemId)
       if (!day || !item) return Promise.resolve(tt('Tappa non trovata.'))
-      const linked = trip.expenses.find((e) => e.source?.kind === 'day_item' && e.source.id === itemId)
-      if (!cost) return linked ? queued(tt('Spesa'), [{ k: 'update', table: 'expenses', id: linked.id, patch: deletedPatch(true) }], { t: 'expense.deleted', id: linked.id, deleted: true }) : Promise.resolve(null)
+      const tutte = speseDellaTappa(trip, itemId)
+      // senza costo (o tappa eliminata) se ne vanno tutte le spese collegate; con un costo la tappa ne ha al massimo una
+      if (!cost) return tutte.reduce<Result>(async (prima, e) => (await prima) ?? queued(tt('Spesa'), [{ k: 'update', table: 'expenses', id: e.id, patch: deletedPatch(true) }], { t: 'expense.deleted', id: e.id, deleted: true }), Promise.resolve(null))
+      if (tutte.length > 1) return Promise.resolve(tt('Questa tappa ha più spese collegate: modificale in Spese.'))
+      const linked = tutte[0]
       if (!schema.itemStatus) return Promise.resolve(api.MIGRATION_0017)
       const input: ExpenseInput = {
-        label: item.title,
+        label: cost.label ?? item.title,
         category: cost.category,
         amount: cost.amount,
         currency: cost.currency,
         fxRate: null,
         paidBy: cost.payers?.length ? (cost.payers[0].travelerId ?? cost.paidBy) : cost.paidBy,
         ...(cost.payers?.length ? { payers: cost.payers } : {}),
-        spentDate: day.date,
+        spentDate: cost.spentDate ?? day.date,
         notes: cost.notes ?? '',
         travelerIds: cost.travelerIds.length > 0 ? cost.travelerIds : trip.travelers.map((t) => t.id),
         ...(cost.splitMode ? { splitMode: cost.splitMode } : {}),

@@ -24,6 +24,8 @@ import { useTrips } from '../../state/trip'
 import type { Expense, ExpenseFile, SplitMode, Trip } from '../../types'
 import { Campo, Chip, Pulsante } from '../../faraway/base'
 import { Foglio } from '../../faraway/Foglio'
+import { CampoScelta } from '../../faraway/CampoScelta'
+import { giornoDellaTappa, scelteTappa } from '../../lib/speseTappa'
 import { Riquadri } from '../../faraway/Moduli'
 import { Sv } from '../../faraway/icons'
 import { inQuanti } from './testi'
@@ -138,6 +140,15 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
   // la valuta del paese di oggi sta davanti alle altre (più paesi, #35)
   // giorno della spesa: oggi se non lo cambi; si può scegliere qualsiasi giorno, anche passato (una spesa dimenticata ieri)
   const [data, setData] = useState(() => (expense ? dateInZone(expense.spentAt, trip.timezone) : tripToday(trip)))
+  // tappa collegata (0061): solo le spese scritte a mano o già collegate a una tappa; quelle di alloggi, voli… restano della loro voce
+  const [tappa, setTappa] = useState(expense?.source?.kind === 'day_item' ? expense.source.id : '')
+  const conTappa = (!expense?.source || expense.source.kind === 'day_item') && trip.days.some((d) => d.items.length > 0)
+  const sceglieTappa = (id: string) => {
+    setTappa(id)
+    // su una spesa nuova la data va al giorno della tappa (si può cambiare); una spesa già salvata tiene la sua
+    const g = id && !expense ? giornoDellaTappa(trip, id) : undefined
+    if (g) setData(g.date)
+  }
   const delGiorno = valutaDelGiorno(trip, expense ? dateInZone(expense.spentAt, trip.timezone) : tripToday(trip))
   const others = tripCurrencies(trip, expense?.currency).filter((c) => c !== base).sort((a, b) => Number(b === delGiorno) - Number(a === delGiorno))
   const [other, setOther] = useState<string | null>(expense && expense.currency !== base ? expense.currency : (others[0] ?? null))
@@ -258,7 +269,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
       spentDate: data || tripToday(trip),
       notes: notes.trim(),
       travelerIds: people,
-      ...(expense?.source ? { source: expense.source } : {}),
+      ...(expense?.source && expense.source.kind !== 'day_item' ? { source: expense.source } : tappa ? { source: { kind: 'day_item' as const, id: tappa } } : expense?.source ? { source: null } : {}),
     }
     const message = expense ? await t.updateExpense(trip.id, expense, input) : await t.createExpense(trip.id, input)
     setBusy(false)
@@ -287,6 +298,7 @@ export function SpesaSheet({ trip, expense, open, onClose, category: cat0 }: Pro
       <form id="spesa-form" className="frm" onSubmit={submit} noValidate>
         <Campo label={tt('Nome della spesa')} value={label} onChange={setLabel} placeholder={tt('es. Cena al ristorante')} maxLength={120} error={errors.label} />
         <Campo label={tt('Data')} type="date" value={data} onChange={setData} />
+        {conTappa ? <CampoScelta label={tt('Tappa')} value={tappa} onChange={sceglieTappa} options={scelteTappa(trip)} /> : null}
         <div className="fa-fld">
           <span>{tt('Importo')}</span>
           {others.length > 1 ? (

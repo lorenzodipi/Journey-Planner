@@ -18,6 +18,7 @@ export function describeError(error: unknown): string {
   if (/row-level security|permission denied/i.test(message) || code === '42501') return t('Non hai il permesso per questa operazione.')
   if (/jwt expired|invalid jwt|refresh token|not authenticated|auth session missing/i.test(message)) return t('La sessione è scaduta: esci e rientra, poi riprova.')
   if (/could not find the (function|'quantity' column)/i.test(message)) return t('Manca un aggiornamento del database: esegui il file supabase/migrations/0006_traveler_accounts.sql nel SQL Editor di Supabase.')
+  if (/expenses_source_unique/i.test(message)) return t('Questa voce ha già la sua spesa collegata.')
   if (/duplicate key/i.test(message) || code === '23505') return t('Esiste già un elemento uguale.')
   if (/trips_dates_ok/i.test(message)) return t('La data di fine non può essere prima di quella di inizio.')
   // messaggi dell'app che nominano il database (migrazioni, file JSON): passano così come sono

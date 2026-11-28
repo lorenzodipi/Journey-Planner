@@ -23,7 +23,13 @@ import { CampoValuta } from '../../faraway/CampoValuta'
 import { Foglio, useConferma } from '../../faraway/Foglio'
 import { Sv } from '../../faraway/icons'
 import { UltimaModifica } from '../../faraway/UltimaModifica'
-import { nomeCategoria, t as tt } from '../../i18n'
+import { LOCALE, nomeCategoria, t as tt } from '../../i18n'
+import { dateInZone } from '../../lib/flights'
+import { fxOf } from '../../lib/budget'
+import { iconaSpesa } from '../../lib/ricevuta'
+import { speseDellaTappa, totaleSpese } from '../../lib/speseTappa'
+import { Ic } from '../../ui/Sprite'
+import type { Expense } from '../../types'
 
 const PARTS = ['', tt('da solo'), tt('in due'), tt('in tre'), tt('in quattro'), tt('in cinque'), tt('in sei'), tt('in sette'), tt('in otto')]
 export const inQuanti = (n: number) => PARTS[n] ?? tt('in {n}', { n })
@@ -47,7 +53,10 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
   const [nuovoId] = useState(() => crypto.randomUUID())
   const id = item?.id ?? nuovoId
   const place0 = item?.placeId ? trip.places.find((p) => p.id === item.placeId) : undefined
-  const linked = item ? trip.expenses.find((e) => e.source?.kind === 'day_item' && e.source.id === item.id) : undefined
+  // con una spesa collegata «Costo» la modifica; con più spese (collegate dal foglio spesa) si vede l'elenco, che si modifica in Spese
+  const spese = item ? speseDellaTappa(trip, item.id) : []
+  const linked = spese.length === 1 ? spese[0] : undefined
+  const piuSpese = spese.length > 1
   const me = useMe(trip)
 
   const [title, setTitle] = useState(item?.title ?? '')
@@ -146,8 +155,14 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
     const cambiaVincolo = item ? vincolata !== (item.timeLock === 'locked') : vincolata && !!time
     if (!message && schema.timeLock && cambiaVincolo) message = await t.setItemLock(id, vincolata && time ? 'locked' : 'flexible', 'manual')
     if (!message && (amount || linked)) {
+      // una spesa collegata dal foglio spesa tiene nome e giorno suoi; quella nata dal «Costo» segue la tappa
+      const giornoSpesa = linked ? dateInZone(linked.spentAt, trip.timezone) : undefined
+      const tieniSpesa = {
+        label: linked && item && linked.label.trim() !== item.title.trim() ? linked.label : title.trim(),
+        ...(giornoSpesa && giornoSpesa !== day.date ? { spentDate: giornoSpesa } : {}),
+      }
       const catLabel = linked?.category || categoriaDaTappa(trip.categories.find((c) => c.id === categoryId)?.label ?? '')
-      message = await t.saveItemCost(trip.id, id, amount ? { amount, currency, paidBy: payRows ? (paganti[0]?.travelerId ?? paidBy) : paidBy, ...(payRows ? { payers: paganti } : {}), travelerIds: partecipanti, category: catLabel, notes: linked?.notes, splitMode: divisa ? mode : 'equal', ...(divisa ? { shares: sharesFrom(mode, who, vals) } : {}) } : null)
+      message = await t.saveItemCost(trip.id, id, amount ? { ...tieniSpesa, amount, currency, paidBy: payRows ? (paganti[0]?.travelerId ?? paidBy) : paidBy, ...(payRows ? { payers: paganti } : {}), travelerIds: partecipanti, category: catLabel, notes: linked?.notes, splitMode: divisa ? mode : 'equal', ...(divisa ? { shares: sharesFrom(mode, who, vals) } : {}) } : null)
     }
     setBusy(false)
     if (message) setError(message)
@@ -256,6 +271,9 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
           </div>
         ) : null}
         {/* costo, chi ha pagato e come dividere: uguali in «Aggiungi tappa» e in «Modifica tappa» */}
+        {piuSpese ? (
+          <SpeseCollegate trip={trip} spese={spese} />
+        ) : (
         <>
           <div className="fa-2c">
             <Campo label={tt('Costo')} icon="bag" importo value={cost} onChange={setCost} placeholder="0,00" />
@@ -275,6 +293,7 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
             </span>
           ) : null}
         </>
+        )}
         <Campo label={tt('Note')} value={notes} onChange={setNotes} placeholder={tt('es. Scarpe comode')} />
         {item ? <UltimaModifica trip={trip} table="day_items" rowId={item.id} /> : null}
         {error ? (
@@ -287,5 +306,32 @@ export function TappaSheet({ trip, day, item, open, onClose, dayNumber }: Props)
       {confirmNode}
     {nodoConflitto}
     </Foglio>
+  )
+}
+
+/** Le spese collegate alla tappa quando sono più d'una: totale ed elenco; si modificano (o si scollegano) in Spese. */
+function SpeseCollegate({ trip, spese }: { trip: Trip; spese: Expense[] }) {
+  const tot = totaleSpese(spese, fxOf(trip))
+  return (
+    <div className="fa-fld">
+      <span id="spese-tappa">{tot ? tt('Spese collegate · {v0}', { v0: formatMoney(tot.amount, tot.currency) }) : tt('Spese collegate')}</span>
+      <ul className="fa-list" aria-labelledby="spese-tappa">
+        {spese.map((e) => (
+          <li key={e.id} className="fa-row" style={{ cursor: 'default' }}>
+            <Ic name={iconaSpesa(e)} size={44} />
+            <span>
+              <span className="t" style={{ display: 'block' }}>
+                {e.label}
+              </span>
+              <span className="s" style={{ display: 'block' }}>
+                {new Intl.DateTimeFormat(LOCALE, { weekday: 'short', day: 'numeric', month: 'short', timeZone: trip.timezone }).format(new Date(e.spentAt)).replace(/\./g, '')}
+              </span>
+            </span>
+            <span className="amt">{formatMoney(e.amount, e.currency)}</span>
+          </li>
+        ))}
+      </ul>
+      <span className="fa-help">{tt('Le spese si modificano in Spese. Per togliere il collegamento apri la spesa e scegli «Nessuna tappa».')}</span>
+    </div>
   )
 }

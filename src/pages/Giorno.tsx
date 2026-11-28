@@ -41,7 +41,8 @@ import { Affianca, BarraIndietro, Colonna, Schermata } from '../faraway/shell'
 import { useVistaAccanto } from '../faraway/mappaAccanto'
 import { GiorniAccanto } from './Giorni'
 import { Vuoto } from '../faraway/Stati'
-import { linkedExpense, TappeLista } from '../faraway/Tappe'
+import { TappeLista } from '../faraway/Tappe'
+import { speseDellaTappa } from '../lib/speseTappa'
 import { SpostaSheet } from './giorno/SpostaSheet'
 import { SpesaSheet } from './spese/SpesaSheet'
 import { iconaSpesa } from '../lib/ricevuta'
@@ -166,16 +167,16 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
   }
 
   const onDelete = async (item: DayItem) => {
-    const exp = linkedExpense(trip, item)
+    const spese = speseDellaTappa(trip, item.id).length
     const ok = await ask({
       title: tt('Eliminare la tappa?'),
-      message: conDipendenze(tt('{title} sparisce dal Giorno {n}{v2}. Non si può annullare.', { title: item.title, n, v2: exp ? tt(' e dalla spesa collegata') : '' }), dipendenze(trip, 'tappa', item.id)),
+      message: conDipendenze(tt('{title} sparisce dal Giorno {n}{v2}. Non si può annullare.', { title: item.title, n, v2: spese === 1 ? tt(' e dalla spesa collegata') : spese > 1 ? tt(' e dalle {n} spese collegate', { n: spese }) : '' }), dipendenze(trip, 'tappa', item.id)),
       confirm: tt('Elimina la tappa'),
       cancel: tt('Tieni la tappa'),
     })
     if (!ok) return
     let m = await t.setItemDeleted(item.id, true)
-    if (!m && exp) m = await t.saveItemCost(trip.id, item.id, null)
+    if (!m && spese > 0) m = await t.saveItemCost(trip.id, item.id, null)
     if (m) showToast(m)
     else setOpenId(null)
   }

@@ -1,4 +1,13 @@
 {
+ "{n} spese": "{n} expenses",
+ "Questa voce ha già la sua spesa collegata.": "This item already has its linked expense.",
+ "Nessuna tappa": "No stop",
+ "Giorno {n} · {data}": "Day {n} · {data}",
+ " e dalle {n} spese collegate": " and from the {n} linked expenses",
+ "Spese collegate · {v0}": "Linked expenses · {v0}",
+ "Spese collegate": "Linked expenses",
+ "Le spese si modificano in Spese. Per togliere il collegamento apri la spesa e scegli «Nessuna tappa».": "Expenses are edited in Expenses. To unlink one, open it and choose “No stop”.",
+ "Questa tappa ha più spese collegate: modificale in Spese.": "This stop has several linked expenses: edit them in Expenses.",
  "{v0}La spesa compare anche in Spese.": "{v0}The expense also appears in Expenses.",
  "iniziava {v0} fa": "started {v0} ago",
  "Siete in ritardo?": "Running late?",

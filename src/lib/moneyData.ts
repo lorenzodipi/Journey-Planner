@@ -276,8 +276,9 @@ export interface ExpenseInput {
   fxManual?: boolean
   /** Account di chi scrive il cambio a mano. */
   fxSetBy?: string
-  /** La voce da cui nasce la spesa (tappa con costo, alloggio, volo…): una sola spesa per voce. */
-  source?: { kind: ExpenseSourceKind; id: string }
+  /** La voce da cui nasce la spesa (tappa, alloggio, volo…). Una tappa può averne più d'una (0061), le altre voci una sola.
+   *  `null` toglie il collegamento (campo «Tappa» del foglio spesa su «Nessuna tappa»). */
+  source?: { kind: ExpenseSourceKind; id: string } | null
 }
 
 /** La spesa vale a mezzogiorno del giorno scelto, nel fuso del viaggio; il giorno del viaggio si ricava dalla data. */
@@ -300,6 +301,6 @@ export function expenseColumns(i: ExpenseInput, timeZone: string, days: Pick<Day
     spent_at: zonedToInstant(i.spentDate, '12:00', timeZone),
     day_id: days.find((d) => d.date === i.spentDate)?.id ?? null,
     notes: orNull(i.notes),
-    ...(i.source ? { source_kind: i.source.kind, source_id: i.source.id } : {}),
+    ...(i.source ? { source_kind: i.source.kind, source_id: i.source.id } : i.source === null ? { source_kind: null, source_id: null } : {}),
   }
 }

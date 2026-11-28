@@ -1142,6 +1142,25 @@ await asUser(null, 'postgres')
   await asUser(A)
 }
 
+// più spese per una tappa (0061): una tappa può averne più d'una, le altre voci restano a una sola
+{
+  await asUser(null, 'postgres')
+  await runMigration('0061_spese_tappa.sql')
+  await runMigration('0061_spese_tappa.sql') // si può rilanciare
+  const tp = (await db.query(`select id, (select trip_id from days where id=day_items.day_id) as trip_id from day_items limit 1`)).rows[0]
+  const sp = (lab) => db.query(`insert into expenses (trip_id,label,amount,currency,source_kind,source_id) values ($1,$2,10,'EUR','day_item',$3)`, [tp.trip_id, lab, tp.id])
+  await sp('Biglietto')
+  await sp('Audioguida')
+  check('0061 due spese sulla stessa tappa', Number((await db.query(`select count(*) from expenses where source_kind='day_item' and source_id=$1 and deleted_at is null`, [tp.id])).rows[0].count) === 2)
+  const voce = (await db.query(`select gen_random_uuid() as id`)).rows[0].id
+  await db.query(`insert into expenses (trip_id,label,amount,currency,source_kind,source_id) values ($1,'Hotel',100,'EUR','stay',$2)`, [tp.trip_id, voce])
+  await throws('0061 un alloggio resta a una sola spesa', () => db.query(`insert into expenses (trip_id,label,amount,currency,source_kind,source_id) values ($1,'Hotel bis',100,'EUR','stay',$2)`, [tp.trip_id, voce]))
+  await db.query(`update expenses set source_kind=null, source_id=null where label='Audioguida' and source_id=$1`, [tp.id])
+  check('0061 il collegamento si toglie', Number((await db.query(`select count(*) from expenses where source_kind='day_item' and source_id=$1`, [tp.id])).rows[0].count) === 1)
+  await db.query(`delete from expenses where source_id in ($1,$2) or label='Audioguida'`, [tp.id, voce])
+  await asUser(A)
+}
+
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione
 await asUser(null, 'service_role')
 const svcTrip = (await db.query(`select id from trips limit 1`)).rows
