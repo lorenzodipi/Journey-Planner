@@ -231,7 +231,40 @@ export function DettaglioGiorno({ id, incastrato }: { id: string; incastrato?: b
           {day.items.length > 0 || route.transports.length > 0 ? (
             <section className="fa-card xl" style={{ padding: 0, overflow: 'hidden' }} aria-label={tt('Mappa del giorno')}>
               <div className="fa-dm" style={{ position: 'relative' }}>
-                <DayMapPanel route={route} center={dayView.center} selectedId={openId} onSelect={onPin} height={240} bare stopState={stopState} />
+                <DayMapPanel
+                  route={route}
+                  center={dayView.center}
+                  selectedId={openId}
+                  onSelect={onPin}
+                  height={240}
+                  bare
+                  stopState={stopState}
+                  card={({ id, open, onToggle }) => {
+                    const item = day.items.find((i) => i.id === id)
+                    if (!item) return null
+                    // la stessa card dell'elenco, da sola: stato, orario, indirizzo, costo e azioni
+                    return (
+                      <TappeLista
+                        trip={trip}
+                        day={{ ...day, items: [item] }}
+                        header={null}
+                        ctx={ctx}
+                        segments={new Map()}
+                        openId={open ? id : null}
+                        onToggle={() => onToggle()}
+                        onStatus={(i, st) => void onStatus(i, st)}
+                        onEdit={(i) => setSheet({ kind: 'edit', item: i })}
+                        onMove={(i) => setSheet({ kind: 'move', item: i, postpone: false })}
+                        onDelete={(i) => void onDelete(i)}
+                        readOnly={lettura}
+                        fromHere={fromHere}
+                        onSlitta={(i) => setSheet({ kind: 'slitta', item: i })}
+                        meteoDi={(i) => meteoDellaTappa(previsioniCitta.get(cittaTappa(trip, day, i)), day.date, i.time)}
+                        highlight={null}
+                      />
+                    )
+                  }}
+                />
                 {route.stops.length > 1 ? (
                   <span className="fa-pillst soft" style={{ position: 'absolute', left: 12, top: 12, background: 'var(--surface-card)', zIndex: 2 }}>
                     {tt('Percorso migliore')}

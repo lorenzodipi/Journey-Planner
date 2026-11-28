@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Foglio } from '../faraway/Foglio'
 import { Sv } from '../faraway/icons'
 import { Loader } from '../faraway/Loader'
@@ -11,17 +11,21 @@ import { t as tt } from '../i18n'
 type DayMapComponent = typeof import('./MapView').DayMapView
 type PuntoMappa = Parameters<DayMapComponent>[0]['stops'][number]
 
-/** La mappa del giorno a schermo intero: un foglio a tutta altezza (tasto indietro ed Esc la chiudono) con la stessa mappa. Toccando un pin si evidenzia e compare il nome della tappa. */
-function MappaGrande({ View, stops, route, center, selectedId, onClose }: { View: DayMapComponent; stops: PuntoMappa[]; route: DayRoute; center: Trip['center']; selectedId?: string | null; onClose: () => void }) {
+/** La card di una tappa da mostrare in basso nella mappa grande (la stessa dell'elenco del giorno): `open`/`onToggle` la aprono e chiudono. */
+export type CardTappa = (p: { id: string; open: boolean; onToggle: () => void }) => ReactNode
+
+/** La mappa del giorno a schermo intero: un foglio a tutta altezza (tasto indietro ed Esc la chiudono) con la stessa mappa. Toccando un pin si evidenzia e in basso compare la card della tappa, come nella mappa dei Luoghi (senza `card`, solo il nome). */
+function MappaGrande({ View, stops, route, center, selectedId, card, onClose }: { View: DayMapComponent; stops: PuntoMappa[]; route: DayRoute; center: Trip['center']; selectedId?: string | null; card?: CardTappa; onClose: () => void }) {
   const [sel, setSel] = useState<string | null>(selectedId ?? null)
+  const [aperta, setAperta] = useState(false)
   const scelta = stops.find((x) => x.id === sel)
   const comandi = useRef<{ locate: () => void } | null>(null)
   return (
     <Foglio open title={tt('Mappa del giorno')} onClose={onClose} full className="fa-mgrande">
       <div className="fa-dmg">
-        <View stops={stops} lines={route.lines} ends={route.ends} center={center} selectedId={sel} onSelect={setSel} apiRef={comandi} />
-        {scelta ? <span className="fa-mapchip">{`${scelta.n} · ${scelta.name}`}</span> : null}
-        <div className="fa-mapctl giu">
+        <View stops={stops} lines={route.lines} ends={route.ends} center={center} selectedId={sel} onSelect={(id) => (setSel(id), setAperta(false))} apiRef={comandi} />
+        {scelta && !card ? <span className="fa-mapchip">{`${scelta.n} · ${scelta.name}`}</span> : null}
+        <div className={card ? 'fa-mapctl' : 'fa-mapctl giu'}>
           <button type="button" className="fa-ib" aria-label={tt('La mia posizione')} onClick={() => comandi.current?.locate()}>
             <Sv name="pin" size={22} />
           </button>
@@ -29,6 +33,7 @@ function MappaGrande({ View, stops, route, center, selectedId, onClose }: { View
             <Sv name="riduci" size={22} />
           </button>
         </div>
+        {scelta && card ? <div className="fa-mapcard fa-mapcard-giorno">{card({ id: scelta.id, open: aperta, onToggle: () => setAperta((v) => !v) })}</div> : null}
       </div>
     </Foglio>
   )
@@ -43,6 +48,7 @@ export function DayMapPanel({
   height = 260,
   bare = false,
   stopState,
+  card,
 }: {
   route: DayRoute
   center: Trip['center']
@@ -53,6 +59,8 @@ export function DayMapPanel({
   bare?: boolean
   /** Stato di ogni tappa (per id) per il colore dei pin. */
   stopState?: Map<string, 'done' | 'skip' | 'now' | 'next'>
+  /** La card di una tappa, per la mappa a schermo intero (toccando un pin compare in basso). */
+  card?: CardTappa
 }) {
   const [View, setView] = useState<DayMapComponent | null>(null)
   const [loadError, setLoadError] = useState(false)
@@ -110,7 +118,7 @@ export function DayMapPanel({
           </p>
         )}
       </div>
-      {grande && View ? <MappaGrande View={View} stops={punti} route={route} center={centro} selectedId={selectedId} onClose={() => setGrande(false)} /> : null}
+      {grande && View ? <MappaGrande View={View} stops={punti} route={route} center={centro} selectedId={selectedId} card={card} onClose={() => setGrande(false)} /> : null}
 
       {!bare && transports.length > 0 && (
         <ul className="b-sm" style={{ display: 'grid', gap: '6px', marginTop: '10px' }} aria-label={tt('Trasporti sulla mappa')}>
