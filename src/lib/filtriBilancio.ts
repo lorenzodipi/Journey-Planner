@@ -1,5 +1,6 @@
 // Filtri e ordinamenti di «Il mio bilancio»: persona, categoria, stato, date, importo; ordine per data, importo, categoria, persona.
 import { categoriaDi } from './ricevuta'
+import { piuRecentiPrima } from './ordineSpese'
 import { parseAmount } from './money'
 import type { DebitoSpesa } from './debitiSpese'
 import { LINGUA } from '../i18n'
@@ -60,7 +61,7 @@ export function ordinaBilancio(righe: readonly DebitoSpesa[], o: Ordine, nome: (
   const confronta = (a: DebitoSpesa, b: DebitoSpesa) => {
     switch (o.per) {
       case 'data':
-        return b.expense.spentAt.localeCompare(a.expense.spentAt)
+        return piuRecentiPrima(a.expense, b.expense)
       case 'importo':
         return b.importo - a.importo
       case 'categoria':
@@ -70,5 +71,5 @@ export function ordinaBilancio(righe: readonly DebitoSpesa[], o: Ordine, nome: (
     }
   }
   // a parità, sempre le più recenti prima
-  return [...righe].sort((a, b) => (o.inverso ? -1 : 1) * confronta(a, b) || b.expense.spentAt.localeCompare(a.expense.spentAt))
+  return [...righe].sort((a, b) => (o.inverso ? -1 : 1) * confronta(a, b) || piuRecentiPrima(a.expense, b.expense))
 }

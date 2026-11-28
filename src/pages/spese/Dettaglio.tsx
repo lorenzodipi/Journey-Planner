@@ -2,6 +2,7 @@
 // righe che si aprono in linea (pagata da, divisione, categoria, Modifica / Elimina). Le spese che non mi
 // riguardano non compaiono in nessuna lista (ma contano nei totali della pagina Spese).
 import { corrispondeSpesa, importiDellaSpesa } from '../../lib/cercaImporto'
+import { poiInseritaPrima } from '../../lib/ordineSpese'
 import { useMemo, useState } from 'react'
 import { useLocation } from 'wouter'
 import { formatMoney, round2 } from '../../lib/money'
@@ -73,7 +74,7 @@ export function Dettaglio() {
   const giorni = useMemo(() => {
     const m = new Map<string, SpesaVista[]>()
     // un giorno per acquisto (non per utilizzo); dentro il giorno, le più recenti in alto
-    for (const e of [...shown].sort((a, b) => (b.acquistoAt ?? b.spentAt).localeCompare(a.acquistoAt ?? a.spentAt))) {
+    for (const e of [...shown].sort((a, b) => (b.acquistoAt ?? b.spentAt).localeCompare(a.acquistoAt ?? a.spentAt) || poiInseritaPrima(a, b))) {
       const d = giornoAcquisto(e, trip.timezone)
       m.set(d, [...(m.get(d) ?? []), e])
     }

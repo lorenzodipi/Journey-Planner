@@ -1,4 +1,5 @@
 import type { BudgetItem, Day, Expense, ExpenseFile, Rimborso, RimborsoConfermato, ExpensePayer, ExpenseShare, Scope, ExpenseSourceKind, SplitMode } from '../types'
+import { piuRecentiPrima } from './ordineSpese'
 import { zonedToInstant } from './zoned'
 import { LINGUA } from '../i18n'
 
@@ -39,6 +40,7 @@ export interface ExpenseRow {
   fx_rate: number | string | null
   paid_by: string | null
   spent_at: string
+  created_at?: string | null
   notes: string | null
   source_kind?: ExpenseSourceKind | null
   source_id?: string | null
@@ -180,6 +182,7 @@ export function mapExpenses(
       fxRate: r.fx_rate == null ? undefined : Number(r.fx_rate),
       paidBy: r.paid_by ?? undefined,
       spentAt: r.spent_at,
+      ...(r.created_at ? { createdAt: r.created_at } : {}),
       dayId: r.day_id ?? undefined,
       notes: r.notes ?? undefined,
       shares: shares
@@ -209,7 +212,7 @@ export function mapExpenses(
         : {}),
       ...(r.source_kind && r.source_id ? { source: { kind: r.source_kind, id: r.source_id } } : {}),
     }))
-    .sort((a, b) => b.spentAt.localeCompare(a.spentAt)) // le più recenti in alto
+    .sort(piuRecentiPrima) // le più recenti in alto
 }
 
 // ---------- moduli -> colonne ----------

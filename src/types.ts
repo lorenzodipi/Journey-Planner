@@ -341,6 +341,8 @@ export interface Expense {
   fxRate?: number // unità di valuta base per 1 unità di `currency`
   paidBy?: string // id del viaggiatore che ha anticipato
   spentAt: string // istante ISO
+  /** Quando è stata inserita (ISO): decide l'ordine delle spese dello stesso giorno, l'ultima inserita in alto. */
+  createdAt?: string
   dayId?: string
   notes?: string
   shares: ExpenseShare[] // tra chi si divide (vuoto = tutti in parti uguali)

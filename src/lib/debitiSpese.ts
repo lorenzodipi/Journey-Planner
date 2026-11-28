@@ -3,6 +3,7 @@
 // copre quella; i rimborsi senza spesa (quelli di prima) coprono le spese dalla più vecchia alla più recente.
 // Una rettifica confermata toglie dal rimborso che corregge. Prima i confermati, poi quelli in attesa.
 import { expenseOwed, expensePaid, expenseBase, settle, type FxContext } from './budget'
+import { piuRecentiPrima } from './ordineSpese'
 import { round2 } from './money'
 import { expenseBalance } from './ripartizione'
 import { rimborsiValidi } from './rimborsi'
@@ -154,7 +155,7 @@ export function debitiPerSpesa(
   for (const g of out) g.stato = g.residuo < MIN ? 'pagato' : g.inAttesa >= g.residuo - MIN ? 'in_attesa' : g.contestato > MIN ? 'contestato' : 'da_pagare'
 
   const rank = (s: StatoDebito) => (s === 'da_pagare' || s === 'contestato' ? 0 : s === 'in_attesa' ? 1 : 2)
-  return out.sort((a, b) => rank(a.stato) - rank(b.stato) || b.expense.spentAt.localeCompare(a.expense.spentAt))
+  return out.sort((a, b) => rank(a.stato) - rank(b.stato) || piuRecentiPrima(a.expense, b.expense))
 }
 
 /** Quanto devo dare e quanto devo ricevere in tutto, sommando le card ancora aperte: senza compensare niente. */

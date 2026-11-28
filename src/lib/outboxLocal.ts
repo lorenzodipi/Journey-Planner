@@ -1,4 +1,5 @@
 import type { Category, ChecklistItem, Expense, ExpenseShare, Trip } from '../types'
+import { piuRecentiPrima } from './ordineSpese'
 import { doneCount } from './checklist'
 import { checklistColumns, type ChecklistInput } from './planningData'
 import { expenseColumns, type ExpenseInput } from './moneyData'
@@ -20,7 +21,7 @@ function apply(trips: Trip[], l: Local): Trip[] {
     case 'expense.save':
       return patchTrip(trips, l.tripId, (t) => ({
         ...t,
-        expenses: upsertById(t.expenses, l.expense).sort((a, b) => b.spentAt.localeCompare(a.spentAt)),
+        expenses: upsertById(t.expenses, l.expense).sort(piuRecentiPrima),
         expenseCategories: l.category ? upsertById(t.expenseCategories, l.category) : t.expenseCategories,
       }))
     case 'expense.deleted':
@@ -109,6 +110,7 @@ export function expenseEntry(
     fxRate: cols.fx_rate ?? undefined,
     paidBy: cols.paid_by ?? undefined,
     spentAt: cols.spent_at,
+    createdAt: existing?.createdAt ?? new Date().toISOString(),
     dayId: cols.day_id ?? undefined,
     notes: cols.notes ?? undefined,
     shares: shareList.map((s) => ({ travelerId: s.travelerId, weight: 1, ...(mode === 'percent' ? { percent: s.percent } : {}), ...(mode === 'fixed' ? { amount: s.amount } : {}) })),

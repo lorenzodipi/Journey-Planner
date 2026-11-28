@@ -3,6 +3,7 @@
 // Le spese registrate a mano (o nate da una tappa con costo) restano quelle del database; le voci pagate
 // senza una spesa collegata diventano spese «derivate» (una sola per voce, nessun doppione).
 import { budgetTotale } from './budgetPersona'
+import { piuRecentiPrima } from './ordineSpese'
 import { expenseBase, expenseOwed, fxOf, summarizeExpenses, type ExpenseSummary, type FxContext } from './budget'
 import { rimborsiValidi } from './rimborsi'
 import { BOOKING_BUDGET_CATEGORY } from './bookingMeta'
@@ -72,7 +73,7 @@ export function tutteLeSpese(trip: Pick<Trip, 'expenses' | 'stays' | 'flights' |
     const tot = total(b.cost, b.scope ?? 'per_person', who.length)
     add('booking', b.id, { label: b.title, category: BOOKING_BUDGET_CATEGORY[b.type], amount: tot, currency: b.currency ?? 'EUR', ...spesaDivisa({ ...b, paidBy: payer }, who, tot, everyone), spentAt: at, acquistoAt: b.createdAt })
   }
-  return out.sort((a, b) => b.spentAt.localeCompare(a.spentAt))
+  return out.sort(piuRecentiPrima)
 }
 
 /** Per chi è la spesa: le persone della divisione (vuoto = tutti). */
