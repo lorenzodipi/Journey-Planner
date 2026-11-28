@@ -16,7 +16,7 @@ import { t as tt } from '../../i18n'
 
 type Scelta = MezzoTratto | 'viaggio' | ''
 
-const GLIFO: Record<MezzoTratto, string> = { walk: 'g-tra-walk', metro: 'g-tra-metro', bus: 'g-tra-bus', train: 'g-tra-train', car: 'g-tra-car' }
+const GLIFO: Record<MezzoTratto, string> = { walk: 'g-tra-walk', bike: 'g-tra-bike', metro: 'g-tra-metro', bus: 'g-tra-bus', train: 'g-tra-train', car: 'g-tra-car' }
 
 export function SpostamentoSheet({ open, onClose, da, a, leg, strada, imp }: {
   open: boolean
@@ -49,7 +49,7 @@ export function SpostamentoSheet({ open, onClose, da, a, leg, strada, imp }: {
   const manuale = !!(scelto || a.arriveMinutes)
   const ll = (p: { lat: number; lng: number }) => encodeURIComponent(`${p.lat},${p.lng}`)
   const modoDi = mezzo === 'viaggio' ? predefinito : mezzo
-  const modo = modoDi === 'walk' ? 'walking' : modoDi === 'car' ? 'driving' : 'transit'
+  const modo = modoDi === 'walk' ? 'walking' : modoDi === 'bike' ? 'bicycling' : modoDi === 'car' ? 'driving' : 'transit'
   const maps = `https://www.google.com/maps/dir/?api=1&origin=${ll(leg.from)}&destination=${ll(leg.to)}&travelmode=${modo}`
 
   async function salva(nuovo: MezzoTratto | null, minuti: number | null) {

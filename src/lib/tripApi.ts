@@ -415,7 +415,7 @@ function mapTrip(row: TripRow, extras: Extras, people: PersonRow[] = [], myId?: 
     localCurrency: row.local_currency?.trim() || undefined,
     ...(row.archived_at ? { archivedAt: row.archived_at } : {}),
     ...(row.default_margin_min != null ? { defaultMarginMin: row.default_margin_min } : {}),
-    ...(row.move_mode === 'walk' || row.move_mode === 'transit' || row.move_mode === 'car' ? { moveMode: row.move_mode } : {}),
+    ...(row.move_mode === 'walk' || row.move_mode === 'bike' || row.move_mode === 'transit' || row.move_mode === 'car' ? { moveMode: row.move_mode } : {}),
     ...(row.walk_max_min != null ? { walkMaxMin: row.walk_max_min } : {}),
     center: {
       lat: row.center_lat ?? DEFAULT_CENTER.lat,

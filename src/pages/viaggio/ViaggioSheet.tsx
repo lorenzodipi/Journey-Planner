@@ -425,12 +425,13 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
           <h2 className="fa-h3">{tt('Spostamenti tra le tappe')}</h2>
           <Riquadri<MezzoViaggio>
             label={tt('Di solito vi spostate')}
-            cols={3}
+            cols={2}
             value={mezzoScelto}
             onChange={(m) => m && setMezzo(m)}
             options={[
               { value: 'car', label: tt('In auto'), glifo: 'g-tra-car', sub: tt('Tempi su strada') },
               { value: 'transit', label: tt('Con i mezzi'), glifo: 'g-tra-metro', sub: tt('Metro, bus, treni') },
+              { value: 'bike', label: tt('In bici'), glifo: 'g-tra-bike', sub: tt('Tempi in bici') },
               { value: 'walk', label: tt('A piedi'), glifo: 'g-tra-walk', sub: tt('Sempre a piedi') },
             ]}
           >
@@ -450,8 +451,8 @@ export function ViaggioSheet({ trip, open, onClose, onDone }: Props) {
               </div>
               <span className="fa-help">
                 {soglia === 0
-                  ? tt('Tra una tappa e l\'altra si va sempre {v0}, anche se è vicina.', { v0: mezzoScelto === 'car' ? tt('in auto') : tt('con i mezzi') })
-                  : tt('Se la tappa successiva è a {soglia} minuti di cammino o meno ci si va a piedi; se è più lontana, {v1}.', { soglia, v1: mezzoScelto === 'car' ? tt('in auto') : tt('con i mezzi') })}
+                  ? tt('Tra una tappa e l\'altra si va sempre {v0}, anche se è vicina.', { v0: mezzoScelto === 'car' ? tt('in auto') : mezzoScelto === 'bike' ? tt('in bici') : tt('con i mezzi') })
+                  : tt('Se la tappa successiva è a {soglia} minuti di cammino o meno ci si va a piedi; se è più lontana, {v1}.', { soglia, v1: mezzoScelto === 'car' ? tt('in auto') : mezzoScelto === 'bike' ? tt('in bici') : tt('con i mezzi') })}
               </span>
             </div>
           ) : null}

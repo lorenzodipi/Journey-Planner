@@ -53,13 +53,13 @@ export function dayStops(day: Day, places: Place[]): { stops: DayStop[]; missing
   return { stops, missing }
 }
 
-export type LegKind = 'walk' | 'drive' | 'line'
+export type LegKind = 'walk' | 'bike' | 'drive' | 'line'
 
 export interface Leg {
   key: string
   from: LatLng
   to: LatLng
-  /** 'walk' = a piedi e 'drive' = in auto, lungo le strade; 'line' = con un mezzo, in linea d'aria (se `via` c'è, è il trasporto del giorno) */
+  /** 'walk' = a piedi, 'bike' = in bici e 'drive' = in auto, lungo le strade; 'line' = con un mezzo, in linea d'aria (se `via` c'è, è il trasporto del giorno) */
   kind: LegKind
   straightM: number
   via?: TransportLine
@@ -104,16 +104,16 @@ export function planLegs(stops: DayStop[], transports: TransportLine[] = [], mez
     const viaUsato = via && (!mezzo || mezzo === via.mode) ? via : undefined
     const tipo = viaUsato ? 'line' : mezzo ? tipoSuMappa(mezzo) : 'walk'
     const kind: LegKind = tipo === 'walk' && straightM > WALK_MAX_M ? 'line' : tipo
-    legs.push({ key: kind === 'drive' ? `car:${legKey(from, to)}` : legKey(from, to), from, to, kind, straightM, fromId: from.id, toId: to.id, ...(viaUsato ? { via: viaUsato } : {}), ...(mezzo ? { mezzo } : {}) })
+    legs.push({ key: kind === 'drive' ? `car:${legKey(from, to)}` : kind === 'bike' ? `bike:${legKey(from, to)}` : legKey(from, to), from, to, kind, straightM, fromId: from.id, toId: to.id, ...(viaUsato ? { via: viaUsato } : {}), ...(mezzo ? { mezzo } : {}) })
   }
   return legs
 }
 
-/** I tratti da calcolare lungo le strade: a piedi e in auto tra le tappe, più il pezzo a piedi fino/dalla stazione dove un trasporto copre il tratto. */
+/** I tratti da calcolare lungo le strade: a piedi, in bici e in auto tra le tappe, più il pezzo a piedi fino/dalla stazione dove un trasporto copre il tratto. */
 export function walkLegs(legs: Leg[]): Leg[] {
   const out: Leg[] = []
   for (const leg of legs) {
-    if (leg.kind === 'walk' || leg.kind === 'drive') {
+    if (leg.kind === 'walk' || leg.kind === 'bike' || leg.kind === 'drive') {
       out.push(leg)
       continue
     }
@@ -174,11 +174,12 @@ export function parseOsrm(json: unknown): WalkRoute | null {
   return { coords: clean, meters: Number(route.distance) || 0, seconds: Number(route.duration) || 0 }
 }
 
-// Il server pubblico di OpenStreetMap (FOSSGIS) ha un'istanza per i pedoni e una per le auto. Il nome del profilo
+// Il server pubblico di OpenStreetMap (FOSSGIS) ha un'istanza per i pedoni, una per le bici e una per le auto. Il nome del profilo
 // nell'indirizzo dipende dalla versione, quindi si prova l'uno e poi l'altro.
 const ENDPOINTS = {
   foot: ['https://routing.openstreetmap.de/routed-foot/route/v1/driving', 'https://routing.openstreetmap.de/routed-foot/route/v1/foot'],
   car: ['https://routing.openstreetmap.de/routed-car/route/v1/driving', 'https://routing.openstreetmap.de/routed-car/route/v1/car'],
+  bike: ['https://routing.openstreetmap.de/routed-bike/route/v1/driving', 'https://routing.openstreetmap.de/routed-bike/route/v1/bike'],
 }
 
 export async function fetchWalkRoute(
@@ -186,7 +187,7 @@ export async function fetchWalkRoute(
   b: LatLng,
   fetchFn: typeof fetch = fetch,
   signal?: AbortSignal,
-  profilo: 'foot' | 'car' = 'foot',
+  profilo: 'foot' | 'bike' | 'car' = 'foot',
 ): Promise<WalkRoute | null> {
   const coords = `${a.lng},${a.lat};${b.lng},${b.lat}`
   for (const base of ENDPOINTS[profilo]) {
@@ -255,12 +256,12 @@ export interface ResolveOptions {
   gapMs?: number
 }
 
-/** Calcola (o recupera dalla cache) i percorsi dei tratti a piedi e in auto, uno alla volta. */
+/** Calcola (o recupera dalla cache) i percorsi dei tratti a piedi, in bici e in auto, uno alla volta. */
 export async function resolveWalkLegs(legs: Leg[], opts: ResolveOptions): Promise<void> {
   const { store, fetchFn = fetch, signal, onRoute, gapMs = 300 } = opts
   let first = true
   for (const leg of legs) {
-    if (leg.kind !== 'walk' && leg.kind !== 'drive') continue
+    if (leg.kind !== 'walk' && leg.kind !== 'bike' && leg.kind !== 'drive') continue
     if (signal?.aborted) return
     const cached = store.get(leg.key)
     if (cached) {
@@ -271,7 +272,7 @@ export async function resolveWalkLegs(legs: Leg[], opts: ResolveOptions): Promis
     first = false
     if (signal?.aborted) return
     try {
-      const route = await fetchWalkRoute(leg.from, leg.to, fetchFn, signal, leg.kind === 'drive' ? 'car' : 'foot')
+      const route = await fetchWalkRoute(leg.from, leg.to, fetchFn, signal, leg.kind === 'drive' ? 'car' : leg.kind === 'bike' ? 'bike' : 'foot')
       if (route) store.set(leg.key, route)
       onRoute(leg.key, route)
     } catch {
@@ -288,6 +289,7 @@ export const formatMinutes = (seconds: number) => `${Math.max(1, Math.round(seco
 export function describeLeg(leg: Pick<Leg, 'kind' | 'straightM' | 'via'>, route: WalkRoute | null | undefined): string {
   if (leg.kind === 'line' && leg.via) return tt('in viaggio: {fromName} → {toName}', { fromName: leg.via.fromName, toName: leg.via.toName })
   if (leg.kind === 'line') return tt('{v0} in linea d\'aria: serve un mezzo', { v0: formatDistance(leg.straightM) })
+  if (leg.kind === 'bike') return route ? tt('{v0} in bici · {v1}', { v0: formatMinutes(route.seconds), v1: formatDistance(route.meters) }) : route === null ? tt('{v0} in linea d\'aria in bici (percorso non disponibile)', { v0: formatDistance(leg.straightM) }) : tt('Calcolo il percorso…')
   if (leg.kind === 'drive') return route ? tt('{v0} in auto · {v1}', { v0: formatMinutes(route.seconds), v1: formatDistance(route.meters) }) : route === null ? tt('{v0} in linea d\'aria in auto (percorso non disponibile)', { v0: formatDistance(leg.straightM) }) : tt('Calcolo il percorso…')
   if (route) return tt('{v0} a piedi · {v1}', { v0: formatMinutes(route.seconds), v1: formatDistance(route.meters) })
   if (route === null) return tt('{v0} in linea d\'aria a piedi (percorso non disponibile)', { v0: formatDistance(leg.straightM) })
@@ -318,6 +320,7 @@ export function modeSymbol(mode: TransportMode): string {
 export function hopSummary(leg: Pick<Leg, 'kind' | 'straightM' | 'via'>, route: WalkRoute | null | undefined): { symbol: string; text: string } {
   if (leg.kind === 'line' && leg.via) return { symbol: modeSymbol(leg.via.mode), text: `${MODE_IN[leg.via.mode]} · ${leg.via.fromName} → ${leg.via.toName}` }
   if (leg.kind === 'line') return { symbol: 'i-tra-bus', text: tt('Serve un mezzo · {v0}', { v0: formatDistance(leg.straightM) }) }
+  if (leg.kind === 'bike') return { symbol: 'i-tra-bike', text: route ? tt('In bici · {v0}', { v0: formatMinutes(route.seconds) }) : route === null ? tt('In bici · {v0}', { v0: formatDistance(leg.straightM) }) : tt('In bici · calcolo…') }
   if (leg.kind === 'drive') return { symbol: 'i-tra-car', text: route ? tt('In auto · {v0}', { v0: formatMinutes(route.seconds) }) : route === null ? tt('In auto · {v0}', { v0: formatDistance(leg.straightM) }) : tt('In auto · calcolo…') }
   if (route) return { symbol: 'i-tra-walk', text: tt('A piedi · {v0}', { v0: formatMinutes(route.seconds) }) }
   return { symbol: 'i-tra-walk', text: route === null ? tt('A piedi · {v0}', { v0: formatDistance(leg.straightM) }) : tt('A piedi · calcolo…') }

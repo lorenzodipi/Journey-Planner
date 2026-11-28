@@ -19,7 +19,7 @@ export function useDaySegments(trip: Trip, day: Day | undefined) {
       const item = day.items[i]
       const leg = legByEnds.get(`${day.items[i - 1].id}>${item.id}`)
       if (!leg) continue
-      const strada = leg.kind === 'walk' || leg.kind === 'drive' ? route.routes[leg.key] : undefined
+      const strada = leg.kind === 'walk' || leg.kind === 'bike' || leg.kind === 'drive' ? route.routes[leg.key] : undefined
       m.set(item.id, spostamento(leg.straightM, { scelto: sceltoPer(item), minuti: item.arriveMinutes, via: leg.via?.mode, imp, strada }))
     }
     return m

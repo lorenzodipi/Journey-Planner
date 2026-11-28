@@ -6,9 +6,9 @@ export type PlaceStatus = 'idea' | 'planned' | 'done' | 'skipped'
 export type Scope = 'per_person' | 'total'
 export type TransportMode = 'train' | 'metro' | 'bus' | 'walk' | 'car' | 'plane' | 'ferry' | 'other'
 /** Mezzo di solito usato in un viaggio tra le tappe (0045). */
-export type MezzoViaggio = 'walk' | 'transit' | 'car'
+export type MezzoViaggio = 'walk' | 'bike' | 'transit' | 'car'
 /** Mezzo scelto a mano per uno spostamento tra due tappe (0045). */
-export type MezzoTratto = 'walk' | 'metro' | 'bus' | 'train' | 'car'
+export type MezzoTratto = 'walk' | 'bike' | 'metro' | 'bus' | 'train' | 'car'
 export type ItemKind = 'visit' | 'meal' | 'transport' | 'free' | 'note' | 'flight'
 /** Stato della tappa (#32): registro in `src/lib/tappaStati.ts`. */
 export type ItemStatus = 'todo' | 'done' | 'skipped' | 'late' | 'postponed' | 'cancelled'

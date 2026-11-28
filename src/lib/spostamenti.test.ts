@@ -4,6 +4,7 @@ import { comeCiSiMuove, impostazioniViaggio, mezzoSuggerito, modoGoogle, scegliM
 
 const base = impostazioniViaggio({})
 const auto = impostazioniViaggio({ moveMode: 'car' })
+const bici = impostazioniViaggio({ moveMode: 'bike' })
 
 describe('scegliMezzo', () => {
   it('senza scelte: a piedi i tratti brevi, poi con i mezzi', () => {
@@ -20,6 +21,7 @@ describe('scegliMezzo', () => {
     expect(scegliMezzo(5000, { via: 'train', imp: auto })).toEqual({ mezzo: 'train', fonte: 'trasporto' })
     expect(scegliMezzo(5000, { scelto: 'bus', via: 'train', imp: auto })).toEqual({ mezzo: 'bus', fonte: 'scelto' })
     expect(scegliMezzo(300, { scelto: 'car', imp: base }).mezzo).toBe('car')
+    expect(scegliMezzo(300, { scelto: 'bike', imp: base }).mezzo).toBe('bike')
   })
 })
 
@@ -49,15 +51,20 @@ describe('testi e Google Maps', () => {
     expect(comeCiSiMuove(['walk', 'bus'])).toBe('tra autobus e a piedi')
     expect(comeCiSiMuove(['metro', 'walk', 'bus'])).toBe('tra metro, autobus e a piedi')
     expect(comeCiSiMuove(['transit'])).toBe('con i mezzi')
+    expect(comeCiSiMuove(['bike', 'bike'])).toBe('in bici')
+    expect(comeCiSiMuove(['walk', 'bike'])).toBe('tra bici e a piedi')
   })
   it('modo di Google Maps', () => {
     expect(modoGoogle(['walk'])).toBe('walking')
     expect(modoGoogle(['car', 'walk'])).toBe('driving')
     expect(modoGoogle(['bus', 'walk'])).toBe('transit')
+    expect(modoGoogle(['bike', 'walk'])).toBe('bicycling')
+    expect(modoGoogle(['bike', 'car'])).toBe('transit')
   })
   it('sulla mappa: a piedi e in auto lungo le strade', () => {
     expect(tipoSuMappa('walk')).toBe('walk')
     expect(tipoSuMappa('car')).toBe('drive')
+    expect(tipoSuMappa('bike')).toBe('bike')
     expect(tipoSuMappa('metro')).toBe('line')
   })
 })
@@ -72,6 +79,23 @@ describe('mezzoSuggerito', () => {
   })
 })
 
+describe('la bici', () => {
+  it('mezzo del viaggio: a piedi i tratti brevi, poi in bici', () => {
+    expect(scegliMezzo(800, { imp: bici })).toEqual({ mezzo: 'walk', fonte: 'breve' })
+    expect(scegliMezzo(5000, { imp: bici })).toEqual({ mezzo: 'bike', fonte: 'viaggio' })
+    expect(scegliMezzo(800, { imp: { mezzo: 'bike', sogliaMin: 0 } }).mezzo).toBe('bike')
+  })
+  it('stima a 15 km/h, testo e icona', () => {
+    const s = spostamento(4000, { imp: base, scelto: 'bike' })
+    expect(s.text).toBe('In bici · 21 min')
+    expect(s.icon).toBe('g-tra-bike')
+    expect(s.minutes).toBeLessThan(spostamento(4000, { imp: base, scelto: 'walk' }).minutes)
+  })
+  it('il percorso calcolato sulle strade per bici vince sulla stima', () => {
+    expect(spostamento(4000, { imp: base, scelto: 'bike', strada: { meters: 4500, seconds: 900 } }).minutes).toBe(15)
+  })
+})
+
 describe('mappa del giorno', () => {
   const stops: DayStop[] = [
     { id: 'a', n: 1, name: 'Þingvellir', lat: 64.2559, lng: -21.1299 },
@@ -81,6 +105,12 @@ describe('mappa del giorno', () => {
     const legs = planLegs(stops, [], (_a, _b, m) => scegliMezzo(m, { imp: auto }).mezzo)
     expect(legs[0].kind).toBe('drive')
     expect(legs[0].key.startsWith('car:')).toBe(true)
+    expect(walkLegs(legs)).toHaveLength(1)
+  })
+  it('un tratto in bici si calcola su strada con una chiave sua', () => {
+    const legs = planLegs(stops, [], (_a, _b, m) => scegliMezzo(m, { imp: bici }).mezzo)
+    expect(legs[0].kind).toBe('bike')
+    expect(legs[0].key.startsWith('bike:')).toBe(true)
     expect(walkLegs(legs)).toHaveLength(1)
   })
   it('con i mezzi resta in linea d’aria', () => {

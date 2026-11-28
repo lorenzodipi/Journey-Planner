@@ -1123,6 +1123,25 @@ await asUser(null, 'postgres')
   await asUser(A)
 }
 
+// la bici come mezzo tra le tappe (0060): ammessa nel viaggio e nella tappa, gli altri valori restano validi, uno sconosciuto no
+{
+  await asUser(null, 'postgres')
+  await runMigration('0060_spostamenti_bici.sql')
+  await runMigration('0060_spostamenti_bici.sql') // si può rilanciare
+  const tr = (await db.query(`select id from trips limit 1`)).rows[0].id
+  const tp = (await db.query(`select id from day_items limit 1`)).rows[0].id
+  await db.query(`update trips set move_mode='bike' where id=$1`, [tr])
+  check('0060 la bici è un mezzo del viaggio', (await db.query(`select move_mode from trips where id=$1`, [tr])).rows[0].move_mode === 'bike')
+  await db.query(`update trips set move_mode='car' where id=$1`, [tr])
+  await db.query(`update day_items set arrive_mode='bike', arrive_minutes=12 where id=$1`, [tp])
+  check('0060 la bici è un mezzo scelto per una tappa', (await db.query(`select arrive_mode from day_items where id=$1`, [tp])).rows[0].arrive_mode === 'bike')
+  await db.query(`update day_items set arrive_mode='taxi' where id=$1`, [tp])
+  await db.query(`update day_items set arrive_mode=null, arrive_minutes=null where id=$1`, [tp])
+  await throws('0060 un mezzo sconosciuto non entra (viaggio)', () => db.query(`update trips set move_mode='monopattino' where id=$1`, [tr]))
+  await throws('0060 un mezzo sconosciuto non entra (tappa)', () => db.query(`update day_items set arrive_mode='monopattino' where id=$1`, [tp]))
+  await asUser(A)
+}
+
 // service_role (script di import): solo le tabelle concesse, nessuna cancellazione
 await asUser(null, 'service_role')
 const svcTrip = (await db.query(`select id from trips limit 1`)).rows

@@ -2290,5 +2290,13 @@
  "{n} tappe ({v0})": "{n} stops ({v0})",
  " Le spese collegate restano in Spese.": " Linked expenses stay in Expenses.",
  "es. Pagato in contanti, scontrino nella borsa": "e.g. Paid in cash, receipt in the bag",
- "Con un costo compare «Chi ha pagato».": "With a cost, «Who paid» appears."
+ "Con un costo compare «Chi ha pagato».": "With a cost, «Who paid» appears.",
+ "In bici": "By bike",
+ "Bici": "Bike",
+ "in bici": "by bike",
+ "Tempi in bici": "Cycling times",
+ "{v0} in bici · {v1}": "{v0} by bike · {v1}",
+ "{v0} in linea d'aria in bici (percorso non disponibile)": "{v0} as the crow flies by bike (route not available)",
+ "In bici · {v0}": "By bike · {v0}",
+ "In bici · calcolo…": "By bike · calculating…"
 }
