@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ricevuta, iconaSpesa, statoBudget } from './ricevuta'
+import { CATEGORIE_BASE, ricevuta, iconaSezione, iconaSpesa, statoBudget } from './ricevuta'
 import { sezioneSpesa, tutteLeSpese } from './spese'
 import type { Trip } from '../types'
 import { formatMoney } from './money'
@@ -89,11 +89,18 @@ describe('ricevuta', () => {
   it('icona della spesa: solo dalla categoria, il nome non conta', () => {
     // il caso di Gaia: «cucina» nel nome, categoria Shopping → borsa
     expect(iconaSpesa({ label: 'Bacchette e roba per la cucina', category: 'Shopping' })).toBe('i-cat-shopping')
-    expect(iconaSpesa({ label: 'Caffè al mercato', category: 'Cibo' })).toBe('i-sez-food')
-    expect(iconaSpesa({ label: 'Treno per Kyoto', category: 'Trasporti' })).toBe('i-tra-train')
-    expect(iconaSpesa({ label: 'Ingresso', category: 'Attività' })).toBe('i-sez-ticket')
-    expect(iconaSpesa({ label: 'Ramen', category: 'Altro' })).toBe('i-sez-bag')
-    expect(iconaSpesa({ label: 'Ramen' })).toBe('i-sez-bag')
+    expect(iconaSpesa({ label: 'Caffè al mercato', category: 'Cibo' })).toBe('i-cat-food')
+    expect(iconaSpesa({ label: 'Treno per Kyoto', category: 'Trasporti' })).toBe('i-cat-transit')
+    expect(iconaSpesa({ label: 'Ingresso', category: 'Attività' })).toBe('i-cat-fun')
+    expect(iconaSpesa({ label: 'Ramen', category: 'Altro' })).toBe('i-cat-pin')
+    expect(iconaSpesa({ label: 'Ramen' })).toBe('i-cat-pin')
+  })
+
+  it('l\'icona di una categoria è la stessa ovunque: foglio della spesa, Dettaglio e Budget', () => {
+    for (const c of CATEGORIE_BASE) {
+      expect(iconaSpesa({ label: 'x', category: c.label })).toBe(c.icon)
+      expect(iconaSezione(c.label)).toBe(c.icon)
+    }
   })
 })
 

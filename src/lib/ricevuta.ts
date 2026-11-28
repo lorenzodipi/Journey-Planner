@@ -34,11 +34,9 @@ export function iconaCategoria(label: string): string {
   return CAT_ICONS.has(i) ? `i-cat-${i}` : 'i-cat-pin'
 }
 
-const SEZIONI: Record<string, string> = { voli: 'i-tra-plane', alloggi: 'i-sez-bed', trasporti: 'i-tra-train', cibo: 'i-sez-food', 'attività': 'i-sez-ticket', altro: 'i-sez-bag' }
-
-/** Disco grande della categoria (pagina Budget e righe del Dettaglio, mock Fa-27/Fa-34). */
+/** Disco grande della categoria (pagina Budget, righe del Dettaglio e dei debiti): lo stesso disegno del foglio della spesa e della ricevuta. */
 export function iconaSezione(label: string): string {
-  return SEZIONI[catKey(label)] ?? iconaCategoria(label)
+  return iconaCategoria(label)
 }
 
 /** Disco di una spesa nel Dettaglio: **solo** dalla categoria scelta (il nome non conta: scegli la categoria, vedi la sua icona). */
